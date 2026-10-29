@@ -135,7 +135,26 @@ async function fixture(page: Page, role: "student" | "teacher") {
       expect(body.expectedDraftVersionId).toBe(version.id);
       mission = {
         ...mission,
-        draftVersion: { ...version, ...body, id: "saved-version" },
+        draftVersion: {
+          ...version,
+          id: "saved-version",
+          source: "manual",
+          title: body.title,
+          description: body.description,
+          objectives: body.objectives,
+          criteria: body.criteria,
+          dueAt: body.dueAt ?? null,
+          steps: body.steps.map((step, index) => ({
+            ...step,
+            id: `saved-step-${index}`,
+            position: index + 1,
+          })),
+          materials: body.materials.map((material, index) => ({
+            ...material,
+            id: `saved-material-${index}`,
+            hasFile: false,
+          })),
+        },
       };
       return respond(mission);
     }

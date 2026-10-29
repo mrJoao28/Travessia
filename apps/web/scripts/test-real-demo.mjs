@@ -193,7 +193,7 @@ try {
       "node_modules/playwright/cli.js",
       "test",
       "--config",
-      "apps/web/playwright.real.config.ts",
+      "apps/web/playwright.real.config.mjs",
     ],
     { env: process.env, stdio: "inherit" },
   );

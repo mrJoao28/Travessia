@@ -26,22 +26,36 @@ export type MissionEntry = {
 };
 
 export function LiveWorkspace({
-  role,
-  section = "",
-  missionId,
+  ...props
 }: {
   role: "aluno" | "professor";
   section?: string;
   missionId?: string;
+  classroomId?: string;
+}) {
+  return (
+    <WorkspaceView
+      key={`${props.role}:${props.section ?? ""}:${props.missionId ?? ""}:${props.classroomId ?? ""}`}
+      {...props}
+    />
+  );
+}
+
+function WorkspaceView({
+  role,
+  section = "",
+  missionId,
+  classroomId,
+}: {
+  role: "aluno" | "professor";
+  section?: string;
+  missionId?: string;
+  classroomId?: string;
 }) {
   const [profile, setProfile] = useState<ApiResponse<"me"> | null>(null);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [entries, setEntries] = useState<MissionEntry[]>([]);
-  const [selected, setSelected] = useState(() =>
-    typeof window === "undefined"
-      ? ""
-      : (new URLSearchParams(window.location.search).get("turma") ?? ""),
-  );
+  const [selected, setSelected] = useState(classroomId ?? "");
   const [pending, setPending] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
@@ -173,7 +187,7 @@ export function LiveWorkspace({
             </section>
           ) : (
             <>
-              {section !== "missao" &&
+              {!["missao", "editor", "nova"].includes(section) &&
                 (role === "professor" || !!section || !!selected) && (
                   <label
                     className="classroom-selector"

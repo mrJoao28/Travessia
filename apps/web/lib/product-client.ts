@@ -109,7 +109,8 @@ export async function pages<
   const items: Array<ApiResponse<K>["items"][number]> = [];
   let cursor: string | undefined;
   for (let page = 0; page < 100; page++) {
-    const response = await api(operation, { params: { id: id ?? "" }, cursor });
+    const params = (id ? { id } : {}) as ApiOperations[K]["params"];
+    const response = await api(operation, { params, cursor });
     items.push(...(response.items as Array<ApiResponse<K>["items"][number]>));
     if (!response.nextCursor) return items as ApiResponse<K>["items"];
     if (cursor === response.nextCursor)

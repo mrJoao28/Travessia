@@ -32,7 +32,7 @@ No backend, `BETTER_AUTH_URL` e `TRUSTED_WEB_ORIGIN` devem ser essa mesma origem
 
 ## Contrato e verificação
 
-Os DTOs em `apps/web/lib/api.generated.ts` são gerados, sem manutenção manual. O snapshot inicial foi derivado da proposta escrita pelo backend em `apps/api/src/contracts.ts` na worktree `feat/backend-auth`, para preparar componentes enquanto o backend termina. Antes da integração final, gerar novamente a partir do OpenAPI implementado:
+Os DTOs vêm dos tipos oficiais `@travessia/contracts/api`, gerados pelo backend. `apps/web/lib/api.generated.ts` contém apenas o adaptador tipado e os caminhos gerados do OpenAPI implementado. O snapshot provisório foi removido após integrar a main `8ae969d`. Gerar novamente quando o contrato mudar:
 
 ```
 node apps/web/scripts/generate-api.mjs
@@ -43,7 +43,7 @@ npx playwright test
 node --test apps/web/tests/proxy.test.mjs
 ```
 
-A geração não acontece no build nem acessa banco. O adaptador web mantém os caminhos e DTOs gerados do contrato; quando o cliente compartilhado estiver disponível, revisar sua adoção com o backend. Não alterar o OpenAPI para declarar endpoints que não foram implementados.
+A geração não acontece no build nem acessa banco. O adaptador web mantém os caminhos do contrato e importa seus DTOs oficiais; CI verifica drift. Não alterar o OpenAPI para declarar endpoints que não foram implementados.
 
 Na URL publicada, verificar health, login/logout, Set-Cookie e expiração; isolamento de turmas; rascunho persistido após recarregar; entrega e feedback; preferências da conta; barreira privada ausente da visão docente; resposta ao relato compartilhado; edição, revisão e publicação; Gemini desativado e, se autorizado, geração real. Não executar seed/migrations no build. Não registrar senha, email pessoal, tokens ou corpos privados.
 

@@ -22,3 +22,7 @@ Revisão realizada em 28/10/2026 de `apps/api/src/contracts.ts`, `runtime.ts`, `
 5. API, seed e banco de teste precisam estar disponíveis para verificar login, logout, expiração, progresso, entrega, feedback, barreiras e publicação reais.
 
 As rotas `/previa/*` são explicitamente fictícias. Não são o modo final de apresentação e não simulam persistência.
+
+## Integração do merge
+
+O merge `8ae969d` da main foi integrado sem conflitos na branch `feat/learning-workspaces-ui`. O adaptador web foi regenerado a partir do OpenAPI implementado e passou a importar DTOs oficiais de `@travessia/contracts/api`; o snapshot provisório de DTOs foi removido. A autoria do contrato/lockfile continua sendo do backend. A validação HTTP relatada pelo backend inclui a função de proxy do frontend; a validação em navegador/Next.js é executada separadamente pelo runner isolado.
