@@ -55,7 +55,7 @@ try {
   phase = 'aplicar migrations';
   await run('node_modules/prisma/build/index.js', ['migrate', 'deploy', '--schema', 'apps/api/prisma/schema.prisma']);
   phase = 'executar testes HTTP';
-  await run('node_modules/tsx/dist/cli.mjs', ['--tsconfig', 'apps/api/tsconfig.json', '--test', 'apps/api/tests/http.test.ts']);
+  await run('node_modules/tsx/dist/cli.mjs', ['--tsconfig', 'apps/api/tsconfig.json', '--test', 'apps/api/tests/http.test.ts', 'apps/api/tests/entrypoint.test.ts']);
 } catch {
   console.error(`Testes API falharam na etapa: ${phase}. Confira a saída anterior.`); process.exitCode = 1;
 } finally {
