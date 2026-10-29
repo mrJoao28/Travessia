@@ -9,11 +9,14 @@ Plataforma web de aprendizagem por missões acessíveis para o ensino superior. 
 - Monorepo com Next.js/TypeScript e NestJS/TypeScript.
 - Telas **demonstrativas**, com dados fictícios, para aluno, professor e leitura de uma missão.
 - Ajustes locais de tamanho do texto, contraste, espaçamento e redução de decoração.
-- API executável com `GET /v1/health`.
-- Política de autorização de referência e testes de isolamento por turma; ainda não integrada a endpoints privados.
+- API NestJS com Better Auth, Prisma/PostgreSQL, autorização por turma e convites transacionais.
+- Missões versionadas, progresso, entregas, feedback, barreiras privadas e Gemini opcional; seed manual idempotente.
+- Testes HTTP reais de sessão/isolamento e tipos gerados do OpenAPI.
 - Documentação de acessibilidade, privacidade, arquitetura e tarefas para dois agentes.
 
-**Ainda não implementados:** contas e login, banco de dados, convites reais, uploads, persistência de progresso, entregas, avaliação e chamadas ao Gemini. As telas não enviam dados de estudantes. Não há certificação de acessibilidade ou alegação de adequação pedagógica a todas as deficiências.
+Setup, seed privado e Vercel: [BACKEND-OPERATIONS.md](docs/BACKEND-OPERATIONS.md). Contrato revisado com frontend: [BACKEND-INTEGRATION.md](docs/BACKEND-INTEGRATION.md). Evidências e limites: [BACKEND-VALIDATION.md](docs/BACKEND-VALIDATION.md).
+
+**Pendências:** configuração do Supabase, conta pessoal via variáveis privadas, deploy e validação na URL publicada, integração da interface e uploads novos (desativados). Gemini real depende de chave/modelo e aprovação de escopo; testes usam fake apenas na suíte. Não há certificação de acessibilidade ou alegação de adequação pedagógica a todas as deficiências.
 
 ## Executar
 
@@ -30,13 +33,14 @@ Acesse `http://localhost:3000/aluno` e `http://localhost:3000/professor`. Em out
 npm run dev:api
 ```
 
-A API inicia em `http://localhost:3001/v1/health`. O comando compila antes de iniciar; reinicie-o após alterações no backend. Nenhuma chave é necessária para a demonstração. `.env.example` documenta configurações futuras; o scaffold não carrega esse arquivo automaticamente. Configure variáveis no ambiente de execução quando necessário.
+A API inicia em `http://localhost:3001/v1/health` após configurar banco e autenticação conforme BACKEND-OPERATIONS.md. O comando compila antes de iniciar; reinicie-o após alterações. `.env.example` documenta nomes sem segredos e não é carregado automaticamente. As telas estáticas da fundação podem ser consultadas sem banco; os fluxos reais exigem API/seed.
 
 ## Verificar
 
 ```bash
 npm run check
 npm run build
+npm run test:api
 npx playwright install chromium
 npx playwright test
 ```
@@ -48,8 +52,8 @@ O Playwright inicia a aplicação web. Os testes automáticos de acessibilidade 
 | Caminho | Finalidade |
 |---|---|
 | `apps/web` | Interface e acessibilidade; agente frontend |
-| `apps/api` | Backend e futuro worker; agente backend |
-| `packages/contracts` | OpenAPI e política de acesso de referência |
+| `apps/api` | Backend serverless, Prisma, auth e Gemini; agente backend |
+| `packages/contracts` | OpenAPI, tipos gerados e política de acesso de referência |
 | `packages/design-tokens` | Cores compartilhadas e regras visuais |
 | `packages/api-client` | Local reservado ao cliente gerado da API |
 | `docs` | Produto, arquitetura, referências e planos dos agentes |
@@ -60,7 +64,7 @@ Leia [AGENTS.md](AGENTS.md) antes de alterar o projeto. As orientações de exec
 
 - [Produto e MVP](docs/PRODUCT.md)
 - [Arquitetura](docs/ARCHITECTURE.md)
-- [Contrato inicial](docs/API.md)
+- [Contrato da API](docs/API.md)
 - [Acessibilidade](docs/ACCESSIBILITY.md)
 - [Segurança e privacidade](docs/SECURITY.md)
 - [Identidade visual](docs/DESIGN.md)
@@ -71,4 +75,4 @@ O Travessia poderá se integrar ao Mais Acesso Conecta em etapa futura. Este MVP
 
 ## MVP para Brazil Conference
 
-O design aprovado está em [docs/design/reference-student.png](docs/design/reference-student.png). Siga a referência estritamente. Os dois prompts estão em [frontend](docs/agents/FRONTEND.md) e [backend](docs/agents/BACKEND.md). O plano final prevê duas aplicações Vercel, Better Auth/PostgreSQL, Gemini no servidor e conta/turmas de demonstração conforme [DEMO.md](docs/DEMO.md) e [DEPLOY.md](docs/DEPLOY.md). Esses fluxos ainda serão implementados pelos agentes.
+O design aprovado está em [docs/design/reference-student.png](docs/design/reference-student.png). Siga a referência estritamente. Os dois prompts estão em [frontend](docs/agents/FRONTEND.md) e [backend](docs/agents/BACKEND.md). A implantação usa duas aplicações Vercel, Better Auth/PostgreSQL, Gemini no servidor e seed conforme [DEMO.md](docs/DEMO.md) e [DEPLOY.md](docs/DEPLOY.md). Consulte as evidências para distinguir implementação local de validação publicada.

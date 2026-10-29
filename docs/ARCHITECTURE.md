@@ -9,12 +9,12 @@ Monorepo npm Workspaces; Node.js 24; frontend Next.js/React/TypeScript; API Nest
 | Componente | Estado | Responsabilidade |
 |---|---|---|
 | Next.js | Demonstração executável | Aluno, professor e preferências locais |
-| NestJS | Health executável | Regras e autorização futuras |
-| PostgreSQL/Supabase + Prisma | Planejado | Persistência, queries e migrations |
-| Better Auth + PostgreSQL | Planejado | Sessões persistidas e credenciais; ver DEPLOY.md |
-| Supabase Storage privado | Planejado | Materiais e entregas |
-| Geração Gemini limitada por requisição | Planejado | Compatível com Vercel; sem worker permanente |
-| Gemini via @google/genai | Planejado, desativado | Rascunhos e apoios revisados por professor |
+| NestJS | API implementada e testada por HTTP | Regras, autorização por turma e serialização explícita |
+| PostgreSQL/Supabase + Prisma | Schema/migrations implementados; validação local PostgreSQL | Persistência e seed manual; Supabase depende de configuração |
+| Better Auth + PostgreSQL | Login/logout/sessões testados | Cookies e credenciais; ver BACKEND-OPERATIONS.md |
+| Supabase Storage privado | Upload desativado; assinatura autorizada preparada | Materiais textuais na demo; pipeline de arquivos pendente |
+| Geração Gemini limitada por requisição | Adaptador implementado; testes com provedor fake | Compatível com Vercel; sem worker permanente |
+| Gemini via @google/genai | Desativável; smoke real depende de credencial | Rascunhos revisados por professor |
 
 ## Modelo
 

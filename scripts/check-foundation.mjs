@@ -22,8 +22,12 @@ for (const [name, color] of Object.entries(colors)) {
 }
 const api = JSON.parse(read('packages/contracts/openapi.json'));
 assert.equal(api.openapi, '3.1.0');
-assert.deepEqual(Object.keys(api.paths), ['/health']);
-assert.equal(api.paths['/health'].get.responses['200'].content['application/json'].schema.$ref, '#/components/schemas/Health');
+assert.ok(api.paths['/v1/health']);
+assert.deepEqual(api.paths['/v1/health'].get.security, []);
+for (const [path, methods] of Object.entries(api.paths)) {
+  if (path === '/v1/health') continue;
+  for (const operation of Object.values(methods)) assert.deepEqual(operation.security, [{ session: [] }]);
+}
 for (const file of ['AGENTS.md','apps/web/AGENTS.md','apps/api/AGENTS.md','docs/ACCESSIBILITY.md','docs/SECURITY.md','docs/REFERENCES.md','docs/agents/FRONTEND.md','docs/agents/BACKEND.md']) {
   assert.ok(existsSync(resolve(root, file)), `Falta ${file}`);
 }

@@ -2,7 +2,7 @@
 
 ## Estado
 
-O scaffold contém somente telas fictícias e um health público. Não recebe dados reais nem chama o Gemini. Este documento define requisitos para os próximos PRs; não representa controles todos implementados.
+O backend implementa Better Auth persistido, autorização por turma, validação de payload, convites transacionais, preferências privadas, compartilhamento explícito de barreiras e geração Gemini opcional. [BACKEND-OPERATIONS.md](BACKEND-OPERATIONS.md) registra controles, testes e limitações. A interface permanece independente até integração. Upload, backup/restore, retenção para piloto e validação publicada não são considerados concluídos por esta implementação.
 
 ## Ameaças prioritárias
 

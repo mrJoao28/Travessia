@@ -1,5 +1,7 @@
 # Deploy do MVP na Vercel
 
+Configuração executável do backend e passos de banco/seed em [BACKEND-OPERATIONS.md](BACKEND-OPERATIONS.md). Contrato do proxy/cookies em [BACKEND-INTEGRATION.md](BACKEND-INTEGRATION.md). O backend está preparado para deploy; publicação e teste do proxy na URL final dependem de infraestrutura/variáveis privadas e integração frontend.
+
 ## Decisão atual
 
 Dois projetos Vercel no mesmo repositório: frontend Next.js com raiz apps/web e backend NestJS com raiz apps/api. Reutilizar workspaces/lockfile da raiz conforme configuração de monorepo. Supabase fornece PostgreSQL e Storage privado. Auth do MVP: Better Auth com sessões no PostgreSQL. Essa decisão substitui a proposta anterior de Supabase Auth.
