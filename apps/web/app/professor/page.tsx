@@ -1,0 +1,10 @@
+import { PathIllustration, Workspace } from '../../components/workspace';
+
+export default function TeacherPage() {
+  return <Workspace role="professor">
+    <div className="page-heading"><h1>Aprender começa com um caminho.</h1><p>Organize missões com objetivos claros e diferentes formas de apoio.</p></div>
+    <section className="mission-hero" aria-labelledby="teacher-mission"><div><p className="eyebrow accent">Planejamento de uma missão</p><h2 id="teacher-mission">Uma biblioteca<br className="desktop-break" /> para todos</h2><p>Programação I · Exemplo de estrutura pedagógica</p><ol className="simple-steps"><li>Definir objetivos e critérios de avaliação.</li><li>Dividir a atividade em etapas compreensíveis.</li><li>Preparar materiais e alternativas acessíveis.</li></ol><p className="notice">A criação, a publicação e a assistência do Gemini serão conectadas nas próximas etapas. Esta tela apresenta a direção visual.</p></div><PathIllustration /></section>
+    <div className="content-grid"><section className="paper" id="missoes"><h2>O que esta missão avalia?</h2><p>Planejamento e implementação de um programa de empréstimo de livros.</p><h3>O que pode variar?</h3><p>Formatos das instruções, apoios de leitura e organização das etapas.</p><h3>O que precisa ser preservado?</h3><p>Os objetivos de programação e a entrega de código que possa ser avaliado.</p></section><section className="paper" id="barreiras"><h2>Apoios e barreiras</h2><p>O estudante poderá informar uma dificuldade no ponto em que ela aparece.</p><p className="notice">Relatos serão privados e terão seu compartilhamento explicado antes do envio.</p><p className="small">Nenhum diagnóstico é necessário para escolher preferências de leitura.</p></section></div>
+    <section className="paper" id="turmas"><h2>Minhas turmas</h2><p>Programação I · Turma fictícia para apresentação.</p><p className="small">Convites, participantes e permissões por turma fazem parte da próxima entrega do backend.</p></section>
+  </Workspace>;
+}

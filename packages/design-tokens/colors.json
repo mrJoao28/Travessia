@@ -1,0 +1,6 @@
+{
+  "background": "#F7F5EF", "surface": "#FFFEFA", "primary": "#234E43",
+  "onPrimary": "#FFFFFF", "text": "#243831", "muted": "#56635C",
+  "sage": "#E6EDE4", "terracotta": "#A84F37", "gold": "#F0DDA5",
+  "border": "#D6DCD3", "focus": "#7B391F"
+}

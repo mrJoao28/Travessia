@@ -1,0 +1,26 @@
+:root {
+  --background: #F7F5EF;
+  --surface: #FFFEFA;
+  --primary: #234E43;
+  --on-primary: #FFFFFF;
+  --text: #243831;
+  --muted: #56635C;
+  --sage: #E6EDE4;
+  --terracotta: #A84F37;
+  --gold: #F0DDA5;
+  --border: #D6DCD3;
+  --focus: #7B391F;
+}
+:root[data-contrast=true] {
+  --background: #FFFFFF;
+  --surface: #FFFFFF;
+  --primary: #123B2F;
+  --on-primary: #FFFFFF;
+  --text: #101B16;
+  --muted: #303C35;
+  --sage: #EAF0EA;
+  --terracotta: #78301F;
+  --gold: #F0DDA5;
+  --border: #526057;
+  --focus: #7B391F;
+}

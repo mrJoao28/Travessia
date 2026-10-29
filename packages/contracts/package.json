@@ -1,0 +1,7 @@
+{
+  "name": "@travessia/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { "./openapi": "./openapi.json", "./policy": "./src/access-policy.ts" }
+}
