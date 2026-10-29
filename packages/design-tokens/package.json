@@ -1,0 +1,6 @@
+{
+  "name": "@travessia/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "exports": { "./css": "./tokens.css", "./colors": "./colors.json" }
+}
