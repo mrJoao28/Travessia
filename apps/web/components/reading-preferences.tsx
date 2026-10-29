@@ -42,13 +42,32 @@ export function ReadingPreferences({
       });
   }, [accountPreferences]);
   useEffect(() => {
-    const openFromHash = () => {
-      if (window.location.hash === "#preferencias" && details.current) {
+    const open = () => {
+      if (details.current) {
         details.current.open = true;
         details.current.querySelector("summary")?.focus();
       }
     };
+    const openFromHash = () => {
+      if (window.location.hash === "#preferencias") open();
+    };
+    const openFromLink = (event: MouseEvent) => {
+      if (
+        event.button !== 0 ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest('a[href="#preferencias"]')
+      )
+        open();
+    };
     window.addEventListener("hashchange", openFromHash);
+    document.addEventListener("click", openFromLink);
     openFromHash();
     try {
       const stored = JSON.parse(localStorage.getItem(key) ?? "null");
@@ -64,7 +83,10 @@ export function ReadingPreferences({
       /* O armazenamento pode estar indisponível; os controles continuam utilizáveis. */
     }
     setReady(true);
-    return () => window.removeEventListener("hashchange", openFromHash);
+    return () => {
+      window.removeEventListener("hashchange", openFromHash);
+      document.removeEventListener("click", openFromLink);
+    };
   }, []);
   useEffect(() => {
     if (!ready) return;

@@ -78,6 +78,9 @@ test("preferências por teclado, Escape, persistência local e skip link", async
   );
   await page.getByRole("link", { name: "Ampliar texto" }).click();
   await expect(page.getByLabel("Tamanho do texto")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("link", { name: "Ampliar texto" }).click();
+  await expect(page.getByLabel("Tamanho do texto")).toBeVisible();
 });
 for (const route of routes)
   test(`reflow 320px e texto 200% — ${route}`, async ({ page }) => {
