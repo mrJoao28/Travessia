@@ -16,6 +16,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - run: npm run contracts:generate
+      - run: git diff --exit-code -- packages/contracts/openapi.json packages/contracts/src/api.d.ts
+      - run: npm run test:api
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test

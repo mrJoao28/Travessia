@@ -2,14 +2,22 @@
   "name": "@travessia/api",
   "version": "0.1.0",
   "private": true,
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "dev": "tsc -p tsconfig.json && node dist/main.js",
-    "build": "tsc -p tsconfig.json",
+    "build": "prisma generate && tsc -p tsconfig.json",
     "start": "node dist/main.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "prisma generate && tsc --noEmit && tsc -p tsconfig.test.json",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed:demo": "tsx src/seed-cli.ts",
+    "test:http": "tsx --test tests/http.test.ts"
   },
   "dependencies": {
+    "@prisma/client": "6.19.3",
+    "better-auth": "1.7.14",
+    "@google/genai": "2.31.0",
+    "zod": "^4.1.0",
+    "express": "^5.1.0",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
@@ -17,5 +25,5 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
-  "devDependencies": { "@types/express": "^5.0.0" }
+  "devDependencies": { "@types/express": "^5.0.0", "prisma": "6.19.3" }
 }

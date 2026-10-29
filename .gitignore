@@ -9,4 +9,6 @@ test-results/
 !.env.example
 *.tsbuildinfo
 *.log
+.tools/
+.test-db/
 .DS_Store
