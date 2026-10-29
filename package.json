@@ -8,6 +8,10 @@
   "scripts": {
     "dev:web": "npm run dev --workspace @travessia/web",
     "dev:api": "npm run dev --workspace @travessia/api",
+    "db:migrate": "npm run db:migrate --workspace @travessia/api",
+    "db:seed:demo": "npm run db:seed:demo --workspace @travessia/api --",
+    "test:api": "tsx scripts/test-api.ts",
+    "contracts:generate": "tsx apps/api/scripts/generate-contracts.ts && openapi-typescript packages/contracts/openapi.json -o packages/contracts/src/api.d.ts",
     "build": "npm run build --workspace @travessia/api && npm run build --workspace @travessia/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "node --test tests/*.test.ts",
@@ -15,6 +19,8 @@
     "check": "npm run check:foundation && npm run typecheck && npm test"
   },
   "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "embedded-postgres": "18.4.0-beta.17",
     "@axe-core/playwright": "^4.10.2",
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.0.0",
