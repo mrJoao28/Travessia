@@ -19,7 +19,7 @@ import type { DraftProvider } from './ai.js';
 
 export async function createApplication(db: PrismaClient, config: Config, provider?: DraftProvider) {
   const runtime: ProductRuntime = { handle: async () => { throw new Error('Runtime not initialized'); } };
-  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(runtime), { bodyParser: false, logger: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(runtime), { bodyParser: false, logger: false, abortOnError: false });
   const express = app.getHttpAdapter().getInstance();
   const auth = createAuth(db, config);
   const service = new ProductService(db, config, provider);
