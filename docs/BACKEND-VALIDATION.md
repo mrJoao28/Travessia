@@ -1,0 +1,16 @@
+# Evidências do backend
+
+Validação local em 28/10/2026 (America/Manaus), Windows x64, Node 24.22.2 isolado (distribuição oficial com SHA-256 conferido), Better Auth 1.7.14, Prisma 6.19.3 e PostgreSQL nativo 18.4. O Node global não foi alterado. Worktree própria `C:/Users/joaof/Travessia-backend`; nenhum arquivo do frontend foi editado.
+
+- `npm ci`: passou com lockfile, após liberar espaço e usar cache local isolado. Avisos informativos sobre scripts de instalação do npm; binários usados nos testes funcionaram.
+- `npm run check`: passou (contratos, typecheck das aplicações e seis testes do kernel de referência). O kernel isolado não é a evidência de proteção HTTP.
+- `npm run build`: passou (API e frontend da fundação). Não comprova integração da nova interface.
+- `npm run contracts:generate`: OpenAPI 3.1 e tipos gerados com openapi-typescript; DTOs de produto têm fonte única em Zod. Verificação de drift incluída no CI.
+- `npm run test:api`: onze cenários HTTP reais, migrations em schema privado `travessia`, Better Auth real e PostgreSQL real. Seed duas vezes preserva contagens, conteúdo alterado e hash, seguido de login com senha fictícia de cinco caracteres. Sem SQLite, sessão simulada ou respostas de negócio falsas.
+- Suíte local com `FRONTEND_PROXY_SOURCE=C:/Users/joaof/Travessia-frontend/apps/web/lib/backend-proxy.ts`: doze cenários passaram, incluindo chamadas através da função de proxy existente do frontend, sem mock de rede/banco/auth. Login e Set-Cookie, contextos, retomada/salvamento, feedback, contexto docente, publicação e logout. É teste de integração da função de proxy, **não** um teste de navegador/Next.js publicado. Essa variável é somente do executor local de testes; não é configuração de produção.
+
+Cobertura negativa: sessão forjada/ausente/expirada e logout, origem maliciosa, signup fechado, aluno A/B, professor de outra turma, vínculo revogado (inclusive leitura de geração), papel/ownerId no payload, draft não visível a aluno/professor indevido, revisão concorrente de entrega, convite expirado/revogado e consumo simultâneo por dois usuários, relato privado invisível ao docente, arquivo em quarentena, upload fechado, IA desabilitada, cota concorrente, idempotência, JSON inválido do provedor, publicação explícita e limite de login persistente após recriar a aplicação.
+
+Gemini foi substituído por fake somente na suíte de testes. Não houve chamada real ao provedor, assinatura real de Storage, conta pessoal criada no Supabase ou deploy Vercel. DATABASE_URL, DEMO_USER_EMAIL, DEMO_USER_PASSWORD e GEMINI_API_KEY pessoais não estavam disponíveis no ambiente da execução. Não foram solicitados nem impressos. Conta, seed e publicação reais aguardam configuração privada e execução dos comandos documentados.
+
+Limitações mantidas explícitas: uploads novos sem pipeline permanecem fechados; sem emails/recuperação pública, reset destrutivo, exportação/exclusão de conta, reenvio de versão já enviada, backup/restore demonstrado ou política de retenção para dados reais. Gemini não decide nota, não publica automaticamente e não garante chamada externa exatamente uma vez. Não foi realizado teste manual de leitor de tela nem validação pedagógica/com usuários pelo backend.

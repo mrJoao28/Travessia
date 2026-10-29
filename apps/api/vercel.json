@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nestjs",
+  "buildCommand": "npm run build --workspace @travessia/api",
+  "functions": { "src/main.ts": { "maxDuration": 60 } }
+}

@@ -1,6 +1,6 @@
 # Contrato e integração entre agentes
 
-A fonte executável atual é `packages/contracts/openapi.json`, versão 0.1.0. Apenas `GET /v1/health` existe. A tabela abaixo é **proposta para implementação**, não lista de endpoints prontos.
+A fonte executável é `packages/contracts/openapi.json`, gerada das rotas Zod implementadas em `apps/api/src/contracts.ts`, com tipos gerados em `packages/contracts/src/api.d.ts`. As operações abaixo estão implementadas no backend; integração frontend e publicação exigem validação separada. Ver [contrato de integração](BACKEND-INTEGRATION.md) e [operação](BACKEND-OPERATIONS.md).
 
 | Operação proposta | Permissão e regra |
 |---|---|
@@ -32,4 +32,4 @@ A fonte executável atual é `packages/contracts/openapi.json`, versão 0.1.0. A
 - Definir estados de missão (`draft`, `published`, `archived`), entrega (`draft`, `submitted`, `reviewed`) e IA (`running`, `succeeded`, `failed`, `cancelled`) em um único contrato.
 - Contrato OpenAPI acompanha a implementação. O frontend usa cliente/tipos gerados, exemplos fictícios e mocks derivados do contrato; não fabrica sucessos de operações ainda indisponíveis.
 
-Não existe autenticação real nesta entrega. A política de referência testada será integrada aos guards e queries na fase de backend, com testes HTTP de acesso.
+Better Auth valida sessões persistidas em cada rota privada; queries resolvem vínculos ativos no PostgreSQL. Testes HTTP usam o servidor Nest e banco PostgreSQL reais. O kernel de referência continua sendo orientação, sem substituir esses testes. Upload de arquivos novos permanece desabilitado.

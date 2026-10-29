@@ -9,7 +9,7 @@ O Travessia será apresentado como MVP na competição Brazil Conference. Esta i
 - Email: configurar privadamente como DEMO_USER_EMAIL com o endereço informado pelo usuário.
 - Senha: configurar privadamente como DEMO_USER_PASSWORD com a credencial informada pelo usuário. Nunca incluir valor no repositório, prompts versionados ou interface.
 
-Conta e turmas ainda **não estão criadas** na fundação. Os prompts instruem a implementação de autenticação, banco e seed.
+Conta e turmas são criadas pelo comando manual `npm run db:seed:demo`, implementado no backend. Requer credenciais e banco dedicado configurados privadamente; ver [operação](BACKEND-OPERATIONS.md). Implementar o seed não significa que a conta pessoal já foi criada no Supabase.
 
 ## Isolamento
 
