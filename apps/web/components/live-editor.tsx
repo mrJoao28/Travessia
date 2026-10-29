@@ -64,14 +64,14 @@ export function LiveEditor({
   );
   const generationKey = useRef<string | null>(null);
   const form = useRef<HTMLFormElement>(null);
-  const keys = useRef<number[]>([1]);
+  const [stepKeys, setStepKeys] = useState<number[]>([1]);
   const nextKey = useRef(2);
   function adopt(value: ApiResponse<"mission">) {
     setMission(value);
     const version = value.draftVersion ?? value.publishedVersion;
     if (version) {
       setInput(editable(version));
-      keys.current = version.steps.map(() => nextKey.current++);
+      setStepKeys(version.steps.map(() => nextKey.current++));
     }
     setDirty(false);
     setReview(null);
@@ -293,13 +293,13 @@ export function LiveEditor({
               </label>
               <h3>Etapas</h3>
               {input.steps.map((step, index) => (
-                <fieldset className="editor-step" key={keys.current[index]}>
+                <fieldset className="editor-step" key={stepKeys[index]}>
                   <legend>Etapa {index + 1}</legend>
                   <div className="form-stack">
-                    <label htmlFor={`live-step-${keys.current[index]}`}>
+                    <label htmlFor={`live-step-${stepKeys[index]}`}>
                       Título da etapa
                       <input
-                        id={`live-step-${keys.current[index]}`}
+                        id={`live-step-${stepKeys[index]}`}
                         required
                         maxLength={200}
                         value={step.title}
@@ -365,18 +365,20 @@ export function LiveEditor({
                         aria-label={`Mover etapa ${index + 1} para ${direction === -1 ? "cima" : "baixo"}`}
                         onClick={() => {
                           const steps = [...input.steps];
-                          const key = keys.current[index];
+                          const key = stepKeys[index];
                           [steps[index], steps[index + direction]] = [
                             steps[index + direction],
                             steps[index],
                           ];
+                          const reorderedKeys = [...stepKeys];
                           [
-                            keys.current[index],
-                            keys.current[index + direction],
+                            reorderedKeys[index],
+                            reorderedKeys[index + direction],
                           ] = [
-                            keys.current[index + direction],
-                            keys.current[index],
+                            reorderedKeys[index + direction],
+                            reorderedKeys[index],
                           ];
+                          setStepKeys(reorderedKeys);
                           change({ ...input, steps });
                           setMessage(
                             `Etapa movida para a posição ${index + direction + 1}. Ainda não salva.`,
@@ -396,7 +398,7 @@ export function LiveEditor({
                       type="button"
                       disabled={input.steps.length === 1}
                       onClick={() => {
-                        keys.current.splice(index, 1);
+                        setStepKeys((all) => all.filter((_, i) => i !== index));
                         change({
                           ...input,
                           steps: input.steps.filter((_, i) => i !== index),
@@ -418,7 +420,7 @@ export function LiveEditor({
                 disabled={input.steps.length >= 10}
                 onClick={() => {
                   const key = nextKey.current++;
-                  keys.current.push(key);
+                  setStepKeys((all) => [...all, key]);
                   change({
                     ...input,
                     steps: [
