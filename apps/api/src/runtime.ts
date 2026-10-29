@@ -6,7 +6,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { PrismaClient } from '@prisma/client';
 import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
 import type { Request, Response, NextFunction } from 'express';
-import helmet from 'helmet';
+import * as helmet from 'helmet';
 import { ZodError } from 'zod';
 import { AppModule, type ProductRuntime } from './app.module.js';
 import { createAuth } from './auth.js';
@@ -30,7 +30,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
     const payload = error instanceof HttpException ? error.getResponse() : null;
     res.status(status).json({ ...(payload && typeof payload === 'object' ? payload : { code: status === 400 ? 'INVALID_INPUT' : 'INTERNAL_ERROR', message: status === 400 ? 'Confira os campos informados.' : 'Não foi possível concluir a operação.' }), requestId: res.locals.requestId });
   }
-  app.use(helmet());
+  app.use(helmet.default());
   app.use((req: Request, res: Response, next: NextFunction) => {
     res.locals.requestId = randomUUID(); res.setHeader('X-Request-Id', res.locals.requestId); res.setHeader('Cache-Control', 'no-store');
     try {
