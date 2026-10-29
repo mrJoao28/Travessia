@@ -6,6 +6,7 @@ Next.js/TypeScript no workspace `apps/web`. O backend é outro projeto, conforme
 
 - Repositório `mrJoao28/Travessia`, branch integrada por PR.
 - Framework Next.js, Root Directory `apps/web`, Node.js 24.x.
+- `apps/web/vercel.json` fixa framework, instalação pelo lockfile da raiz e build do workspace; o Root Directory continua sendo uma configuração do projeto Vercel.
 - Habilitar acesso aos arquivos externos ao Root Directory para os workspaces. O tracing aponta para a raiz do monorepo.
 - Install Command: `npm ci --prefix ../..` (usa o lockfile da raiz).
 - Build Command: `npm run build` (no diretório `apps/web`). Output Directory: `.next`, padrão do framework.
@@ -23,7 +24,7 @@ No backend, `BETTER_AUTH_URL` e `TRUSTED_WEB_ORIGIN` devem ser essa mesma origem
 ## Rotas
 
 - `/login`: formulário sem credenciais embutidas, colagem e gerenciador de senhas permitidos.
-- `/aluno`, `/aluno/turmas`, `/aluno/entregas`, `/aluno/feedback`, `/aluno/missoes/[id]`: dados reais da API, sem fallback fictício.
+- `/aluno`, `/aluno/turmas`, `/aluno/entregas`, `/aluno/feedback`, `/aluno/barreiras`, `/aluno/missoes/[id]`: dados reais da API, sem fallback fictício.
 - `/professor`, `/professor/missoes`, `/professor/entregas`, `/professor/barreiras`, `/professor/missoes/[id]/editar`: contexto docente autorizado pelo backend.
 - `/previa/aluno` e `/previa/professor`: prévias de interface explícitas, sem autenticação ou persistência; não são o modo final de apresentação. Metadados noindex.
 - `/api/auth/*`: apenas sign-in/email, get-session e sign-out, encaminhados ao backend.

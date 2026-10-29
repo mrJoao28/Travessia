@@ -8,7 +8,7 @@ import { AccountMenu, type AccountView } from "./account-menu";
 export function Workspace({
   role,
   children,
-  preview = true,
+  preview = false,
   preferences,
   account,
 }: {
@@ -29,6 +29,15 @@ export function Workspace({
       ]
     : [
         [`${base}/professor`, "Visão da turma", "users"],
+        ...(!preview
+          ? [
+              [`${base}/professor/turmas`, "Minhas turmas", "users"] as [
+                string,
+                string,
+                IconName,
+              ],
+            ]
+          : []),
         [`${base}/professor/missoes`, "Missões", "book"],
         [`${base}/professor/entregas`, "Entregas", "document"],
         [`${base}/professor/barreiras`, "Apoios e barreiras", "message"],

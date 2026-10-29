@@ -1038,18 +1038,46 @@ body {
   overflow-wrap: anywhere;
 }
 @media (min-width: 1101px) {
-  .page-heading { margin-top: -.95rem; }
-  .mission-hero { padding-top: .6rem; padding-bottom: .6rem; }
-  .hero-copy { padding-block: .95rem; }
-  .lesson-list { margin-top: 1.6rem; }
-  .lesson-list li { grid-template-columns: minmax(0,1fr) 11rem auto; }
+  .page-heading {
+    margin-top: -0.95rem;
+  }
+  .mission-hero {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+  .hero-copy {
+    padding-block: 0.95rem;
+  }
+  .lesson-list {
+    margin-top: 1.6rem;
+  }
+  .lesson-list li {
+    grid-template-columns: minmax(0, 1fr) 11rem auto;
+  }
 }
-.lesson-body h3 { font-size: 1.2rem; }
-.lesson-body p { font-size: .96rem; max-width: 38ch; }
-.lesson-format { flex-direction: column; align-items: flex-start; gap: .6rem; }
-.lesson-format > span { display: flex; align-items: center; gap: .6rem; }
-.preferences > summary { list-style: none; }
-.preferences > summary::-webkit-details-marker { display: none; }
+.lesson-body h3 {
+  font-size: 1.2rem;
+}
+.lesson-body p {
+  font-size: 0.96rem;
+  max-width: 38ch;
+}
+.lesson-format {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.lesson-format > span {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.preferences > summary {
+  list-style: none;
+}
+.preferences > summary::-webkit-details-marker {
+  display: none;
+}
 .button {
   max-width: 100%;
   flex-wrap: wrap;

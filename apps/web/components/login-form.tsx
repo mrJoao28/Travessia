@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authRequest, hasSession } from "../lib/auth-client";
 export function LoginForm() {
@@ -8,6 +8,9 @@ export function LoginForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
   return (
     <section className="login-form" id="conteudo" tabIndex={-1}>
       <p className="eyebrow">BEM-VINDO AO TRAVESSIA</p>
@@ -41,7 +44,6 @@ export function LoginForm() {
                 ? reason.message
                 : "Não foi possível conectar ao serviço. Seus dados permanecem no formulário.",
             );
-            requestAnimationFrame(() => errorRef.current?.focus());
           } finally {
             setPending(false);
           }

@@ -29,6 +29,12 @@ export async function proxyBackend(
       "API_UNAVAILABLE",
       "O serviço ainda não está disponível. Tente novamente mais tarde.",
     );
+  if (process.env.NODE_ENV === "production" && !settings.publicOrigin)
+    return failure(
+      503,
+      "API_UNAVAILABLE",
+      "O serviço ainda não está disponível.",
+    );
   let backend: URL;
   try {
     backend = new URL(settings.internalUrl);
@@ -43,6 +49,7 @@ export async function proxyBackend(
     if (
       backend.protocol !== "https:" &&
       !(
+        process.env.NODE_ENV !== "production" &&
         backend.protocol === "http:" &&
         ["localhost", "127.0.0.1", "[::1]"].includes(backend.hostname)
       )

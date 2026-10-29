@@ -16,7 +16,7 @@ Revisão realizada em 28/10/2026 de `apps/api/src/contracts.ts`, `runtime.ts`, `
 ## Pontos para verificar juntos
 
 1. Tipos de resposta/requisição e cliente gerados disponíveis em commit backend consumível pelo frontend.
-2. Publicação: `missionInput` é strict; `missionInput.parse(row.draftVersion)` precisa selecionar somente campos da entrada, pois o registro Prisma inclui IDs/metadados/relacionamentos. Revisar para não rejeitar toda publicação.
+2. Publicação: `missionInput` é strict. A seleção explícita dos campos da entrada já foi observada na atualização do backend; confirmar por teste HTTP/browser para não rejeitar registros Prisma com IDs/metadados.
 3. Entregas: selecionar pelo `versionId` publicado, não usar entrega de versão antiga como progresso atual. Preservar expectedRevision/expectedDraftVersionId em conflitos.
 4. IA: rascunho manual salvável antes de solicitar geração; erro/cota/timeout preserva o editor, sem retries automáticos que dupliquem consumo.
 5. API, seed e banco de teste precisam estar disponíveis para verificar login, logout, expiração, progresso, entrega, feedback, barreiras e publicação reais.

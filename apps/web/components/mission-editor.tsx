@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Step = {
   key: number;
@@ -25,6 +25,9 @@ export function MissionEditor() {
     },
   ]);
   const [review, setReview] = useState(false);
+  useEffect(() => {
+    if (review) document.getElementById("review-title")?.focus();
+  }, [review]);
   const [message, setMessage] = useState("");
   const [orderMessage, setOrderMessage] = useState("");
   const counter = useRef(3);
@@ -228,9 +231,7 @@ export function MissionEditor() {
             onClick={() => {
               if (form.current?.reportValidity()) {
                 setReview(true);
-                requestAnimationFrame(() =>
-                  document.getElementById("review-title")?.focus(),
-                );
+                document.getElementById("review-title")?.focus();
               }
             }}
           >
