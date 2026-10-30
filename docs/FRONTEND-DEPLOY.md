@@ -27,7 +27,7 @@ No backend, `BETTER_AUTH_URL` e `TRUSTED_WEB_ORIGIN` devem ser essa mesma origem
 - `/aluno`, `/aluno/turmas`, `/aluno/entregas`, `/aluno/feedback`, `/aluno/barreiras`, `/aluno/missoes/[id]`: dados reais da API, sem fallback fictício.
 - `/professor`, `/professor/missoes`, `/professor/entregas`, `/professor/barreiras`, `/professor/missoes/[id]/editar`: contexto docente autorizado pelo backend.
 - `/previa/aluno` e `/previa/professor`: prévias de interface explícitas, sem autenticação ou persistência; não são o modo final de apresentação. Metadados noindex.
-- `/api/auth/*`: apenas sign-in/email, get-session e sign-out, encaminhados ao backend.
+- `/api/auth/*`: apenas sign-in/email, sign-up/email, get-session e sign-out, encaminhados ao backend.
 - `/api/v1/*`: encaminhados para `/v1/*`, destino fixo server-side. Corpo máximo 64 KiB, JSON, timeout de 30s, orçamento de função de 45s, sem cache. Uploads não são suportados.
 
 ## Contrato e verificação

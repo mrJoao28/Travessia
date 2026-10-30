@@ -1174,6 +1174,15 @@ body {
 .login-form .form-stack > button {
   width: 100%;
 }
+.login-form button.text-link {
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .login-form input:focus-visible,
 .form-stack textarea:focus-visible {
   border-color: var(--primary);

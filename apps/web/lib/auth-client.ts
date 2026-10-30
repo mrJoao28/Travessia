@@ -1,6 +1,6 @@
 // Better Auth's HTTP endpoints. No session token is stored in browser storage.
 export async function authRequest(
-  path: "sign-in/email" | "sign-out" | "get-session",
+  path: "sign-in/email" | "sign-up/email" | "sign-out" | "get-session",
   body?: unknown,
 ) {
   const response = await fetch(`/api/auth/${path}`, {
@@ -16,6 +16,12 @@ export async function authRequest(
     signal: AbortSignal.timeout(35_000),
   });
   if (!response.ok) {
+    if (response.status === 400 && path === "sign-up/email")
+      throw new Error(
+        "Confira nome, e-mail e senha. A senha precisa ter de 12 a 128 caracteres.",
+      );
+    if (response.status === 422 && path === "sign-up/email")
+      throw new Error("Já existe uma conta com esse e-mail.");
     if (response.status === 401)
       throw new Error(
         "Não foi possível entrar. Confira suas credenciais e tente novamente.",

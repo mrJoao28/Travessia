@@ -26,7 +26,7 @@ Após entrar, abrir **Menu da conta → Meu perfil**. A rota `/perfil` oferece t
 - A escrita de contatos, aluno e professor em uma mesma requisição é transacional. A identidade vem da sessão. Payload estrito, tamanhos máximos, proteção de origem/CSRF e rate limit existentes continuam aplicados.
 - `GET /v1/me` mantém o campo `course` por compatibilidade, agora lido de StudentProfile. O contato e os perfis acadêmicos não foram acrescentados às respostas de membros, entregas, chamadas Gemini ou listagens docentes.
 
-Os tipos da interface e os contratos OpenAPI são gerados das rotas implementadas. Não existe endpoint público para consultar o perfil de outra pessoa. Criar/preencher TeacherProfile não promove o usuário; criar turma e aceitar convites seguem as regras existentes. O cadastro público continua fechado como antes desta alteração; provisionamento de contas reais é uma etapa própria.
+Os tipos da interface e os contratos OpenAPI são gerados das rotas implementadas. Não existe endpoint público para consultar o perfil de outra pessoa. Criar/preencher TeacherProfile não promove o usuário; criar turma e aceitar convites seguem as regras existentes. O cadastro é feito na própria plataforma, com nome, e-mail e senha. A conta nova não recebe papel: aluno e professor continuam definidos pelo vínculo com a turma.
 
 ## Atualização de uma instalação Docker existente
 
