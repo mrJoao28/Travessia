@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateProfile"];
+        trace?: never;
+    };
     "/v1/me/preferences": {
         parameters: {
             query?: never;
@@ -471,6 +487,135 @@ export interface operations {
                             contrast?: "default" | "high";
                             reducedDistractions?: boolean;
                         };
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        /** Format: email */
+                        email: string;
+                        emailVerified: boolean;
+                        phone: string | null;
+                        alternateEmail: string | null;
+                        student: {
+                            registration: string | null;
+                            institution: string | null;
+                            unit: string | null;
+                            course: string | null;
+                            period: string | null;
+                        } | null;
+                        teacher: {
+                            teachings: {
+                                subject: string;
+                                course: string;
+                            }[];
+                        } | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name?: string;
+                    phone?: string | null;
+                    alternateEmail?: string | null;
+                    student?: {
+                        registration?: string | null;
+                        institution?: string | null;
+                        unit?: string | null;
+                        course?: string | null;
+                        period?: string | null;
+                    };
+                    teacher?: {
+                        teachings: {
+                            subject: string;
+                            course: string;
+                        }[];
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        /** Format: email */
+                        email: string;
+                        emailVerified: boolean;
+                        phone: string | null;
+                        alternateEmail: string | null;
+                        student: {
+                            registration: string | null;
+                            institution: string | null;
+                            unit: string | null;
+                            course: string | null;
+                            period: string | null;
+                        } | null;
+                        teacher: {
+                            teachings: {
+                                subject: string;
+                                course: string;
+                            }[];
+                        } | null;
                     };
                 };
             };

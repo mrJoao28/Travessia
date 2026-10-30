@@ -40,7 +40,10 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
         await tx.session.deleteMany({ where: { userId } });
       }
     }
-    await tx.profile.upsert({ where: { userId }, create: { userId, course: 'Engenharia da Computação' }, update: {} });
+    await tx.studentProfile.upsert({ where: { userId }, create: { userId, course: 'Engenharia da Computação', institution: 'UEA' }, update: {} });
+    await tx.teacherProfile.upsert({ where: { userId }, create: { userId, teachings: { create: [
+      { subject: 'Oficina de Projetos Inclusivos', course: 'Engenharia da Computação', position: 0 },
+    ] } }, update: {} });
     await tx.readingPreferences.upsert({ where: { userId }, create: { userId }, update: {} });
     const teacherIds = ['demo-teacher-programacao', 'demo-teacher-calculo', 'demo-teacher-estatistica'];
     const names = ['Ana Souza', 'Carlos Lima', 'Marina Alves'];
@@ -49,6 +52,11 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
     const students = Array.from({ length: 8 }, (_, i) => `demo-student-${i + 1}`);
     for (const [i, id] of students.entries()) await tx.user.upsert({ where: { id }, create: { id,
       name: `Estudante Fictício ${i + 1}`, email: `student-${i + 1}@example.invalid` }, update: {} });
+    for (const id of students) await tx.studentProfile.upsert({ where: { userId: id }, create: {
+      userId: id, course: 'Engenharia da Computação', institution: 'UEA' }, update: {} });
+    for (const [index, id] of teacherIds.entries()) await tx.teacherProfile.upsert({ where: { userId: id }, create: {
+      userId: id, teachings: { create: [{ subject: ['Programação I', 'Cálculo Aplicado', 'Estatística'][index],
+        course: 'Engenharia da Computação', position: 0 }] } }, update: {} });
     const classes = [
       { id: 'demo-class-programacao', name: 'Programação I', title: 'Uma biblioteca para todos', teacher: teacherIds[0], students: [userId] },
       { id: 'demo-class-calculo', name: 'Cálculo Aplicado', title: 'Energia no campus', teacher: teacherIds[1], students: [userId] },

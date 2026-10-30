@@ -6,6 +6,7 @@ import { fail, missing } from './errors.js';
 import { serial, type Tx } from './database.js';
 import { budget, digest } from './rate-limit.js';
 import { AiService, type DraftProvider } from './ai.js';
+import { getProfile, updateProfile } from './profiles.js';
 
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
 const missionInclude = { draftVersion: { include: versionInclude }, publishedVersion: { include: versionInclude } };
@@ -62,10 +63,12 @@ export class ProductService {
     const paging = query as Paging;
     if (op === 'health') return { status: 'ok', service: 'travessia-api', stage: 'mvp' };
     if (op === 'me') {
-      const user = await this.db.user.findUniqueOrThrow({ where: { id: userId }, include: { profile: true, preferences: true } });
-      return { id: user.id, name: user.name, email: user.email, course: user.profile?.course ?? null, demo: this.config.demo,
+      const user = await this.db.user.findUniqueOrThrow({ where: { id: userId }, include: { studentProfile: true, preferences: true } });
+      return { id: user.id, name: user.name, email: user.email, course: user.studentProfile?.course ?? null, demo: this.config.demo,
         preferences: this.preferenceView(user.preferences) };
     }
+    if (op === 'profile') return getProfile(this.db, userId);
+    if (op === 'updateProfile') return updateProfile(this.db, userId, body as Body<'updateProfile'>);
     if (op === 'preferences') {
       const data = body as Body<'preferences'>;
       return this.preferenceView(await this.db.readingPreferences.upsert({ where: { userId }, create: { userId, ...data }, update: data }));

@@ -10,6 +10,14 @@ export const apiRoutes = {
     "method": "GET",
     "path": "/me"
   },
+  "profile": {
+    "method": "GET",
+    "path": "/me/profile"
+  },
+  "updateProfile": {
+    "method": "PATCH",
+    "path": "/me/profile"
+  },
   "preferences": {
     "method": "PATCH",
     "path": "/me/preferences"
