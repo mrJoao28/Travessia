@@ -43,3 +43,19 @@ Isso não valida Vercel, conta pessoal ou chamada real ao Gemini. Gemini permane
 Pendência de dependências para o backend: revisar [Multer GHSA-q7qp-rjg7-q26m](https://github.com/advisories/GHSA-q7qp-rjg7-q26m) e [deepmerge-ts GHSA-ggr8-5vv4-36mx](https://github.com/advisories/GHSA-ggr8-5vv4-36mx), selecionar atualizações compatíveis e repetir os testes. O segundo advisory depende de grafos recursivos, que JSON simples não cria; essa é uma limitação do cenário descrito pelo advisory, não uma certificação de segurança do projeto.
 
 A fonte pedagógica especializada continua pendente conforme `REFERENCES.md`. Preferências não exigem diagnóstico nem alteram objetivos avaliados.
+
+
+## Identidade Mais Acesso Conecta
+
+Direção atual solicitada pelo usuário: azul institucional, branco, azul claro e amarelo pontual, usando os arquivos fornecidos em public.zip e duas novas ilustrações editoriais. As artes foram incorporadas localmente em WebP; marca original Mais Acesso Conecta preservada. Prompts e procedência em design/ARTWORK.md.
+
+Código validado no commit c22086d5892135247f16021f24ef35edad4b4e74, [CI 40979783560](https://github.com/mrJoao28/Travessia/actions/runs/40979783560): instalação, check/typecheck, contratos sem divergência, 13 testes HTTP com PostgreSQL/Better Auth reais, builds, 36 testes de navegador e 1 fluxo integrado com banco real passaram. Os quatro testes unitários do proxy também passaram localmente. Oito pares de contraste verificados: mínimo 5,66:1; botão principal branco/azul 7,11:1.
+
+As capturas de login, aluno desktop/mobile e professor foram geradas pelo CI e revisadas visualmente. Em design/previews, estão convertidas para WebP sem perdas e sem alterar enquadramento. Mostram dados fictícios nas rotas de prévia. Conferidos: carregamento das imagens, nova paleta, alinhamento dos cartões, navegação mobile, ausência do indicador de desenvolvimento sobre o conteúdo e composição coerente entre as áreas.
+
+O navegador deste executor local não iniciou por limitações gráficas; a verificação de navegador foi feita no runner do GitHub. Os testes incluem axe, reflow a 320px/texto 200%, teclado e preferências. Não substituem teste manual de leitor de tela e validação com usuários. Nenhuma alteração em schema, autenticação ou containerização nesta etapa.
+
+- [Aluno desktop](design/previews/student-desktop.webp)
+- [Aluno mobile](design/previews/student-mobile.webp)
+- [Professor desktop](design/previews/teacher-desktop.webp)
+- [Login desktop](design/previews/login-desktop.webp)
