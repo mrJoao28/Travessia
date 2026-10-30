@@ -52,6 +52,166 @@ export interface paths {
         patch: operations["updateProfile"];
         trace?: never;
     };
+    "/v1/learning-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["learningOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/learning-needs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["learningNeeds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateLearningNeeds"];
+        trace?: never;
+    };
+    "/v1/classrooms/{id}/needs-sharing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["needsSharing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateNeedsSharing"];
+        trace?: never;
+    };
+    "/v1/classrooms/{id}/learning-needs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sharedLearningNeeds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/adaptations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adaptationPlans"];
+        put?: never;
+        post: operations["createAdaptation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/adaptations/{planId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateAdaptation"];
+        trace?: never;
+    };
+    "/v1/missions/{id}/adaptations/{planId}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["removeAdaptation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/my-adaptations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["learnerAdaptations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/submissions/{id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["submissionAudio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/submissions/{id}/text-file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["submissionTextFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/strategies": {
         parameters: {
             query?: never;
@@ -762,6 +922,625 @@ export interface operations {
             };
         };
     };
+    learningOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        supports: {
+                            /** @enum {string} */
+                            id: "image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file";
+                            label: string;
+                        }[];
+                        disabilities: {
+                            /** @enum {string} */
+                            id: "visual" | "hearing" | "physical" | "intellectual" | "multiple" | "other";
+                            label: string;
+                        }[];
+                        formats: {
+                            /** @enum {string} */
+                            id: "text" | "audio" | "text_file";
+                            label: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    learningNeeds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        disabilities: ("visual" | "hearing" | "physical" | "intellectual" | "multiple" | "other")[];
+                        supports: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                        preferredFormats: ("text" | "audio" | "text_file")[];
+                        revision: number;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    updateLearningNeeds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    disabilities: ("visual" | "hearing" | "physical" | "intellectual" | "multiple" | "other")[];
+                    supports: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                    preferredFormats: ("text" | "audio" | "text_file")[];
+                    expectedRevision: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        disabilities: ("visual" | "hearing" | "physical" | "intellectual" | "multiple" | "other")[];
+                        supports: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                        preferredFormats: ("text" | "audio" | "text_file")[];
+                        revision: number;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    needsSharing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        classroomId: string;
+                        shared: boolean;
+                        includeDisabilities: boolean;
+                        revision: number;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    updateNeedsSharing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    shared: boolean;
+                    includeDisabilities: boolean;
+                    expectedRevision: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        classroomId: string;
+                        shared: boolean;
+                        includeDisabilities: boolean;
+                        revision: number;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    sharedLearningNeeds: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            userId: string;
+                            name: string;
+                            supports: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                            preferredFormats: ("text" | "audio" | "text_file")[];
+                            disabilities: ("visual" | "hearing" | "physical" | "intellectual" | "multiple" | "other")[] | null;
+                        }[];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    adaptationPlans: {
+        parameters: {
+            query: {
+                versionId: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            versionId: string;
+                            stepId: string | null;
+                            /** @enum {string} */
+                            audience: "classroom" | "students";
+                            studentIds: string[];
+                            instructions: string;
+                            example: string;
+                            supportNeeds: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                            allowedFormats: ("text" | "audio" | "text_file")[];
+                            revision: number;
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    createAdaptation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    versionId: string;
+                    stepId: string | null;
+                    /** @enum {string} */
+                    audience: "classroom" | "students";
+                    studentIds: string[];
+                    instructions: string;
+                    example: string;
+                    supportNeeds: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                    allowedFormats: ("text" | "audio" | "text_file")[];
+                    /** @constant */
+                    reviewed: true;
+                    /** Format: uuid */
+                    requestKey: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        versionId: string;
+                        stepId: string | null;
+                        /** @enum {string} */
+                        audience: "classroom" | "students";
+                        studentIds: string[];
+                        instructions: string;
+                        example: string;
+                        supportNeeds: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                        allowedFormats: ("text" | "audio" | "text_file")[];
+                        revision: number;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    updateAdaptation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    versionId: string;
+                    stepId: string | null;
+                    /** @enum {string} */
+                    audience: "classroom" | "students";
+                    studentIds: string[];
+                    instructions: string;
+                    example: string;
+                    supportNeeds: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                    allowedFormats: ("text" | "audio" | "text_file")[];
+                    /** @constant */
+                    reviewed: true;
+                    expectedRevision: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        versionId: string;
+                        stepId: string | null;
+                        /** @enum {string} */
+                        audience: "classroom" | "students";
+                        studentIds: string[];
+                        instructions: string;
+                        example: string;
+                        supportNeeds: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
+                        allowedFormats: ("text" | "audio" | "text_file")[];
+                        revision: number;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    removeAdaptation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    expectedRevision: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        removed: true;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    learnerAdaptations: {
+        parameters: {
+            query: {
+                versionId: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        versionId: string;
+                        allowedFormats: ("text" | "audio" | "text_file")[];
+                        items: {
+                            id: string;
+                            stepId: string | null;
+                            instructions: string;
+                            example: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    submissionAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        base64: string;
+                        /** @constant */
+                        mimeType: "audio/wav";
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    submissionTextFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        name: "atividade.txt";
+                        text: string;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     strategyCatalog: {
         parameters: {
             query?: never;
@@ -1210,6 +1989,9 @@ export interface operations {
                     stepId: string | null;
                     materialIds: string[];
                     strategyIds: ("step-checklist" | "worked-example" | "context-glossary" | "written-instructions" | "planning-outline")[];
+                    /** @constant */
+                    activityAdaptation?: true;
+                    supportNeeds?: ("image-description" | "transcript" | "clear-instructions" | "short-steps" | "worked-example" | "glossary" | "audio-response" | "text-file")[];
                     /** @constant */
                     approvedForProvider: true;
                     /** Format: uuid */
@@ -2244,6 +3026,8 @@ export interface operations {
                             /** @enum {string} */
                             status: "draft" | "submitted" | "reviewed";
                             content: string;
+                            hasAudio?: boolean;
+                            hasTextFile?: boolean;
                             completedStepIds: string[];
                             currentStepId: string;
                             revision: number;
@@ -2290,6 +3074,10 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     content: string;
+                    audio?: string | null;
+                    textFile?: {
+                        text: string;
+                    } | null;
                     completedStepIds: string[];
                     currentStepId: string;
                     /** @enum {string} */
@@ -2312,6 +3100,8 @@ export interface operations {
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
+                        hasAudio?: boolean;
+                        hasTextFile?: boolean;
                         completedStepIds: string[];
                         currentStepId: string;
                         revision: number;
@@ -2366,6 +3156,8 @@ export interface operations {
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
+                        hasAudio?: boolean;
+                        hasTextFile?: boolean;
                         completedStepIds: string[];
                         currentStepId: string;
                         revision: number;
@@ -2426,6 +3218,8 @@ export interface operations {
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
+                        hasAudio?: boolean;
+                        hasTextFile?: boolean;
                         completedStepIds: string[];
                         currentStepId: string;
                         revision: number;

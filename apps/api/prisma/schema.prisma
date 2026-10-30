@@ -26,6 +26,9 @@ model User {
   submissions   Submission[]
   barriers      BarrierReport[]
   generations   AiGeneration[]
+  learningNeeds LearningNeeds?
+  needsSharing NeedsSharing[]
+  adaptationRecipients AdaptationRecipient[]
   strategyRecipients StrategyRecipient[]
 }
 
@@ -146,6 +149,7 @@ enum FileStatus {
 }
 
 model Classroom {
+  needsSharing NeedsSharing[]
   id String @id @default(uuid())
   name String
   createdAt DateTime @default(now())
@@ -206,6 +210,7 @@ model MissionVersion {
   materials Material[]
   submissions Submission[]
   strategyPlans StrategyPlan[]
+  activityAdaptations ActivityAdaptation[]
   @@index([missionId])
 }
 model Step {
@@ -218,6 +223,7 @@ model Step {
   version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   barriers BarrierReport[]
   strategyPlans StrategyPlan[]
+  activityAdaptations ActivityAdaptation[]
   @@unique([versionId, position])
 }
 model Material {
@@ -238,6 +244,10 @@ model Submission {
   userId String
   status SubmissionStatus @default(draft)
   content String
+  audio Bytes?
+  hasAudio Boolean @default(false)
+  textFile String?
+  hasTextFile Boolean @default(false)
   completedStepIds Json
   currentStepId String
   revision Int @default(1)
@@ -350,4 +360,48 @@ model StrategyRecipient {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([planId, userId])
   @@index([userId])
+}
+
+model LearningNeeds {
+  userId String @id
+  disabilities Json
+  supports Json
+  preferredFormats Json
+  revision Int @default(1)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model NeedsSharing {
+  userId String
+  classroomId String
+  shared Boolean @default(false)
+  includeDisabilities Boolean @default(false)
+  revision Int @default(1)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  @@id([userId, classroomId])
+}
+model ActivityAdaptation {
+  id String @id @default(uuid())
+  versionId String
+  stepId String?
+  audience String
+  instructions String
+  example String
+  supportNeeds Json
+  allowedFormats Json
+  revision Int @default(1)
+  requestKey String
+  requestHash String
+  version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  step Step? @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  recipients AdaptationRecipient[]
+  @@unique([versionId, requestKey])
+  @@index([versionId])
+}
+model AdaptationRecipient {
+  adaptationId String
+  userId String
+  adaptation ActivityAdaptation @relation(fields: [adaptationId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([adaptationId, userId])
 }

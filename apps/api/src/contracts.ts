@@ -25,7 +25,7 @@ const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', '
 const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher']) });
 const feedback = z.strictObject({ id, content: text, createdAt: date });
 const submission = z.strictObject({ id, versionId: id, userId: id, status: z.enum(['draft', 'submitted', 'reviewed']),
-  content: z.string().max(12000), completedStepIds: z.array(id), currentStepId: id, revision: z.number().int(),
+  content: z.string().max(12000), hasAudio: z.boolean().optional(), hasTextFile: z.boolean().optional(), completedStepIds: z.array(id), currentStepId: id, revision: z.number().int(),
   submittedAt: date.nullable(), updatedAt: date, feedback: z.array(feedback) });
 const barrier = z.strictObject({ id, stepId: id, description: text, sharedWithTeacher: z.boolean(), response: text.nullable(), createdAt: date });
 const generation = z.strictObject({ id, missionId: id, status: z.enum(['running', 'succeeded', 'failed', 'cancelled']),
@@ -51,6 +51,21 @@ const academicProfile = z.strictObject({ id, name: z.string(), email: z.email(),
 export const profileInput = z.strictObject({ name: z.string().trim().min(1).max(150).optional(), phone: optionalText(30),
   alternateEmail: z.email().max(150).nullable().optional(), student: studentInput.optional(), teacher: teacherInput.optional() });
 
+export const needCode = z.enum(['image-description', 'transcript', 'clear-instructions', 'short-steps', 'worked-example', 'glossary', 'audio-response', 'text-file']);
+export const disabilityCode = z.enum(['visual', 'hearing', 'physical', 'intellectual', 'multiple', 'other']);
+export const responseFormat = z.enum(['text', 'audio', 'text_file']);
+const unique = <T extends z.ZodType>(item: T, max: number) => z.array(item).max(max).refine(items => new Set(items).size === items.length, 'Seleção repetida.');
+const needsFields = { disabilities: unique(disabilityCode, 6), supports: unique(needCode, 8), preferredFormats: unique(responseFormat, 3) };
+export const learningNeedsInput = z.strictObject({ ...needsFields, expectedRevision: z.number().int().min(0) });
+const learningNeeds = z.strictObject({ ...needsFields, revision: z.number().int() });
+const needsShare = z.strictObject({ classroomId: id, shared: z.boolean(), includeDisabilities: z.boolean(), revision: z.number().int() });
+export const adaptationInput = z.strictObject({ versionId: id, stepId: id.nullable(), audience: z.enum(['classroom', 'students']), studentIds: unique(id, 50),
+  instructions: z.string().trim().min(1).max(6000), example: z.string().trim().max(3000), supportNeeds: unique(needCode, 8),
+  allowedFormats: unique(responseFormat, 3).refine(f => f.includes('text'), 'Mantenha a entrega por texto disponível.'), reviewed: z.literal(true) }).superRefine((v, ctx) => {
+  if ((v.audience === 'classroom' && v.studentIds.length) || (v.audience === 'students' && !v.studentIds.length)) ctx.addIssue({ code: 'custom', path: ['studentIds'], message: 'Confira os destinatários.' });
+});
+const adaptation = z.strictObject({ id, versionId: id, stepId: id.nullable(), audience: z.enum(['classroom', 'students']), studentIds: z.array(id),
+  instructions: z.string(), example: z.string(), supportNeeds: z.array(needCode), allowedFormats: z.array(responseFormat), revision: z.number().int() });
 const strategyId = z.enum(strategyCatalog.map(s => s.id));
 export const supportDraft = z.strictObject({ items: z.array(z.strictObject({ strategyId: z.enum(['step-checklist', 'worked-example', 'context-glossary', 'written-instructions', 'planning-outline']), content: z.string().trim().min(1).max(3000) })).min(1).max(5) });
 const audioInput = z.union([z.strictObject({ base64: z.string().min(60).max(1400000) }), z.strictObject({ itemId: id })]).nullable().optional();
@@ -71,6 +86,19 @@ export const routes = {
   me: { method: 'get', path: '/v1/me', body: empty, query: empty, response: z.strictObject({ id, name: z.string(), email: z.email(), course: z.string().nullable(), demo: z.boolean(), preferences: preferences }) },
   profile: { method: 'get', path: '/v1/me/profile', body: empty, query: empty, response: academicProfile },
   updateProfile: { method: 'patch', path: '/v1/me/profile', body: profileInput, query: empty, response: academicProfile },
+  learningOptions: { method: 'get', path: '/v1/learning-options', body: empty, query: empty, response: z.strictObject({ supports: z.array(z.strictObject({ id: needCode, label: short })), disabilities: z.array(z.strictObject({ id: disabilityCode, label: short })), formats: z.array(z.strictObject({ id: responseFormat, label: short })) }) },
+  learningNeeds: { method: 'get', path: '/v1/me/learning-needs', body: empty, query: empty, response: learningNeeds },
+  updateLearningNeeds: { method: 'patch', path: '/v1/me/learning-needs', body: learningNeedsInput, query: empty, response: learningNeeds },
+  needsSharing: { method: 'get', path: '/v1/classrooms/{id}/needs-sharing', body: empty, query: empty, response: needsShare },
+  updateNeedsSharing: { method: 'patch', path: '/v1/classrooms/{id}/needs-sharing', body: z.strictObject({ shared: z.boolean(), includeDisabilities: z.boolean(), expectedRevision: z.number().int().min(0) }), query: empty, response: needsShare },
+  sharedLearningNeeds: { method: 'get', path: '/v1/classrooms/{id}/learning-needs', body: empty, query: page, response: list(z.strictObject({ userId: id, name: z.string(), supports: z.array(needCode), preferredFormats: z.array(responseFormat), disabilities: z.array(disabilityCode).nullable() })) },
+  adaptationPlans: { method: 'get', path: '/v1/missions/{id}/adaptations', body: empty, query: z.strictObject({ versionId: id }), response: z.strictObject({ items: z.array(adaptation) }) },
+  createAdaptation: { method: 'post', path: '/v1/missions/{id}/adaptations', body: adaptationInput.safeExtend({ requestKey: z.uuid() }), query: empty, response: adaptation },
+  updateAdaptation: { method: 'patch', path: '/v1/missions/{id}/adaptations/{planId}', body: adaptationInput.safeExtend({ expectedRevision: z.number().int().min(1) }), query: empty, response: adaptation },
+  removeAdaptation: { method: 'post', path: '/v1/missions/{id}/adaptations/{planId}/remove', body: z.strictObject({ expectedRevision: z.number().int().min(1) }), query: empty, response: z.strictObject({ removed: z.literal(true) }) },
+  learnerAdaptations: { method: 'get', path: '/v1/missions/{id}/my-adaptations', body: empty, query: z.strictObject({ versionId: id }), response: z.strictObject({ versionId: id, allowedFormats: z.array(responseFormat), items: z.array(z.strictObject({ id, stepId: id.nullable(), instructions: z.string(), example: z.string() })) }) },
+  submissionAudio: { method: 'get', path: '/v1/submissions/{id}/audio', body: empty, query: empty, response: z.strictObject({ base64: z.string(), mimeType: z.literal('audio/wav') }) },
+  submissionTextFile: { method: 'get', path: '/v1/submissions/{id}/text-file', body: empty, query: empty, response: z.strictObject({ name: z.literal('atividade.txt'), text: z.string() }) },
   strategyCatalog: { method: 'get', path: '/v1/strategies', body: empty, query: empty, response: z.strictObject({ items: z.array(z.strictObject({
     id: strategyId, title: short, category: short, description: z.string(), guidance: z.string(), example: z.string(),
   })) }) },
@@ -82,7 +110,7 @@ export const routes = {
   missionSupports: { method: 'get', path: '/v1/missions/{id}/supports', body: empty, query: z.strictObject({ versionId: id }), response: z.strictObject({ versionId: id,
     items: z.array(z.strictObject({ id, stepId: id.nullable(), title: short, content: z.string(), hasAudio: z.boolean().optional() })) }) },
   supportAudio: { method: 'get', path: '/v1/missions/{id}/support-audio/{itemId}', body: empty, query: empty, response: z.strictObject({ base64: z.string(), mimeType: z.literal('audio/wav') }) },
-  generateSupports: { method: 'post', path: '/v1/missions/{id}/ai-supports', body: z.strictObject({ versionId: id, stepId: id.nullable(), materialIds: z.array(id).min(1).max(3), strategyIds: z.array(z.enum(['step-checklist', 'worked-example', 'context-glossary', 'written-instructions', 'planning-outline'])).min(1).max(5), approvedForProvider: z.literal(true), idempotencyKey: z.uuid() }), query: empty, response: z.strictObject({ id, status: z.enum(['running', 'succeeded', 'failed']), draft: supportDraft.nullable() }) },
+  generateSupports: { method: 'post', path: '/v1/missions/{id}/ai-supports', body: z.strictObject({ versionId: id, stepId: id.nullable(), materialIds: z.array(id).min(1).max(3), strategyIds: z.array(z.enum(['step-checklist', 'worked-example', 'context-glossary', 'written-instructions', 'planning-outline'])).min(1).max(5), activityAdaptation: z.literal(true).optional(), supportNeeds: unique(needCode, 8).optional(), approvedForProvider: z.literal(true), idempotencyKey: z.uuid() }), query: empty, response: z.strictObject({ id, status: z.enum(['running', 'succeeded', 'failed']), draft: supportDraft.nullable() }) },
   preferences: { method: 'patch', path: '/v1/me/preferences', body: preferences, query: empty, response: preferences },
   classrooms: { method: 'get', path: '/v1/classrooms', body: empty, query: page, response: list(classroom) },
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short }), query: empty, response: classroom },
@@ -100,7 +128,7 @@ export const routes = {
   publish: { method: 'post', path: '/v1/missions/{id}/publish', body: z.strictObject({ versionId: id, reviewed: z.literal(true) }), query: empty, response: mission },
   archive: { method: 'post', path: '/v1/missions/{id}/archive', body: empty, query: empty, response: mission },
   saveSubmission: { method: 'post', path: '/v1/missions/{id}/submissions',
-    body: z.strictObject({ versionId: id, content: z.string().max(12000), completedStepIds: z.array(id).max(10), currentStepId: id,
+    body: z.strictObject({ versionId: id, content: z.string().max(12000), audio: z.string().min(60).max(1400000).nullable().optional(), textFile: z.strictObject({ text: z.string().max(20000) }).nullable().optional(), completedStepIds: z.array(id).max(10), currentStepId: id,
       status: z.enum(['draft', 'submitted']), expectedRevision: z.number().int().min(0) }), query: empty, response: submission },
   submissions: { method: 'get', path: '/v1/missions/{id}/submissions', body: empty, query: page, response: list(submission) },
   submission: { method: 'get', path: '/v1/submissions/{id}', body: empty, query: empty, response: submission },

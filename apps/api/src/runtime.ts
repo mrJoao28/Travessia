@@ -37,7 +37,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
     try {
       if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers.origin !== config.origin) fail(403, 'INVALID_ORIGIN', 'Origem não autorizada.');
       if (!['GET', 'HEAD', 'OPTIONS', 'DELETE'].includes(req.method) && !req.is('application/json')) fail(415, 'JSON_REQUIRED', 'Envie dados em JSON.');
-      const limit = /^\/v1\/missions\/[^/]+\/strategy-plans(?:\/[^/]+)?\/?$/.test(req.path) && ['POST', 'PATCH'].includes(req.method) ? 2 * 1024 * 1024 : 65536;
+      const limit = /^\/v1\/missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)\/?$/.test(req.path) && ['POST', 'PATCH'].includes(req.method) ? 2 * 1024 * 1024 : 65536;
       if (Number(req.headers['content-length'] ?? 0) > limit) fail(413, 'BODY_TOO_LARGE', 'Conteúdo muito grande.');
       // The auth handler consumes the raw stream. Require a bounded length there;
       // the frontend proxy must buffer its small JSON body instead of streaming it.
@@ -59,7 +59,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
     } catch (error) { respondError(error, req, res); }
   });
   app.use((req: Request, res: Response, next: NextFunction) => {
-    const large = /^\/v1\/missions\/[^/]+\/strategy-plans(?:\/[^/]+)?\/?$/.test(req.path) && ['POST', 'PATCH'].includes(req.method);
+    const large = /^\/v1\/missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)\/?$/.test(req.path) && ['POST', 'PATCH'].includes(req.method);
     expressParser.json({ limit: large ? '2mb' : '64kb' })(req, res, next);
   });
   runtime.handle = async (req, res) => {
