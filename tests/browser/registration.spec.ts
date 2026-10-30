@@ -86,8 +86,8 @@ test('primeiros passos preservam convite recusado e continuam legíveis com text
   const token = 'a'.repeat(64);
   await page.getByLabel('Código de convite', { exact: true }).fill(token);
   await page.getByRole('button', { name: 'Entrar na turma', exact: true }).click();
-  await expect(page.getByRole('alert')).toBeFocused();
-  await expect(page.getByRole('alert')).toContainText('Peça um novo código ao professor');
+  await expect(page.getByRole('main').getByRole('alert')).toBeFocused();
+  await expect(page.getByRole('main').getByRole('alert')).toContainText('Peça um novo código ao professor');
   await expect(page.getByLabel('Código de convite', { exact: true })).toHaveValue(token);
   await page.getByRole('radio', { name: 'Sou professor', exact: true }).check();
   await expect(page.getByLabel('Nome da turma', { exact: true })).toBeVisible();
