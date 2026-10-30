@@ -1253,3 +1253,6 @@ body {
 
 .mission-supports audio, .strategy-content audio, .strategy-preview audio, .strategy-saved audio { width: 100%; max-width: 100%; }
 .strategy-content input[type="file"] { width: 100%; min-width: 0; }
+
+.form-stack audio { max-width: 100%; width: 100%; }
+.form-stack input[type="file"] { max-width: 100%; min-width: 0; }

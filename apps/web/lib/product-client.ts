@@ -26,7 +26,7 @@ export async function api<K extends keyof ApiOperations>(
 ): Promise<ApiResponse<K>> {
   const serialized =
     options.body === undefined ? undefined : JSON.stringify(options.body);
-  const maxBytes = ["createStrategyPlan", "updateStrategyPlan"].includes(operation) ? 2 * 1024 * 1024 : 64 * 1024;
+  const maxBytes = ["createStrategyPlan", "updateStrategyPlan", "saveSubmission"].includes(operation) ? 2 * 1024 * 1024 : 64 * 1024;
   if (serialized && new TextEncoder().encode(serialized).byteLength > maxBytes)
     throw new ApiError(
       413,
@@ -109,7 +109,7 @@ export function errorMessage(error: unknown) {
 }
 
 export async function pages<
-  K extends "classrooms" | "missions" | "submissions" | "barriers" | "members" | "strategyRecipients",
+  K extends "classrooms" | "missions" | "submissions" | "barriers" | "members" | "strategyRecipients" | "sharedLearningNeeds",
 >(operation: K, id?: string) {
   const items: Array<ApiResponse<K>["items"][number]> = [];
   let cursor: string | undefined;

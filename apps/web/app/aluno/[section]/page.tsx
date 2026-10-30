@@ -5,6 +5,7 @@ import {
   type ClassroomQuery,
 } from "../../../lib/classroom-context";
 const titles: Record<string, string> = {
+  apoios: "Meus apoios",
   barreiras: "Meus relatos e respostas",
   turmas: "Minhas turmas",
   entregas: "Minhas entregas",
