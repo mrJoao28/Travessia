@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api, pages, errorMessage, type ApiResponse } from "../lib/product-client";
 import type { MissionEntry } from "./live-workspace";
+import { AudioAttachment, SupportAudio, type AudioValue } from "./support-audio";
+import { SupportGenerator } from "./support-generator";
 import { OperationStatus } from "./operation-status";
 
 type Strategy = ApiResponse<"strategyCatalog">["items"][number];
@@ -49,6 +51,9 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [contents, setContents] = useState<Record<string, string>>({});
+  const [audios, setAudios] = useState<Record<string, AudioValue>>({});
+  const [mediaBusy, setMediaBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [stepId, setStepId] = useState("");
   const [audience, setAudience] = useState<"classroom" | "students">("classroom");
@@ -73,7 +78,7 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
   }, [entry.mission.id, version.id, attempt]);
   useEffect(() => { if (preview) previewTitle.current?.focus(); }, [preview]);
   function change() { setReviewed(false); setPreview(false); setMessage(""); setFailed(false); requestKey.current = null; }
-  function reset() { setSelected([]); setContents({}); setEditing(null); setStudentIds([]); setAudience("classroom"); setStepId(""); setReviewed(false); setPreview(false); requestKey.current = null; }
+  function reset() { setSelected([]); setContents({}); setAudios({}); setEditing(null); setStudentIds([]); setAudience("classroom"); setStepId(""); setReviewed(false); setPreview(false); requestKey.current = null; }
   function validate() {
     if (!selected.length || selected.some(id => !contents[id]?.trim()) || (audience === "students" && (!studentIds.length || studentIds.some(id => !students.some(s => s.id === id))))) {
       setFailed(true); setMessage("Selecione estratégias, preencha seus textos e confira os alunos destinatários."); return false;
@@ -81,11 +86,11 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
     return true;
   }
   async function save() {
-    if (pending || !validate()) return;
+    if (pending || mediaBusy || aiBusy || !validate()) return;
     if (!reviewed) { setFailed(true); setMessage("Revise os apoios e confirme antes de salvar."); return; }
     setPending(true); setMessage(""); setFailed(false);
     const input = { versionId: version.id, stepId: stepId || null, audience, studentIds: audience === "students" ? studentIds : [],
-      items: selected.map(strategyId => ({ strategyId: strategyId as Strategy["id"], content: contents[strategyId].trim() })), reviewed: true as const };
+      items: selected.map(strategyId => ({ strategyId: strategyId as Strategy["id"], content: contents[strategyId].trim(), audio: audios[strategyId] ?? null })), reviewed: true as const };
     try {
       const saved = editing ? await api("updateStrategyPlan", { params: { ...params, planId: editing.id }, body: { ...input, expectedRevision: editing.revision } })
         : await api("createStrategyPlan", { params, body: { ...input, requestKey: requestKey.current ??= crypto.randomUUID() } });
@@ -113,7 +118,7 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
     <p className="small">Os apoios são opcionais e não alteram os objetivos ou critérios de avaliação. Prepare o conteúdo para esta atividade, sem exigir diagnóstico.</p>
     {archived && <p className="demo-banner">Missão arquivada: aplicações disponíveis apenas para consulta.</p>}
     <form onSubmit={e => { e.preventDefault(); void save(); }}>
-      <fieldset className="strategy-fields" disabled={pending || archived}>
+      <fieldset className="strategy-fields" disabled={pending || mediaBusy || aiBusy || archived}>
         <legend className="sr-only">Preparar estratégias pedagógicas</legend>
         <div className="strategy-layout">
           <section aria-label="Biblioteca de estratégias">
@@ -130,9 +135,11 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
               </article>)}
             </div>
             {!filtered.length && <p>Nenhuma estratégia corresponde a essa busca. Ajuste os filtros.</p>}
+            {!!chosen.length && <SupportGenerator key={`${selected.join(",")}:${stepId}`} missionId={entry.mission.id} version={version} stepId={stepId} selected={chosen} onBusy={setAiBusy} onApply={(id, content) => { change(); setContents(old => ({ ...old, [id]: content })); }} />}
             {!!chosen.length && <section className="paper form-stack strategy-content" aria-label="Conteúdo dos apoios">
               <h3>Prepare o conteúdo para os alunos</h3>
               {chosen.map(s => <div key={s.id} className="form-stack"><label htmlFor={`support-${s.id}`}>Texto do apoio: {s.title}</label><textarea id={`support-${s.id}`} maxLength={3000} required value={contents[s.id] ?? ""} onChange={e => { const value = e.target.value; change(); setContents(old => ({ ...old, [s.id]: value })); }} />
+                <AudioAttachment id={s.id} missionId={entry.mission.id} value={audios[s.id] ?? null} onBusy={setMediaBusy} onChange={value => { change(); setAudios(old => ({ ...old, [s.id]: value })); }} />
                 <p className="small">{s.guidance}</p><button type="button" className="text-button" onClick={() => { change(); setContents(old => ({ ...old, [s.id]: s.example })); }}>Usar exemplo ilustrativo de {s.title}</button>
               </div>)}
             </section>}
@@ -161,14 +168,15 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
       </fieldset>
     </form>
     <OperationStatus message={message} error={failed} />
-    {preview && <section className="paper strategy-preview" aria-label="Prévia do aluno"><h2 ref={previewTitle} tabIndex={-1}>Prévia dos apoios para o aluno</h2><p>{stepId ? version.steps.find(s => s.id === stepId)?.title : "Apoios disponíveis em todas as etapas desta missão"}</p>{chosen.map(s => <details className="example" key={s.id}><summary>{s.title}</summary><p className="submission-content">{contents[s.id]}</p></details>)}<p className="small">Esta prévia não salva nem publica os apoios.</p></section>}
+    {preview && <section className="paper strategy-preview" aria-label="Prévia do aluno"><h2 ref={previewTitle} tabIndex={-1}>Prévia dos apoios para o aluno</h2><p>{stepId ? version.steps.find(s => s.id === stepId)?.title : "Apoios disponíveis em todas as etapas desta missão"}</p>{chosen.map(s => <details className="example" key={s.id}><summary>{s.title}</summary><p className="submission-content">{contents[s.id]}</p>{audios[s.id] && <SupportAudio missionId={entry.mission.id} {...audios[s.id]!} />}</details>)}<p className="small">Esta prévia não salva nem publica os apoios.</p></section>}
     <section className="strategy-saved" aria-label="Aplicações salvas"><h2>Aplicações nesta versão</h2>{!plans.length && <p>Nenhuma aplicação salva nesta versão.</p>}
       {plans.map(plan => <article className="paper" key={plan.id}><h3>{plan.stepId ? `Etapa · ${version.steps.find(s => s.id === plan.stepId)?.title}` : "Missão inteira"}</h3><p>{plan.audience === "classroom" ? "Turma inteira" : `Alunos selecionados: ${plan.recipients.map(s => s.name).join(", ")}`}</p>
-        {plan.items.map(item => <details key={item.id}><summary>{item.title}</summary><p className="submission-content">{item.content}</p></details>)}
-        <div className="actions"><button className="button button-outline" disabled={pending || archived} onClick={() => {
+        {plan.items.map(item => <details key={item.id}><summary>{item.title}</summary><p className="submission-content">{item.content}</p>{item.hasAudio && <SupportAudio missionId={entry.mission.id} itemId={item.id} />}</details>)}
+        <div className="actions"><button className="button button-outline" disabled={pending || mediaBusy || aiBusy || archived} onClick={() => {
           setEditing(plan); setSelected(plan.items.map(i => i.strategyId)); setContents(Object.fromEntries(plan.items.map(i => [i.strategyId, i.content])));
+          setAudios(Object.fromEntries(plan.items.map(i => [i.strategyId, i.hasAudio ? { itemId: i.id } : null])));
           setStepId(plan.stepId ?? ""); setAudience(plan.audience); setStudentIds(plan.recipients.map(s => s.id)); change(); formTitle.current?.focus();
-        }}>Editar aplicação</button><button className="text-button" disabled={pending || archived} onClick={() => void remove(plan)}>Remover aplicação</button></div>
+        }}>Editar aplicação</button><button className="text-button" disabled={pending || mediaBusy || aiBusy || archived} onClick={() => void remove(plan)}>Remover aplicação</button></div>
       </article>)}
     </section>
   </>;

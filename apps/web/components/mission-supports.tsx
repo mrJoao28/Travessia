@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { SupportAudio } from "./support-audio";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
 
 export function MissionSupports({ missionId, versionId, stepId }: { missionId: string; versionId: string; stepId: string }) {
@@ -21,7 +22,7 @@ export function MissionSupports({ missionId, versionId, stepId }: { missionId: s
     {pending ? <p role="status">Consultando os apoios disponíveis…</p> : error ? <>
       <p role="alert">{error}</p><button className="text-button" onClick={() => setRetry(n => n + 1)}>Tentar carregar os apoios novamente</button>
     </> : items.length ? <><p className="small">Abra os apoios que forem úteis para você.</p>
-      {items.map(item => <details className="example" key={item.id}><summary>{item.title}</summary><p className="submission-content">{item.content}</p></details>)}
+      {items.map(item => <details className="example" key={item.id}><summary>{item.title}</summary><p className="submission-content">{item.content}</p>{item.hasAudio && <SupportAudio missionId={missionId} itemId={item.id} />}</details>)}
     </> : <p className="small">Nenhum apoio adicional disponível nesta etapa.</p>}
   </section>;
 }
