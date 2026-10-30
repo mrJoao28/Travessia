@@ -74,6 +74,7 @@ async function fixture(page: Page, role: "student" | "teacher") {
     );
     const respond = (body: unknown) => route.fulfill({ json: body });
     if (path === "/me") return respond(me);
+    if (path === "/missions/test-mission/supports") return respond({ versionId: version.id, items: [] });
     if (path === "/classrooms")
       return respond({
         items: [

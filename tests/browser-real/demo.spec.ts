@@ -230,4 +230,64 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     page.getByRole("button", { name: "Entrar", exact: true }),
   ).toBeVisible();
   expect((await page.request.get("/api/v1/me")).status()).toBe(401);
+  // Same PostgreSQL and real sessions: teacher applies public/private supports,
+  // learner A receives both, learner B never receives A's private support.
+  await page.getByLabel('Email', { exact: true }).fill(process.env.DEMO_USER_EMAIL!);
+  await page.getByLabel('Senha', { exact: true }).fill(process.env.DEMO_USER_PASSWORD!);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
+  await page.goto('/professor/missoes/demo-class-oficina-mission/estrategias');
+  await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
+  await page.getByLabel('Texto do apoio: Checklist do próximo passo', { exact: true }).fill('Apoio coletivo real: confira os requisitos antes de entregar.');
+  await page.getByLabel('Onde disponibilizar', { exact: true }).selectOption({ label: 'Etapa 1 · Conhecer o desafio' });
+  await page.getByRole('checkbox', { name: 'Revisei os textos, o destino e os destinatários dos apoios.', exact: true }).check();
+  await page.getByRole('button', { name: 'Salvar apoios', exact: true }).click();
+  await expect(page.getByText('Apoios salvos e disponíveis aos destinatários selecionados.', { exact: true })).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Exemplo comentado', exact: true }).check();
+  await page.getByLabel('Texto do apoio: Exemplo comentado', { exact: true }).fill('Apoio individual de A: compare duas propostas e justifique sua escolha.');
+  await page.getByRole('radio', { name: 'Alunos selecionados', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Estudante Fictício 1', exact: true }).check();
+  await page.getByRole('button', { name: 'Ver prévia do aluno', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Prévia dos apoios para o aluno', exact: true })).toBeFocused();
+  await page.getByRole('checkbox', { name: 'Revisei os textos, o destino e os destinatários dos apoios.', exact: true }).check();
+  await page.getByRole('button', { name: 'Salvar apoios', exact: true }).click();
+  await expect(page.getByText('Apoios salvos e disponíveis aos destinatários selecionados.', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('region', { name: 'Aplicações salvas', exact: true }).getByText('Alunos selecionados: Estudante Fictício 1', { exact: true })).toBeVisible();
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: 'test-results/reference-strategies-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 320, height: 850 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/reference-strategies-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  async function logout() {
+    await page.locator('summary[aria-label="Menu da conta"]').click();
+    await page.getByRole('button', { name: 'Sair da conta', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
+  }
+  await logout();
+  for (const suffix of ['A', 'B']) {
+    await page.getByLabel('Email', { exact: true }).fill(process.env[`SUPPORT_STUDENT_${suffix}_EMAIL`]!);
+    await page.getByLabel('Senha', { exact: true }).fill(process.env[`SUPPORT_STUDENT_${suffix}_PASSWORD`]!);
+    await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
+    await page.goto('/aluno/missoes/demo-class-oficina-mission');
+    await page.getByRole('button', { name: /^Conhecer o desafio(?: · concluída e salva)?$/ }).click({ timeout: 15_000 });
+    const supports = page.getByRole('region', { name: 'Apoios desta etapa', exact: true });
+    await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toBeVisible();
+    if (suffix === 'A') {
+      await supports.getByText('Exemplo comentado', { exact: true }).click();
+      await expect(supports.getByText('Apoio individual de A: compare duas propostas e justifique sua escolha.', { exact: true })).toBeVisible();
+    } else {
+      await expect(supports.getByText('Exemplo comentado', { exact: true })).toHaveCount(0);
+      const versionId = await page.evaluate(async () => (await (await fetch('/api/v1/missions/demo-class-oficina-mission')).json()).publishedVersion.id as string);
+      const response = await page.request.get(`/api/v1/missions/demo-class-oficina-mission/supports?versionId=${encodeURIComponent(versionId)}`);
+      expect(await response.text()).not.toContain('Apoio individual de A');
+    }
+    await page.getByRole('button', { name: 'Próxima etapa', exact: true }).click();
+    await expect(supports.getByRole('status')).toHaveCount(0);
+    await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toHaveCount(0);
+    await logout();
+  }
 });

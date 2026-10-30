@@ -52,6 +52,102 @@ export interface paths {
         patch: operations["updateProfile"];
         trace?: never;
     };
+    "/v1/strategies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["strategyCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/strategy-recipients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["strategyRecipients"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/strategy-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["strategyPlans"];
+        put?: never;
+        post: operations["createStrategyPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/strategy-plans/{planId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateStrategyPlan"];
+        trace?: never;
+    };
+    "/v1/missions/{id}/strategy-plans/{planId}/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["removeStrategyPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/supports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["missionSupports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/preferences": {
         parameters: {
             query?: never;
@@ -616,6 +712,384 @@ export interface operations {
                                 course: string;
                             }[];
                         } | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    strategyCatalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            /** @enum {string} */
+                            id: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
+                            title: string;
+                            category: string;
+                            description: string;
+                            guidance: string;
+                            example: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    strategyRecipients: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            name: string;
+                        }[];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    strategyPlans: {
+        parameters: {
+            query: {
+                versionId: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            versionId: string;
+                            stepId: string | null;
+                            /** @enum {string} */
+                            audience: "classroom" | "students";
+                            revision: number;
+                            items: {
+                                id: string;
+                                /** @enum {string} */
+                                strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
+                                title: string;
+                                content: string;
+                            }[];
+                            recipients: {
+                                id: string;
+                                name: string;
+                            }[];
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    createStrategyPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    versionId: string;
+                    stepId: string | null;
+                    /** @enum {string} */
+                    audience: "classroom" | "students";
+                    studentIds: string[];
+                    items: {
+                        /** @enum {string} */
+                        strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
+                        content: string;
+                    }[];
+                    /** @constant */
+                    reviewed: true;
+                    /** Format: uuid */
+                    requestKey: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        versionId: string;
+                        stepId: string | null;
+                        /** @enum {string} */
+                        audience: "classroom" | "students";
+                        revision: number;
+                        items: {
+                            id: string;
+                            /** @enum {string} */
+                            strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
+                            title: string;
+                            content: string;
+                        }[];
+                        recipients: {
+                            id: string;
+                            name: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    updateStrategyPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    versionId: string;
+                    stepId: string | null;
+                    /** @enum {string} */
+                    audience: "classroom" | "students";
+                    studentIds: string[];
+                    items: {
+                        /** @enum {string} */
+                        strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
+                        content: string;
+                    }[];
+                    /** @constant */
+                    reviewed: true;
+                    expectedRevision: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        versionId: string;
+                        stepId: string | null;
+                        /** @enum {string} */
+                        audience: "classroom" | "students";
+                        revision: number;
+                        items: {
+                            id: string;
+                            /** @enum {string} */
+                            strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
+                            title: string;
+                            content: string;
+                        }[];
+                        recipients: {
+                            id: string;
+                            name: string;
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    removeStrategyPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    expectedRevision: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        removed: true;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    missionSupports: {
+        parameters: {
+            query: {
+                versionId: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        versionId: string;
+                        items: {
+                            id: string;
+                            stepId: string | null;
+                            title: string;
+                            content: string;
+                        }[];
                     };
                 };
             };

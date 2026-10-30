@@ -10,6 +10,7 @@ const titles: Record<string, string> = {
   entregas: "Entregas da turma",
   barreiras: "Apoios e barreiras",
   ajuda: "Ajuda",
+  estrategias: "Estratégias pedagógicas",
 };
 export default async function Page({
   params,

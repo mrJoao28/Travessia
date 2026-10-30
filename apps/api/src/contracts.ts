@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { strategyCatalog } from './strategy-catalog.js';
 
 export const id = z.string().min(1).max(100);
 const text = z.string().trim().min(1).max(6000);
@@ -50,11 +51,34 @@ const academicProfile = z.strictObject({ id, name: z.string(), email: z.email(),
 export const profileInput = z.strictObject({ name: z.string().trim().min(1).max(150).optional(), phone: optionalText(30),
   alternateEmail: z.email().max(150).nullable().optional(), student: studentInput.optional(), teacher: teacherInput.optional() });
 
+const strategyId = z.enum(strategyCatalog.map(s => s.id));
+const strategyItem = z.strictObject({ strategyId, content: z.string().trim().min(1).max(3000) });
+export const strategyPlanInput = z.strictObject({ versionId: id, stepId: id.nullable(), audience: z.enum(['classroom', 'students']),
+  studentIds: z.array(id).max(50), items: z.array(strategyItem).min(1).max(8), reviewed: z.literal(true) }).superRefine((input, ctx) => {
+  if ((input.audience === 'classroom' && input.studentIds.length !== 0) || (input.audience === 'students' && input.studentIds.length === 0))
+    ctx.addIssue({ code: 'custom', path: ['studentIds'], message: 'Confira os destinatários.' });
+  if (new Set(input.studentIds).size !== input.studentIds.length || new Set(input.items.map(item => item.strategyId)).size !== input.items.length)
+    ctx.addIssue({ code: 'custom', message: 'Itens ou destinatários repetidos.' });
+});
+const strategyPlan = z.strictObject({ id, versionId: id, stepId: id.nullable(), audience: z.enum(['classroom', 'students']), revision: z.number().int(),
+  items: z.array(z.strictObject({ id, strategyId, title: short, content: z.string() })),
+  recipients: z.array(z.strictObject({ id, name: z.string() })) });
+
 export const routes = {
   health: { method: 'get', path: '/v1/health', body: empty, query: empty, response: z.strictObject({ status: z.literal('ok'), service: z.literal('travessia-api'), stage: z.literal('mvp') }), public: true },
   me: { method: 'get', path: '/v1/me', body: empty, query: empty, response: z.strictObject({ id, name: z.string(), email: z.email(), course: z.string().nullable(), demo: z.boolean(), preferences: preferences }) },
   profile: { method: 'get', path: '/v1/me/profile', body: empty, query: empty, response: academicProfile },
   updateProfile: { method: 'patch', path: '/v1/me/profile', body: profileInput, query: empty, response: academicProfile },
+  strategyCatalog: { method: 'get', path: '/v1/strategies', body: empty, query: empty, response: z.strictObject({ items: z.array(z.strictObject({
+    id: strategyId, title: short, category: short, description: z.string(), guidance: z.string(), example: z.string(),
+  })) }) },
+  strategyRecipients: { method: 'get', path: '/v1/missions/{id}/strategy-recipients', body: empty, query: page, response: list(z.strictObject({ id, name: z.string() })) },
+  strategyPlans: { method: 'get', path: '/v1/missions/{id}/strategy-plans', body: empty, query: z.strictObject({ versionId: id }), response: z.strictObject({ items: z.array(strategyPlan) }) },
+  createStrategyPlan: { method: 'post', path: '/v1/missions/{id}/strategy-plans', body: strategyPlanInput.safeExtend({ requestKey: z.uuid() }), query: empty, response: strategyPlan },
+  updateStrategyPlan: { method: 'patch', path: '/v1/missions/{id}/strategy-plans/{planId}', body: strategyPlanInput.safeExtend({ expectedRevision: z.number().int().min(1) }), query: empty, response: strategyPlan },
+  removeStrategyPlan: { method: 'post', path: '/v1/missions/{id}/strategy-plans/{planId}/remove', body: z.strictObject({ expectedRevision: z.number().int().min(1) }), query: empty, response: z.strictObject({ removed: z.literal(true) }) },
+  missionSupports: { method: 'get', path: '/v1/missions/{id}/supports', body: empty, query: z.strictObject({ versionId: id }), response: z.strictObject({ versionId: id,
+    items: z.array(z.strictObject({ id, stepId: id.nullable(), title: short, content: z.string() })) }) },
   preferences: { method: 'patch', path: '/v1/me/preferences', body: preferences, query: empty, response: preferences },
   classrooms: { method: 'get', path: '/v1/classrooms', body: empty, query: page, response: list(classroom) },
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short }), query: empty, response: classroom },
@@ -95,8 +119,8 @@ export function openapi() {
   const paths: Record<string, Record<string, unknown>> = {};
   for (const [operationId, route] of Object.entries(routes)) {
     const parameters: {name: string; in: string; required: boolean; schema: unknown}[] = Array.from(route.path.matchAll(/\{(\w+)\}/g), ([, name]) => ({ name, in: 'path', required: true, schema: z.toJSONSchema(id) }));
-    const query = z.toJSONSchema(route.query) as { properties?: Record<string, unknown> };
-    for (const [name, schema] of Object.entries(query.properties ?? {})) parameters.push({ name, in: 'query', required: false, schema });
+    const query = z.toJSONSchema(route.query, { io: 'input' }) as { properties?: Record<string, unknown>; required?: string[] };
+    for (const [name, schema] of Object.entries(query.properties ?? {})) parameters.push({ name, in: 'query', required: query.required?.includes(name) ?? false, schema });
     (paths[route.path] ??= {})[route.method] = { operationId, security: 'public' in route && route.public === true ? [] : [{ session: [] }], parameters,
       ...(route.method === 'get' || route.method === 'delete' ? {} : { requestBody: { required: true, content: { 'application/json': { schema: z.toJSONSchema(route.body) } } } }),
       responses: { '200': { description: 'Sucesso', content: { 'application/json': { schema: z.toJSONSchema(route.response) } } },

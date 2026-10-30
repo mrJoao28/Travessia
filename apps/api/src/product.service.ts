@@ -7,6 +7,7 @@ import { serial, type Tx } from './database.js';
 import { budget, digest } from './rate-limit.js';
 import { AiService, type DraftProvider } from './ai.js';
 import { getProfile, updateProfile } from './profiles.js';
+import { StrategyService } from './strategies.js';
 
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
 const missionInclude = { draftVersion: { include: versionInclude }, publishedVersion: { include: versionInclude } };
@@ -62,6 +63,8 @@ export class ProductService {
     const id = p.id;
     const paging = query as Paging;
     if (op === 'health') return { status: 'ok', service: 'travessia-api', stage: 'mvp' };
+    if (['strategyCatalog', 'strategyRecipients', 'strategyPlans', 'createStrategyPlan', 'updateStrategyPlan', 'removeStrategyPlan', 'missionSupports'].includes(op))
+      return new StrategyService(this.db).execute(op, userId, p, body, query);
     if (op === 'me') {
       const user = await this.db.user.findUniqueOrThrow({ where: { id: userId }, include: { studentProfile: true, preferences: true } });
       return { id: user.id, name: user.name, email: user.email, course: user.studentProfile?.course ?? null, demo: this.config.demo,

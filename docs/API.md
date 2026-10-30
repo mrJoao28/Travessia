@@ -7,6 +7,12 @@ A fonte executável é `packages/contracts/openapi.json`, gerada das rotas Zod i
 | GET /v1/me | Sessão válida; somente perfil próprio |
 | GET /v1/me/profile | Contatos e perfis acadêmicos próprios; detalhes em PROFILES.md |
 | PATCH /v1/me/profile | Edição própria e transacional; campos permitidos, sem promoção de papel |
+| GET /v1/strategies | Catálogo genérico; sessão válida |
+| GET/POST /v1/missions/{id}/strategy-plans | Docente da turma; aplicação por versão/etapa e destinatários validados |
+| PATCH /v1/missions/{id}/strategy-plans/{planId} | Docente; revisão esperada e conteúdo revisado |
+| POST /v1/missions/{id}/strategy-plans/{planId}/remove | Docente; remoção com revisão esperada |
+| GET /v1/missions/{id}/strategy-recipients | Docente; alunos ativos da turma, paginados |
+| GET /v1/missions/{id}/supports | Aluno; somente apoios próprios/coletivos da publicação atual |
 | PATCH /v1/me/preferences | Preferências próprias; campos permitidos explicitamente |
 | POST /v1/classrooms | Criador autenticado torna-se docente da turma criada |
 | GET /v1/classrooms | Somente turmas com vínculo ativo |

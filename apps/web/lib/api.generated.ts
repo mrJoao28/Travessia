@@ -18,6 +18,34 @@ export const apiRoutes = {
     "method": "PATCH",
     "path": "/me/profile"
   },
+  "strategyCatalog": {
+    "method": "GET",
+    "path": "/strategies"
+  },
+  "strategyRecipients": {
+    "method": "GET",
+    "path": "/missions/{id}/strategy-recipients"
+  },
+  "strategyPlans": {
+    "method": "GET",
+    "path": "/missions/{id}/strategy-plans"
+  },
+  "createStrategyPlan": {
+    "method": "POST",
+    "path": "/missions/{id}/strategy-plans"
+  },
+  "updateStrategyPlan": {
+    "method": "PATCH",
+    "path": "/missions/{id}/strategy-plans/{planId}"
+  },
+  "removeStrategyPlan": {
+    "method": "POST",
+    "path": "/missions/{id}/strategy-plans/{planId}/remove"
+  },
+  "missionSupports": {
+    "method": "GET",
+    "path": "/missions/{id}/supports"
+  },
   "preferences": {
     "method": "PATCH",
     "path": "/me/preferences"
@@ -126,4 +154,5 @@ export const apiRoutes = {
 export type ApiResponse<K extends keyof operations> = operations[K]['responses'][200]['content']['application/json'];
 export type ApiBody<K extends keyof operations> = operations[K] extends { requestBody: { content: { 'application/json': infer T } } } ? T : never;
 type Params<K extends keyof operations> = operations[K]['parameters'] extends { path: infer T } ? T : {};
-export type ApiOperations = { [K in keyof typeof apiRoutes]: { response: ApiResponse<K>; body: ApiBody<K>; params: Params<K> } };
+type Query<K extends keyof operations> = operations[K]['parameters'] extends { query?: infer T } ? NonNullable<T> : never;
+export type ApiOperations = { [K in keyof typeof apiRoutes]: { response: ApiResponse<K>; body: ApiBody<K>; params: Params<K>; query: Query<K> } };

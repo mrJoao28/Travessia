@@ -15,6 +15,7 @@ import { LiveEditor } from "./live-editor";
 import { LiveBarriers } from "./live-barriers";
 import { OperationStatus } from "./operation-status";
 import { ClassroomTools, ClassroomMembers } from "./classroom-tools";
+import { LiveStrategies } from "./live-strategies";
 
 export type Classroom = ApiResponse<"classrooms">["items"][number];
 export type Mission = ApiResponse<"mission">;
@@ -112,7 +113,7 @@ function WorkspaceView({
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
   const title =
-    role === "aluno"
+    section === "estrategias" ? "Estratégias pedagógicas" : role === "aluno"
       ? "Um passo de cada vez."
       : "Ensinar também é construir caminhos.";
   const otherRole = classrooms.some(
@@ -140,7 +141,7 @@ function WorkspaceView({
       <div className="page-heading">
         <h1>{title}</h1>
         <p>
-          {role === "aluno"
+          {section === "estrategias" ? "Prepare apoios para uma etapa ou missão, com destinatários definidos por você." : role === "aluno"
             ? "Retome sua missão de onde parou."
             : "Organize objetivos, etapas e devolutivas para sua turma."}
         </p>
@@ -213,7 +214,7 @@ function WorkspaceView({
                     </select>
                   </label>
                 )}
-              {section === "missao" && missionId ? (
+              {section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} /> : section === "missao" && missionId ? (
                 <LiveMission
                   id={missionId}
                   role={role}
@@ -508,6 +509,7 @@ function TeacherDashboard({
                 Editar e revisar
               </Link>
             )}
+            <Link className="button button-outline" href={`/professor/missoes/${mission.id}/estrategias`}>Estratégias pedagógicas</Link>
           </li>
         ))}
       </ul>

@@ -26,6 +26,7 @@ model User {
   submissions   Submission[]
   barriers      BarrierReport[]
   generations   AiGeneration[]
+  strategyRecipients StrategyRecipient[]
 }
 
 model Session {
@@ -204,6 +205,7 @@ model MissionVersion {
   steps Step[]
   materials Material[]
   submissions Submission[]
+  strategyPlans StrategyPlan[]
   @@index([missionId])
 }
 model Step {
@@ -215,6 +217,7 @@ model Step {
   example String
   version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   barriers BarrierReport[]
+  strategyPlans StrategyPlan[]
   @@unique([versionId, position])
 }
 model Material {
@@ -307,4 +310,41 @@ model DemoDataset {
   id String @id
   anchor DateTime @default(now())
   userId String? @unique
+}
+
+model StrategyPlan {
+  id String @id @default(uuid())
+  versionId String
+  stepId String?
+  audience String
+  revision Int @default(1)
+  requestKey String
+  requestHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  step Step? @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  items StrategyItem[]
+  recipients StrategyRecipient[]
+  @@unique([versionId, requestKey])
+  @@index([versionId, stepId])
+}
+model StrategyItem {
+  id String @id @default(uuid())
+  planId String
+  strategyId String
+  title String
+  content String
+  position Int
+  plan StrategyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  @@unique([planId, strategyId])
+  @@unique([planId, position])
+}
+model StrategyRecipient {
+  planId String
+  userId String
+  plan StrategyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([planId, userId])
+  @@index([userId])
 }
