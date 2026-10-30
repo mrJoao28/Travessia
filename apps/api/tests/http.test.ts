@@ -104,6 +104,51 @@ test('preferências privadas e autorização de turmas/papéis resolvida no banc
   await request(`/v1/classrooms/${workshop}/invitations`, a, 'POST', { role: 'teacher' }, 400);
   await request('/v1/classrooms?limit=1000', main, 'GET', undefined, 400);
 });
+test('perfis acadêmicos próprios: aluno e professor na mesma conta, campos parciais e contatos privados', async () => {
+  await request('/v1/me/profile', '', 'GET', undefined, 401);
+  await request('/v1/me/profile', 'better-auth.session_token=forged', 'PATCH', { phone: '999' }, 401);
+  const beforeB = (await request('/v1/me/profile', b)).json;
+  const memberships = await db.membership.findMany({ where: { userId: 'demo-student-1' }, orderBy: { id: 'asc' } });
+  const hash = (await db.account.findFirstOrThrow({ where: { userId: 'demo-student-1', providerId: 'credential' } })).password;
+  const saved = (await request('/v1/me/profile', a, 'PATCH', {
+    name: 'Aluno e professor fictício', phone: '+55 92 90000-0000', alternateEmail: 'contact@example.invalid',
+    student: { registration: '2026001', institution: 'UEA', unit: 'EST', course: 'Engenharia de Computação', period: '2º' },
+    teacher: { teachings: [{ subject: 'Cálculo I', course: 'Engenharia de Computação' }, { subject: 'Cálculo I', course: 'Engenharia Elétrica' }] },
+  })).json;
+  assert.equal(saved.student.registration, '2026001'); assert.equal(saved.teacher.teachings.length, 2);
+  assert.equal(saved.name, 'Aluno e professor fictício'); assert.equal(saved.phone, '+55 92 90000-0000');
+  assert.equal('userId' in saved.student, false); assert.equal('password' in saved, false);
+  assert.deepEqual((await request('/v1/me/profile', b)).json, beforeB);
+  // Even a teacher of this student's classroom cannot inspect private academic/contact data.
+  await request('/v1/users/demo-student-1/profile', main, 'GET', undefined, 404);
+  await request('/v1/users/demo-student-1/profile', otherTeacher, 'GET', undefined, 404);
+  await request('/v1/me/profile?userId=demo-student-1', main, 'GET', undefined, 400);
+  assert.deepEqual(await db.membership.findMany({ where: { userId: 'demo-student-1' }, orderBy: { id: 'asc' } }), memberships);
+  await request(`/v1/classrooms/${workshop}/missions`, a, 'POST', fixture, 404);
+  const partial = (await request('/v1/me/profile', a, 'PATCH', { student: { period: null }, phone: null })).json;
+  assert.equal(partial.student.period, null); assert.equal(partial.phone, null);
+  assert.equal(partial.student.registration, '2026001'); assert.equal(partial.teacher.teachings.length, 2);
+  assert.equal(partial.alternateEmail, 'contact@example.invalid');
+  assert.equal((await request('/v1/me', a)).json.course, 'Engenharia de Computação');
+  assert.equal((await db.account.findFirstOrThrow({ where: { userId: 'demo-student-1', providerId: 'credential' } })).password, hash);
+  // Explicit replacement removes associations without affecting student/contact data.
+  const removed = (await request('/v1/me/profile', a, 'PATCH', { teacher: { teachings: [] } })).json;
+  assert.deepEqual(removed.teacher.teachings, []); assert.equal(removed.student.registration, '2026001');
+});
+test('perfil rejeita promoção, troca de dono, campos excluídos e disciplinas inválidas sem alteração parcial', async () => {
+  const before = (await request('/v1/me/profile', a)).json;
+  for (const input of [
+    { userId: 'demo-student-2' }, { role: 'teacher' }, { email: 'other@example.invalid' }, { emailVerified: true },
+    { name: ' ' }, { phone: 'x'.repeat(31) }, { alternateEmail: 'invalid' },
+    { student: { shift: 'noturno' } }, { student: { coordination: 'Curso' } },
+    { student: { registration: 'x'.repeat(51) } }, { teacher: { active: true, teachings: [] } },
+    { teacher: { teachings: [{ subject: '', course: 'Curso' }] } },
+    { teacher: { teachings: [{ subject: 'Cálculo', course: 'Curso' }, { subject: ' cálculo ', course: 'curso' }] } },
+    { name: 'Não deve ser salvo', teacher: { teachings: Array.from({ length: 21 }, (_, i) => ({ subject: `Disciplina ${i}`, course: 'Curso' })) } },
+  ]) await request('/v1/me/profile', a, 'PATCH', input, 400);
+  await request('/v1/me/profile', a, 'PATCH', { phone: '999' }, 403, 'https://attacker.invalid');
+  assert.deepEqual((await request('/v1/me/profile', a)).json, before);
+});
 test('rascunho privado, publicação com revisão explícita e versões imutáveis', async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   await request(`/v1/missions/${created.id}`, a, 'GET', undefined, 404);

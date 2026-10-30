@@ -75,12 +75,12 @@ As mesmas imagens executam em Linux sem depender da Vercel. A conexão ao proxy/
 
 - Usar `APP_PUBLIC_ORIGIN=https://dominio-aprovado`, `ALLOW_LOCAL_HTTP=false` e segredo exclusivo do ambiente. Cookies ficam HttpOnly, SameSite=Lax e Secure em HTTPS. O opt-in de localhost não libera HTTP de domínio público.
 - Se o proxy estiver no host, ele pode encaminhar HTTPS para a porta loopback do frontend. Se o proxy estiver em outro container, a equipe deve conectá-lo à rede apropriada e usar `frontend:3000`; não resolver isso expondo PostgreSQL/API publicamente.
-- Em banco com dados reais, `DEMO_MODE=false` e `DEMO_ONLY=false`; não executar seed de demonstração. Provisionamento de contas reais e adaptação dos perfis aluno/professor são tarefas próprias.
+- Em banco com dados reais, `DEMO_MODE=false` e `DEMO_ONLY=false`; não executar seed de demonstração. Provisionamento de contas reais é tarefa própria. Perfis de aluno/professor e atualização de um volume existente estão em [PROFILES.md](PROFILES.md).
 - `.env.docker` não entra no build. As imagens não recebem secrets como build arguments. O servidor recebe configuração privada apenas em runtime.
 - Migrations usam `docker:migrate` em etapa controlada. As aplicações executam como usuário `node`, com init e encerramento gracioso. Health da API é de aplicação; o teste de integração verifica também acesso real ao banco após migrations.
 - O volume pertence ao ambiente; backup e restauração devem ser definidos pela equipe antes de dados reais. Esta entrega valida persistência entre recriações, sem alegar recuperação de backup já testada.
 
-Não há mudança de schema ou importação do banco anterior. PostgreSQL local e Better Auth atendem ao fluxo textual sem exigir Supabase. Storage privado/Gemini continuam opcionais e requerem sua configuração caso sejam utilizados.
+Não há importação do banco do Mais Acesso. As migrations do Travessia são executadas por `docker:up`, incluindo os perfis acadêmicos descritos em [PROFILES.md](PROFILES.md). PostgreSQL local e Better Auth atendem ao fluxo textual sem exigir Supabase. Storage privado/Gemini continuam opcionais e requerem sua configuração caso sejam utilizados.
 
 ## CI Linux
 

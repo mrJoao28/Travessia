@@ -60,6 +60,7 @@ try {
   }
   console.log('Containers saudáveis, rede compartilhada, volume e isolamento de portas/segredos verificados.');
   await request('/login');
+  await request('/perfil');
   for (const asset of ['mais-acesso-conecta.png', 'mais-acesso-auth.webp', 'learning-together.webp', 'teaching-pathways.webp']) {
     const r = await fetch(new URL(`/brand/${asset}`, base), { signal: AbortSignal.timeout(15000) });
     check(r.ok && (await r.arrayBuffer()).byteLength > 1000, 'Arte local ausente da imagem frontend.');
@@ -68,6 +69,7 @@ try {
   check(optimized.ok && optimized.headers.get('content-type')?.startsWith('image/'), 'Otimização de imagens indisponível.');
   check((await request('/api/v1/health')).json?.status === 'ok', 'API não acessível pelo frontend.');
   await request('/api/v1/me', { authenticated: false, status: 401 });
+  await request('/api/v1/me/profile', { authenticated: false, status: 401 });
   await request('/api/auth/sign-up/email', { method: 'POST', body: {}, status: 404 });
   await login();
   check((await request('/api/auth/get-session')).json?.user?.id, 'Sessão não confirmada pelo proxy.');
@@ -82,6 +84,9 @@ try {
   check(own?.currentStepId === mission.publishedVersion.steps[1].id, 'Retomada da etapa 2 não foi preservada.');
   if (verifyPersistence) {
     check(own.content === marker && me.preferences.spacing === 'wide', 'Dados não sobreviveram à recriação dos containers.');
+    const profile = (await request('/api/v1/me/profile')).json;
+    check(profile.student?.registration === 'docker-profile-test' && profile.teacher?.teachings?.length === 2,
+      'Perfis acadêmicos não sobreviveram à recriação dos containers.');
   } else {
     check(own.status === 'draft', 'Use um banco de demonstração novo para este teste.');
     own = (await request(`/api/v1/missions/${mission.id}/submissions`, { method: 'POST', body: {
@@ -90,6 +95,12 @@ try {
     } })).json;
     await request('/api/v1/me/preferences', { method: 'PATCH', body: { spacing: 'wide' } });
     check(own.content === marker, 'Rascunho não foi salvo.');
+    const profile = (await request('/api/v1/me/profile', { method: 'PATCH', body: {
+      student: { registration: 'docker-profile-test' }, teacher: { teachings: [
+        { subject: 'Cálculo I', course: 'Computação' }, { subject: 'Cálculo I', course: 'Engenharia Elétrica' },
+      ] },
+    } })).json;
+    check(profile.student.registration === 'docker-profile-test' && profile.teacher.teachings.length === 2, 'Perfis acadêmicos não foram salvos.');
   }
   const members = (await request('/api/v1/classrooms/demo-class-oficina/members')).json.items;
   check(members.filter(m => m.role === 'student').length === 8, 'Contexto docente indisponível.');

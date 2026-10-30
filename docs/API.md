@@ -5,6 +5,8 @@ A fonte executável é `packages/contracts/openapi.json`, gerada das rotas Zod i
 | Operação proposta | Permissão e regra |
 |---|---|
 | GET /v1/me | Sessão válida; somente perfil próprio |
+| GET /v1/me/profile | Contatos e perfis acadêmicos próprios; detalhes em PROFILES.md |
+| PATCH /v1/me/profile | Edição própria e transacional; campos permitidos, sem promoção de papel |
 | PATCH /v1/me/preferences | Preferências próprias; campos permitidos explicitamente |
 | POST /v1/classrooms | Criador autenticado torna-se docente da turma criada |
 | GET /v1/classrooms | Somente turmas com vínculo ativo |
