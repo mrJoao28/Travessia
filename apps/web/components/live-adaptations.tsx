@@ -10,13 +10,13 @@ export function LiveAdaptations({ entries }: { entries: MissionEntry[] }) {
   const [missionId, setMissionId] = useState(entries[0]?.mission.id ?? "");
   const entry = entries.find(e => e.mission.id === missionId);
   if (!entry) return <p className="paper">Crie uma missão para preparar adaptações de atividades.</p>;
-  return <><label htmlFor="adapt-mission">Missão para adaptar</label><select id="adapt-mission" value={missionId} onChange={e => setMissionId(e.target.value)}>{entries.map(e => <option value={e.mission.id} key={e.mission.id}>{e.classroom.name} · {(e.mission.publishedVersion ?? e.mission.draftVersion)?.title}</option>)}</select><AdaptationVersions key={entry.mission.id} entry={entry} /></>;
+  return <><div className="classroom-selector"><label htmlFor="adapt-mission">Missão para adaptar</label><select id="adapt-mission" value={missionId} onChange={e => setMissionId(e.target.value)}>{entries.map(e => <option value={e.mission.id} key={e.mission.id}>{e.classroom.name} · {(e.mission.publishedVersion ?? e.mission.draftVersion)?.title}</option>)}</select></div><AdaptationVersions key={entry.mission.id} entry={entry} /></>;
 }
 function AdaptationVersions({ entry }: { entry: MissionEntry }) {
   const versions = [entry.mission.publishedVersion, entry.mission.draftVersion].filter((v): v is Version => !!v);
   const [versionId, setVersionId] = useState(versions[0]?.id ?? "");
   const version = versions.find(v => v.id === versionId);
-  return <>{version && <><label htmlFor="adapt-version">Versão para adaptar</label><select id="adapt-version" value={versionId} onChange={e => setVersionId(e.target.value)}>{versions.map(v => <option key={v.id} value={v.id}>{v.id === entry.mission.publishedVersion?.id ? "Publicada" : "Rascunho"} · {v.title}</option>)}</select><AdaptationForm key={versionId} entry={entry} version={version} /></>}</>;
+  return <>{version && <><div className="classroom-selector"><label htmlFor="adapt-version">Versão para adaptar</label><select id="adapt-version" value={versionId} onChange={e => setVersionId(e.target.value)}>{versions.map(v => <option key={v.id} value={v.id}>{v.id === entry.mission.publishedVersion?.id ? "Publicada" : "Rascunho"} · {v.title}</option>)}</select></div><AdaptationForm key={versionId} entry={entry} version={version} /></>}</>;
 }
 function AdaptationForm({ entry, version }: { entry: MissionEntry; version: Version }) {
   const [options, setOptions] = useState<Options | null>(null);
