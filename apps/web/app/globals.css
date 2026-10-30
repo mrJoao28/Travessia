@@ -1256,3 +1256,78 @@ body {
 
 .form-stack audio { max-width: 100%; width: 100%; }
 .form-stack input[type="file"] { max-width: 100%; min-width: 0; }
+
+/* Teacher preparation: one decision at a time, with a clear next action. */
+[hidden] { display: none !important; }
+.teacher-shell .button { border-radius: .7rem; min-height: 3rem; font-weight: 650; }
+.teacher-shell .page-heading { margin-bottom: 1.7rem; }
+.teacher-shell .teacher-guide-heading h1 { font-size: clamp(1.8rem, 3vw, 2.75rem); margin-top: 1rem; }
+.teacher-guide { min-width: 0; }
+.teacher-guide-heading > p { color: var(--muted); }
+.teacher-steps { margin-block: 1.5rem 2rem; }
+.teacher-steps ol { padding: 0; margin: 0; list-style: none; display: flex; gap: 1rem; }
+.teacher-steps li { flex: 1; min-width: 0; position: relative; }
+.teacher-steps li:not(:last-child)::after { content: ""; position: absolute; height: 2px; background: var(--border); top: 1.15rem; left: calc(50% + 1.6rem); right: calc(-50% + 1.6rem); }
+.teacher-steps button { width: 100%; display: grid; justify-items: center; gap: .6rem; padding: 0 .25rem; border: 0; background: transparent; color: var(--muted); font-weight: 600; line-height: 1.35; }
+.teacher-steps button:disabled { opacity: 1; }
+.teacher-steps .step-number { width: 2.4rem; height: 2.4rem; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--text); }
+.teacher-steps .step-reached button { color: var(--primary); }
+.teacher-steps .step-reached .step-number { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.teacher-steps [aria-current="step"] .step-number { box-shadow: 0 0 0 4px var(--sage); }
+.teacher-guide-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(16rem, .85fr); gap: 1.25rem; align-items: start; }
+.teacher-guide-grid > *, .teacher-guide .form-stack, .teacher-context-strip > *, .teacher-guide-footer > * { min-width: 0; }
+.teacher-editor-panel { padding: clamp(1.1rem, 2.4vw, 2rem); }
+.teacher-editor-panel h2 { font-size: clamp(1.3rem, 2vw, 1.7rem); }
+.teacher-editor-panel textarea { min-height: 7rem; }
+.teacher-editor-panel .form-stack { gap: .85rem; }
+.teacher-guidance { background: var(--sage); padding: 1.7rem; }
+.teacher-guidance h2, .teacher-student-preview h2 { font-size: 1.3rem; }
+.teacher-guidance ul { padding-left: 1.3rem; margin-block: 1.3rem; }
+.teacher-guidance li { padding-bottom: .9rem; }
+.teacher-guide-footer { position: sticky; bottom: 0; z-index: 3; background: var(--surface); border: 1px solid var(--border); border-radius: .75rem; padding: 1rem 1.25rem; margin-top: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .9rem; }
+.teacher-guide-footer > div { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.teacher-guide-footer .button { white-space: normal; }
+.teacher-guide-footer .text-button { min-height: 2.75rem; }
+.teacher-guide input:not([type="checkbox"]):not([type="radio"]), .teacher-guide textarea, .teacher-guide select { width: 100%; max-width: 100%; min-width: 0; }
+.teacher-guide .notice { overflow-wrap: anywhere; }
+.teacher-guide .editor-step { margin-bottom: 1.1rem; }
+.teacher-guide .editor-step .button-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: .45rem .8rem; min-height: 2.75rem; font-size: .92rem; }
+.teacher-ai, .teacher-disclosure { padding: 1rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); }
+.teacher-ai { background: var(--background); }
+.teacher-ai > summary, .teacher-disclosure > summary { font-weight: 650; overflow-wrap: anywhere; }
+.teacher-ai[open] > summary, .teacher-disclosure[open] > summary { margin-bottom: 1rem; }
+.teacher-ai > form { margin-top: 1rem; }
+.teacher-ai > .check { display: flex; align-items: flex-start; gap: .65rem; margin-block: .8rem; }
+.teacher-choice-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .55rem; }
+.teacher-choice-list .check { display: flex; align-items: flex-start; gap: .6rem; border: 1px solid var(--border); border-radius: .5rem; padding: .7rem; margin: 0; min-height: 2.75rem; }
+.teacher-choice-list > p { grid-column: 1 / -1; }
+.teacher-student-preview { background: var(--sage); position: sticky; top: 1rem; padding: 1.5rem; }
+.teacher-student-preview > h3 { margin-top: 1.5rem; }
+.teacher-student-preview .notice { background: var(--surface); border-left: 3px solid var(--gold); }
+.teacher-context-strip { padding: .75rem; background: var(--sage); border-radius: .6rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.teacher-mission-context { overflow-wrap: anywhere; margin-bottom: 1rem; }
+.teacher-mission-context p { margin-top: .7rem; color: var(--muted); }
+.teacher-support-links { display: grid; gap: 1rem; margin-block: 1rem; }
+.teacher-support-hub { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.teacher-support-hub .paper { display: flex; flex-direction: column; align-items: flex-start; }
+.teacher-support-hub .paper > a { margin-top: auto; }
+.teacher-success { padding: 2rem; }
+.teacher-danger { color: var(--terracotta); }
+.teacher-guide :focus-visible { scroll-margin-block: 5rem 8rem; }
+@media (max-width: 1100px) {
+  .teacher-guide-grid { grid-template-columns: minmax(0, 1fr); }
+  .teacher-guidance { display: none; }
+  .teacher-student-preview { position: static; }
+}
+@media (max-width: 600px) {
+  .teacher-shell .sidebar nav ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; }
+  .teacher-shell .sidebar nav a { justify-content: center; flex-direction: column; text-align: center; font-size: .85rem; padding: .5rem .25rem; }
+  .teacher-steps ol { gap: .35rem; }
+  .teacher-steps button { font-size: .8rem; }
+  .teacher-steps li:not(:last-child)::after { display: none; }
+  .teacher-guide-footer { position: static; padding: 1rem; }
+  .teacher-guide-footer > .button, .teacher-guide-footer > .actions { width: 100%; }
+  .teacher-guide-footer .actions > .button { flex: 1; }
+  .teacher-support-hub { grid-template-columns: minmax(0, 1fr); }
+  .teacher-editor-panel, .teacher-student-preview { padding: 1rem; }
+}

@@ -11,7 +11,8 @@ export function NavLink({
   label: string;
   icon: IconName;
 }) {
-  const active = usePathname() === href;
+  const pathname = usePathname();
+  const active = pathname === href || (href.endsWith("/professor/missoes") && pathname.startsWith(`${href}/`));
   return (
     <Link
       href={href}
