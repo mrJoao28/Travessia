@@ -44,6 +44,7 @@ export class LearningService {
         const saved = await tx.learningNeeds.upsert({ where: { userId }, create: { userId, ...data }, update: { ...data, revision: { increment: 1 } } });
         // A revised profile never silently broadens an earlier sharing permission.
         await tx.needsSharing.updateMany({ where: { userId }, data: { shared: false, includeDisabilities: false, revision: { increment: 1 } } });
+        await tx.auditEvent.create({ data: { actorId: userId, action: 'learning-needs.update', resourceId: userId } });
         return needsView(saved);
       }
       if (['needsSharing', 'updateNeedsSharing', 'sharedLearningNeeds'].includes(op)) {
@@ -65,6 +66,7 @@ export class LearningService {
         if (input.shared && !await tx.learningNeeds.findUnique({ where: { userId } })) return fail(400, 'NEEDS_REQUIRED', 'Salve suas escolhas primeiro.');
         const data = { shared: input.shared, includeDisabilities: input.shared && input.includeDisabilities };
         const saved = await tx.needsSharing.upsert({ where, create: { userId, classroomId: p.id, ...data }, update: { ...data, revision: { increment: 1 } } });
+        await tx.auditEvent.create({ data: { actorId: userId, action: saved.shared ? 'learning-needs.share' : 'learning-needs.revoke', resourceId: p.id } });
         return { classroomId: p.id, shared: saved.shared, includeDisabilities: saved.includeDisabilities, revision: saved.revision };
       }
       const { row, member } = await scopedMission(tx, userId, p.id, op !== 'learnerAdaptations');
@@ -86,6 +88,7 @@ export class LearningService {
         if (!old) return missing(); current(old.versionId);
         if (old.revision !== (body as Body<'removeAdaptation'>).expectedRevision) return fail(409, 'REVISION_CONFLICT', 'A adaptação mudou.');
         await tx.activityAdaptation.delete({ where: { id: old.id } });
+        await tx.auditEvent.create({ data: { actorId: userId, action: 'adaptation.remove', resourceId: old.id } });
         return { removed: true };
       }
       const input = body as Body<'createAdaptation'> | Body<'updateAdaptation'>; current(input.versionId);
