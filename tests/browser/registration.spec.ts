@@ -28,11 +28,12 @@ test('cadastro mantém campos ao escolher espaço, opera por teclado e tem reflo
   await page.getByRole('radio', { name: 'Sou aluno', exact: true }).check();
   await page.screenshot({ path: 'test-results/reference-register-student-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 320, height: 850 });
+  await page.screenshot({ path: 'test-results/reference-register-mobile.png', fullPage: true });
   await page.addStyleTag({ content: 'html { font-size: 200%; }' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect(page.getByRole('button', { name: 'Criar minha conta', exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
-  await page.screenshot({ path: 'test-results/reference-register-mobile.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/reference-register-mobile-200.png', fullPage: true });
 });
 
 test('senhas diferentes não chamam API; falha 429 preserva dados e foco', async ({ page }) => {
@@ -76,4 +77,23 @@ test('cadastro sem JavaScript não envia credenciais por formulário nativo', as
     await expect(page.getByText('Ative o JavaScript para criar sua conta com segurança.', { exact: true })).toBeVisible();
     expect(new URL(page.url()).search).toBe('');
   } finally { await context.close(); }
+});
+
+test('primeiros passos preservam convite recusado e continuam legíveis com texto ampliado', async ({ page }) => {
+  await page.route('**/api/v1/me', route => route.fulfill({ json: { id: 'test-user', name: 'Pessoa fictícia', email: 'welcome@example.invalid', course: null, demo: true, preferences: {} } }));
+  await page.route('**/api/v1/invitations/accept', route => route.fulfill({ status: 400, json: { code: 'INVALID_INVITATION' } }));
+  await page.goto('/boas-vindas?espaco=aluno');
+  const token = 'a'.repeat(64);
+  await page.getByLabel('Código de convite', { exact: true }).fill(token);
+  await page.getByRole('button', { name: 'Entrar na turma', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeFocused();
+  await expect(page.getByRole('alert')).toContainText('Peça um novo código ao professor');
+  await expect(page.getByLabel('Código de convite', { exact: true })).toHaveValue(token);
+  await page.getByRole('radio', { name: 'Sou professor', exact: true }).check();
+  await expect(page.getByLabel('Nome da turma', { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 850 });
+  await page.addStyleTag({ content: 'html { font-size: 200%; }' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: 'test-results/reference-welcome-mobile-200.png', fullPage: true });
 });

@@ -1381,3 +1381,22 @@ body {
   .starting-space-options { grid-template-columns: minmax(0, 1fr); gap: 0.65rem; }
   .starting-space-option { min-height: 3.5rem; }
 }
+@media (max-width: 800px) {
+  .registration-intro { padding: 16px 20px; }
+  .registration-intro .brand-lockup { flex-wrap: wrap; }
+  .registration-intro .brand-lockup > svg { width: 56px; height: 44px; }
+  .registration-intro .brand-lockup strong { white-space: nowrap; }
+  .registration-form { padding: 24px 20px; }
+  .registration-form .button { padding-inline: 16px; }
+}
+@media (max-width: 380px) {
+  .starting-space-options .starting-space-option { padding: 12px; gap: 12px; }
+  .starting-space-options .starting-space-option:has(input:checked) { padding: 11px; }
+  .starting-space-option .icon { display: none; }
+  .starting-space-option input[type="radio"] { width: 20px; min-width: 20px; height: 20px; }
+  .starting-space-option span { overflow-wrap: normal; }
+}
+@media (max-width: 380px) {
+  .welcome-shell { padding: 20px 16px; }
+  .welcome-card { padding: 20px 16px; }
+}

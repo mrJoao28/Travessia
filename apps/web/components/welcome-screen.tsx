@@ -48,7 +48,14 @@ export function WelcomeScreen({ initialSpace }: { initialSpace: StartingSpace })
               try {
                 const room = space === "professor" ? await api("createClassroom", { body: { name: value } }) : await api("acceptInvite", { body: { token: value } });
                 router.replace(`/${space}?turma=${encodeURIComponent(room.id)}`); router.refresh();
-              } catch (reason) { setError(errorMessage(reason)); setPending(false); }
+              } catch (reason) {
+                setError(reason instanceof ApiError && reason.code === "INVALID_INVITATION"
+                  ? "Este convite está indisponível ou expirou. Peça um novo código ao professor."
+                  : reason instanceof ApiError && reason.code === "MEMBERSHIP_EXISTS"
+                    ? "Sua conta já possui um vínculo com essa turma. Consulte Minhas turmas ou peça ajuda ao professor."
+                    : errorMessage(reason));
+                setPending(false);
+              }
             }}>
               <h2>{space === "professor" ? "Crie sua primeira turma" : "Entre na sua turma"}</h2>
               <p>{space === "professor" ? "Dê um nome à turma. Depois você poderá convidar os alunos e preparar a primeira missão." : "Cole o código que o professor compartilhou com você. Ainda não recebeu? Você pode entrar depois."}</p>
