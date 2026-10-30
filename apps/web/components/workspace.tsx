@@ -27,6 +27,7 @@ export function Workspace({
         [`${base}/aluno/turmas`, "Minhas turmas", "users"],
         [`${base}/aluno/entregas`, "Entregas", "document"],
         [`${base}/aluno/feedback`, "Feedback", "message"],
+        ...(!preview ? [["/aluno/apoios", "Meus apoios", "message"] as [string, string, IconName]] : []),
       ]
     : [
         [`${base}/professor`, "Visão da turma", "users"],
@@ -41,6 +42,7 @@ export function Workspace({
           : []),
         [`${base}/professor/missoes`, "Missões", "book"],
         ...(!preview ? [["/professor/estrategias", "Estratégias", "list"] as [string, string, IconName]] : []),
+        ...(!preview ? [["/professor/adaptacoes", "Adaptações", "document"] as [string, string, IconName]] : []),
         [`${base}/professor/entregas`, "Entregas", "document"],
         [`${base}/professor/barreiras`, "Apoios e barreiras", "message"],
       ];

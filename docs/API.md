@@ -43,3 +43,5 @@ A fonte executável é `packages/contracts/openapi.json`, gerada das rotas Zod i
 Better Auth valida sessões persistidas em cada rota privada; queries resolvem vínculos ativos no PostgreSQL. Testes HTTP usam o servidor Nest e banco PostgreSQL reais. O kernel de referência continua sendo orientação, sem substituir esses testes. Upload de arquivos novos permanece desabilitado.
 
 Áudio privado de apoios e geração Gemini: contratos implementados `supportAudio` e `generateSupports`, descritos em [STRATEGIES.md](STRATEGIES.md#áudio-privado-e-assistência-gemini).
+
+Adaptações, escolhas voluntárias e entregas alternativas: [INCLUSIVE-ACTIVITIES.md](INCLUSIVE-ACTIVITIES.md). Contratos gerados a partir dos endpoints implementados.

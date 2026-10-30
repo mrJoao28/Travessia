@@ -6,12 +6,12 @@ export type AudioValue = { base64: string } | { itemId: string } | null;
 function audioBlob(base64: string) {
   return new Blob([Uint8Array.from(atob(base64), c => c.charCodeAt(0))], { type: "audio/wav" });
 }
-export function SupportAudio({ missionId, itemId, base64 }: { missionId: string; itemId?: string; base64?: string }) {
+export function SupportAudio({ missionId, itemId, base64, submissionId }: { missionId: string; itemId?: string; base64?: string; submissionId?: string }) {
   const [source, setSource] = useState(base64 ?? "");
   const [url, setUrl] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  useEffect(() => { setSource(base64 ?? ""); setError(""); }, [base64, itemId, missionId]);
+  useEffect(() => { setSource(base64 ?? ""); setError(""); }, [base64, itemId, missionId, submissionId]);
   useEffect(() => {
     setUrl("");
     if (!source) return;
@@ -19,22 +19,22 @@ export function SupportAudio({ missionId, itemId, base64 }: { missionId: string;
     return () => URL.revokeObjectURL(localUrl);
   }, [source]);
   return <div className="form-stack">
-    {url ? <audio controls preload="none" src={url} aria-label="Áudio do apoio">Consulte a transcrição em texto deste apoio.</audio> :
+    {url ? <audio controls preload="none" src={url} aria-label={submissionId ? "Áudio da atividade" : "Áudio do apoio"}>Consulte a transcrição em texto deste apoio.</audio> :
       <button type="button" className="text-button" disabled={pending} onClick={async () => {
-        if (!itemId) return; setPending(true); setError("");
-        try { setSource((await api("supportAudio", { params: { id: missionId, itemId } })).base64); }
+        if (!itemId && !submissionId) return; setPending(true); setError("");
+        try { setSource(submissionId ? (await api("submissionAudio", { params: { id: submissionId } })).base64 : (await api("supportAudio", { params: { id: missionId, itemId: itemId! } })).base64); }
         catch (reason) { setError(errorMessage(reason)); } finally { setPending(false); }
-      }}>{pending ? "Carregando áudio…" : "Carregar áudio do apoio"}</button>}
+      }}>{pending ? "Carregando áudio…" : submissionId ? "Carregar áudio da atividade" : "Carregar áudio do apoio"}</button>}
     {error && <p role="alert">{error}</p>}
   </div>;
 }
-export function AudioAttachment({ id, value, missionId, onChange, onBusy }: { id: string; value: AudioValue; missionId: string; onChange: (value: AudioValue) => void; onBusy: (busy: boolean) => void }) {
+export function AudioAttachment({ id, value, missionId, onChange, onBusy, help, disabled, label }: { label?: string; disabled?: boolean; help?: string; id: string; value: AudioValue; missionId: string; onChange: (value: AudioValue) => void; onBusy: (busy: boolean) => void }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   return <div className="form-stack">
-    <label htmlFor={`audio-${id}`}>Áudio opcional deste apoio</label>
-    <p id={`audio-help-${id}`} className="small">Até 30 segundos e 10 MB na seleção. O navegador converte para WAV mono de 16 kHz. Escreva acima a transcrição completa, incluindo as informações visuais descritas.</p>
-    <input id={`audio-${id}`} aria-describedby={`audio-help-${id}`} type="file" accept="audio/*" disabled={busy} onChange={async e => {
+    <label htmlFor={`audio-${id}`}>{label ?? "Áudio opcional deste apoio"}</label>
+    <p id={`audio-help-${id}`} className="small">{help ?? "Até 30 segundos e 10 MB na seleção. O navegador converte para WAV mono de 16 kHz. Escreva acima a transcrição completa, incluindo as informações visuais descritas."}</p>
+    <input id={`audio-${id}`} aria-describedby={`audio-help-${id}`} type="file" accept="audio/*" disabled={busy || disabled} onChange={async e => {
       const file = e.target.files?.[0]; e.target.value = ""; if (!file) return;
       setBusy(true); onBusy(true); setError("");
       try {
@@ -59,6 +59,6 @@ export function AudioAttachment({ id, value, missionId, onChange, onBusy }: { id
     }} />
     {busy && <p role="status">Preparando o áudio no navegador…</p>}
     {error && <p role="alert">{error}</p>}
-    {value && <><SupportAudio key={"base64" in value ? value.base64.slice(-60) : value.itemId} missionId={missionId} {...value} /><button type="button" className="text-button" onClick={() => onChange(null)}>Remover áudio deste apoio</button></>}
+    {value && <><SupportAudio key={"base64" in value ? value.base64.slice(-60) : value.itemId} missionId={missionId} {...value} /><button type="button" className="text-button" disabled={busy || disabled} onClick={() => onChange(null)}>Remover áudio deste apoio</button></>}
   </div>;
 }

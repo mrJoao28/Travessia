@@ -271,6 +271,30 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByRole('button', { name: 'Sair da conta', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
   }
+  const origin = new URL(page.url()).origin;
+  const inclusiveResponse = await page.request.post('/api/v1/classrooms/demo-class-oficina/missions', { headers: { origin }, data: {
+    title: 'Atividade inclusiva de teste', description: 'Compare propostas e justifique sua escolha.', objectives: ['Justificar uma escolha.'], criteria: ['Explicar o raciocínio.'],
+    steps: [{ title: 'Comparar propostas', instructions: 'Compare as propostas.', example: 'Compare dois custos.' }], materials: [{ title: 'Texto didático público fictício', text: 'Compare custo e clareza.' }],
+  } });
+  expect(inclusiveResponse.status()).toBe(200);
+  const inclusiveMission = await inclusiveResponse.json();
+  expect((await page.request.post(`/api/v1/missions/${inclusiveMission.id}/publish`, { headers: { origin }, data: { versionId: inclusiveMission.draftVersion.id, reviewed: true } })).status()).toBe(200);
+  await page.goto('/professor/adaptacoes');
+  await page.getByLabel('Missão para adaptar', { exact: true }).selectOption(inclusiveMission.id);
+  await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.');
+  await page.getByRole('checkbox', { name: 'Áudio de até 30 segundos', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Arquivo de texto (.txt)', exact: true }).check();
+  await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
+  await page.getByRole('checkbox', { name: 'Estudante Fictício 1', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Revisei a adaptação, os objetivos preservados, os formatos e os destinatários.', exact: true }).check();
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: 'test-results/reference-adaptations-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 320, height: 850 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/reference-adaptations-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole('button', { name: 'Salvar adaptação revisada', exact: true }).click();
+  await expect(page.getByText('Adaptação revisada e disponível aos destinatários.', { exact: true })).toBeVisible();
   await logout();
   for (const suffix of ['A', 'B']) {
     await page.getByLabel('Email', { exact: true }).fill(process.env[`SUPPORT_STUDENT_${suffix}_EMAIL`]!);
@@ -296,6 +320,53 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByRole('button', { name: 'Próxima etapa', exact: true }).click();
     await expect(supports.getByRole('status')).toHaveCount(0);
     await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toHaveCount(0);
+    if (suffix === 'A') {
+      await page.goto('/aluno/apoios');
+      await page.getByRole('checkbox', { name: 'Tarefa dividida em passos curtos', exact: true }).check();
+      await page.getByText('Informar deficiência autodeclarada (opcional)', { exact: true }).click();
+      await page.getByRole('checkbox', { name: 'Visual', exact: true }).check();
+      await page.getByRole('button', { name: 'Salvar minhas escolhas', exact: true }).click();
+      await expect(page.getByText('Escolhas salvas. Revise e autorize novamente as turmas com quem deseja compartilhar.', { exact: true })).toBeVisible();
+      await page.getByRole('checkbox', { name: 'Compartilhar apoios e preferências com docentes de Oficina de Projetos Inclusivos', exact: true }).check();
+      await page.getByRole('button', { name: 'Salvar compartilhamento de Oficina de Projetos Inclusivos', exact: true }).click();
+      await expect(page.getByText('Compartilhamento salvo para os docentes desta turma.', { exact: true })).toBeVisible();
+      await page.screenshot({ path: 'test-results/reference-learning-needs.png', fullPage: true });
+    }
+    await page.goto(`/aluno/missoes/${inclusiveMission.id}`);
+    if (suffix === 'A') {
+      await page.getByText('Consultar enunciado adaptado', { exact: true }).click();
+      await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: true })).toBeVisible();
+      await page.getByLabel('Áudio da atividade (opcional)', { exact: true }).setInputFiles({ name: 'resposta.wav', mimeType: 'audio/wav', buffer: audio });
+      await expect(page.getByRole('button', { name: 'Remover áudio deste apoio', exact: true })).toBeVisible();
+      await page.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)', { exact: true }).setInputFiles({ name: 'resposta.txt', mimeType: 'text/plain', buffer: Buffer.from('Arquivo privado do aluno A: comparo duas propostas.') });
+      await expect(page.getByText('Arquivo de texto preparado para salvar.', { exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
+      await expect(page.getByText('Rascunho e etapa atual salvos no servidor.', { exact: true })).toBeVisible();
+      await page.reload();
+      await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
+      await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
+    } else {
+      await expect(page.getByText('Consultar enunciado adaptado', { exact: true })).toHaveCount(0);
+      await expect(page.getByLabel('Áudio da atividade (opcional)', { exact: true })).toHaveCount(0);
+      const plans = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/my-adaptations?versionId=${inclusiveMission.draftVersion.id}`);
+      expect((await plans.json()).allowedFormats).toEqual(['text']);
+    }
     await logout();
   }
+  await page.getByLabel('Email', { exact: true }).fill(process.env.DEMO_USER_EMAIL!);
+  await page.getByLabel('Senha', { exact: true }).fill(process.env.DEMO_USER_PASSWORD!);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
+  const sharedNeeds = await (await page.request.get('/api/v1/classrooms/demo-class-oficina/learning-needs')).json();
+  const learnerA = sharedNeeds.items.find((n: { userId: string }) => n.userId === 'demo-student-1');
+  expect(learnerA.supports).toContain('short-steps'); expect(learnerA.disabilities).toBeNull();
+  await page.goto('/professor/entregas');
+  const delivery = page.locator('li.paper').filter({ has: page.getByRole('heading', { name: 'Atividade inclusiva de teste', exact: true }) });
+  await delivery.getByText('Consultar entrega e escrever feedback', { exact: true }).click();
+  await delivery.getByRole('button', { name: 'Carregar áudio da atividade', exact: true }).click();
+  await expect(delivery.locator('audio')).toHaveAttribute('src', /^blob:/);
+  const fileDownload = page.waitForEvent('download');
+  await delivery.getByRole('button', { name: 'Baixar arquivo de texto da atividade', exact: true }).click();
+  expect((await fileDownload).suggestedFilename()).toBe('atividade.txt');
 });

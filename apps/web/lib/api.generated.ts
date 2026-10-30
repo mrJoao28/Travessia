@@ -18,6 +18,58 @@ export const apiRoutes = {
     "method": "PATCH",
     "path": "/me/profile"
   },
+  "learningOptions": {
+    "method": "GET",
+    "path": "/learning-options"
+  },
+  "learningNeeds": {
+    "method": "GET",
+    "path": "/me/learning-needs"
+  },
+  "updateLearningNeeds": {
+    "method": "PATCH",
+    "path": "/me/learning-needs"
+  },
+  "needsSharing": {
+    "method": "GET",
+    "path": "/classrooms/{id}/needs-sharing"
+  },
+  "updateNeedsSharing": {
+    "method": "PATCH",
+    "path": "/classrooms/{id}/needs-sharing"
+  },
+  "sharedLearningNeeds": {
+    "method": "GET",
+    "path": "/classrooms/{id}/learning-needs"
+  },
+  "adaptationPlans": {
+    "method": "GET",
+    "path": "/missions/{id}/adaptations"
+  },
+  "createAdaptation": {
+    "method": "POST",
+    "path": "/missions/{id}/adaptations"
+  },
+  "updateAdaptation": {
+    "method": "PATCH",
+    "path": "/missions/{id}/adaptations/{planId}"
+  },
+  "removeAdaptation": {
+    "method": "POST",
+    "path": "/missions/{id}/adaptations/{planId}/remove"
+  },
+  "learnerAdaptations": {
+    "method": "GET",
+    "path": "/missions/{id}/my-adaptations"
+  },
+  "submissionAudio": {
+    "method": "GET",
+    "path": "/submissions/{id}/audio"
+  },
+  "submissionTextFile": {
+    "method": "GET",
+    "path": "/submissions/{id}/text-file"
+  },
   "strategyCatalog": {
     "method": "GET",
     "path": "/strategies"

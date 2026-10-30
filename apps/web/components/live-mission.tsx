@@ -5,6 +5,9 @@ import { api, pages, errorMessage } from "../lib/product-client";
 import type { Classroom, Mission, Submission } from "./live-workspace";
 import { OperationStatus } from "./operation-status";
 import { BarrierComposer } from "./live-barriers";
+import { LearnerAdaptations } from "./learner-adaptations";
+import { AudioAttachment } from "./support-audio";
+import { SubmissionMedia } from "./submission-media";
 import { MissionSupports } from "./mission-supports";
 
 export function LiveMission({
@@ -19,6 +22,10 @@ export function LiveMission({
   const [mission, setMission] = useState<Mission | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [index, setIndex] = useState(0);
+  const [formats, setFormats] = useState<("text" | "audio" | "text_file")[]>(["text"]);
+  const [audio, setAudio] = useState<string | null | undefined>();
+  const [textFile, setTextFile] = useState<{ text: string } | null | undefined>();
+  const [mediaBusy, setMediaBusy] = useState(false);
   const [content, setContent] = useState("");
   const [completed, setCompleted] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +98,7 @@ export function LiveMission({
     return <p className="paper">Este contexto não está disponível.</p>;
   const locked = !!submission && submission.status !== "draft";
   async function save(status: "draft" | "submitted") {
-    if (pending || !mission?.publishedVersion || !step) return;
+    if (pending || mediaBusy || !mission?.publishedVersion || !step) return;
     setPending(true);
     setMessage("");
     try {
@@ -100,13 +107,15 @@ export function LiveMission({
         body: {
           versionId: mission.publishedVersion.id,
           content,
+          ...(audio !== undefined ? { audio } : {}),
+          ...(textFile !== undefined ? { textFile } : {}),
           completedStepIds: completed,
           currentStepId: step.id,
           status,
           expectedRevision: submission?.revision ?? 0,
         },
       });
-      setSubmission(saved);
+      setSubmission(saved); setAudio(undefined); setTextFile(undefined);
       setContent(saved.content);
       setCompleted(saved.completedStepIds);
       setDirty(false);
@@ -213,12 +222,13 @@ export function LiveMission({
                 Próxima etapa
               </button>
             </div>
+            {role === "aluno" && <LearnerAdaptations missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
             {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
               <label className="check">
                 <input
                   type="checkbox"
-                  disabled={pending}
+                  disabled={pending || mediaBusy}
                   checked={completed.includes(step.id)}
                   onChange={(e) => {
                     setCompleted((all) =>
@@ -245,6 +255,7 @@ export function LiveMission({
                       : "Aguardando feedback"}
                   </p>
                   <p className="submission-content">{submission.content}</p>
+                  <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
                   {submission.feedback.map((feedback) => (
                     <blockquote key={feedback.id}>
                       <h3>Feedback docente</h3>
@@ -267,10 +278,9 @@ export function LiveMission({
                   <label htmlFor="submission-content">
                     Planejamento e atividade
                     <textarea
-                      disabled={pending}
+                      disabled={pending || mediaBusy}
                       id="submission-content"
                       maxLength={12000}
-                      required
                       value={content}
                       onChange={(e) => {
                         setContent(e.target.value);
@@ -285,16 +295,24 @@ export function LiveMission({
                     {classroom.name}. Salve o rascunho para retomar depois. Ele
                     permanece privado para você.
                   </p>
+                  <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao Gemini.</p>
+                  {formats.includes("audio") && <AudioAttachment label="Áudio da atividade (opcional)" disabled={pending || mediaBusy} id="submission" missionId={id} help="Resposta em áudio de até 30 segundos; arquivo de até 10 MB na seleção. O navegador converte localmente para WAV. Um resumo no editor é opcional." value={audio ? { base64: audio } : null} onBusy={setMediaBusy} onChange={value => { setAudio(value && "base64" in value ? value.base64 : null); setDirty(true); }} />}
+                  {submission?.hasAudio && audio === undefined && <><SubmissionMedia id={submission.id} hasAudio /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setAudio(null); setDirty(true); }}>Remover áudio salvo da atividade</button></>}
+                  {formats.includes("text_file") && <div className="form-stack"><label htmlFor="submission-file">Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)</label><input id="submission-file" type="file" accept=".txt,text/plain" disabled={pending || mediaBusy} onChange={async e => {
+                    const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; setMediaBusy(true); setMessage("");
+                    try { if (!/\.txt$/i.test(file.name) || file.size > 32768) throw new Error("Selecione um arquivo .txt de até 32 KiB."); const text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer()); if (text.length > 20000 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(text)) throw new Error("O arquivo precisa conter somente texto UTF-8, até 20 mil caracteres."); setTextFile({ text }); setDirty(true); } catch (reason) { setMessage(errorMessage(reason)); } finally { setMediaBusy(false); }
+                  }} />{textFile && <><p>Arquivo de texto preparado para salvar.</p><details><summary>Conferir texto do arquivo</summary><p className="submission-content">{textFile.text}</p></details><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo selecionado</button></>}</div>}
+                  {submission?.hasTextFile && textFile === undefined && <><SubmissionMedia id={submission.id} hasTextFile /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo salvo da atividade</button></>}
                   <div className="actions">
                     <button
                       className="button button-outline"
                       type="button"
-                      disabled={pending}
+                      disabled={pending || mediaBusy}
                       onClick={() => void save("draft")}
                     >
                       {pending ? "Aguarde…" : "Salvar rascunho"}
                     </button>
-                    <button className="button" disabled={pending}>
+                    <button className="button" disabled={pending || mediaBusy}>
                       {pending ? "Aguarde…" : "Enviar atividade"}
                     </button>
                   </div>
@@ -337,7 +355,7 @@ export function LiveMission({
               <li key={item.id}>
                 <button
                   className="text-button"
-                  disabled={pending}
+                  disabled={pending || mediaBusy}
                   aria-current={i === index ? "step" : undefined}
                   onClick={() => navigate(i)}
                 >

@@ -15,6 +15,9 @@ import { LiveEditor } from "./live-editor";
 import { LiveBarriers } from "./live-barriers";
 import { OperationStatus } from "./operation-status";
 import { ClassroomTools, ClassroomMembers } from "./classroom-tools";
+import { LearningNeeds } from "./learning-needs";
+import { LiveAdaptations } from "./live-adaptations";
+import { SubmissionMedia } from "./submission-media";
 import { LiveStrategies } from "./live-strategies";
 
 export type Classroom = ApiResponse<"classrooms">["items"][number];
@@ -113,7 +116,7 @@ function WorkspaceView({
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
   const title =
-    section === "estrategias" ? "Estratégias pedagógicas" : role === "aluno"
+    section === "apoios" ? "Meus apoios de aprendizagem" : section === "adaptacoes" ? "Adaptações de atividades" : section === "estrategias" ? "Estratégias pedagógicas" : role === "aluno"
       ? "Um passo de cada vez."
       : "Ensinar também é construir caminhos.";
   const otherRole = classrooms.some(
@@ -214,7 +217,7 @@ function WorkspaceView({
                     </select>
                   </label>
                 )}
-              {section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} /> : section === "missao" && missionId ? (
+              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveAdaptations entries={entries} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} /> : section === "missao" && missionId ? (
                 <LiveMission
                   id={missionId}
                   role={role}
@@ -555,6 +558,7 @@ function SubmissionList({
                     ? "Aguardando feedback"
                     : "Revisada"}
               </p>
+              {role === "aluno" && <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />}
               {submission.feedback.map((feedback) => (
                 <blockquote key={feedback.id}>
                   <p>{feedback.content}</p>
@@ -588,16 +592,17 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
   const [done, setDone] = useState(false);
   if (submission.status === "reviewed" || done)
     return (
-      <p role="status">
+      <div><SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} /><p role="status">
         {done
           ? "Feedback publicado pelo servidor."
           : "Esta entrega já foi revisada."}
-      </p>
+      </p></div>
     );
   return (
     <details>
       <summary>Consultar entrega e escrever feedback</summary>
       <p className="submission-content">{submission.content}</p>
+      <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
       <form
         className="form-stack"
         onSubmit={async (e) => {

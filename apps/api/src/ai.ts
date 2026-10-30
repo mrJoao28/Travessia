@@ -6,6 +6,7 @@ import type { Config } from './config.js';
 import { serial } from './database.js';
 import { fail, missing } from './errors.js';
 import { digest } from './rate-limit.js';
+import { learningOptions } from './learning.js';
 import { strategyCatalog } from './strategy-catalog.js';
 import { createVersion, scopedMission } from './product.service.js';
 
@@ -27,7 +28,7 @@ const view = (g: {id: string; missionId: string; status: string; outputVersionId
   ({ id: g.id, missionId: g.missionId, status: g.status, outputVersionId: g.outputVersionId, createdAt: g.createdAt });
 
 export type SupportProvider = (input: { objectives: string[]; step: { title: string; instructions: string } | null;
-  materials: { title: string; text: string }[]; strategies: { id: string; title: string; guidance: string }[] }, signal: AbortSignal) => Promise<unknown>;
+  activity?: { instructions: string; criteria: string[] }; supportNeeds?: string[]; materials: { title: string; text: string }[]; strategies: { id: string; title: string; guidance: string }[] }, signal: AbortSignal) => Promise<unknown>;
 export function geminiSupportProvider(config: Config): SupportProvider {
   const client = new GoogleGenAI({ apiKey: config.geminiKey });
   return async (input, signal) => {
@@ -57,7 +58,7 @@ export class AiService {
       if (new Set(input.strategyIds).size !== input.strategyIds.length || new Set(input.materialIds).size !== input.materialIds.length) return fail(400, 'INVALID_INPUT', 'Seleção repetida.');
       const materials = version.materials.filter(m => input.materialIds.includes(m.id)).sort((a, b) => a.id.localeCompare(b.id));
       if (materials.length !== input.materialIds.length) return missing();
-      const providerInput = { objectives: z.array(z.string()).parse(version.objectives), step: step ? { title: step.title, instructions: step.instructions } : null,
+      const providerInput = { ...(input.activityAdaptation ? { activity: { instructions: step?.instructions ?? version.description, criteria: z.array(z.string()).parse(version.criteria) } } : {}), ...(input.supportNeeds?.length ? { supportNeeds: input.supportNeeds.map(id => learningOptions.supports.find(s => s.id === id)!.label) } : {}), objectives: z.array(z.string()).parse(version.objectives), step: step ? { title: step.title, instructions: step.instructions } : null,
         materials: materials.map(m => ({ title: m.title, text: m.text })), strategies: input.strategyIds.map(id => {
           const s = strategyCatalog.find(s => s.id === id)!; return { id: s.id, title: s.title, guidance: s.guidance };
         }) };

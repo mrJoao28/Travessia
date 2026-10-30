@@ -7,6 +7,8 @@ import { serial, type Tx } from './database.js';
 import { budget, digest } from './rate-limit.js';
 import { AiService, type DraftProvider } from './ai.js';
 import { getProfile, updateProfile } from './profiles.js';
+import { LearningService, learnerPlans, allowedFormats } from './learning.js';
+import { verifySupportAudio } from './support-audio.js';
 import { StrategyService } from './strategies.js';
 
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
@@ -23,7 +25,7 @@ export function missionView(row: MissionRow, teacher: boolean) {
     draftVersion: teacher ? version(row.draftVersion) : null, publishedVersion: version(row.publishedVersion) };
 }
 export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof submissionInclude }>) {
-  return { id: s.id, versionId: s.versionId, userId: s.userId, status: s.status, content: s.content,
+  return { id: s.id, versionId: s.versionId, userId: s.userId, status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
     submittedAt: s.submittedAt, updatedAt: s.updatedAt,
     feedback: s.feedback.map(f => ({ id: f.id, content: f.content, createdAt: f.createdAt })) };
@@ -65,6 +67,7 @@ export class ProductService {
     if (op === 'health') return { status: 'ok', service: 'travessia-api', stage: 'mvp' };
     if (['strategyCatalog', 'strategyRecipients', 'strategyPlans', 'createStrategyPlan', 'updateStrategyPlan', 'removeStrategyPlan', 'missionSupports', 'supportAudio'].includes(op))
       return new StrategyService(this.db).execute(op, userId, p, body, query);
+    if (['learningOptions', 'learningNeeds', 'updateLearningNeeds', 'needsSharing', 'updateNeedsSharing', 'sharedLearningNeeds', 'adaptationPlans', 'createAdaptation', 'updateAdaptation', 'removeAdaptation', 'learnerAdaptations'].includes(op)) return new LearningService(this.db).execute(op, userId, p, body, query);
     if (op === 'me') {
       const user = await this.db.user.findUniqueOrThrow({ where: { id: userId }, include: { studentProfile: true, preferences: true } });
       return { id: user.id, name: user.name, email: user.email, course: user.studentProfile?.course ?? null, demo: this.config.demo,
@@ -181,14 +184,19 @@ export class ProductService {
           if (input.versionId !== version.id) return fail(409, 'VERSION_CONFLICT', 'Uma nova versão foi publicada. Recarregue a missão.');
           const stepIds = new Set(version.steps.map(s => s.id));
           if (!stepIds.has(input.currentStepId) || input.completedStepIds.some(s => !stepIds.has(s)) || new Set(input.completedStepIds).size !== input.completedStepIds.length) return fail(400, 'INVALID_PROGRESS', 'Etapas inválidas.');
-          if (input.status === 'submitted' && !input.content.trim()) return fail(400, 'EMPTY_SUBMISSION', 'Inclua sua atividade antes de enviar.');
           const old = await tx.submission.findUnique({ where: { versionId_userId: { versionId: version.id, userId } } });
           if ((old?.revision ?? 0) !== input.expectedRevision) {
-            if (old && old.content === input.content && old.status === input.status && old.currentStepId === input.currentStepId && JSON.stringify(old.completedStepIds) === JSON.stringify(input.completedStepIds)) return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: old.id }, include: submissionInclude }));
+            if (old && input.audio === undefined && input.textFile === undefined && old.content === input.content && old.status === input.status && old.currentStepId === input.currentStepId && JSON.stringify(old.completedStepIds) === JSON.stringify(input.completedStepIds)) return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: old.id }, include: submissionInclude }));
             return fail(409, 'REVISION_CONFLICT', 'A entrega mudou. Recarregue antes de salvar.');
           }
           if (old && old.status !== 'draft') return fail(409, 'SUBMISSION_LOCKED', 'Entrega enviada preservada para revisão.');
-          const data = { content: input.content, currentStepId: input.currentStepId, completedStepIds: input.completedStepIds, status: input.status,
+          const audio = input.audio === undefined ? old?.audio ?? null : input.audio === null ? null : verifySupportAudio(input.audio);
+          const textFile = input.textFile === undefined ? old?.textFile ?? null : input.textFile?.text ?? null;
+          if (textFile !== null && (Buffer.byteLength(textFile, 'utf8') > 32768 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(textFile))) return fail(400, 'INVALID_TEXT_FILE', 'Use arquivo de texto UTF-8, até 32 KiB, sem conteúdo binário.');
+          const formats = allowedFormats(await learnerPlans(tx, version.id, userId));
+          if ((audio && !formats.includes('audio')) || (textFile !== null && !formats.includes('text_file'))) return fail(409, 'FORMAT_NOT_ALLOWED', 'O professor não liberou este formato. Preserve sua resposta e consulte os formatos atuais.');
+          if (input.status === 'submitted' && !input.content.trim() && !audio && !textFile?.trim()) return fail(400, 'EMPTY_SUBMISSION', 'Inclua sua atividade antes de enviar.');
+          const data = { audio, hasAudio: !!audio, textFile, hasTextFile: textFile !== null, content: input.content, currentStepId: input.currentStepId, completedStepIds: input.completedStepIds, status: input.status,
             submittedAt: input.status === 'submitted' ? new Date() : null };
           const saved = old ? await tx.submission.update({ where: { id: old.id }, data: { ...data, revision: { increment: 1 } }, include: submissionInclude }) :
             await tx.submission.create({ data: { ...data, versionId: version.id, userId }, include: submissionInclude });
@@ -200,11 +208,13 @@ export class ProductService {
           return pagination(rows.map(submissionView), paging.limit);
         }
       }
-      if (op === 'submission' || op === 'feedback') {
+      if (['submission', 'feedback', 'submissionAudio', 'submissionTextFile'].includes(op)) {
         const row = await tx.submission.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { ...submissionInclude, version: { include: { mission: true } } } });
         if (!row) return missing();
         const member = await membership(tx, userId, row.version.mission.classroomId);
         if (row.userId !== userId && (member.role !== 'teacher' || row.status === 'draft')) return missing();
+        if (op === 'submissionAudio') { if (!row.audio) return missing(); return { base64: Buffer.from(row.audio).toString('base64'), mimeType: 'audio/wav' }; }
+        if (op === 'submissionTextFile') { if (row.textFile === null) return missing(); return { name: 'atividade.txt', text: row.textFile }; }
         if (op === 'submission') return submissionView(row);
         if (member.role !== 'teacher' || row.status === 'draft') return missing();
         const content = (body as Body<'feedback'>).content;

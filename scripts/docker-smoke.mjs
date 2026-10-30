@@ -108,6 +108,19 @@ try {
   const teacherVersion = teacherMission.publishedVersion;
   const strategyPath = `/api/v1/missions/${teacherMission.id}/strategy-plans`;
   const supportMarker = 'Apoio pedagógico preservado no volume PostgreSQL.';
+  const adaptationPath = `/api/v1/missions/${teacherMission.id}/adaptations`;
+  const adaptationMarker = 'Atividade adaptada preservada no volume PostgreSQL.';
+  if (verifyPersistence) {
+    const needs = (await request('/api/v1/me/learning-needs')).json;
+    check(needs.supports.includes('short-steps'), 'Escolhas privadas não persistiram no volume.');
+    const adaptations = (await request(`${adaptationPath}?versionId=${teacherVersion.id}`)).json.items;
+    check(adaptations.some(p => p.instructions === adaptationMarker && p.allowedFormats.includes('audio')), 'Adaptação e formatos de entrega não persistiram.');
+  } else {
+    const needs = (await request('/api/v1/me/learning-needs')).json;
+    await request('/api/v1/me/learning-needs', { method: 'PATCH', body: { disabilities: [], supports: ['short-steps'], preferredFormats: ['text'], expectedRevision: needs.revision } });
+    await request(adaptationPath, { method: 'POST', body: { versionId: teacherVersion.id, stepId: null, audience: 'classroom', studentIds: [],
+      instructions: adaptationMarker, example: '', supportNeeds: ['short-steps'], allowedFormats: ['text', 'audio'], reviewed: true, requestKey: crypto.randomUUID() } });
+  }
   const audio = Buffer.alloc(32044); audio.write('RIFF'); audio.writeUInt32LE(audio.length - 8, 4); audio.write('WAVEfmt ', 8);
   audio.writeUInt32LE(16, 16); audio.writeUInt16LE(1, 20); audio.writeUInt16LE(1, 22); audio.writeUInt32LE(16000, 24);
   audio.writeUInt32LE(32000, 28); audio.writeUInt16LE(2, 32); audio.writeUInt16LE(16, 34); audio.write('data', 36); audio.writeUInt32LE(32000, 40);

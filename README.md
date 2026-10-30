@@ -93,3 +93,5 @@ npm run docker:seed
 ```
 
 Consulte email/senha em `.env.docker` no seu editor e abra http://localhost:3000. O setup gera credenciais aleatórias sem exibi-las e não sobrescreve configuração existente. O seed é somente para demonstração isolada. `docker:down` preserva o volume PostgreSQL. Comandos, variáveis, teste de persistência e preparação para o servidor: [DOCKER.md](docs/DOCKER.md). O workflow **Docker Linux** constrói e testa os três containers no GitHub Actions.
+
+Adaptação de atividades, apoios compartilhados e alternativas de entrega: [documentação](docs/INCLUSIVE-ACTIVITIES.md).
