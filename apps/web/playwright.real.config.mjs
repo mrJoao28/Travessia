@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 import { resolve } from "node:path";
 export default defineConfig({
   testDir: resolve(import.meta.dirname, "../../tests/browser-real"),
-  testMatch: "demo.spec.ts",
+  testMatch: ["demo.spec.ts", "registration.spec.ts"],
   workers: 1,
   timeout: 240_000,
   expect: { timeout: 15_000 },

@@ -86,6 +86,9 @@ test('health público, sessão inválida, CSRF e cadastro na plataforma', async 
   await request('/v1/me', 'better-auth.session_token=forged', 'GET', undefined, 401);
   await request('/api/auth/sign-up/email', '', 'POST', {}, 400);
   await request('/api/auth/sign-up/email', '', 'POST', { name: 'Ana', email: 'ana-curta@example.invalid', password: 'curta' }, 400);
+  await request('/api/auth/sign-up/email', '', 'POST', { name: 'Ana', email: 'csrf@example.invalid', password: testPassword }, 403, 'https://attacker.invalid');
+  await request('/api/auth/sign-up/email', '', 'POST', { name: '  ', email: 'sem-nome@example.invalid', password: testPassword }, 400);
+  await request('/api/auth/sign-up/email', '', 'POST', { name: 'A'.repeat(81), email: 'nome-longo@example.invalid', password: testPassword }, 400);
   const email = `ana-${randomUUID()}@example.invalid`;
   const password = 'senha-de-cadastro-90817';
   const created = await request('/api/auth/sign-up/email', '', 'POST', { name: '  Ana Costa  ', email, password, role: 'teacher' });
@@ -96,6 +99,10 @@ test('health público, sessão inválida, CSRF e cadastro na plataforma', async 
   assert.equal(me.name, 'Ana Costa');
   assert.equal(me.email, email);
   assert.equal((await request('/v1/classrooms', cookie)).json.items.length, 0);
+  await request(`/v1/classrooms/${workshop}/members`, cookie, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/invitations`, cookie, 'POST', {}, 404);
+  const stored = await db.user.findUniqueOrThrow({ where: { email }, include: { accounts: true } });
+  assert.ok(stored.accounts.some(account => account.password && account.password !== password));
   await request('/api/auth/sign-up/email', '', 'POST', { name: 'Ana Costa', email, password }, 422);
   await request('/v1/classrooms', main, 'POST', { name: 'Teste' }, 403, 'https://attacker.invalid');
   await request('/v1/me/preferences', main, 'PATCH', { role: 'teacher' }, 400);
@@ -543,10 +550,13 @@ test('limite de login persiste após recriar a aplicação e demo exige isolamen
   await db.rateBucket.deleteMany();
   for (let i = 0; i < 20; i++) await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 401);
   await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
+  for (let i = 0; i < 10; i++) await request('/api/auth/sign-up/email', '', 'POST', {}, 400);
+  await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
   await runtime.app.close();
   runtime = await createApplication(db, config);
   await runtime.app.listen(0, '127.0.0.1'); base = await runtime.app.getUrl();
   await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
+  await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
 });
 test('vínculo revogado impede novas leituras e sessão revogada/expirada não autentica', async () => {
   const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } } });
