@@ -271,14 +271,42 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByRole('button', { name: 'Sair da conta', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
   }
-  const origin = new URL(page.url()).origin;
-  const inclusiveResponse = await page.request.post('/api/v1/classrooms/demo-class-oficina/missions', { headers: { origin }, data: {
-    title: 'Atividade inclusiva de teste', description: 'Compare propostas e justifique sua escolha.', objectives: ['Justificar uma escolha.'], criteria: ['Explicar o raciocínio.'],
-    steps: [{ title: 'Comparar propostas', instructions: 'Compare as propostas.', example: 'Compare dois custos.' }], materials: [{ title: 'Texto didático público fictício', text: 'Compare custo e clareza.' }],
-  } });
-  expect(inclusiveResponse.status()).toBe(200);
-  const inclusiveMission = await inclusiveResponse.json();
-  expect((await page.request.post(`/api/v1/missions/${inclusiveMission.id}/publish`, { headers: { origin }, data: { versionId: inclusiveMission.draftVersion.id, reviewed: true } })).status()).toBe(200);
+  // Create from the same empty editor a teacher uses, without API writes.
+  await page.goto('/professor?turma=demo-class-oficina');
+  await page.getByRole('link', { name: 'Criar missão', exact: true }).click();
+  await page.getByLabel('Título da missão', { exact: true }).fill('Atividade inclusiva de teste');
+  await page.getByLabel('Descrição', { exact: true }).fill('Compare propostas e justifique sua escolha.');
+  await page.getByLabel('Objetivos de aprendizagem · um por linha', { exact: true }).fill('Justificar uma escolha.');
+  await page.getByLabel('Critérios de avaliação · um por linha', { exact: true }).fill('Explicar o raciocínio.');
+  await page.getByLabel('Título da etapa', { exact: true }).fill('Comparar propostas');
+  await page.getByLabel('Instrução', { exact: true }).fill('Compare as propostas.');
+  await page.getByLabel('Exemplo de apoio', { exact: true }).fill('Compare dois custos.');
+  await page.getByRole('button', { name: 'Adicionar material textual', exact: true }).click();
+  await page.getByLabel('Título do material', { exact: true }).fill('Texto didático público fictício');
+  await page.getByLabel('Texto do material', { exact: true }).fill('Compare custo e clareza.');
+  await page.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
+  await expect(page.getByText('Rascunho salvo no servidor. Ainda não publicado.', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/professor\/missoes\/[^/]+\/editar$/);
+  const createdMissionId = new URL(page.url()).pathname.split('/')[3];
+  await page.reload();
+  await expect(page.getByLabel('Título da missão', { exact: true })).toHaveValue('Atividade inclusiva de teste');
+  await expect(page.getByLabel('Texto do material', { exact: true })).toHaveValue('Compare custo e clareza.');
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+  await page.setViewportSize({ width: 320, height: 850 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/reference-editor-real-mobile.png', fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole('button', { name: 'Salvar e revisar', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Revisão antes de publicar', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Publicar missão', exact: true })).toBeDisabled();
+  await page.getByLabel('Revisei objetivos, critérios, etapas e materiais.', { exact: true }).check();
+  await page.getByRole('button', { name: 'Publicar missão', exact: true }).click();
+  await expect(page.getByText('Missão publicada pelo servidor e disponível para a turma.', { exact: true })).toBeVisible();
+  // Read only: capture the authoritative published version for later assertions.
+  const createdMissionResponse = await page.request.get(`/api/v1/missions/${createdMissionId}`);
+  expect(createdMissionResponse.status()).toBe(200);
+  const inclusiveMission = await createdMissionResponse.json();
   await page.goto('/professor/adaptacoes');
   await page.getByLabel('Missão para adaptar', { exact: true }).selectOption(inclusiveMission.id);
   await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.');
@@ -333,6 +361,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.screenshot({ path: 'test-results/reference-learning-needs.png', fullPage: true });
     }
     await page.goto(`/aluno/missoes/${inclusiveMission.id}`);
+    await expect(page.getByText('Justificar uma escolha.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
     if (suffix === 'A') {
       await page.getByText('Consultar enunciado adaptado', { exact: true }).click();
       await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: true })).toBeVisible();
@@ -349,7 +379,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     } else {
       await expect(page.getByText('Consultar enunciado adaptado', { exact: true })).toHaveCount(0);
       await expect(page.getByLabel('Áudio da atividade (opcional)', { exact: true })).toHaveCount(0);
-      const plans = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/my-adaptations?versionId=${inclusiveMission.draftVersion.id}`);
+      const plans = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/my-adaptations?versionId=${inclusiveMission.publishedVersion.id}`);
       expect((await plans.json()).allowedFormats).toEqual(['text']);
     }
     await logout();
@@ -369,4 +399,24 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   const fileDownload = page.waitForEvent('download');
   await delivery.getByRole('button', { name: 'Baixar arquivo de texto da atividade', exact: true }).click();
   expect((await fileDownload).suggestedFilename()).toBe('atividade.txt');
+  const feedback = 'Sua comparação está clara. No próximo passo, justifique como o custo e a clareza orientaram a escolha.';
+  await delivery.getByLabel('Orientação para o próximo passo', { exact: true }).fill(feedback);
+  await delivery.getByRole('button', { name: 'Publicar feedback', exact: true }).click();
+  await expect(delivery.getByText('Feedback publicado pelo servidor.', { exact: true })).toBeVisible();
+  await logout();
+  await page.getByLabel('Email', { exact: true }).fill(process.env.SUPPORT_STUDENT_A_EMAIL!);
+  await page.getByLabel('Senha', { exact: true }).fill(process.env.SUPPORT_STUDENT_A_PASSWORD!);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
+  await page.goto(`/aluno/missoes/${inclusiveMission.id}`);
+  await expect(page.getByText(feedback, { exact: true })).toBeVisible();
+  await expect(page.getByText('Revisada', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Planejamento e atividade', { exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText(feedback, { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 850 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: 'test-results/reference-feedback-real-mobile.png', fullPage: true });
 });
