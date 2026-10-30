@@ -2,7 +2,7 @@
 
 Contrato desta implementação. Revisão do frontend encontrada em `C:/Users/joaof/Travessia-frontend/docs/FRONTEND-INTEGRATION.md` em 28/10/2026; o frontend revisou rotas, cookies e proxy e reservou OpenAPI/lockfile ao backend. Nenhum arquivo da worktree frontend foi alterado pelo backend.
 
-- Auth: `/api/auth/sign-in/email`, `/api/auth/get-session`, `/api/auth/sign-out`. Cadastro público desabilitado. Sem recuperação por email no MVP; provisionamento/recuperação são operações administrativas privadas com Better Auth, nunca bypass público.
+- Auth: `/api/auth/sign-in/email`, `/api/auth/sign-up/email`, `/api/auth/get-session`, `/api/auth/sign-out`. Cadastro com nome, e-mail e senha na própria API. Sem recuperação por email no MVP.
 - Produto: `/v1/*`. Navegador deve usar `/api/v1/*` pelo proxy Next.js. Destino fixo server-side `API_INTERNAL_URL`; preservar Cookie, Origin, Content-Type e todos os Set-Cookie separadamente. Não cachear respostas privadas. Não confiar em userId/role do navegador.
 - `BETTER_AUTH_URL` é a origem pública do **frontend**, sem caminho; `TRUSTED_WEB_ORIGIN` deve ser a mesma origem exata. Cookie host-only, path `/`, HttpOnly, SameSite=Lax, Secure em produção, 7 dias. Sem cache de sessão em cookie; revogação é verificada no banco a cada requisição.
 - Mutações exigem `Origin` igual à origem aprovada e JSON, inclusive quando chamadas diretamente à API. Frontend deve preservar Origin; cliente CLI usa a origem configurada. Health é público, demais recursos negam sem sessão persistida válida.

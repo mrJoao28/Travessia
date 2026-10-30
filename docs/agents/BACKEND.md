@@ -24,7 +24,7 @@ Implementar User/Profile, Classroom/Membership, Invitation, Mission/Version/Step
 
 Ler docs/DEMO.md. Criar comando manual e idempotente npm run db:seed:demo. Nome: Joao Felipe. Curso: Engenharia da Computação. Email e senha escolhidos pelo usuário serão fornecidos por DEMO_USER_EMAIL e DEMO_USER_PASSWORD no ambiente privado; nunca hardcodar, imprimir ou versionar esses valores. Seed usa as APIs/hashing da biblioteca, não insere senha em texto puro nem inventa formatos internos de credencial.
 
-A senha solicitada é curta. Preservá-la exclusivamente no ambiente isolado de demonstração com DEMO_MODE=true, DEMO_ONLY=true, cadastro público desabilitado e banco sem dados reais. Better Auth permite configurar comprimento mínimo: exceção de 5 apenas nesse ambiente; fora dele exigir política mais forte e rejeitar configuração fraca. A exceção é limitada à demo sem novos cadastros. Não colocar credenciais na UI ou criar um bypass público. Proteção de tentativas com estado persistente, não só Map em memória.
+A senha do seed de demonstração pode ser curta e fica só no ambiente privado. O cadastro aberto na plataforma exige senha de 12 a 128 caracteres, inclusive na demonstração. Não colocar credenciais na UI. Proteção de tentativas com estado persistente, não só Map em memória.
 
 Criar 3 turmas para a conta como aluno: Programação I, Cálculo Aplicado e Estatística. Usar professores fictícios. Criar 1 turma como docente: Oficina de Projetos Inclusivos, com alunos fictícios. Preencher missões, etapas, rascunhos, entregas em andamento/enviadas/revisadas, feedback e uma barreira explicitamente compartilhada. Preservar o exemplo “Uma biblioteca para todos”, etapa 2 de 5. Ver docs/DEMO.md para cenários.
 

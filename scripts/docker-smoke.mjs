@@ -70,7 +70,7 @@ try {
   check((await request('/api/v1/health')).json?.status === 'ok', 'API não acessível pelo frontend.');
   await request('/api/v1/me', { authenticated: false, status: 401 });
   await request('/api/v1/me/profile', { authenticated: false, status: 401 });
-  await request('/api/auth/sign-up/email', { method: 'POST', body: {}, status: 404 });
+  await request('/api/auth/sign-up/email', { method: 'POST', body: {}, status: 400 });
   await login();
   check((await request('/api/auth/get-session')).json?.user?.id, 'Sessão não confirmada pelo proxy.');
   const me = (await request('/api/v1/me')).json;
