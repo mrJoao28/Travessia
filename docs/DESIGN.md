@@ -29,3 +29,7 @@ No mobile, navegação passa para o topo, colunas viram uma e artes laterais sã
 ## Escopo
 
 Login, aluno, professor, leitor, editor, entregas e barreiras compartilham os mesmos tokens. Sem mudança de schema, autenticação, contratos ou infraestrutura nesta etapa. Não adicionar logos de clientes/parceiros do ZIP, pois não representam vínculos específicos do Travessia. Detalhes das artes e prompts em design/ARTWORK.md. A referência marfim/verde anterior fica apenas como histórico.
+
+## Preparação guiada docente
+
+Em 30/10/2026 o usuário aprovou aplicar as propostas de criação de missão em passos e adaptação com prévia. O professor vê três destinos principais, uma ação dominante por etapa e ajuda da IA opcional/recolhida. Os apoios ficam no contexto da missão, com versão e destinatários explícitos. Detalhes de persistência, revisão e validação: [TEACHER-INTERFACE.md](TEACHER-INTERFACE.md).

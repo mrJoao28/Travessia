@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { OperationStatus } from "./operation-status";
 import {
   api,
@@ -41,10 +43,20 @@ const empty: Input = {
 export function LiveEditor({
   id,
   classroomId,
+  classroomNames,
 }: {
   id?: string;
   classroomId?: string;
+  classroomNames?: Record<string, string>;
 }) {
+  const [stage, setStage] = useState(0);
+  const [published, setPublished] = useState(false);
+  const stageTitle = useRef<HTMLHeadingElement>(null);
+  const invalidField = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    if (invalidField.current) { invalidField.current.focus(); invalidField.current.reportValidity(); invalidField.current = null; }
+    else stageTitle.current?.focus();
+  }, [stage]);
   const [mission, setMission] = useState<ApiResponse<"mission"> | null>(null);
   const [input, setInput] = useState<Input>(empty);
   const [loading, setLoading] = useState(!!id);
@@ -97,13 +109,7 @@ export function LiveEditor({
       active = false;
     };
   }, [id]);
-  useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => {
-      if (dirty) event.preventDefault();
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  useTeacherDraftGuard(dirty);
   function change(next: Input) {
     setInput(next);
     setDirty(true);
@@ -111,22 +117,28 @@ export function LiveEditor({
     setConfirmed(false);
     setMessage("");
   }
-  async function save(forReview = false) {
-    for (const [fieldId, lines] of [
-      ["editor-objectives", input.objectives],
-      ["editor-criteria", input.criteria],
-    ] as const) {
-      const field = document.getElementById(
-        fieldId,
-      ) as HTMLTextAreaElement | null;
-      field?.setCustomValidity(
-        lines.length > 10 ||
-          lines.some((line) => !line.trim() || line.trim().length > 200)
-          ? "Use de 1 a 10 linhas preenchidas, com até 200 caracteres em cada linha."
-          : "",
-      );
+  function validate(onlyStage?: number) {
+    for (const [fieldId, lines] of [["editor-objectives", input.objectives], ["editor-criteria", input.criteria]] as const) {
+      const field = document.getElementById(fieldId) as HTMLTextAreaElement | null;
+      field?.setCustomValidity(lines.length > 10 || lines.some(line => !line.trim() || line.trim().length > 200) ? "Use de 1 a 10 linhas preenchidas, com até 200 caracteres em cada linha." : "");
     }
-    if (!form.current?.reportValidity() || pending) return;
+    const selector = onlyStage === undefined ? 'input, textarea' : `[data-editor-stage="${onlyStage}"] input, [data-editor-stage="${onlyStage}"] textarea`;
+    const fields = Array.from(form.current?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(selector) ?? []);
+    const invalid = fields.find(field => !field.checkValidity());
+    if (!invalid) return true;
+    const targetStage = Number(invalid.closest<HTMLElement>('[data-editor-stage]')?.dataset.editorStage ?? 0);
+    const details = invalid.closest("details"); if (details) details.open = true;
+    if (targetStage !== stage) { invalidField.current = invalid; setStage(targetStage); }
+    else { invalid.focus(); invalid.reportValidity(); }
+    return false;
+  }
+  async function save(forReview = false, nextStage?: number) {
+    if (!validate() || pending) return;
+    if (!dirty && mission?.draftVersion) {
+      if (forReview) setReview(mission.draftVersion.id);
+      if (nextStage !== undefined) setStage(nextStage);
+      return;
+    }
     setPending(true);
     setMessage("");
     try {
@@ -150,6 +162,7 @@ export function LiveEditor({
           "",
           `/professor/missoes/${value.id}/editar`,
         );
+      if (nextStage !== undefined) setStage(nextStage);
       if (forReview && value.draftVersion) {
         setReview(value.draftVersion.id);
       }
@@ -168,6 +181,7 @@ export function LiveEditor({
           "O rascunho mudou. Consulte a versão atual antes de substituir o editor.",
         );
       adopt(value);
+      setStage(1);
       setMessage(
         "Rascunho Gemini carregado do servidor. Revise todo o conteúdo antes de publicar.",
       );
@@ -181,21 +195,16 @@ export function LiveEditor({
       );
   }
   if (loading) return <p role="status">Abrindo rascunho…</p>;
-  if (loadError)
-    return (
-      <p className="paper" role="alert">
-        {loadError}
-      </p>
-    );
+  if (loadError) return <section className="paper"><h1>Não foi possível abrir esta missão</h1><p role="alert">{loadError}</p><Link className="text-link" href="/professor/missoes">Voltar às minhas missões</Link></section>;
+  if (published && mission) return <section className="paper teacher-success"><p className="eyebrow">Missão publicada</p><h1>Pronto para sua turma!</h1><p role="status">Missão publicada pelo servidor e disponível para a turma.</p><p>Agora você pode preparar apoios ou acompanhar as entregas.</p><div className="actions"><Link className="button" href={`/professor/missoes/${mission.id}/apoios`}>Preparar apoios desta missão</Link><Link className="text-link" href="/professor/entregas">Acompanhar entregas</Link></div></section>;
   const storedVersion = mission?.draftVersion ?? mission?.publishedVersion;
   return (
-    <div className="two-column">
-      <section className="paper">
-        <h2>{id ? "Editar missão" : "Criar missão"}</h2>
-        <p>
-          Objetivos, critérios e apoios devem preservar a competência avaliada.
-          Nenhuma missão é publicada sem sua revisão.
-        </p>
+    <div className="teacher-guide">
+      <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar missão"}</p><Link className="text-link" href="/professor/missoes">← Minhas missões</Link><h1>Vamos preparar sua missão</h1><p>Um passo de cada vez. Você revisa antes de publicar.</p></header>
+      <TeacherSteps labels={["Sobre a missão", "Etapas e materiais", "Apoios", "Revisão"]} current={stage} disabled={pending} onBack={value => { setConfirmed(false); setReview(null); setStage(value); }} />
+      <div className="teacher-guide-grid"><section className="paper teacher-editor-panel">
+        <h2 ref={stageTitle} tabIndex={-1} id="editor-stage-title">{["O que a turma vai aprender?", "Como o aluno vai realizar a atividade?", "Quer oferecer alguma ajuda?", "Confira antes de publicar"][stage]}</h2>
+        <p className="muted">{["Dê um nome à missão e explique o que será aprendido e avaliado.", "Divida o trabalho em ações claras. Acrescente os materiais que o aluno vai consultar.", "Os apoios são opcionais. Você pode prepará-los agora ou depois da publicação.", "Confira o conteúdo completo. Só você pode autorizar a publicação."][stage]}</p>
         {storedVersion?.source === "demo_fixture" && (
           <p className="notice">
             Rascunho fictício pré-criado para a demonstração, sem geração
@@ -210,6 +219,7 @@ export function LiveEditor({
         )}
         <form
           className="form-stack"
+          noValidate
           ref={form}
           onChange={(event) => {
             const target = event.target;
@@ -221,14 +231,15 @@ export function LiveEditor({
           }}
           onSubmit={(e) => {
             e.preventDefault();
-            void save();
+            if (stage === 0) { if (validate(0)) setStage(1); } else void save(false, 2);
           }}
         >
-          <fieldset className="editor-fields" disabled={pending}>
-            <div className="form-stack">
+          <fieldset className="editor-fields" disabled={pending || mission?.status === "archived"}>
+            <div className="form-stack" data-editor-stage="0" hidden={stage !== 0}>
               <label htmlFor="editor-title">
                 Título da missão
                 <input
+                  placeholder="Ex.: Comparar soluções de acesso à informação"
                   id="editor-title"
                   required
                   maxLength={200}
@@ -275,6 +286,7 @@ export function LiveEditor({
                 De 1 a 10 objetivos e critérios; até 200 caracteres por linha.
                 Não inclua linhas vazias.
               </p>
+              <details className="teacher-disclosure"><summary>Data de entrega (opcional)</summary>
               <label htmlFor="editor-due">
                 Data prevista de entrega · opcional
                 <input
@@ -291,6 +303,9 @@ export function LiveEditor({
                   }
                 />
               </label>
+              </details>
+            </div>
+            <div className="form-stack" data-editor-stage="1" hidden={stage !== 1}>
               <h3>Etapas</h3>
               {input.steps.map((step, index) => (
                 <fieldset className="editor-step" key={stepKeys[index]}>
@@ -508,22 +523,10 @@ export function LiveEditor({
                 Uploads permanecem desativados. Disponibilize conteúdo textual
                 verificável.
               </p>
-              <div className="actions">
-                <button className="button button-outline" type="submit">
-                  {pending ? "Salvando…" : "Salvar rascunho"}
-                </button>
-                <button
-                  className="button"
-                  type="button"
-                  onClick={() => void save(true)}
-                >
-                  Salvar e revisar
-                </button>
-              </div>
             </div>
           </fieldset>
         </form>
-        {review && mission?.draftVersion && (
+        {stage === 3 && review && mission?.draftVersion && (
           <section className="notice" style={{ marginTop: "1rem" }}>
             <h3 id="publish-review" tabIndex={-1}>
               Revisão antes de publicar
@@ -554,9 +557,9 @@ export function LiveEditor({
               ))}
             </ol>
             <p>
-              Os {input.materials.length} materiais estão disponíveis no editor
-              acima. A publicação disponibiliza esta versão aos alunos da turma.
+              A publicação disponibiliza esta versão aos alunos da turma.
             </p>
+            <h4>Materiais</h4>{input.materials.map((m, i) => <details className="example" key={i}><summary>{m.title}</summary><p className="submission-content">{m.text}</p></details>)}
             <label className="check">
               <input
                 type="checkbox"
@@ -577,6 +580,7 @@ export function LiveEditor({
                     body: { versionId: review, reviewed: true },
                   });
                   adopt(value);
+                  setPublished(true);
                   setMessage(
                     "Missão publicada pelo servidor e disponível para a turma.",
                   );
@@ -591,16 +595,9 @@ export function LiveEditor({
             </button>
           </section>
         )}
-        <OperationStatus message={message} />
-        <p className="small">
-          {dirty
-            ? "Há alterações ainda não salvas."
-            : mission
-              ? "Versão carregada do servidor."
-              : "Este rascunho ainda não foi criado no servidor."}
-        </p>
-      </section>
-      <aside className="paper">
+        {stage === 2 && <div className="form-stack">
+          <div className="notice"><h3>Apoios para esta missão</h3><p>Adapte as instruções e os formatos de entrega, ou prepare exemplos e checklists. O objetivo avaliado é mantido.</p>{mission && <div className="teacher-support-links"><Link className="text-link" href={`/professor/missoes/${mission.id}/adaptacoes?versao=${storedVersion?.id}`}>Adaptar a atividade para a turma ou um aluno</Link><Link className="text-link" href={`/professor/missoes/${mission.id}/estrategias?versao=${storedVersion?.id}`}>Preparar exemplos, checklists e outros apoios</Link></div>}<p className="small">Se alterar a missão e criar outra versão depois, será necessário revisar os apoios dessa nova versão.</p></div>
+          <details className="teacher-ai"><summary>Pedir ajuda à IA para escrever a missão (opcional)</summary>
         <h2>Assistência Gemini</h2>
         <p>
           Selecione até 3 materiais didáticos já salvos. Somente esses textos e
@@ -735,7 +732,19 @@ export function LiveEditor({
           planejamento manual continua disponível. Não há publicação nem nota
           automática.
         </p>
-      </aside>
+          </details>
+        </div>}
+        <OperationStatus message={message} />
+        <p className="small">
+          {dirty
+            ? "Há alterações ainda não salvas."
+            : mission
+              ? "Versão carregada do servidor."
+              : "Este rascunho ainda não foi criado no servidor."}
+        </p>
+      </section>
+      <aside className="teacher-guidance paper"><h2>{stage === 0 ? "Uma boa missão tem" : "Você está no controle"}</h2><ul><li>Um objetivo claro</li><li>Uma ação possível</li><li>Critérios compreensíveis</li></ul><p>O aluno verá as instruções e os critérios antes de começar.</p><p className="small">{mission ? "Rascunho salvo no servidor. Alterações precisam ser salvas novamente." : "Seu texto permanece nesta tela. O primeiro salvamento acontece depois de preencher as etapas."}</p></aside></div>
+      <footer className="teacher-guide-footer"><div>{stage > 0 && <button type="button" className="text-button" disabled={pending} onClick={() => { setConfirmed(false); setStage(stage - 1); }}>← Voltar</button>}<span className="small">Etapa {stage + 1} de 4</span></div><div className="actions">{stage > 0 && stage < 3 && <button type="button" className="text-button" disabled={pending} onClick={() => void save()}>Salvar rascunho</button>}{stage < 3 && <button type="button" className="button" disabled={pending || mission?.status === "archived"} onClick={() => { if (stage === 0) { if (validate(0)) setStage(1); } else void save(stage === 2, stage + 1); }}>{pending ? "Salvando…" : ["Continuar para as etapas →", "Salvar e continuar →", "Salvar e revisar"][stage]}</button>}</div></footer>
     </div>
   );
 }

@@ -11,26 +11,27 @@ type Strategy = ApiResponse<"strategyCatalog">["items"][number];
 type Plan = ApiResponse<"createStrategyPlan">;
 type Student = ApiResponse<"strategyRecipients">["items"][number];
 
-export function LiveStrategies({ entries, initialMissionId }: { entries: MissionEntry[]; initialMissionId?: string }) {
+export function LiveStrategies({ entries, initialMissionId, initialVersionId }: { entries: MissionEntry[]; initialMissionId?: string; initialVersionId?: string }) {
   const [missionId, setMissionId] = useState(initialMissionId ?? entries[0]?.mission.id ?? "");
   const entry = entries.find(e => e.mission.id === missionId);
   if (!entry) return <section className="paper"><h2>Escolha uma missão da sua turma</h2><p>Crie e salve uma missão para preparar seus apoios.</p><Link className="text-link" href="/professor/missoes">Consultar minhas missões</Link></section>;
   return <>
-    <div className="classroom-selector"><label htmlFor="strategy-mission">Missão</label>
+    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/missoes/${entry.mission.id}/apoios`}>← Apoios da missão</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector"><label htmlFor="strategy-mission">Missão</label>
       <select id="strategy-mission" value={missionId} onChange={e => setMissionId(e.target.value)}>
         {entries.map(({ mission, classroom }) => <option key={mission.id} value={mission.id}>{classroom.name} · {(mission.publishedVersion ?? mission.draftVersion)?.title}</option>)}
       </select>
-    </div>
-    <StrategyMission key={entry.mission.id} entry={entry} />
+    </div>}
+    <StrategyMission key={entry.mission.id} entry={entry} initialVersionId={initialVersionId} />
   </>;
 }
 
-function StrategyMission({ entry }: { entry: MissionEntry }) {
+function StrategyMission({ entry, initialVersionId }: { entry: MissionEntry; initialVersionId?: string }) {
   const versions = [entry.mission.publishedVersion, entry.mission.draftVersion].filter((v): v is NonNullable<typeof v> => !!v);
-  const [versionId, setVersionId] = useState(versions[0]?.id ?? "");
+  const [versionId, setVersionId] = useState(versions.find(v => v.id === initialVersionId)?.id ?? versions[0]?.id ?? "");
   const version = versions.find(v => v.id === versionId);
   if (!version) return <p className="paper">Salve uma versão da missão antes de preparar os apoios.</p>;
   return <>
+    {initialVersionId && !versions.some(v => v.id === initialVersionId) && <p className="notice">A versão escolhida mudou. Confira a versão disponível antes de preparar o apoio.</p>}
     <div className="classroom-selector"><label htmlFor="strategy-version">Versão da missão</label>
       <select id="strategy-version" value={versionId} onChange={e => setVersionId(e.target.value)}>
         {versions.map(v => <option key={v.id} value={v.id}>{v.id === entry.mission.publishedVersion?.id ? "Publicada · visível aos alunos" : "Rascunho · aguarda publicação"} · {v.title}</option>)}

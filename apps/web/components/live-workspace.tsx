@@ -18,6 +18,7 @@ import { ClassroomTools, ClassroomMembers } from "./classroom-tools";
 import { LearningNeeds } from "./learning-needs";
 import { LiveAdaptations } from "./live-adaptations";
 import { SubmissionMedia } from "./submission-media";
+import { MissionSupportHub } from "./mission-support-hub";
 import { LiveStrategies } from "./live-strategies";
 
 export type Classroom = ApiResponse<"classrooms">["items"][number];
@@ -36,10 +37,11 @@ export function LiveWorkspace({
   section?: string;
   missionId?: string;
   classroomId?: string;
+  versionId?: string;
 }) {
   return (
     <WorkspaceView
-      key={`${props.role}:${props.section ?? ""}:${props.missionId ?? ""}:${props.classroomId ?? ""}`}
+      key={`${props.role}:${props.section ?? ""}:${props.missionId ?? ""}:${props.classroomId ?? ""}:${props.versionId ?? ""}`}
       {...props}
     />
   );
@@ -50,11 +52,13 @@ function WorkspaceView({
   section = "",
   missionId,
   classroomId,
+  versionId,
 }: {
   role: "aluno" | "professor";
   section?: string;
   missionId?: string;
   classroomId?: string;
+  versionId?: string;
 }) {
   const [profile, setProfile] = useState<ApiResponse<"me"> | null>(null);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -80,15 +84,17 @@ function WorkspaceView({
         const relevant = selected
           ? permitted.filter((room) => room.id === selected)
           : permitted;
-        const data = (
+        const preparingEditor = role === "professor" && ["editor", "nova", "turmas", "ajuda", "barreiras"].includes(section);
+        const needsDeliveries = role === "aluno" || ["", "missoes", "entregas", "feedback"].includes(section);
+        const data = preparingEditor ? [] : (
           await Promise.all(
             relevant.map(async (classroom) => {
-              const missions = await pages("missions", classroom.id);
+              const missions = missionId ? [await api("mission", { params: { id: missionId } })].filter(m => m.classroomId === classroom.id) : await pages("missions", classroom.id);
               return Promise.all(
                 missions.map(async (mission) => ({
                   mission,
                   classroom,
-                  submissions: await pages("submissions", mission.id),
+                  submissions: needsDeliveries ? await pages("submissions", mission.id) : [],
                 })),
               );
             }),
@@ -109,16 +115,14 @@ function WorkspaceView({
     return () => {
       active = false;
     };
-  }, [role, selected, reload]);
+  }, [role, selected, reload, section, missionId]);
   const permitted = classrooms.filter(
     (room) => room.role === (role === "aluno" ? "student" : "teacher"),
   );
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
-  const title =
-    section === "apoios" ? "Meus apoios de aprendizagem" : section === "adaptacoes" ? "Adaptações de atividades" : section === "estrategias" ? "Estratégias pedagógicas" : role === "aluno"
-      ? "Um passo de cada vez."
-      : "Ensinar também é construir caminhos.";
+  const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : ({ adaptacoes: "Deixe a atividade mais clara", estrategias: "Prepare os apoios da missão", apoios: "Como você quer apoiar sua turma?", missoes: "Suas missões", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
+  const guidedEditor = role === "professor" && ["editor", "nova"].includes(section);
   const otherRole = classrooms.some(
     (room) => room.role === (role === "aluno" ? "teacher" : "student"),
   );
@@ -141,14 +145,14 @@ function WorkspaceView({
           : undefined
       }
     >
-      <div className="page-heading">
+      {!guidedEditor && <div className="page-heading">
         <h1>{title}</h1>
         <p>
-          {section === "estrategias" ? "Prepare apoios para uma etapa ou missão, com destinatários definidos por você." : role === "aluno"
+          {section === "adaptacoes" ? "Ajuste as instruções. O objetivo da atividade continua o mesmo." : section === "estrategias" ? "Prepare apoios para uma etapa ou missão, com destinatários definidos por você." : role === "aluno"
             ? "Retome sua missão de onde parou."
             : "Organize objetivos, etapas e devolutivas para sua turma."}
         </p>
-      </div>
+      </div>}
       {pending ? (
         <section className="paper" role="status">
           <h2>Abrindo seu percurso…</h2>
@@ -162,9 +166,7 @@ function WorkspaceView({
             <button className="button" onClick={() => setReload((n) => n + 1)}>
               Tentar novamente
             </button>
-            <Link className="button button-outline" href="/login">
-              Entrar novamente
-            </Link>
+            {error.startsWith("Sua sessão expirou.") && <Link className="text-link" href="/login">Entrar novamente</Link>}
           </div>
         </section>
       ) : (
@@ -191,7 +193,7 @@ function WorkspaceView({
             </section>
           ) : (
             <>
-              {!["missao", "editor", "nova"].includes(section) &&
+              {!["missao", "editor", "nova"].includes(section) && !missionId && !(role === "professor" && ["adaptacoes", "estrategias", "apoios"].includes(section)) &&
                 (role === "professor" || !!section || !!selected) && (
                   <label
                     className="classroom-selector"
@@ -217,16 +219,16 @@ function WorkspaceView({
                     </select>
                   </label>
                 )}
-              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveAdaptations entries={entries} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} /> : section === "missao" && missionId ? (
+              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveAdaptations entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "missao" && missionId ? (
                 <LiveMission
                   id={missionId}
                   role={role}
                   classrooms={permitted}
                 />
               ) : section === "editor" && missionId ? (
-                <LiveEditor id={missionId} />
+                <LiveEditor id={missionId} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
               ) : section === "nova" && chosen ? (
-                <LiveEditor classroomId={chosen.id} />
+                <LiveEditor classroomId={chosen.id} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
               ) : section === "barreiras" && chosen ? (
                 <LiveBarriers classroom={chosen} />
               ) : section === "turmas" ? (
@@ -261,16 +263,17 @@ function WorkspaceView({
               ) : section === "ajuda" ? (
                 <section className="paper">
                   <h2>Um apoio no caminho</h2>
-                  <p>
+                  {role === "professor" ? <><ol><li>Abra uma turma e escolha Criar missão.</li><li>Preencha o objetivo e os critérios, depois organize as etapas.</li><li>Salve o rascunho. Prepare apoios se necessário.</li><li>Confira a revisão e confirme a publicação.</li><li>Consulte as entregas para escrever o feedback.</li></ol><p>A IA é opcional. O professor sempre revisa antes de publicar.</p><Link className="text-link" href="/professor">Voltar às minhas turmas</Link></> : <p>
                     Consulte os objetivos e critérios, escolha uma etapa e use
                     “Ver um exemplo” quando precisar. As preferências ficam em
                     “Ajustar leitura”. Para comunicar uma barreira, use o
                     formulário dentro da etapa; os destinatários aparecem antes
                     do envio.
-                  </p>
+                  </p>}
                 </section>
               ) : (
                 <TeacherDashboard
+                  classrooms={permitted}
                   entries={entries}
                   classroom={
                     selected || permitted.length === 1 ? chosen : undefined
@@ -446,10 +449,13 @@ function StudentDashboard({ entries }: { entries: MissionEntry[] }) {
 function TeacherDashboard({
   entries,
   classroom,
+  classrooms,
 }: {
   entries: MissionEntry[];
   classroom?: Classroom;
+  classrooms: Classroom[];
 }) {
+  if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para criar missões, preparar apoios e acompanhar as entregas.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul><Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link></section>;
   return (
     <>
       <section className="paper teacher-overview">
@@ -469,17 +475,18 @@ function TeacherDashboard({
                 Criar missão
               </Link>
             )}
-            <Link className="button button-outline" href="/professor/entregas">
+            <Link className="text-link" href="/professor/entregas">
               Consultar entregas
             </Link>
             <Link className="text-link" href="/professor/barreiras">
-              Relatos compartilhados
+              Apoios e barreiras
             </Link>
+            <Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link>
           </div>
         </div>
         <PathIllustration variant="teacher" />
       </section>
-      {classroom && <ClassroomMembers classroom={classroom} />}
+      {classroom && <details className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
           <li className="paper" key={mission.id}>
@@ -512,7 +519,7 @@ function TeacherDashboard({
                 Editar e revisar
               </Link>
             )}
-            <Link className="button button-outline" href={`/professor/missoes/${mission.id}/estrategias`}>Estratégias pedagógicas</Link>
+            <Link className="text-link" href={`/professor/missoes/${mission.id}/apoios`}>Preparar apoios</Link>
           </li>
         ))}
       </ul>
@@ -540,6 +547,7 @@ function SubmissionList({
       {!submitted.length && (
         <p className="paper">Nenhuma entrega disponível neste contexto.</p>
       )}
+      {role === "professor" && <p className="small"><Link className="text-link" href="/professor/barreiras">Apoios e barreiras</Link></p>}
       <ul className="card-list">
         {submitted.map(({ entry, submission }) => (
           <li className="paper" key={submission.id}>

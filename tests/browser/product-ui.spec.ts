@@ -236,6 +236,8 @@ test("editor salva versão, exige revisão e publica somente a versão confirmad
   await page
     .getByLabel("Título da missão", { exact: true })
     .fill("Missão revisada de teste");
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
+  await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
   await page
     .getByRole("button", { name: "Salvar e revisar", exact: true })
     .click();
@@ -263,6 +265,9 @@ test("Gemini indisponível preserva planejamento e permite continuar manualmente
 }) => {
   await fixture(page, "teacher");
   await page.goto("/professor/missoes/test-mission/editar");
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
+  await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
+  await page.getByText('Pedir ajuda à IA para escrever a missão (opcional)', { exact: true }).click();
   await page.getByLabel("Exemplo fictício", { exact: true }).check();
   await page
     .getByLabel(
@@ -294,6 +299,7 @@ test("convite usa vínculo docente e revogação envia JSON ao proxy — transpo
 }) => {
   await fixture(page, "teacher");
   await page.goto("/professor");
+  await page.getByText('Alunos da turma e convites', { exact: true }).click();
   await page.getByRole("button", { name: "Gerar convite de aluno" }).click();
   await expect(page.getByLabel("Código de convite")).toHaveValue(
     "a".repeat(64),
@@ -303,4 +309,34 @@ test("convite usa vínculo docente e revogação envia JSON ao proxy — transpo
     page.getByText("Convite revogado pelo servidor.", { exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("Código de convite")).toHaveCount(0);
+});
+
+test('preparação guiada valida a etapa atual, volta por teclado e preserva conteúdo quando salvar falha', async ({ page }) => {
+  await fixture(page, 'teacher');
+  await page.goto('/professor/missoes/test-mission/editar');
+  await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
+  await page.getByLabel('Título da missão', { exact: true }).fill('');
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
+  await expect(page.getByLabel('Título da missão', { exact: true })).toBeFocused();
+  await page.getByLabel('Título da missão', { exact: true }).fill('Missão que quero preservar');
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
+  const instruction = page.getByRole('textbox', { name: 'Instrução', exact: true }).first();
+  await instruction.fill('');
+  await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
+  await expect(instruction).toBeFocused();
+  await instruction.fill('Compare as alternativas antes de escolher.');
+  await page.getByRole('button', { name: '← Voltar', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByLabel('Título da missão', { exact: true })).toHaveValue('Missão que quero preservar');
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
+  await expect(instruction).toHaveValue('Compare as alternativas antes de escolher.');
+  await page.route('**/api/v1/missions/test-mission', async route => route.request().method() === 'PATCH' ? route.fulfill({ status: 409, json: { code: 'VERSION_CONFLICT' } }) : route.fallback());
+  await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
+  await expect(page.getByText(/O conteúdo mudou no servidor/)).toBeVisible();
+  await expect(instruction).toHaveValue('Compare as alternativas antes de escolher.');
+  await expect(page.getByRole('button', { name: 'Salvar e continuar →', exact: true })).toBeEnabled();
+  await page.setViewportSize({ width: 320, height: 850 });
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
 });
