@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test.afterEach(async ({ page }, info) => {
+  if (info.status !== info.expectedStatus)
+    await page.screenshot({ path: 'test-results/reference-real-failure.png', fullPage: true });
+});
+
 test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simuladas", async ({
   page,
 }) => {
@@ -10,6 +15,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     !process.env.DEMO_USER_PASSWORD
   )
     throw new Error("Execute pelo runner de integração isolada.");
+  page.setDefaultTimeout(15_000);
   await page.goto("/login");
   await page
     .getByLabel("Email", { exact: true })
@@ -394,8 +400,12 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   const sharedNeeds = await (await page.request.get('/api/v1/classrooms/demo-class-oficina/learning-needs')).json();
   const learnerA = sharedNeeds.items.find((n: { userId: string }) => n.userId === 'demo-student-1');
   expect(learnerA.supports).toContain('short-steps'); expect(learnerA.disabilities).toBeNull();
+  const submittedResponse = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/submissions`);
+  expect(submittedResponse.status()).toBe(200);
+  expect((await submittedResponse.json()).items).toEqual(expect.arrayContaining([expect.objectContaining({ userId: 'demo-student-1', status: 'submitted' })]));
   await page.goto('/professor/entregas');
   const delivery = page.locator('li.paper').filter({ has: page.getByRole('heading', { name: 'Atividade inclusiva de teste', exact: true }) });
+  await expect(delivery).toBeVisible();
   await delivery.getByText('Consultar entrega e escrever feedback', { exact: true }).click();
   await delivery.getByRole('button', { name: 'Carregar áudio da atividade', exact: true }).click();
   await expect(delivery.locator('audio')).toHaveAttribute('src', /^blob:/);
