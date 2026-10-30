@@ -54,7 +54,14 @@ before(async () => {
   await db.submission.update({ where: { id: draft.id }, data: { content: 'Alteração que o seed deve preservar.' } });
   const account = await db.account.findFirstOrThrow({ where: { userId: mainId } });
   assert.ok(account.password && account.password !== process.env.DEMO_USER_PASSWORD);
+  await db.studentProfile.update({ where: { userId: mainId }, data: { period: '2º período preservado' } });
+  const academicBefore = await db.user.findUniqueOrThrow({ where: { id: mainId }, select: {
+    studentProfile: true, teacherProfile: { include: { teachings: true } },
+  } });
   await seedDemo(db, config);
+  assert.deepEqual(await db.user.findUniqueOrThrow({ where: { id: mainId }, select: {
+    studentProfile: true, teacherProfile: { include: { teachings: true } },
+  } }), academicBefore);
   assert.deepEqual(await Promise.all([db.user.count(), db.classroom.count(), db.mission.count(), db.submission.count(), db.feedback.count(), db.barrierReport.count()]), counts);
   assert.equal((await db.submission.findUniqueOrThrow({ where: { id: draft.id } })).content, 'Alteração que o seed deve preservar.');
   assert.equal((await db.account.findFirstOrThrow({ where: { userId: mainId } })).password, account.password);

@@ -50,7 +50,7 @@ function useSave(onSaved: Saved, success: string) {
     catch (reason) { setFailed(true); setMessage(errorMessage(reason)); }
     finally { setPending(false); }
   }
-  return { pending, save, status: <div role={failed ? "alert" : undefined}><OperationStatus message={message} /></div> };
+  return { pending, save, status: <OperationStatus message={message} error={failed} /> };
 }
 
 function Field({ label, id, value, onChange, maxLength, type = "text", required = false, autoComplete }: {

@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { ApiResponse } from '../../apps/web/lib/api.generated';
 
 async function setup(page: Page, failSave = false) {
-  const profile: ApiResponse<'profile'> = { id: 'ui-profile-person', name: 'Pessoa fictícia', email: 'profile@example.invalid',
+  const profile: ApiResponse<'profile'> = { id: 'ui-profile-person', name: 'Pessoa fictícia', email: 'profile-long-email-for-reflow@example.invalid',
     emailVerified: true, phone: null, alternateEmail: null,
     student: { registration: null, institution: 'UEA', unit: null, course: 'Computação', period: null },
     teacher: { teachings: [{ subject: 'Cálculo I', course: 'Computação' }] } };
@@ -28,7 +28,7 @@ test('perfil mantém alterações quando o servidor falha e permite tentar novam
   const updates = await setup(page, true);
   await page.getByLabel('Matrícula', { exact: true }).fill('2026999');
   await page.getByRole('button', { name: 'Salvar perfil de aluno', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Seu texto foi preservado');
+  await expect(page.getByRole('region', { name: 'Perfil de aluno', exact: true }).getByRole('alert')).toContainText('Seu texto foi preservado');
   await expect(page.getByLabel('Matrícula', { exact: true })).toHaveValue('2026999');
   expect(updates()).toBe(1);
   await expect(page.getByRole('button', { name: 'Salvar perfil de aluno', exact: true })).toBeEnabled();
@@ -43,7 +43,7 @@ test('disciplinas repetidas são corrigíveis por teclado e a tela permite reflo
   await page.keyboard.press('Tab');
   await page.keyboard.type(' computação ');
   await page.getByRole('button', { name: 'Salvar perfil de professor', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('sem repetir a mesma associação');
+  await expect(page.getByRole('region', { name: 'Perfil de professor', exact: true }).getByRole('alert')).toContainText('sem repetir a mesma associação');
   await expect(page.getByLabel('Disciplina 2', { exact: true })).toBeFocused();
   expect(updates()).toBe(0);
   await page.getByLabel('Curso 2', { exact: true }).fill('Engenharia Elétrica');
