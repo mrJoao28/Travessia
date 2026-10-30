@@ -63,8 +63,8 @@ test('aluno escolhe apoios sem diagnóstico obrigatório e compartilha deficiên
 test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro preserva adaptação', async ({ page }) => {
   const captured = await fixture(page, 'teacher'); await page.goto('/professor/adaptacoes');
   await page.getByRole('button', { name: 'Preparar adaptação com os apoios de Aluno A', exact: true }).click();
-  await page.getByText('Gerar rascunho de adaptação com Gemini', { exact: true }).click();
-  const generate = page.getByRole('button', { name: 'Gerar adaptação com Gemini', exact: true });
+  await page.getByText('Pedir uma sugestão à IA (opcional)', { exact: true }).click();
+  const generate = page.getByRole('button', { name: 'Sugerir um texto com IA', exact: true });
   await expect(generate).toBeDisabled();
   await page.getByRole('checkbox', { name: 'Material didático', exact: true }).check();
   await page.getByRole('checkbox', { name: 'Conferi os textos e autorizo o envio de material didático sem dados pessoais ao Gemini.', exact: true }).check();
@@ -73,9 +73,11 @@ test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro pre
   expect(captured.ai?.supportNeeds).toEqual(['short-steps']);
   expect(captured.ai).not.toHaveProperty('studentIds'); expect(captured.ai).not.toHaveProperty('disabilities');
   await expect(page.getByLabel('Enunciado adaptado', { exact: true })).toHaveValue('Primeiro compare os custos.');
+  await page.getByRole('button', { name: 'Conferir adaptação →', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Revisei a adaptação, os objetivos preservados, os formatos e os destinatários.', exact: true }).check();
   await page.getByRole('button', { name: 'Salvar adaptação revisada', exact: true }).click();
   await expect(page.getByRole('main').getByRole('alert')).toContainText('O conteúdo mudou');
+  await page.getByRole('button', { name: '← Voltar', exact: true }).click();
   await expect(page.getByLabel('Enunciado adaptado', { exact: true })).toHaveValue('Primeiro compare os custos.');
   await page.setViewportSize({ width: 320, height: 850 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -89,4 +91,30 @@ test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e prese
   await expect(page.getByText('O conteúdo mudou no servidor. Preserve seu texto e consulte a versão atual antes de tentar novamente.', { exact: true })).toBeVisible();
   expect(captured.submission?.content).toBe(''); expect(captured.submission?.textFile).toEqual({ text: 'Minha resposta em arquivo.' });
   await expect(page.getByText('Arquivo de texto preparado para salvar.', { exact: true })).toBeVisible();
+});
+
+test('apoios partem da missão e exigem destinatários e nova revisão após voltar para editar', async ({ page }) => {
+  await fixture(page, 'teacher');
+  await page.goto('/professor/missoes/m-inclusive/apoios');
+  await expect(page.getByRole('link', { name: 'Preparar adaptação', exact: true })).toHaveAttribute('href', /adaptacoes\?versao=v-inclusive$/);
+  await page.getByRole('link', { name: 'Preparar adaptação', exact: true }).click();
+  await expect(page.getByLabel('Missão para adaptar', { exact: true })).toHaveCount(0);
+  await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
+  await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Escolha pelo menos um aluno');
+  await page.getByRole('checkbox', { name: 'Aluno A', exact: true }).check();
+  await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
+  await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Compare um custo por vez.');
+  await page.getByRole('button', { name: 'Conferir adaptação →', exact: true }).click();
+  const reviewed = page.getByRole('checkbox', { name: 'Revisei a adaptação, os objetivos preservados, os formatos e os destinatários.', exact: true });
+  await expect(page.getByRole('button', { name: 'Salvar adaptação revisada', exact: true })).toBeDisabled();
+  await reviewed.check();
+  await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+  await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Agora compare a clareza das propostas.');
+  await page.getByRole('button', { name: 'Conferir adaptação →', exact: true }).click();
+  await expect(reviewed).not.toBeChecked();
+  await expect(page.getByRole('button', { name: 'Salvar adaptação revisada', exact: true })).toBeDisabled();
+  await page.setViewportSize({ width: 320, height: 850 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
 });

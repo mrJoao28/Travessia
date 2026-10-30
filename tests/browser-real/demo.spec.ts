@@ -185,6 +185,9 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   const originalTitle = await page
     .getByLabel("Título da missão", { exact: true })
     .inputValue();
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
+  await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
+  await page.getByText('Pedir ajuda à IA para escrever a missão (opcional)', { exact: true }).click();
   await page
     .getByRole("group", { name: "Materiais que serão enviados" })
     .getByRole("checkbox")
@@ -207,9 +210,12 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(
     page.getByLabel("Título da missão", { exact: true }),
   ).toHaveValue(originalTitle);
+  await page.getByRole('button', { name: 'Etapa 1: Sobre a missão', exact: true }).click();
   await page
     .getByLabel("Título da missão", { exact: true })
     .fill(`${originalTitle} · revisão demonstrada`);
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
+  await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
   await page
     .getByRole("button", { name: "Salvar e revisar", exact: true })
     .click();
@@ -284,6 +290,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByLabel('Descrição', { exact: true }).fill('Compare propostas e justifique sua escolha.');
   await page.getByLabel('Objetivos de aprendizagem · um por linha', { exact: true }).fill('Justificar uma escolha.');
   await page.getByLabel('Critérios de avaliação · um por linha', { exact: true }).fill('Explicar o raciocínio.');
+  await page.screenshot({ path: 'test-results/reference-editor-guided-desktop.png', fullPage: true });
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await page.getByLabel('Título da etapa', { exact: true }).fill('Comparar propostas');
   await page.getByLabel('Instrução', { exact: true }).fill('Compare as propostas.');
   await page.getByLabel('Exemplo de apoio', { exact: true }).fill('Compare dois custos.');
@@ -299,12 +307,14 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByRole('textbox', { name: 'Texto do material', exact: true })).toHaveValue('Compare custo e clareza.');
   await page.reload();
   await expect(page.getByLabel('Título da missão', { exact: true })).toHaveValue('Atividade inclusiva de teste');
+  await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Texto do material', exact: true })).toHaveValue('Compare custo e clareza.');
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
   await page.setViewportSize({ width: 320, height: 850 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/reference-editor-real-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar e revisar', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Revisão antes de publicar', exact: true })).toBeFocused();
@@ -316,20 +326,24 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   const createdMissionResponse = await page.request.get(`/api/v1/missions/${createdMissionId}`);
   expect(createdMissionResponse.status()).toBe(200);
   const inclusiveMission = await createdMissionResponse.json();
-  await page.goto('/professor/adaptacoes');
-  await page.getByLabel('Missão para adaptar', { exact: true }).selectOption(inclusiveMission.id);
-  await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.');
-  await page.getByRole('checkbox', { name: 'Áudio de até 30 segundos', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'Arquivo de texto (.txt)', exact: true }).check();
+  await page.getByRole('link', { name: 'Preparar apoios desta missão', exact: true }).click();
+  await page.getByRole('link', { name: 'Preparar adaptação', exact: true }).click();
+  await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
   await page.getByRole('checkbox', { name: 'Estudante Fictício 1', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'Revisei a adaptação, os objetivos preservados, os formatos e os destinatários.', exact: true }).check();
+  await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
+  await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.');
+  await page.getByText(/^Formas de entrega/).click();
+  await page.getByRole('checkbox', { name: 'Áudio de até 30 segundos', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Arquivo de texto (.txt)', exact: true }).check();
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
   await page.screenshot({ path: 'test-results/reference-adaptations-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 320, height: 850 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/reference-adaptations-mobile.png', fullPage: true });
   await page.setViewportSize({ width: 1280, height: 900 });
+  await page.getByRole('button', { name: 'Conferir adaptação →', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Revisei a adaptação, os objetivos preservados, os formatos e os destinatários.', exact: true }).check();
   await page.getByRole('button', { name: 'Salvar adaptação revisada', exact: true }).click();
   await expect(page.getByText('Adaptação revisada e disponível aos destinatários.', { exact: true })).toBeVisible();
   await logout();
