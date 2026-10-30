@@ -1,8 +1,8 @@
 import Link from "next/link";
-export function OperationStatus({ message }: { message: string }) {
+export function OperationStatus({ message, error = false }: { message: string; error?: boolean }) {
   return (
     <div>
-      <p role="status">{message}</p>
+      <p role={error ? "alert" : "status"}>{message}</p>
       {message.startsWith("Sua sessão expirou.") && (
         <>
           <Link

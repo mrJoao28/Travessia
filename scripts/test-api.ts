@@ -52,6 +52,9 @@ try {
   process.env.BETTER_AUTH_URL = 'http://localhost:3000'; process.env.TRUSTED_WEB_ORIGIN = 'http://localhost:3000';
   process.env.DEMO_USER_EMAIL = 'principal@example.invalid'; process.env.DEMO_USER_PASSWORD = randomBytes(3).toString('hex').slice(0, 5);
   process.env.AI_ENABLED = 'false';
+  phase = 'verificar atualização do schema anterior sem perda de dados';
+  const { verifyProfileMigration } = await import('./test-profile-migration.js');
+  await verifyProfileMigration(directory, run);
   phase = 'aplicar migrations';
   await run('node_modules/prisma/build/index.js', ['migrate', 'deploy', '--schema', 'apps/api/prisma/schema.prisma']);
   phase = 'executar testes HTTP';

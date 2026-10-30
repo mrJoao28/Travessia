@@ -30,9 +30,31 @@ const barrier = z.strictObject({ id, stepId: id, description: text, sharedWithTe
 const generation = z.strictObject({ id, missionId: id, status: z.enum(['running', 'succeeded', 'failed', 'cancelled']),
   outputVersionId: id.nullable(), createdAt: date });
 
+const optionalText = (max: number) => z.string().trim().min(1).max(max).nullable().optional();
+const studentInput = z.strictObject({ registration: optionalText(50), institution: optionalText(80),
+  unit: optionalText(150), course: optionalText(150), period: optionalText(50) });
+const teaching = z.strictObject({ subject: z.string().trim().min(1).max(150), course: z.string().trim().min(1).max(150) });
+const teacherInput = z.strictObject({ teachings: z.array(teaching).max(20).superRefine((rows, ctx) => {
+  const seen = new Set<string>();
+  rows.forEach((row, index) => {
+    const key = JSON.stringify([row.subject.toLocaleLowerCase('pt-BR'), row.course.toLocaleLowerCase('pt-BR')]);
+    if (seen.has(key)) ctx.addIssue({ code: 'custom', path: [index], message: 'Disciplina e curso repetidos.' });
+    seen.add(key);
+  });
+}) });
+const academicProfile = z.strictObject({ id, name: z.string(), email: z.email(), emailVerified: z.boolean(),
+  phone: z.string().nullable(), alternateEmail: z.string().nullable(),
+  student: z.strictObject({ registration: z.string().nullable(), institution: z.string().nullable(),
+    unit: z.string().nullable(), course: z.string().nullable(), period: z.string().nullable() }).nullable(),
+  teacher: z.strictObject({ teachings: z.array(teaching) }).nullable() });
+export const profileInput = z.strictObject({ name: z.string().trim().min(1).max(150).optional(), phone: optionalText(30),
+  alternateEmail: z.email().max(150).nullable().optional(), student: studentInput.optional(), teacher: teacherInput.optional() });
+
 export const routes = {
   health: { method: 'get', path: '/v1/health', body: empty, query: empty, response: z.strictObject({ status: z.literal('ok'), service: z.literal('travessia-api'), stage: z.literal('mvp') }), public: true },
   me: { method: 'get', path: '/v1/me', body: empty, query: empty, response: z.strictObject({ id, name: z.string(), email: z.email(), course: z.string().nullable(), demo: z.boolean(), preferences: preferences }) },
+  profile: { method: 'get', path: '/v1/me/profile', body: empty, query: empty, response: academicProfile },
+  updateProfile: { method: 'patch', path: '/v1/me/profile', body: profileInput, query: empty, response: academicProfile },
   preferences: { method: 'patch', path: '/v1/me/preferences', body: preferences, query: empty, response: preferences },
   classrooms: { method: 'get', path: '/v1/classrooms', body: empty, query: page, response: list(classroom) },
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short }), query: empty, response: classroom },

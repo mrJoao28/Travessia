@@ -19,6 +19,8 @@ model User {
   sessions      Session[]
   accounts      Account[]
   profile       Profile?
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
   preferences   ReadingPreferences?
   memberships   Membership[]
   submissions   Submission[]
@@ -70,8 +72,41 @@ model Verification {
 
 model Profile {
   userId String @id
-  course String
+  phone String? @db.VarChar(30)
+  alternateEmail String? @db.VarChar(150)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StudentProfile {
+  userId String @id
+  registration String? @db.VarChar(50)
+  institution String? @db.VarChar(80)
+  unit String? @db.VarChar(150)
+  course String?
+  period String? @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TeacherProfile {
+  userId String @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teachings TeachingAssignment[]
+}
+
+// Self-described academic information; never grants a classroom membership.
+model TeachingAssignment {
+  id String @id @default(uuid())
+  teacherId String
+  subject String @db.VarChar(150)
+  course String @db.VarChar(150)
+  position Int
+  teacher TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  @@unique([teacherId, subject, course])
+  @@unique([teacherId, position])
 }
 
 model ReadingPreferences {

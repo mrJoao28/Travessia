@@ -657,6 +657,14 @@ nav a:hover,
   min-height: 8rem;
   resize: vertical;
 }
+.profile-sections { display: grid; gap: 1.5rem; margin-top: 1.5rem; max-width: 60rem; min-width: 0; overflow-wrap: anywhere; }
+.profile-sections > section { min-width: 0; }
+.profile-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 1rem; }
+.profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1rem; }
+.profile-form h2, .profile-form p { margin: 0; }
+.teaching-row { min-width: 0; border: 1px solid var(--muted); border-radius: .5rem; padding: 1rem; display: grid; gap: .75rem; }
+.teaching-row legend { font-weight: 600; padding: 0 .4rem; }
+.profile-form button { justify-self: start; }
 .form-stack label.check {
   align-items: flex-start;
   font-weight: 400;
