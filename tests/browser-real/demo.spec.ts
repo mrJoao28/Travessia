@@ -404,6 +404,20 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   expect(submittedResponse.status()).toBe(200);
   expect((await submittedResponse.json()).items).toEqual(expect.arrayContaining([expect.objectContaining({ userId: 'demo-student-1', status: 'submitted' })]));
   await page.goto('/professor/entregas');
+  const deliveryHeading = page.getByRole('heading', { name: 'Entregas para acompanhar', exact: true });
+  const limitNotice = page.getByText('O limite de solicitações foi atingido. Aguarde antes de tentar novamente.', { exact: true });
+  await expect(deliveryHeading.or(limitNotice)).toBeVisible();
+  // The comprehensive dev-browser scenario can exceed the real 300/minute
+  // per-user budget. Exercise its visible retry instead of bypassing/resetting
+  // the limiter or treating a temporary limit as a missing delivery.
+  if (await limitNotice.isVisible()) {
+    await expect(async () => {
+      if (await deliveryHeading.isVisible()) return;
+      if (await limitNotice.isVisible())
+        await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
+      await expect(deliveryHeading).toBeVisible({ timeout: 2500 });
+    }).toPass({ timeout: 75_000, intervals: [5000, 10000, 15000] });
+  }
   const delivery = page.locator('li.paper').filter({ has: page.getByRole('heading', { name: 'Atividade inclusiva de teste', exact: true }) });
   await expect(delivery).toBeVisible();
   await delivery.getByText('Consultar entrega e escrever feedback', { exact: true }).click();
