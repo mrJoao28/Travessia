@@ -1,0 +1,52 @@
+name: Docker Linux
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      COMPOSE_PROJECT_NAME: travessia-ci-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Preparar configuração efêmera sem credenciais pessoais
+        run: |
+          node scripts/docker-setup.mjs
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { parseEnv } from 'node:util';
+          const settings = parseEnv(readFileSync('.env.docker', 'utf8'));
+          for (const key of ['POSTGRES_PASSWORD', 'DATABASE_URL', 'BETTER_AUTH_SECRET', 'DEMO_USER_PASSWORD'])
+            console.log(`::add-mask::${settings[key]}`);
+          JS
+          node scripts/docker-compose.mjs config --quiet
+      - name: Construir imagens, iniciar PostgreSQL, migrar e subir aplicações
+        run: npm run docker:up
+      - name: Criar demonstração isolada pela imagem de produção
+        run: npm run docker:seed
+      - name: Testar os três containers reais
+        run: npm run docker:smoke
+      - name: Recriar containers preservando o volume
+        run: |
+          npm run docker:down
+          npm run docker:start
+          node scripts/docker-smoke.mjs --verify-persistence
+      - name: Diagnóstico limitado em caso de falha
+        if: failure()
+        run: |
+          node scripts/docker-compose.mjs ps
+          node scripts/docker-compose.mjs logs --no-color --tail 100
+      - name: Remover apenas recursos efêmeros deste job
+        if: always()
+        run: node scripts/docker-compose.mjs down --volumes --remove-orphans
