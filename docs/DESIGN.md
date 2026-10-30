@@ -1,45 +1,31 @@
-# Identidade visual — Caderno e percurso
+# Identidade visual — Travessia / Mais Acesso Conecta
 
 ## Direção
 
-Ambiente universitário acolhedor e editorial: papel marfim, verde profundo, sálvia e terracota. O livro aberto e a linha de percurso representam aprendizagem e autonomia. Personalidade em tipografia, composição e ilustrações discretas; controles convencionais e previsíveis.
+Identidade próxima ao Mais Acesso Conecta, conforme nova solicitação do usuário e assets do arquivo `public.zip`. Interface universitária clara, superfícies brancas, azul institucional, azul suave e amarelo pontual. Manter a marca Travessia e a organização por missões. Usar o logo original Mais Acesso Conecta como assinatura, sem recolorir ou redesenhar esse arquivo.
 
-A imagem de conceito apresentada na conversa é referência de intenção. Ela não comprova contraste, funcionamento ou acessibilidade. A implementação pode ajustar composição e cor para atender requisitos. O scaffold contém uma interpretação inicial em HTML/CSS/SVG, sem incorporar a imagem como interface.
+## Tokens
 
-| Token | Cor | Uso |
+| Token | Cor | Aplicação |
 |---|---|---|
-| background | #F7F5EF | Fundo marfim |
-| surface | #FFFEFA | Superfícies de leitura |
-| primary | #234E43 | Ação principal e identidade |
-| text | #243831 | Texto principal |
-| muted | #56635C | Texto secundário legível |
-| sage | #E6EDE4 | Agrupamento e contexto |
-| terracotta | #A84F37 | Destaques pequenos |
-| gold | #F0DDA5 | Ilustração e fundo auxiliar, com texto escuro |
-| focus | #7B391F | Indicador de foco |
+| background | #F5F8FC | Fundo |
+| surface | #FFFFFF | Painéis e leitura |
+| primary | #075A9C | Navegação, marca e ações |
+| text | #173651 | Texto principal |
+| muted | #50657A | Texto secundário |
+| sage | #EAF2FC | Azul suave; nome legado mantido por compatibilidade |
+| terracotta | #205FA7 | Destaque azul; nome legado mantido por compatibilidade |
+| gold | #F8D879 | Acento amarelo com texto escuro |
+| focus | #995100 | Foco visível |
 
-`packages/design-tokens` é a fonte de cores. Testar cada combinação efetivamente usada; fundos suaves não justificam texto pálido. Borda sutil não é suficiente sozinha para identificar campos e controles; nesses casos usar limite mais contrastante.
+A fonte compartilhada continua em packages/design-tokens. Cores de texto e botões foram escurecidas em relação à arte para garantir contraste. Não usar amarelo claro como texto no branco. Modo de contraste ampliado tem tokens próprios. O script check:foundation verifica os oito pares de texto usados na base.
 
-## Tipografia e composição
+## Composição
 
-Preferir fonte humanista legível, com Atkinson Hyperlegible como candidata após revisão de licença e distribuição local. O scaffold usa essa família se já estiver instalada, com fallback Segoe UI/Arial; não carrega fontes externas. Corpo ~17px relativo e entrelinha 1.65; títulos com escala responsiva; largura de leitura 55–70 caracteres; texto alinhado à esquerda; cantos de 12–16px. Evitar caixa alta em instruções longas e pesos excessivamente leves.
+Sidebar branca com marca Travessia, navegação azul e assinatura Mais Acesso Conecta. Cabeçalho separa contexto, leitura e conta. Missão principal usa texto e etapas reais à esquerda e arte decorativa à direita. Área docente usa arte própria de planejamento. Login combina apresentação azul suave, ilustração fornecida e formulário branco. Botões principais arredondados, ícones de linha e tipografia do sistema sem download externo.
 
-## Aluno
+No mobile, navegação passa para o topo, colunas viram uma e artes laterais são ocultadas. Conteúdo e controles permanecem disponíveis. As preferências de contraste, tamanho e espaçamento são independentes; reduzir decoração remove as ilustrações. Testar também reflow a 320px, texto 200%, cores do sistema e movimento reduzido. As artes não contêm dados reais nem métricas.
 
-Uma ação principal: próxima etapa. Contexto da disciplina e missão, etapa atual e passos consultáveis. Apoios visíveis e barreira relatável no ponto necessário. Informação de prazo quando real, com alternativas e orientações; sem contagem regressiva de pressão. Decoração removível sem ocultar conteúdo essencial.
+## Escopo
 
-## Professor
-
-Planejamento com objetivo → critérios → etapas → materiais → revisão → publicação. Gemini assiste o rascunho. Tornar explícito o que foi gerado e o que está revisado. Painel mostra trabalho a acompanhar e barreiras compartilhadas, sem inferir diagnósticos ou criar rankings de estudantes.
-
-## Interações
-
-Feedback calmo; sem autoplay, confete ou sequência obrigatória. Seleção de formatos e apoios é individual, sem “modo TDAH” ou “modo cego”. Alto contraste, tamanho e espaçamento são preferências independentes. Sem sidebar fixa que encubra foco/zoom. No mobile, navegação se reorganiza com rótulos completos; testes em 320px.
-
-## Brief da imagem de conceito
-
-Mockup desktop da área de aluno: marca travessia com livro/percurso, menu lateral curto, título “Um passo de cada vez.”, missão “Uma biblioteca para todos”, progresso em cinco etapas com estado escrito, ação principal, lista de atividades e painel de preferências. Paleta marfim/verde/sálvia/terracota, contraste forte, ilustração discreta de livros e caminho; evitar aparência SaaS genérica, excesso de indicadores e gradientes tecnológicos. Prévia gerada com ferramenta de imagens; verificar a implementação real separadamente.
-
-## Aprovação do usuário
-
-A imagem em design/reference-student.png foi aprovada e deve ser seguida estritamente. Ver design/APPROVED.md. O scaffold visual é uma aproximação e precisa ser ajustado à referência pelo agente frontend. Artes finais serão adicionadas em etapa posterior.
+Login, aluno, professor, leitor, editor, entregas e barreiras compartilham os mesmos tokens. Sem mudança de schema, autenticação, contratos ou infraestrutura nesta etapa. Não adicionar logos de clientes/parceiros do ZIP, pois não representam vínculos específicos do Travessia. Detalhes das artes e prompts em design/ARTWORK.md. A referência marfim/verde anterior fica apenas como histórico.

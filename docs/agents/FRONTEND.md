@@ -6,13 +6,11 @@ Você é responsável pelo FRONTEND do Travessia, MVP de aprendizagem por missõ
 
 Leia AGENTS.md, apps/web/AGENTS.md, docs/PRODUCT.md, docs/API.md, docs/ACCESSIBILITY.md, docs/SECURITY.md, docs/DEMO.md e docs/DEPLOY.md. Inspecione o código existente. Trabalhe em worktree própria, com branches por funcionalidade, commits pequenos e PRs. Combine mudanças em contratos/lockfile com o agente backend. Não modifique migrations, segredos, autenticação de servidor ou a pasta de trabalho dele sem coordenação.
 
-## 2. Design aprovado é obrigatório
+## 2. Direção visual atual
 
-Abra e examine docs/design/reference-student.png. Essa imagem é a referência visual aprovada pelo usuário, não apenas um moodboard. Siga estritamente a identidade e a composição: marca travessia com livro/percurso, barra lateral, marfim, superfícies claras, verde profundo, sálvia, terracota e dourado suave; títulos, hierarquia, espaçamentos, cantos e proporções. O protótipo HTML atual é só uma aproximação inicial; não o trate como referência superior à imagem. Não faça um redesign, não troque por dashboard SaaS genérico, não adicione gradientes tecnológicos, glassmorphism, indicadores sem utilidade ou estética infantil.
+O usuário substituiu a direção marfim/verde pela identidade próxima ao Mais Acesso Conecta e forneceu `public.zip` como referência. Leia `docs/DESIGN.md`, `docs/design/APPROVED.md` e `docs/design/ARTWORK.md`. Preserve o nome Travessia, azul institucional, branco, amarelo discreto, ilustrações editoriais inclusivas e controles acessíveis. A imagem reference-student.png permanece como histórico, sem impor a paleta anterior.
 
-Preserve os textos centrais do exemplo: “Um passo de cada vez.”, “Retome sua missão de onde parou.”, “Uma biblioteca para todos”, “Continuar missão” e “Aprenda do seu jeito”. Aplique o mesmo sistema visual às telas novas. Compare screenshots em desktop com a referência e corrija divergências. No mobile, reorganize sem mudar a identidade ou perder funções. Acessibilidade e reflow precisam funcionar mesmo quando a composição se adapta ao zoom.
-
-As ilustrações e artes finais serão fornecidas/geradas posteriormente pelo usuário. Reserve componentes e arquivos substituíveis; evite depender de serviços de geração ou imagens externas. Não use a imagem inteira como interface clicável. Não finja que um placeholder é a arte final.
+As artes de aprendizagem e planejamento docente ficam em `apps/web/public/brand`, em WebP local. Conteúdo, etapas e progresso pertencem ao HTML; imagens são decorativas, removíveis por “Reduzir elementos decorativos”. Preserve os fluxos reais, os avisos de prévia e a revisão humana.
 
 ## 3. Escopo do MVP
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { librarySteps } from "./student-home";
+import { PathIllustration } from "./workspace";
 import { MissionEditor } from "./mission-editor";
 
 const previewMessage =
@@ -491,25 +492,28 @@ function TeacherPreview({ route }: { route: string }) {
         }
         description="Oficina de Projetos Inclusivos · contexto docente fictício"
       />
-      <section className="paper">
-        <p className="eyebrow accent">Turma de demonstração</p>
-        <h2>Oficina de Projetos Inclusivos</h2>
-        <p>
-          O dataset previsto contém 8 alunos fictícios, 2 entregas enviadas e 1
-          revisada. Estes dados são uma prévia de conteúdo, sem consulta ao
-          banco.
-        </p>
-        <div className="actions">
-          <Link
-            className="button button-outline"
-            href="/previa/professor/entregas"
-          >
-            Consultar entregas
-          </Link>
-          <Link className="text-link" href="/previa/professor/barreiras">
-            Ver relato compartilhado
-          </Link>
+      <section className="paper teacher-overview">
+        <div>
+          <p className="eyebrow accent">Turma de demonstração</p>
+          <h2>Oficina de Projetos Inclusivos</h2>
+          <p>
+            O dataset previsto contém 8 alunos fictícios, 2 entregas enviadas e 1
+            revisada. Estes dados são uma prévia de conteúdo, sem consulta ao
+            banco.
+          </p>
+          <div className="actions">
+            <Link
+              className="button button-outline"
+              href="/previa/professor/entregas"
+            >
+              Consultar entregas
+            </Link>
+            <Link className="text-link" href="/previa/professor/barreiras">
+              Ver relato compartilhado
+            </Link>
+          </div>
         </div>
+        <PathIllustration variant="teacher" />
       </section>
       <ul className="card-list">
         <li className="paper">

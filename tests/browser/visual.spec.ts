@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-test("capturas da composição aprovada — desktop e mobile", async ({ page }) => {
+test("identidade Mais Acesso — aluno, professor, login e mobile", async ({ page }) => {
   await page.setViewportSize({ width: 1586, height: 991 });
   await page.goto("/previa/aluno");
   await expect(
@@ -9,6 +9,8 @@ test("capturas da composição aprovada — desktop e mobile", async ({ page }) 
     "style",
     /font-size: 100%/,
   );
+  await expect(page.locator(".path-art img")).toBeVisible();
+  await expect.poll(() => page.locator(".path-art img").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
   await page.screenshot({
     path: "test-results/reference-desktop.png",
     fullPage: true,
@@ -18,4 +20,13 @@ test("capturas da composição aprovada — desktop e mobile", async ({ page }) 
     path: "test-results/reference-mobile.png",
     fullPage: true,
   });
+  await page.setViewportSize({ width: 1586, height: 991 });
+  await page.goto("/previa/professor");
+  await expect(page.locator(".path-art img")).toBeVisible();
+  await expect.poll(() => page.locator(".path-art img").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  await page.screenshot({ path: "test-results/reference-teacher.png", fullPage: true });
+  await page.goto("/login");
+  await expect(page.locator(".login-art")).toBeVisible();
+  await expect.poll(() => page.locator(".login-art").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  await page.screenshot({ path: "test-results/reference-login.png", fullPage: true });
 });

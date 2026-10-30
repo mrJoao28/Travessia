@@ -43,4 +43,4 @@ Não afirmar que mocks, screenshots, respostas falsas ou arquivos de especifica�
 
 ## Escopo final da apresentação
 
-MVP para Brazil Conference, design estritamente conforme docs/design/reference-student.png. Ler docs/DEMO.md e docs/DEPLOY.md. Os prompts atualizados em docs/agents prevalecem sobre a proposta inicial de Supabase Auth/worker: Better Auth no PostgreSQL, dois projetos Vercel e Gemini limitado por requisição. Conta e seed são tarefas de implementação, não funcionalidades já existentes. Credenciais pessoais não são versionadas.
+MVP para Brazil Conference. A direção visual atual segue o Mais Acesso Conecta e os assets fornecidos pelo usuário; ler docs/DESIGN.md e docs/design/APPROVED.md. A imagem reference-student.png é referência histórica. Ler docs/DEMO.md e docs/DEPLOY.md. Os prompts atualizados em docs/agents prevalecem sobre a proposta inicial de Supabase Auth/worker: Better Auth no PostgreSQL, dois projetos Vercel e Gemini limitado por requisição. Conta e seed são tarefas de implementação, não funcionalidades já existentes. Credenciais pessoais não são versionadas.

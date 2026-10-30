@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const config: NextConfig = {
   poweredByHeader: false,
+  devIndicators: false,
   outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
   async headers() {
     return [

@@ -10,7 +10,7 @@ body {
   background: var(--background);
   color: var(--text);
   font:
-    1.0625rem/1.5 "Segoe UI",
+    1.0625rem/1.6 "Segoe UI",
     Arial,
     sans-serif;
 }
@@ -112,7 +112,7 @@ svg {
 }
 .shell {
   display: grid;
-  grid-template-columns: 17.625rem minmax(0, 1fr);
+  grid-template-columns: 15.5rem minmax(0, 1fr);
   min-height: 100vh;
 }
 .sidebar {
@@ -123,18 +123,24 @@ svg {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+  background: var(--surface);
 }
 .brand {
   display: flex;
   width: fit-content;
   text-decoration: none;
   color: var(--primary);
-  margin: 0 1.5rem 0.9rem;
+  margin: 0 0.65rem 1.25rem;
 }
 .brand-lockup {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+.brand-lockup > svg {
+  width: 4rem;
+  height: 3rem;
+  margin-bottom: 0.45rem;
 }
 .brand-lockup strong {
   font-size: 2.15rem;
@@ -142,10 +148,10 @@ svg {
   line-height: 1;
 }
 .brand-lockup small {
-  font-size: 0.64rem;
-  letter-spacing: 0.22em;
+  font-size: 0.61rem;
+  letter-spacing: 0.12em;
   line-height: 1.6;
-  margin-top: 0.85rem;
+  margin-top: 0.65rem;
 }
 nav ul {
   padding: 0;
@@ -157,10 +163,10 @@ nav ul {
 nav a {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 0.8rem;
   min-height: 3.3rem;
   text-decoration: none;
-  padding: 0.8rem 1.5rem;
+  padding: 0.8rem 1rem;
   border-radius: 0.8rem;
 }
 nav a:hover,
@@ -170,6 +176,8 @@ nav a:hover,
 .nav-current {
   background: var(--sage);
   font-weight: 650;
+  color: var(--primary);
+  box-shadow: inset 3px 0 var(--primary);
 }
 .sidebar-tools {
   margin: 0.5rem 0.8rem 0;
@@ -206,7 +214,7 @@ nav a:hover,
 }
 .workspace {
   min-width: 0;
-  padding: 1.4rem 1.4rem 0;
+  padding: 1.4rem 2rem 0;
 }
 .topbar {
   position: relative;
@@ -214,8 +222,10 @@ nav a:hover,
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  min-height: 2.9rem;
-  padding: 0 0.9rem;
+  min-height: 4.2rem;
+  padding: 0 0 1.1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.9rem;
 }
 .topbar-actions {
   display: flex;
@@ -233,11 +243,11 @@ nav a:hover,
   color: var(--terracotta);
 }
 .page-heading {
-  margin: -0.2rem 0.9rem 1.5rem;
+  margin: 0 0 1.7rem;
 }
 .page-heading p {
   color: var(--muted);
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   margin-bottom: 0;
 }
 .preferences {
@@ -334,12 +344,12 @@ nav a:hover,
 }
 .mission-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   align-items: center;
-  padding: 1.7rem 0 1.5rem 2rem;
+  padding: 2rem;
   gap: 1.5rem;
   border: 1px solid var(--border);
-  border-radius: 0.8rem;
+  border-radius: 1.25rem;
   background: var(--surface);
   margin-bottom: 0.9rem;
 }
@@ -349,13 +359,13 @@ nav a:hover,
   margin-bottom: 0.6rem;
 }
 .mission-hero h2 {
-  font-size: clamp(1.9rem, 3vw, 3rem);
+  font-size: clamp(1.9rem, 2.7vw, 2.7rem);
   letter-spacing: -0.04em;
   margin-bottom: 0.15rem;
 }
 .hero-description {
   color: var(--muted);
-  font-size: 1.4rem;
+  font-size: 1.15rem;
 }
 .progress-description {
   margin: 1rem 0;
@@ -434,7 +444,7 @@ nav a:hover,
   padding: 0.8rem 1.15rem;
   min-height: 3rem;
   border: 1px solid var(--primary);
-  border-radius: 0.7rem;
+  border-radius: 2rem;
   background: var(--primary);
   color: var(--on-primary);
   font-weight: 650;
@@ -458,9 +468,9 @@ nav a:hover,
 }
 .mission-hero .button {
   padding: 0.8rem 2.1rem;
-  min-width: 16.5rem;
-  border-radius: 1.3rem;
-  font-size: 1.15rem;
+  min-width: 0;
+  border-radius: 2rem;
+  font-size: 1rem;
 }
 .path-art {
   position: relative;
@@ -472,7 +482,7 @@ nav a:hover,
   overflow: hidden;
   border-radius: 0.6rem;
 }
-.path-art svg {
+.path-art img {
   width: 100%;
   height: auto;
 }
@@ -493,8 +503,8 @@ nav a:hover,
 .paper {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 0.8rem;
-  padding: 1.3rem;
+  border-radius: 1rem;
+  padding: 1.5rem;
   min-width: 0;
 }
 .muted,
@@ -520,7 +530,7 @@ nav a:hover,
   border-radius: 0.7rem;
   background: var(--sage);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 1.4rem;
   padding: 1rem 1.4rem;
@@ -569,7 +579,7 @@ nav a:hover,
   width: fit-content;
   border-radius: 2rem;
   font-size: 0.8rem;
-  background: #d3dfcf;
+  background: var(--sage);
   padding: 0.6rem 0.9rem;
   white-space: nowrap;
 }
@@ -577,7 +587,8 @@ nav a:hover,
   background: var(--gold);
 }
 .current-lesson {
-  background: #f6f0e7 !important;
+  background: var(--sage) !important;
+  box-shadow: inset 3px 0 var(--primary);
 }
 .support-card > p {
   font-size: 1rem;
@@ -589,7 +600,7 @@ nav a:hover,
   gap: 1rem;
   align-items: center;
   border: 1px solid var(--border);
-  border-radius: 0.8rem;
+  border-radius: 0.65rem;
   padding: 0.65rem 1.2rem;
   min-height: 3.1rem;
   text-decoration: none;
@@ -718,23 +729,25 @@ nav a:hover,
 .login-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  background: var(--surface);
 }
 .login-intro {
   background: var(--sage);
-  padding: clamp(1.5rem, 6vw, 7rem);
+  padding: clamp(1.5rem, 4vw, 4.5rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
 }
 .login-intro h1 {
-  margin-top: 3rem;
+  margin-top: 2rem;
+  max-width: 12ch;
 }
 .login-form {
   align-self: center;
   padding: 2rem;
-  max-width: 31rem;
+  max-width: 30rem;
   width: 100%;
   justify-self: center;
 }
@@ -1039,11 +1052,11 @@ body {
 }
 @media (min-width: 1101px) {
   .page-heading {
-    margin-top: -0.95rem;
+    margin-top: 0;
   }
   .mission-hero {
-    padding-top: 0.6rem;
-    padding-bottom: 0.6rem;
+    padding-top: 1.2rem;
+    padding-bottom: 1.2rem;
   }
   .hero-copy {
     padding-block: 0.95rem;
@@ -1052,7 +1065,7 @@ body {
     margin-top: 1.6rem;
   }
   .lesson-list li {
-    grid-template-columns: minmax(0, 1fr) 11rem auto;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 }
 .lesson-body h3 {
@@ -1071,6 +1084,98 @@ body {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+}
+@media (min-width: 1351px) {
+  .lesson-list li:has(.lesson-format) {
+    grid-template-columns: minmax(0, 1fr) 9rem auto;
+  }
+}
+.network-brand {
+  margin: auto 0.6rem 1.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+.network-brand > span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.network-brand img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.network-brand p {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  margin: 0.75rem 0 0;
+}
+.teacher-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 2rem;
+}
+.teacher-overview > div {
+  min-width: 0;
+}
+.teacher-overview .path-art {
+  max-width: 26rem;
+  justify-self: end;
+}
+.login-art {
+  width: min(100%, 23rem);
+  height: auto;
+  align-self: center;
+  margin-block: 0.5rem;
+  border-radius: 1.5rem;
+}
+.login-network {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 1rem;
+}
+.login-network img {
+  max-width: 40%;
+  height: auto;
+  flex-shrink: 0;
+}
+.login-network p {
+  max-width: 25ch;
+  margin: 0;
+}
+.login-form .form-stack > button {
+  width: 100%;
+}
+.login-form input:focus-visible,
+.form-stack textarea:focus-visible {
+  border-color: var(--primary);
+}
+[data-focus="true"] .teacher-overview {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 1100px) {
+  .teacher-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 800px) {
+  .network-brand,
+  .login-art {
+    display: none;
+  }
+  .brand-lockup > svg {
+    margin-bottom: 0;
+  }
+  .login-network {
+    flex-wrap: wrap;
+  }
+  .topbar {
+    margin-bottom: 1.2rem;
+  }
 }
 .preferences > summary {
   list-style: none;

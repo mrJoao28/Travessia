@@ -75,4 +75,6 @@ O Travessia poderá se integrar ao Mais Acesso Conecta em etapa futura. Este MVP
 
 ## MVP para Brazil Conference
 
-O design aprovado está em [docs/design/reference-student.png](docs/design/reference-student.png). Siga a referência estritamente. Os dois prompts estão em [frontend](docs/agents/FRONTEND.md) e [backend](docs/agents/BACKEND.md). A implantação usa duas aplicações Vercel, Better Auth/PostgreSQL, Gemini no servidor e seed conforme [DEMO.md](docs/DEMO.md) e [DEPLOY.md](docs/DEPLOY.md). Consulte as evidências para distinguir implementação local de validação publicada.
+A identidade atual segue o Mais Acesso Conecta: azul institucional, superfícies brancas e azul claro, amarelo pontual e ilustrações inclusivas. A direção e as referências estão em [DESIGN.md](docs/DESIGN.md), com procedência e prompts das artes em [ARTWORK.md](docs/design/ARTWORK.md). A antiga imagem marfim/verde permanece como registro histórico.
+
+Os prompts de trabalho estão em [frontend](docs/agents/FRONTEND.md) e [backend](docs/agents/BACKEND.md). A preparação para o servidor Mais Acesso e a containerização serão tratadas em etapa própria; as instruções antigas da Vercel não representam validação ou configuração desse novo destino. Consulte as evidências para distinguir implementação, testes e publicação.
