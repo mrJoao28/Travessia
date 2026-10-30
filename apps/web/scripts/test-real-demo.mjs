@@ -123,6 +123,16 @@ try {
   const config = readConfig();
   phase = "executar seed real de teste";
   await seedDemo(db, config);
+  // Test-only credentials for real learner views; never created by production seed.
+  const { createAuth } = await import("../../api/src/auth.ts");
+  const authContext = await createAuth(db, config).$context;
+  for (const [suffix, id] of [["A", "demo-student-1"], ["B", "demo-student-2"]]) {
+    const user = await db.user.findUniqueOrThrow({ where: { id } });
+    const password = randomBytes(18).toString("hex");
+    await authContext.internalAdapter.createAccount({ userId: id, accountId: id, providerId: "credential", password: await authContext.password.hash(password) });
+    process.env[`SUPPORT_STUDENT_${suffix}_EMAIL`] = user.email;
+    process.env[`SUPPORT_STUDENT_${suffix}_PASSWORD`] = password;
+  }
   phase = "iniciar API real";
   runtime = await createApplication(db, config);
   await runtime.app.listen(0, "127.0.0.1");

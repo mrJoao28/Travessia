@@ -104,6 +104,20 @@ try {
   }
   const members = (await request('/api/v1/classrooms/demo-class-oficina/members')).json.items;
   check(members.filter(m => m.role === 'student').length === 8, 'Contexto docente indisponível.');
+  const teacherMission = (await request('/api/v1/missions/demo-class-oficina-mission')).json;
+  const teacherVersion = teacherMission.publishedVersion;
+  const strategyPath = `/api/v1/missions/${teacherMission.id}/strategy-plans`;
+  const supportMarker = 'Apoio pedagógico preservado no volume PostgreSQL.';
+  if (verifyPersistence) {
+    const plans = (await request(`${strategyPath}?versionId=${teacherVersion.id}`)).json.items;
+    check(plans.some(plan => plan.items.some(item => item.content === supportMarker)), 'Estratégias não sobreviveram à recriação dos containers.');
+  } else {
+    const recipients = (await request(`/api/v1/missions/${teacherMission.id}/strategy-recipients`)).json.items;
+    check(recipients.length > 0, 'Destinatários da estratégia indisponíveis.');
+    await request(strategyPath, { method: 'POST', body: { versionId: teacherVersion.id, stepId: teacherVersion.steps[0].id,
+      audience: 'students', studentIds: [recipients[0].id], items: [{ strategyId: 'step-checklist', content: supportMarker }],
+      reviewed: true, requestKey: crypto.randomUUID() } });
+  }
   await request('/api/auth/sign-out', { method: 'POST', body: {} });
   await request('/api/v1/me', { status: 401 });
   await login();

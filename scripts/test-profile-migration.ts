@@ -34,8 +34,8 @@ export async function verifyProfileMigration(directory: string, run: (file: stri
     assert.equal((await db.account.findUniqueOrThrow({ where: { id: 'legacy-account' } })).password, 'fixture-hash-unchanged');
     assert.equal((await db.session.findUniqueOrThrow({ where: { id: 'legacy-session' } })).token, 'fixture-token-unchanged');
     assert.equal(await db.membership.count({ where: { userId: 'legacy-person', active: true } }), 2);
-    const tables = await db.$queryRaw<{ tablename: string; rowsecurity: boolean }[]>`SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'legacy_profile_upgrade' AND tablename IN ('StudentProfile', 'TeacherProfile', 'TeachingAssignment')`;
-    assert.equal(tables.length, 3); assert.ok(tables.every(table => table.rowsecurity));
+    const tables = await db.$queryRaw<{ tablename: string; rowsecurity: boolean }[]>`SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'legacy_profile_upgrade' AND tablename IN ('StudentProfile', 'TeacherProfile', 'TeachingAssignment', 'StrategyPlan', 'StrategyItem', 'StrategyRecipient')`;
+    assert.equal(tables.length, 6); assert.ok(tables.every(table => table.rowsecurity));
     console.log('Upgrade de perfis confirmado: curso, conta, sessão e vínculos preservados; novas tabelas privadas.');
   } finally {
     await db.$disconnect(); Object.assign(process.env, original);

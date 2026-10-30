@@ -66,6 +66,7 @@ Leia [AGENTS.md](AGENTS.md) antes de alterar o projeto. As orientações de exec
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [Contrato da API](docs/API.md)
 - [Perfis de alunos e professores](docs/PROFILES.md)
+- [Estratégias pedagógicas](docs/STRATEGIES.md)
 - [Acessibilidade](docs/ACCESSIBILITY.md)
 - [Segurança e privacidade](docs/SECURITY.md)
 - [Identidade visual](docs/DESIGN.md)

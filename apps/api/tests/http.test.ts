@@ -253,6 +253,79 @@ if (process.env.FRONTEND_PROXY_SOURCE) test('contrato com o proxy real do fronte
   assert.equal(published.status, 'published');
   await proxy('auth', ['sign-out'], cookie, 'POST', {});
 });
+test('estratégias: apoios por etapa/turma/aluno, privacidade, revisão, concorrência e revogação', async () => {
+  await request('/v1/strategies', '', 'GET', undefined, 401);
+  const catalog = (await request('/v1/strategies', main)).json.items;
+  assert.equal(catalog.length, 8);
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const version = created.draftVersion;
+  await request(`/v1/missions/${created.id}/publish`, main, 'POST', { versionId: version.id, reviewed: true });
+  const path = `/v1/missions/${created.id}`;
+  const baseInput = { versionId: version.id, stepId: null, audience: 'classroom', studentIds: [], items: [{ strategyId: 'step-checklist', content: 'Apoio de toda a turma.' }], reviewed: true, requestKey: randomUUID() };
+  const common = (await request(`${path}/strategy-plans`, main, 'POST', baseInput)).json;
+  assert.equal((await request(`${path}/strategy-plans`, main, 'POST', baseInput)).json.id, common.id);
+  await request(`${path}/strategy-plans`, main, 'POST', { ...baseInput, items: [{ strategyId: 'step-checklist', content: 'Conteúdo diferente.' }] }, 409);
+  const personalA = (await request(`${path}/strategy-plans`, main, 'POST', { ...baseInput, requestKey: randomUUID(), stepId: version.steps[0].id, audience: 'students', studentIds: ['demo-student-1'], items: [{ strategyId: 'worked-example', content: 'Apoio individual exclusivo de A.' }] })).json;
+  const personalB = (await request(`${path}/strategy-plans`, main, 'POST', { ...baseInput, requestKey: randomUUID(), audience: 'students', studentIds: ['demo-student-2'], items: [{ strategyId: 'context-glossary', content: 'Apoio individual exclusivo de B.' }] })).json;
+  const ownA = (await request(`${path}/supports?versionId=${version.id}`, a)).json;
+  const ownB = (await request(`${path}/supports?versionId=${version.id}`, b)).json;
+  assert.equal(ownA.items.length, 2); assert.equal(ownB.items.length, 2);
+  assert.ok(JSON.stringify(ownA).includes('exclusivo de A') && !JSON.stringify(ownA).includes('exclusivo de B'));
+  assert.ok(!JSON.stringify(ownA).includes('recipients') && !JSON.stringify(ownA).includes('audience') && !JSON.stringify(ownA).includes('Pessoa'));
+  assert.ok(ownA.items.some((i: any) => i.stepId === version.steps[0].id));
+  await request(`${path}/strategy-plans?versionId=${version.id}`, a, 'GET', undefined, 404);
+  await request(`${path}/strategy-plans?versionId=${version.id}`, otherTeacher, 'GET', undefined, 404);
+  await request(`${path}/strategy-plans`, a, 'POST', baseInput, 404);
+  await request(`${path}/strategy-recipients`, a, 'GET', undefined, 404);
+  const recipients = (await request(`${path}/strategy-recipients?limit=1`, main)).json;
+  assert.equal(recipients.items.length, 1); assert.ok(recipients.nextCursor);
+  assert.ok(!JSON.stringify(recipients).includes('email'));
+  const update = { versionId: version.id, stepId: null, audience: 'classroom', studentIds: [], items: [{ strategyId: 'step-checklist', content: 'Apoio atualizado.' }], reviewed: true, expectedRevision: common.revision };
+  const concurrent = await Promise.all(['Versão A', 'Versão B'].map(content => fetch(base + `${path}/strategy-plans/${common.id}`, { method: 'PATCH', headers: { cookie: main, origin: config.origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...update, items: [{ strategyId: 'step-checklist', content }] }) })));
+  assert.deepEqual(concurrent.map(r => r.status).sort(), [200, 409]);
+  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { active: false } });
+  await request(`${path}/supports?versionId=${version.id}`, a, 'GET', undefined, 404);
+  await request(`${path}/strategy-plans`, main, 'POST', { ...baseInput, requestKey: randomUUID(), audience: 'students', studentIds: ['demo-student-1'] }, 400);
+  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { active: true } });
+  await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: workshop } }, data: { active: false } });
+  await request(`${path}/strategy-plans?versionId=${version.id}`, main, 'GET', undefined, 404);
+  await request(`${path}/strategy-plans/${personalA.id}/remove`, main, 'POST', { expectedRevision: personalA.revision }, 404);
+  await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: workshop } }, data: { active: true } });
+  await request(`${path}/strategy-plans/${personalB.id}/remove`, main, 'POST', { expectedRevision: personalB.revision });
+  assert.equal(await db.strategyRecipient.count({ where: { planId: personalB.id } }), 0);
+  assert.equal(await db.strategyItem.count({ where: { planId: personalB.id } }), 0);
+  assert.equal((await request(`${path}/supports?versionId=${version.id}`, b)).json.items.length, 1);
+  const draft = (await request(path, main, 'PATCH', { ...fixture, expectedDraftVersionId: null })).json.draftVersion;
+  await request(`${path}/strategy-plans`, main, 'POST', { ...baseInput, versionId: draft.id, requestKey: randomUUID(), items: [{ strategyId: 'planning-outline', content: 'Apoio privado de rascunho.' }] });
+  assert.ok(!JSON.stringify((await request(`${path}/supports?versionId=${version.id}`, a)).json).includes('rascunho'));
+  await request(`${path}/supports?versionId=${draft.id}`, a, 'GET', undefined, 409);
+  await request(`${path}/publish`, main, 'POST', { versionId: draft.id, reviewed: true });
+  await request(`${path}/supports?versionId=${version.id}`, a, 'GET', undefined, 409);
+  const newSupports = (await request(`${path}/supports?versionId=${draft.id}`, a)).json;
+  assert.equal(newSupports.items.length, 1); assert.equal(newSupports.items[0].content, 'Apoio privado de rascunho.');
+  await request(`${path}/strategy-plans/${personalA.id}/remove`, main, 'POST', { expectedRevision: personalA.revision }, 404);
+});
+test('estratégias rejeitam destinos cruzados, campos indevidos, falta de revisão e alterações em missão arquivada', async () => {
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const path = `/v1/missions/${created.id}`;
+  const input = { versionId: created.draftVersion.id, stepId: null, audience: 'classroom', studentIds: [], items: [{ strategyId: 'step-checklist', content: 'Conteúdo revisado.' }], reviewed: true, requestKey: randomUUID() };
+  for (const change of [{ role: 'teacher' }, { ownerId: mainId }, { reviewed: false }, { studentIds: ['demo-student-1'] },
+    { audience: 'students' }, { items: [] }, { items: [{ strategyId: 'diagnostico', content: 'x' }] },
+    { items: [{ strategyId: 'step-checklist', content: ' ' }] }, { items: [{ strategyId: 'step-checklist', content: 'x'.repeat(3001) }] },
+    { items: [...input.items, ...input.items] }, { audience: 'students', studentIds: ['demo-student-1', 'demo-student-1'] },
+  ]) await request(`${path}/strategy-plans`, main, 'POST', { ...input, ...change }, 400);
+  await request(`${path}/strategy-plans`, main, 'POST', { ...input, audience: 'students', studentIds: ['demo-teacher-programacao'] }, 400);
+  await request(`${path}/strategy-plans`, main, 'POST', { ...input, versionId: 'foreign-version' }, 404);
+  const foreign = await db.step.findFirstOrThrow({ where: { version: { mission: { classroomId: 'demo-class-calculo' } } } });
+  await request(`${path}/strategy-plans`, main, 'POST', { ...input, stepId: foreign.id }, 404);
+  await request(`${path}/strategy-plans`, main, 'POST', input, 403, 'https://attacker.invalid');
+  assert.equal(await db.strategyPlan.count({ where: { versionId: input.versionId } }), 0);
+  const plan = (await request(`${path}/strategy-plans`, main, 'POST', input)).json;
+  await request(`${path}/strategy-plans/${plan.id}/remove`, main, 'POST', { expectedRevision: plan.revision + 1 }, 409);
+  await request(`${path}/archive`, main, 'POST', {});
+  await request(`${path}/strategy-plans/${plan.id}/remove`, main, 'POST', { expectedRevision: plan.revision }, 409);
+  await request(`${path}/strategy-plans`, main, 'POST', { ...input, requestKey: randomUUID() }, 409);
+});
 test('IA indisponível clara; cota concorrente, deduplicação e revisão humana', { timeout: 30000 }, async () => {
   let mission = (await request(`/v1/missions/${workshop}-draft`, main)).json;
   const input = { materialIds: [mission.draftVersion.materials[0].id], objectives: ['Comparar soluções.'], approvedForProvider: true, idempotencyKey: randomUUID() };
