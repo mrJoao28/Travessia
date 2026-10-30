@@ -1,43 +1,25 @@
-# Deploy do MVP na Vercel
+# Execução e implantação do Travessia
 
-Configuração executável do backend e passos de banco/seed em [BACKEND-OPERATIONS.md](BACKEND-OPERATIONS.md). Contrato do proxy/cookies em [BACKEND-INTEGRATION.md](BACKEND-INTEGRATION.md). O backend está preparado para deploy; publicação e teste do proxy na URL final dependem de infraestrutura/variáveis privadas e integração frontend.
+O destino atual é o servidor Mais Acesso, com frontend, API e PostgreSQL em containers Linux. A configuração executável e os comandos de teste local estão em [DOCKER.md](DOCKER.md). A implantação anterior na Vercel foi descontinuada como direção do projeto.
 
-## Decisão atual
+## Arquitetura atual
 
-Dois projetos Vercel no mesmo repositório: frontend Next.js com raiz apps/web e backend NestJS com raiz apps/api. Reutilizar workspaces/lockfile da raiz conforme configuração de monorepo. Supabase fornece PostgreSQL e Storage privado. Auth do MVP: Better Auth com sessões no PostgreSQL. Essa decisão substitui a proposta anterior de Supabase Auth.
+Três serviços no compose.yaml, na mesma rede bridge: frontend Next.js standalone, API NestJS/Better Auth/Prisma e PostgreSQL com volume persistente. Apenas a porta do frontend é publicada, por padrão em loopback. Frontend chama API, e API acessa o banco. Não há credenciais de banco no frontend.
 
-Vercel suporta NestJS com entrypoint reconhecido e chamadas app.listen; confirmar configuração atual antes de publicar: https://vercel.com/docs/frameworks/backend/nestjs e https://vercel.com/kb/guide/ship-a-nestjs-app-on-vercel . Todos os limites de Functions se aplicam. Não prever worker persistente, disco durável ou Map de sessão/rate limit como armazenamento confiável.
+As imagens usam Node 24 / Debian Bookworm. Prisma Client é gerado dentro de Linux; a imagem API inclui a CLI para executar as migrations existentes. Next.js inclui arquivos public e .next/static junto ao standalone. Os processos API/frontend executam sem root e escutam em 0.0.0.0 dentro dos containers.
 
-## Rotas e sessão
+## Fluxo
 
-Navegador usa mesma origem do frontend. Encaminhar /api/auth/* para /api/auth/* do backend e /api/v1/* para /v1/*, com destino obtido exclusivamente de API_INTERNAL_URL server-side. Preservar headers/cookies/Set-Cookie e sem aceitar proxy para URL arbitrária. Frontend/backend combinam baseURL pública do auth, cookie path e estratégia de proxy antes da implementação. Autorização também acontece no backend; proxy não concede acesso.
+1. Criar a configuração privada com docker:setup e revisar o arquivo no editor.
+2. Executar docker:up: build, banco saudável, migration explícita e aplicações.
+3. Para demonstração isolada, executar docker:seed manualmente.
+4. Testar login, vínculos, atividades, feedback, barreiras e persistência. CI Linux também executa teste real dos containers.
+5. Combinar domínio HTTPS, proxy, configuração privada, volume/backup e publicação das imagens com a equipe do servidor.
 
-Preferir cookies host-only, HttpOnly, Secure e política SameSite compatível com fluxo; checar origem e proteção CSRF. Não emitir cookies para domínio interno do backend quando o navegador usa frontend. Verificar o fluxo completo na URL Vercel. Previews usam ambiente de dados isolado e origens aprovadas explicitamente; nunca wildcard amplo para permitir cookies.
+APP_PUBLIC_ORIGIN define a origem pública da autenticação. ALLOW_LOCAL_HTTP vale exclusivamente para localhost/loopback; no servidor, usar HTTPS e desativar essa opção. A exceção HTTP do proxy interno é limitada ao serviço exato http://api:3001 e ativada por configuração de servidor, preservando validação de origem, cookies e autorização.
 
-## Variáveis
+Migrations e seed não executam em build, healthcheck ou na inicialização da aplicação. docker:up orquestra a migration em uma tarefa temporária antes de iniciar o conjunto. Nenhuma conta ou dado real é migrado implicitamente. A adaptação do schema de alunos/professores fica para etapa própria.
 
-| Aplicação | Variáveis privadas |
-|---|---|
-| Frontend | API_INTERNAL_URL e configurações server-side de proxy |
-| Backend | DATABASE_URL, DIRECT_URL conforme estratégia de migração, SUPABASE_URL, credencial de Storage server-side quando necessária |
-| Backend auth | BETTER_AUTH_SECRET, BETTER_AUTH_URL (origem pública), TRUSTED_WEB_ORIGIN |
-| Backend Gemini | GEMINI_API_KEY, GEMINI_MODEL, AI_ENABLED |
-| Seed/demo | DEMO_MODE, DEMO_ONLY, DEMO_USER_NAME, DEMO_USER_EMAIL, DEMO_USER_PASSWORD, DEMO_USER_COURSE |
+Gemini continua limitado por requisição, com revisão humana e quotas persistidas. Não há worker durável novo nesta etapa. Uploads continuam desativados. O banco local atende autenticação e materiais textuais sem Supabase; Storage permanece opcional para objetos previamente verificados.
 
-Nenhum segredo usa NEXT_PUBLIC_. Os arquivos .env.example só descrevem nomes, não contêm valores de acesso. Biblioteca auth: https://better-auth.com/docs/reference/options e https://better-auth.com/docs/integrations/nestjs . Configurar exceção de senha curta somente na demo isolada com signup desabilitado; política forte fora desse contexto.
-
-## Gemini serverless
-
-Primeira versão gera rascunhos dentro de uma requisição com entrada pequena, limite de saída e timeout controlado inferior ao orçamento da função. Estado persistido no banco e proteção contra repetição. Não prometer execução durável após retornar resposta. Processamento longo exige solução durável adicional em fase posterior; pg-boss/worker contínuo não faz parte do MVP hospedado integralmente na Vercel.
-
-## Publicação
-
-1. Configurar banco/Storage isolados para demonstração e segredos privados.
-2. Aplicar migrations por comando controlado; não em cold start ou a cada build.
-3. Executar seed manual/idempotente no ambiente correto.
-4. Importar os dois projetos Vercel e conferir dependências externas ao root de cada app.
-5. Configurar URLs, cookies, proxy e origens finais.
-6. Verificar health, login/logout, permissões, conta/seed, arquivos e geração/revisão.
-7. Conferir builds, teclado/zoom, ausência de segredos em bundles e registros. Documentar URLs publicadas e limitações.
-
-O usuário pediu preparação/lançamento na Vercel; esta fundação ainda não foi publicada e nenhuma conta foi semeada. Planos, limites e custos precisam ser conferidos na implantação. Não garantir operação ilimitada ou gratuita.
+Os documentos antigos específicos da Vercel são históricos. Sua configuração não é requisito para os containers. A validação no servidor Mais Acesso só pode ser declarada após a integração com a infraestrutura da equipe.

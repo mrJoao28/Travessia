@@ -1,6 +1,11 @@
 const safeMethods = new Set(["GET", "HEAD"]);
 const authPaths = new Set(["sign-in/email", "sign-out", "get-session"]);
 const maxBodyBytes = 64 * 1024;
+type ProxySettings = {
+  internalUrl?: string;
+  publicOrigin?: string;
+  allowInternalHttp?: string;
+};
 
 function failure(status: number, code: string, message: string) {
   return Response.json(
@@ -14,9 +19,10 @@ export async function proxyBackend(
   request: Request,
   group: "auth" | "v1",
   path: string[],
-  settings = {
+  settings: ProxySettings = {
     internalUrl: process.env.API_INTERNAL_URL,
     publicOrigin: process.env.WEB_PUBLIC_ORIGIN,
+    allowInternalHttp: process.env.API_INTERNAL_ALLOW_HTTP,
   },
 ) {
   if (!path.length || path.some((segment) => !/^[a-zA-Z0-9_-]+$/.test(segment)))
@@ -46,8 +52,13 @@ export async function proxyBackend(
       backend.pathname !== "/"
     )
       throw new Error();
+    // This exception is an explicit server setting for the fixed Compose service.
+    // Request headers and client input can never choose the upstream destination.
+    const composeHttp = settings.allowInternalHttp === "true" &&
+      backend.origin === "http://api:3001";
     if (
       backend.protocol !== "https:" &&
+      !composeHttp &&
       !(
         process.env.NODE_ENV !== "production" &&
         backend.protocol === "http:" &&

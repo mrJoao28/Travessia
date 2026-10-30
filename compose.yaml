@@ -1,0 +1,103 @@
+name: travessia
+services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-travessia}
+      POSTGRES_DB: ${POSTGRES_DB:-travessia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Execute npm run docker:setup}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [travessia]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
+  api:
+    image: travessia-api:local
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_HOST: 0.0.0.0
+      PORT: "3001"
+      DATABASE_URL: ${DATABASE_URL:?Execute npm run docker:setup}
+      DIRECT_URL: ${DATABASE_URL:?Execute npm run docker:setup}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Execute npm run docker:setup}
+      BETTER_AUTH_URL: ${APP_PUBLIC_ORIGIN:-http://localhost:3000}
+      TRUSTED_WEB_ORIGIN: ${APP_PUBLIC_ORIGIN:-http://localhost:3000}
+      ALLOW_LOCAL_HTTP: ${ALLOW_LOCAL_HTTP:-false}
+      DEMO_MODE: ${DEMO_MODE:-false}
+      DEMO_ONLY: ${DEMO_ONLY:-false}
+      DEMO_DATABASE_NAME: ${POSTGRES_DB:-travessia}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      GEMINI_PUBLIC_USE_APPROVED: ${GEMINI_PUBLIC_USE_APPROVED:-false}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_STORAGE_SECRET: ${SUPABASE_STORAGE_SECRET:-}
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [travessia]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:3001/v1/health").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
+  frontend:
+    image: travessia-frontend:local
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    init: true
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
+      NEXT_TELEMETRY_DISABLED: "1"
+      API_INTERNAL_URL: http://api:3001
+      API_INTERNAL_ALLOW_HTTP: "true"
+      WEB_PUBLIC_ORIGIN: ${APP_PUBLIC_ORIGIN:-http://localhost:3000}
+    ports:
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-3000}:3000"
+    depends_on:
+      api: {condition: service_healthy}
+    networks: [travessia]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, node, -e, 'fetch("http://127.0.0.1:3000/login").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+    stop_grace_period: 20s
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
+networks:
+  travessia:
+    driver: bridge
+volumes:
+  postgres-data:

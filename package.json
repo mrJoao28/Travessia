@@ -3,8 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "workspaces": ["apps/*", "packages/*"],
-  "engines": { "node": ">=24 <25" },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev:web": "npm run dev --workspace @travessia/web",
     "dev:api": "npm run dev --workspace @travessia/api",
@@ -14,9 +19,19 @@
     "contracts:generate": "tsx apps/api/scripts/generate-contracts.ts && openapi-typescript packages/contracts/openapi.json -o packages/contracts/src/api.d.ts",
     "build": "npm run build --workspace @travessia/api && npm run build --workspace @travessia/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "node --test tests/*.test.ts",
+    "test": "node --test tests/*.test.ts apps/web/tests/*.test.mjs",
     "check:foundation": "node scripts/check-foundation.mjs",
-    "check": "npm run check:foundation && npm run typecheck && npm test"
+    "check": "npm run check:foundation && npm run typecheck && npm test",
+    "docker:setup": "node scripts/docker-setup.mjs",
+    "docker:build": "node scripts/docker-compose.mjs build",
+    "docker:db": "node scripts/docker-compose.mjs up -d --wait --wait-timeout 120 db",
+    "docker:migrate": "node scripts/docker-compose.mjs run --rm --no-deps api node node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma",
+    "docker:seed": "node scripts/docker-seed.mjs",
+    "docker:up": "npm run docker:build && npm run docker:db && npm run docker:migrate && npm run docker:start",
+    "docker:down": "node scripts/docker-compose.mjs down",
+    "docker:smoke": "node scripts/docker-smoke.mjs",
+    "docker:logs": "node scripts/docker-compose.mjs logs --tail 80",
+    "docker:start": "node scripts/docker-compose.mjs up -d --wait --wait-timeout 120"
   },
   "devDependencies": {
     "openapi-typescript": "^7.13.0",

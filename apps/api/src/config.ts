@@ -19,10 +19,15 @@ function value<T>(schema: z.ZodType<T>, env: NodeJS.ProcessEnv, name: string): T
 export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   const origin = value(z.url(), env, 'TRUSTED_WEB_ORIGIN');
   const baseURL = value(z.url(), env, 'BETTER_AUTH_URL');
+  // Production images can be tested on loopback without changing NODE_ENV.
+  // Public domains always require HTTPS, even when this local opt-in is set.
+  const localHttp = env.ALLOW_LOCAL_HTTP === 'true' &&
+    new URL(origin).protocol === 'http:' &&
+    ['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin).hostname);
   for (const [name, address] of [['TRUSTED_WEB_ORIGIN', origin], ['BETTER_AUTH_URL', baseURL]]) {
     const url = new URL(address);
     if (url.origin !== address || !['http:', 'https:'].includes(url.protocol) ||
-      (env.NODE_ENV === 'production' && url.protocol !== 'https:')) {
+      (env.NODE_ENV === 'production' && url.protocol !== 'https:' && !localHttp)) {
       throw new ConfigurationError([name], 'Use somente a origem pública, sem caminho ou barra final; produção exige HTTPS.');
     }
   }
@@ -42,6 +47,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   const port = value(z.coerce.number().int().min(0).max(65535), { [portName]: env[portName] ?? '3001' }, portName);
   return { origin, baseURL, secret, demo, aiEnabled, model: env.GEMINI_MODEL ?? 'disabled',
     geminiKey: env.GEMINI_API_KEY, production: env.NODE_ENV === 'production',
+    secureCookies: new URL(origin).protocol === 'https:',
     storageURL: env.SUPABASE_URL, storageKey: env.SUPABASE_STORAGE_SECRET,
     port };
 }
