@@ -51,6 +51,7 @@ export function AccountMenu({
           <>
             <strong>{account.name}</strong>
             <p className="small">{account.course}</p>
+            <Link className="text-link" href={`/perfil?espaco=${student ? "aluno" : "professor"}`}>Meu perfil</Link>
             {account.switchHref && (
               <Link className="text-link" href={account.switchHref}>
                 {account.switchLabel}
