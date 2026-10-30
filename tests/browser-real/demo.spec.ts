@@ -288,6 +288,9 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByText('Rascunho salvo no servidor. Ainda não publicado.', { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/professor\/missoes\/[^/]+\/editar$/);
   const createdMissionId = new URL(page.url()).pathname.split('/')[3];
+  const savedDraft = await (await page.request.get(`/api/v1/missions/${createdMissionId}`)).json();
+  expect(savedDraft.draftVersion.materials).toMatchObject([{ title: 'Texto didático público fictício', text: 'Compare custo e clareza.' }]);
+  await expect(page.getByLabel('Texto do material', { exact: true })).toHaveValue('Compare custo e clareza.');
   await page.reload();
   await expect(page.getByLabel('Título da missão', { exact: true })).toHaveValue('Atividade inclusiva de teste');
   await expect(page.getByLabel('Texto do material', { exact: true })).toHaveValue('Compare custo e clareza.');
