@@ -5,6 +5,7 @@ import { api, pages, errorMessage } from "../lib/product-client";
 import type { Classroom, Mission, Submission } from "./live-workspace";
 import { OperationStatus } from "./operation-status";
 import { BarrierComposer } from "./live-barriers";
+import { MissionSupports } from "./mission-supports";
 
 export function LiveMission({
   id,
@@ -212,6 +213,7 @@ export function LiveMission({
                 Próxima etapa
               </button>
             </div>
+            {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
               <label className="check">
                 <input

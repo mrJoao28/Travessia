@@ -40,6 +40,7 @@ export function Workspace({
             ]
           : []),
         [`${base}/professor/missoes`, "Missões", "book"],
+        ...(!preview ? [["/professor/estrategias", "Estratégias", "list"] as [string, string, IconName]] : []),
         [`${base}/professor/entregas`, "Entregas", "document"],
         [`${base}/professor/barreiras`, "Apoios e barreiras", "message"],
       ];

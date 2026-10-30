@@ -665,6 +665,22 @@ nav a:hover,
 .teaching-row { min-width: 0; border: 1px solid var(--muted); border-radius: .5rem; padding: 1rem; display: grid; gap: .75rem; }
 .teaching-row legend { font-weight: 600; padding: 0 .4rem; }
 .profile-form button { justify-self: start; }
+.strategy-fields { min-width: 0; border: 0; padding: 0; margin: 0; }
+.strategy-fields > legend { font-weight: 600; margin-bottom: .6rem; }
+.strategy-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, .55fr); gap: 1.25rem; align-items: start; }
+.strategy-layout > *, .strategy-card, .strategy-destination { min-width: 0; overflow-wrap: anywhere; }
+.strategy-catalog { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 1rem; }
+.strategy-card { display: grid; gap: .7rem; align-content: start; }
+.strategy-card p { margin: 0; }
+.strategy-selected { border: 2px solid var(--primary); background: var(--sage); }
+.strategy-content, .strategy-preview, .strategy-saved { margin-top: 1.5rem; }
+.strategy-saved > article { margin-top: 1rem; }
+.strategy-saved details { margin-bottom: .6rem; }
+.strategy-fields .check { margin-block: .5rem; }
+.strategy-destination label.check { display: flex; gap: .65rem; align-items: flex-start; }
+.strategy-fields:disabled { opacity: .8; }
+.mission-supports { border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem; }
+@media (max-width: 1100px) { .strategy-layout { grid-template-columns: minmax(0, 1fr); } }
 .form-stack label.check {
   align-items: flex-start;
   font-weight: 400;
