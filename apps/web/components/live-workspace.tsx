@@ -226,9 +226,9 @@ function WorkspaceView({
                   classrooms={permitted}
                 />
               ) : section === "editor" && missionId ? (
-                <LiveEditor id={missionId} />
+                <LiveEditor id={missionId} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
               ) : section === "nova" && chosen ? (
-                <LiveEditor classroomId={chosen.id} />
+                <LiveEditor classroomId={chosen.id} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
               ) : section === "barreiras" && chosen ? (
                 <LiveBarriers classroom={chosen} />
               ) : section === "turmas" ? (

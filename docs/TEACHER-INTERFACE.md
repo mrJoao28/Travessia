@@ -27,7 +27,7 @@ Se um rascunho válido não mudou, avançar para apoios/revisão reutiliza sua v
 
 As opções de entrega se aplicam à missão inteira, mesmo quando o enunciado é exibido em uma etapa. Texto continua disponível. Os formatos liberados para o aluno se somam. Nenhuma deficiência impõe um apoio; a IA recebe apenas material didático autorizado e rótulos genéricos, conforme os controles existentes.
 
-Trocar de missão/versão ou sair com alterações pede confirmação de descarte. Erros preservam o conteúdo. Missões arquivadas permanecem sem edição. Remoção continua confirmada e não apaga entregas já enviadas.
+Trocar de missão/versão, seguir links da interface ou recarregar com alterações pede confirmação de descarte. Os botões Voltar do assistente preservam os campos. O histórico de navegação do navegador não é um mecanismo de salvamento de rascunho. Erros preservam o conteúdo. Missões arquivadas permanecem sem edição. Remoção continua confirmada e não apaga entregas já enviadas.
 
 ## Verificação
 

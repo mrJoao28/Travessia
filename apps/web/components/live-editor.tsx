@@ -43,9 +43,11 @@ const empty: Input = {
 export function LiveEditor({
   id,
   classroomId,
+  classroomNames,
 }: {
   id?: string;
   classroomId?: string;
+  classroomNames?: Record<string, string>;
 }) {
   const [stage, setStage] = useState(0);
   const [published, setPublished] = useState(false);
@@ -125,25 +127,12 @@ export function LiveEditor({
     const invalid = fields.find(field => !field.checkValidity());
     if (!invalid) return true;
     const targetStage = Number(invalid.closest<HTMLElement>('[data-editor-stage]')?.dataset.editorStage ?? 0);
+    const details = invalid.closest("details"); if (details) details.open = true;
     if (targetStage !== stage) { invalidField.current = invalid; setStage(targetStage); }
     else { invalid.focus(); invalid.reportValidity(); }
     return false;
   }
   async function save(forReview = false, nextStage?: number) {
-    for (const [fieldId, lines] of [
-      ["editor-objectives", input.objectives],
-      ["editor-criteria", input.criteria],
-    ] as const) {
-      const field = document.getElementById(
-        fieldId,
-      ) as HTMLTextAreaElement | null;
-      field?.setCustomValidity(
-        lines.length > 10 ||
-          lines.some((line) => !line.trim() || line.trim().length > 200)
-          ? "Use de 1 a 10 linhas preenchidas, com até 200 caracteres em cada linha."
-          : "",
-      );
-    }
     if (!validate() || pending) return;
     if (!dirty && mission?.draftVersion) {
       if (forReview) setReview(mission.draftVersion.id);
@@ -206,17 +195,12 @@ export function LiveEditor({
       );
   }
   if (loading) return <p role="status">Abrindo rascunho…</p>;
-  if (loadError)
-    return (
-      <p className="paper" role="alert">
-        {loadError}
-      </p>
-    );
+  if (loadError) return <section className="paper"><h1>Não foi possível abrir esta missão</h1><p role="alert">{loadError}</p><Link className="text-link" href="/professor/missoes">Voltar às minhas missões</Link></section>;
   if (published && mission) return <section className="paper teacher-success"><p className="eyebrow">Missão publicada</p><h1>Pronto para sua turma!</h1><p role="status">Missão publicada pelo servidor e disponível para a turma.</p><p>Agora você pode preparar apoios ou acompanhar as entregas.</p><div className="actions"><Link className="button" href={`/professor/missoes/${mission.id}/apoios`}>Preparar apoios desta missão</Link><Link className="text-link" href="/professor/entregas">Acompanhar entregas</Link></div></section>;
   const storedVersion = mission?.draftVersion ?? mission?.publishedVersion;
   return (
     <div className="teacher-guide">
-      <header className="teacher-guide-heading"><Link className="text-link" href="/professor/missoes">← Minhas missões</Link><h1>Vamos preparar sua missão</h1><p>Um passo de cada vez. Você revisa antes de publicar.</p></header>
+      <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar missão"}</p><Link className="text-link" href="/professor/missoes">← Minhas missões</Link><h1>Vamos preparar sua missão</h1><p>Um passo de cada vez. Você revisa antes de publicar.</p></header>
       <TeacherSteps labels={["Sobre a missão", "Etapas e materiais", "Apoios", "Revisão"]} current={stage} disabled={pending} onBack={value => { setConfirmed(false); setReview(null); setStage(value); }} />
       <div className="teacher-guide-grid"><section className="paper teacher-editor-panel">
         <h2 ref={stageTitle} tabIndex={-1} id="editor-stage-title">{["O que a turma vai aprender?", "Como o aluno vai realizar a atividade?", "Quer oferecer alguma ajuda?", "Confira antes de publicar"][stage]}</h2>
