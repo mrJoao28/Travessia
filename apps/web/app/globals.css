@@ -1085,6 +1085,11 @@ body {
   align-items: center;
   gap: 0.6rem;
 }
+@media (min-width: 1351px) {
+  .lesson-list li:has(.lesson-format) {
+    grid-template-columns: minmax(0, 1fr) 9rem auto;
+  }
+}
 .network-brand {
   margin: auto 0.6rem 1.5rem;
   padding-top: 2rem;
