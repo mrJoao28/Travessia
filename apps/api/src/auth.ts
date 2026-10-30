@@ -10,7 +10,7 @@ export function createAuth(db: PrismaClient, config: Config) {
     trustedOrigins: [config.origin],
     emailAndPassword: { enabled: true, disableSignUp: true, minPasswordLength: config.demo ? 5 : 12, maxPasswordLength: 128 },
     session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24, cookieCache: { enabled: false } },
-    advanced: { useSecureCookies: config.production,
+    advanced: { useSecureCookies: config.secureCookies,
       defaultCookieAttributes: { httpOnly: true, sameSite: 'lax', path: '/' },
       database: { generateId: () => crypto.randomUUID() } },
     // Atomic, persistent request budgets are applied before this handler (runtime.ts).

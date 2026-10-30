@@ -152,3 +152,41 @@ test("proxy rejects a streamed body over the size limit", async () => {
   );
   assert.equal(response.status, 413);
 });
+
+test("produção permite HTTP somente para o serviço Compose exato e com opção do servidor", async (t) => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  const mocked = t.mock.method(globalThis, 'fetch', async (url, init) => {
+    assert.equal(url.href, 'http://api:3001/v1/me');
+    assert.equal(init.headers.get('cookie'), 'session=existing');
+    return Response.json({ ok: true });
+  });
+  try {
+    const compose = { ...settings, internalUrl: 'http://api:3001', allowInternalHttp: 'true' };
+    assert.equal((await proxyBackend(request('/api/v1/me', undefined, { headers: { cookie: 'session=existing' } }), 'v1', ['me'], compose)).status, 200);
+    for (const address of ['http://api:3002', 'http://api.attacker.invalid:3001', 'http://untrusted.invalid', 'http://api:3001/path', 'http://user:password@api:3001', 'http://api:3001?target=other']) {
+      assert.equal((await proxyBackend(request('/api/v1/me'), 'v1', ['me'], { ...compose, internalUrl: address })).status, 503);
+    }
+    assert.equal((await proxyBackend(request('/api/v1/me'), 'v1', ['me'], { ...compose, allowInternalHttp: undefined })).status, 503);
+    assert.equal(mocked.mock.callCount(), 1);
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
+  }
+});
+
+test("headers do navegador não concedem exceção de HTTP interno ou contornam origem", async (t) => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  const mocked = t.mock.method(globalThis, 'fetch', async () => { throw new Error('Upstream must not be reached'); });
+  try {
+    const withoutFlag = { ...settings, internalUrl: 'http://api:3001' };
+    const forged = request('/api/v1/me', undefined, { headers: { 'api-internal-allow-http': 'true' } });
+    assert.equal((await proxyBackend(forged, 'v1', ['me'], withoutFlag)).status, 503);
+    assert.equal((await proxyBackend(request('/api/v1/me', {}, { origin: 'https://attacker.invalid' }), 'v1', ['me'], { ...withoutFlag, allowInternalHttp: 'true' })).status, 403);
+    assert.equal(mocked.mock.callCount(), 0);
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
+  }
+});
