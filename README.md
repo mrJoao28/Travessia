@@ -77,4 +77,17 @@ O Travessia poderá se integrar ao Mais Acesso Conecta em etapa futura. Este MVP
 
 A identidade atual segue o Mais Acesso Conecta: azul institucional, superfícies brancas e azul claro, amarelo pontual e ilustrações inclusivas. A direção e as referências estão em [DESIGN.md](docs/DESIGN.md), com procedência e prompts das artes em [ARTWORK.md](docs/design/ARTWORK.md). A antiga imagem marfim/verde permanece como registro histórico.
 
-Os prompts de trabalho estão em [frontend](docs/agents/FRONTEND.md) e [backend](docs/agents/BACKEND.md). A preparação para o servidor Mais Acesso e a containerização serão tratadas em etapa própria; as instruções antigas da Vercel não representam validação ou configuração desse novo destino. Consulte as evidências para distinguir implementação, testes e publicação.
+Os prompts de trabalho estão em [frontend](docs/agents/FRONTEND.md) e [backend](docs/agents/BACKEND.md). A execução em três containers Linux está em [DOCKER.md](docs/DOCKER.md); as instruções antigas da Vercel são históricas. A integração ao proxy/pipeline do servidor Mais Acesso é uma etapa própria da equipe. Consulte as evidências para distinguir implementação, testes e publicação.
+
+
+## Executar com Docker
+
+Requisitos: Node.js 24 e Docker Desktop em Linux containers (ou Docker Engine com Compose v2). Não precisa instalar as dependências npm no host.
+
+```sh
+npm run docker:setup
+npm run docker:up
+npm run docker:seed
+```
+
+Consulte email/senha em `.env.docker` no seu editor e abra http://localhost:3000. O setup gera credenciais aleatórias sem exibi-las e não sobrescreve configuração existente. O seed é somente para demonstração isolada. `docker:down` preserva o volume PostgreSQL. Comandos, variáveis, teste de persistência e preparação para o servidor: [DOCKER.md](docs/DOCKER.md). O workflow **Docker Linux** constrói e testa os três containers no GitHub Actions.
