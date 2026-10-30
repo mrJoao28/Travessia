@@ -75,7 +75,7 @@ test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro pre
   await expect(page.getByLabel('Enunciado adaptado', { exact: true })).toHaveValue('Primeiro compare os custos.');
   await page.getByRole('checkbox', { name: 'Revisei a adaptação, os objetivos preservados, os formatos e os destinatários.', exact: true }).check();
   await page.getByRole('button', { name: 'Salvar adaptação revisada', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('O conteúdo mudou');
+  await expect(page.getByRole('main').getByRole('alert')).toContainText('O conteúdo mudou');
   await expect(page.getByLabel('Enunciado adaptado', { exact: true })).toHaveValue('Primeiro compare os custos.');
   await page.setViewportSize({ width: 320, height: 850 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
