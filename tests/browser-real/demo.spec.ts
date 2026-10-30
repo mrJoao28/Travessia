@@ -235,6 +235,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByLabel('Email', { exact: true }).fill(process.env.DEMO_USER_EMAIL!);
   await page.getByLabel('Senha', { exact: true }).fill(process.env.DEMO_USER_PASSWORD!);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
   await page.goto('/professor/missoes/demo-class-oficina-mission/estrategias');
   await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
@@ -270,8 +271,9 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByLabel('Email', { exact: true }).fill(process.env[`SUPPORT_STUDENT_${suffix}_EMAIL`]!);
     await page.getByLabel('Senha', { exact: true }).fill(process.env[`SUPPORT_STUDENT_${suffix}_PASSWORD`]!);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+    await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
     await page.goto('/aluno/missoes/demo-class-oficina-mission');
-    await page.getByRole('button', { name: 'Conhecer o desafio', exact: true }).click();
+    await page.getByRole('button', { name: /^Conhecer o desafio(?: · concluída e salva)?$/ }).click({ timeout: 15_000 });
     const supports = page.getByRole('region', { name: 'Apoios desta etapa', exact: true });
     await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toBeVisible();
     if (suffix === 'A') {
@@ -284,6 +286,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       expect(await response.text()).not.toContain('Apoio individual de A');
     }
     await page.getByRole('button', { name: 'Próxima etapa', exact: true }).click();
+    await expect(supports.getByRole('status')).toHaveCount(0);
     await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toHaveCount(0);
     await logout();
   }
