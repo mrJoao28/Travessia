@@ -123,9 +123,6 @@ function WorkspaceView({
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
   const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : ({ adaptacoes: "Deixe a atividade mais clara", estrategias: "Prepare os apoios da missão", apoios: "Como você quer apoiar sua turma?", missoes: "Suas missões", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
   const guidedEditor = role === "professor" && ["editor", "nova"].includes(section);
-  const otherRole = classrooms.some(
-    (room) => room.role === (role === "aluno" ? "teacher" : "student"),
-  );
   return (
     <Workspace
       role={role}
@@ -135,12 +132,8 @@ function WorkspaceView({
           ? {
               name: profile.name,
               course: profile.course,
-              ...(otherRole
-                ? {
-                    switchHref: role === "aluno" ? "/professor" : "/aluno",
-                    switchLabel: `Ir para o espaço ${role === "aluno" ? "do professor" : "do aluno"}`,
-                  }
-                : {}),
+              switchHref: role === "aluno" ? "/professor" : "/aluno",
+              switchLabel: `Ir para o espaço ${role === "aluno" ? "do professor" : "do aluno"}`,
             }
           : undefined
       }
@@ -186,10 +179,9 @@ function WorkspaceView({
           {!permitted.length ? (
             <section className="paper">
               <h2>Nenhuma turma neste espaço</h2>
-              <p>
-                Seus vínculos são definidos no servidor. Escolher um espaço não
-                concede um papel.
-              </p>
+              <p>{role === "aluno" ? "Peça um convite ao professor para começar sua primeira missão." : "Crie sua primeira turma para preparar missões e convidar os alunos."}</p>
+              {role === "aluno" && section !== "turmas" && <Link className="button" href="/aluno/turmas">Entrar na minha turma</Link>}
+              <p><Link className="text-link" href={`/boas-vindas?espaco=${role === "aluno" ? "professor" : "aluno"}`}>{role === "aluno" ? "Quero preparar uma turma como professor" : "Quero participar como aluno"}</Link></p>
             </section>
           ) : (
             <>
