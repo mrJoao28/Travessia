@@ -20,6 +20,7 @@ export async function api<K extends keyof ApiOperations>(
     params?: ApiOperations[K]["params"];
     body?: ApiOperations[K]["body"];
     cursor?: string;
+    query?: ApiOperations[K]["query"];
     signal?: AbortSignal;
   } = {},
 ): Promise<ApiResponse<K>> {
@@ -39,6 +40,9 @@ export async function api<K extends keyof ApiOperations>(
   );
   const url = new URL(`/api/v1${path}`, window.location.origin);
   if (options.cursor) url.searchParams.set("cursor", options.cursor);
+  for (const [name, value] of Object.entries(options.query ?? {})) {
+    if (value !== undefined) url.searchParams.set(name, String(value));
+  }
   const response = await fetch(url, {
     method: route.method,
     credentials: "same-origin",
@@ -104,7 +108,7 @@ export function errorMessage(error: unknown) {
 }
 
 export async function pages<
-  K extends "classrooms" | "missions" | "submissions" | "barriers" | "members",
+  K extends "classrooms" | "missions" | "submissions" | "barriers" | "members" | "strategyRecipients",
 >(operation: K, id?: string) {
   const items: Array<ApiResponse<K>["items"][number]> = [];
   let cursor: string | undefined;
