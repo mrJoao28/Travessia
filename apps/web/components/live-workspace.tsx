@@ -448,28 +448,32 @@ function TeacherDashboard({
 }) {
   return (
     <>
-      <section className="paper">
-        <h2>{classroom?.name ?? "Minhas missões"}</h2>
-        <p>
-          Consulte as entregas e os relatos compartilhados. Rascunhos permanecem
-          privados até a publicação.
-        </p>
-        <div className="actions">
-          {classroom && (
-            <Link
-              className="button"
-              href={`/professor/missoes/nova?turma=${encodeURIComponent(classroom.id)}`}
-            >
-              Criar missão
+      <section className="paper teacher-overview">
+        <div>
+          <p className="eyebrow accent">Planejar, acompanhar e incluir</p>
+          <h2>{classroom?.name ?? "Minhas missões"}</h2>
+          <p>
+            Consulte as entregas e os relatos compartilhados. Rascunhos permanecem
+            privados até a publicação.
+          </p>
+          <div className="actions">
+            {classroom && (
+              <Link
+                className="button"
+                href={`/professor/missoes/nova?turma=${encodeURIComponent(classroom.id)}`}
+              >
+                Criar missão
+              </Link>
+            )}
+            <Link className="button button-outline" href="/professor/entregas">
+              Consultar entregas
             </Link>
-          )}
-          <Link className="button button-outline" href="/professor/entregas">
-            Consultar entregas
-          </Link>
-          <Link className="text-link" href="/professor/barreiras">
-            Relatos compartilhados
-          </Link>
+            <Link className="text-link" href="/professor/barreiras">
+              Relatos compartilhados
+            </Link>
+          </div>
         </div>
+        <PathIllustration variant="teacher" />
       </section>
       {classroom && <ClassroomMembers classroom={classroom} />}
       <ul className="card-list">

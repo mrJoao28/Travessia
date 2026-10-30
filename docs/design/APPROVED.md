@@ -1,7 +1,7 @@
-# Referência visual aprovada
+# Referência visual atual
 
-O usuário aprovou o design da imagem reference-student.png nesta pasta e solicitou fidelidade estrita a ele. A imagem original foi preservada sem edição. Abra-a antes de implementar ou alterar telas.
+O usuário solicitou aproximar o Travessia do Mais Acesso Conecta, forneceu `public.zip` e autorizou a criação de artes complementares e aplicação no repositório.
 
-Fonte de verdade visual: imagem aprovada → tokens e especificação em docs/DESIGN.md → implementação. O HTML inicial é uma aproximação, não uma aprovação de diferenças.
+A fonte visual atual é o site https://www.maisacessoconecta.com.br/ e os arquivos fornecidos: logo Mais Acesso Conecta, `professor/auth-illustration.png` e `landing/hero-illustration.png`. O nome Travessia e a aprendizagem por missões são preservados. A antiga `reference-student.png` permanece como registro histórico, sem vincular novas alterações ao marfim/verde.
 
-Preservar composição desktop, identidade, hierarquia, proporções, paleta e linguagem visual. Aplicar o mesmo sistema à área docente, login e missões. Adaptações de responsividade, teclado, leitor de tela, contraste e zoom devem manter a identidade e a funcionalidade. As artes finais serão geradas/fornecidas posteriormente; nenhuma nova direção visual foi autorizada.
+Usar azul, branco, amarelo pontual, ilustração editorial adulta e colaboração entre pessoas. As imagens não substituem conteúdo ou controles. Manter leitura, contraste, teclado, reflow e redução de decoração. Procedência e prompts: ARTWORK.md.

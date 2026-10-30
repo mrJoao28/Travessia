@@ -51,11 +51,7 @@ export function Brand() {
         />
       </svg>
       <strong>travessia</strong>
-      <small>
-        ENSINO SUPERIOR
-        <br />
-        PARA NOVOS HORIZONTES
-      </small>
+      <small>APRENDIZAGEM POR MISSÕES</small>
     </span>
   );
 }
