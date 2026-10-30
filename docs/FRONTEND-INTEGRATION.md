@@ -8,10 +8,10 @@ Revisão realizada em 28/10/2026 de `apps/api/src/contracts.ts`, `runtime.ts`, `
 
 - `API_INTERNAL_URL`: origem fixa do projeto API, sem caminho, credenciais, query ou fragmento; HTTPS em produção, HTTP somente loopback em desenvolvimento.
 - `WEB_PUBLIC_ORIGIN` no Next.js: origem pública exata; igual a `BETTER_AUTH_URL` e `TRUSTED_WEB_ORIGIN` do backend. Configuração privada, sem prefixo público.
-- Navegador: `/api/auth/sign-in/email`, `/api/auth/get-session`, `/api/auth/sign-out`; produto em `/api/v1/*` encaminhado para `/v1/*`.
+- Navegador: `/api/auth/sign-in/email`, `/api/auth/sign-up/email`, `/api/auth/get-session`, `/api/auth/sign-out`; produto em `/api/v1/*` encaminhado para `/v1/*`.
 - Proxy preserva Cookie, Origin, método, JSON, headers de concorrência e cada Set-Cookie separadamente. Sem cache. Não aceita redirecionamento do upstream ou cookies com Domain; backend emite cookies host-only no path `/`.
 - Mutações exigem JSON e Origin correspondente; autorização e vínculo continuam obrigatórios no backend. Proxy não concede acesso.
-- Sem cadastro público, email real, uploads ou chamada Gemini pelo navegador.
+- Cadastro e login pelo navegador, na API da plataforma. Sem email real de recuperação, uploads ou chamada Gemini pelo navegador.
 
 ## Pontos para verificar juntos
 

@@ -1,6 +1,5 @@
 const safeMethods = new Set(["GET", "HEAD"]);
-const authPaths = new Set(["sign-in/email", "sign-out", "get-session"]);
-
+const authPaths = new Set(["sign-in/email", "sign-up/email", "sign-out", "get-session"]);
 type ProxySettings = {
   internalUrl?: string;
   publicOrigin?: string;

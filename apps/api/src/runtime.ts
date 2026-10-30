@@ -49,11 +49,12 @@ export async function createApplication(db: PrismaClient, config: Config, provid
   });
   express.all('/api/auth/{*path}', async (req: Request, res: Response) => {
     try {
-      if (!['/api/auth/sign-in/email', '/api/auth/get-session', '/api/auth/sign-out'].includes(req.path)) return missing();
+      if (!['/api/auth/sign-in/email', '/api/auth/sign-up/email', '/api/auth/get-session', '/api/auth/sign-out'].includes(req.path)) return missing();
       if ((req.path !== '/api/auth/get-session' && req.method !== 'POST') || (req.path === '/api/auth/get-session' && req.method !== 'GET')) return missing();
-      if (req.path === '/api/auth/sign-in/email') {
-        await budget(db, `login-ip:${digest(config.secret + (req.socket.remoteAddress ?? 'unknown'))}`, 20, 60);
-        await budget(db, 'login-global', 200, 60);
+      if (req.path === '/api/auth/sign-in/email' || req.path === '/api/auth/sign-up/email') {
+        const scope = req.path === '/api/auth/sign-up/email' ? 'signup' : 'login';
+        await budget(db, `${scope}-ip:${digest(config.secret + (req.socket.remoteAddress ?? 'unknown'))}`, scope === 'signup' ? 10 : 20, 60);
+        await budget(db, `${scope}-global`, scope === 'signup' ? 30 : 200, 60);
       }
       await toNodeHandler(auth)(req, res);
     } catch (error) { respondError(error, req, res); }
