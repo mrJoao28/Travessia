@@ -1400,3 +1400,9 @@ body {
   .welcome-shell { padding: 20px 16px; }
   .welcome-card { padding: 20px 16px; }
 }
+@media (max-width: 800px) {
+  .welcome-shell > .brand { margin-inline: 0; max-width: 100%; }
+  .welcome-shell .brand-lockup { flex-wrap: wrap; }
+  .welcome-shell .brand-lockup > svg { width: 56px; height: 44px; }
+  .welcome-shell .brand-lockup strong { white-space: nowrap; }
+}
