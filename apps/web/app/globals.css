@@ -1322,7 +1322,7 @@ body {
 @media (max-width: 600px) {
   .teacher-shell .sidebar nav ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .25rem; }
   .teacher-shell .sidebar nav a { justify-content: center; flex-direction: column; text-align: center; font-size: .85rem; padding: .5rem .25rem; }
-  .teacher-steps ol { gap: .35rem; }
+  .teacher-steps ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem .5rem; }
   .teacher-steps button { font-size: .8rem; }
   .teacher-steps li:not(:last-child)::after { display: none; }
   .teacher-guide-footer { position: static; padding: 1rem; }

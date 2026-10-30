@@ -101,7 +101,7 @@ test('apoios partem da missão e exigem destinatários e nova revisão após vol
   await expect(page.getByLabel('Missão para adaptar', { exact: true })).toHaveCount(0);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
   await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Escolha pelo menos um aluno');
+  await expect(page.getByRole('main').getByRole('alert')).toContainText('Escolha pelo menos um aluno');
   await page.getByRole('checkbox', { name: 'Aluno A', exact: true }).check();
   await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
   await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Compare um custo por vez.');

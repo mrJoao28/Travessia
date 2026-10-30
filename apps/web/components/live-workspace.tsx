@@ -193,7 +193,7 @@ function WorkspaceView({
             </section>
           ) : (
             <>
-              {!["missao", "editor", "nova"].includes(section) && !missionId &&
+              {!["missao", "editor", "nova"].includes(section) && !missionId && !(role === "professor" && ["adaptacoes", "estrategias", "apoios"].includes(section)) &&
                 (role === "professor" || !!section || !!selected) && (
                   <label
                     className="classroom-selector"

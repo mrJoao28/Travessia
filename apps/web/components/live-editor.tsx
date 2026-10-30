@@ -50,7 +50,11 @@ export function LiveEditor({
   const [stage, setStage] = useState(0);
   const [published, setPublished] = useState(false);
   const stageTitle = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { stageTitle.current?.focus(); }, [stage]);
+  const invalidField = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    if (invalidField.current) { invalidField.current.focus(); invalidField.current.reportValidity(); invalidField.current = null; }
+    else stageTitle.current?.focus();
+  }, [stage]);
   const [mission, setMission] = useState<ApiResponse<"mission"> | null>(null);
   const [input, setInput] = useState<Input>(empty);
   const [loading, setLoading] = useState(!!id);
@@ -121,8 +125,8 @@ export function LiveEditor({
     const invalid = fields.find(field => !field.checkValidity());
     if (!invalid) return true;
     const targetStage = Number(invalid.closest<HTMLElement>('[data-editor-stage]')?.dataset.editorStage ?? 0);
-    setStage(targetStage);
-    requestAnimationFrame(() => { invalid.focus(); invalid.reportValidity(); });
+    if (targetStage !== stage) { invalidField.current = invalid; setStage(targetStage); }
+    else { invalid.focus(); invalid.reportValidity(); }
     return false;
   }
   async function save(forReview = false, nextStage?: number) {
