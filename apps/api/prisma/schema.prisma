@@ -284,6 +284,7 @@ model AiGeneration {
   attempt Int @default(1)
   model String
   outputVersionId String?
+  supportDraft Json?
   inputTokens Int?
   outputTokens Int?
   expiresAt DateTime
@@ -336,6 +337,8 @@ model StrategyItem {
   title String
   content String
   position Int
+  audio Bytes?
+  hasAudio Boolean @default(false)
   plan StrategyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
   @@unique([planId, strategyId])
   @@unique([planId, position])

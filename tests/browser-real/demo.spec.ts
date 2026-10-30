@@ -246,6 +246,11 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByText('Apoios salvos e disponíveis aos destinatários selecionados.', { exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Exemplo comentado', exact: true }).check();
   await page.getByLabel('Texto do apoio: Exemplo comentado', { exact: true }).fill('Apoio individual de A: compare duas propostas e justifique sua escolha.');
+  const audio = Buffer.alloc(32044); audio.write('RIFF'); audio.writeUInt32LE(audio.length - 8, 4); audio.write('WAVEfmt ', 8);
+  audio.writeUInt32LE(16, 16); audio.writeUInt16LE(1, 20); audio.writeUInt16LE(1, 22); audio.writeUInt32LE(16000, 24);
+  audio.writeUInt32LE(32000, 28); audio.writeUInt16LE(2, 32); audio.writeUInt16LE(16, 34); audio.write('data', 36); audio.writeUInt32LE(32000, 40);
+  await page.getByLabel('Áudio opcional deste apoio', { exact: true }).setInputFiles({ name: 'apoio-ficticio.wav', mimeType: 'audio/wav', buffer: audio });
+  await expect(page.getByRole('button', { name: 'Remover áudio deste apoio', exact: true })).toBeVisible();
   await page.getByRole('radio', { name: 'Alunos selecionados', exact: true }).check();
   await page.getByRole('checkbox', { name: 'Estudante Fictício 1', exact: true }).check();
   await page.getByRole('button', { name: 'Ver prévia do aluno', exact: true }).click();
@@ -279,6 +284,9 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     if (suffix === 'A') {
       await supports.getByText('Exemplo comentado', { exact: true }).click();
       await expect(supports.getByText('Apoio individual de A: compare duas propostas e justifique sua escolha.', { exact: true })).toBeVisible();
+      await supports.getByRole('button', { name: 'Carregar áudio do apoio', exact: true }).click();
+      await expect(supports.locator('audio')).toHaveAttribute('src', /^blob:/);
+
     } else {
       await expect(supports.getByText('Exemplo comentado', { exact: true })).toHaveCount(0);
       const versionId = await page.evaluate(async () => (await (await fetch('/api/v1/missions/demo-class-oficina-mission')).json()).publishedVersion.id as string);

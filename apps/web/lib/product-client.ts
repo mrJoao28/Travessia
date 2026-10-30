@@ -26,11 +26,12 @@ export async function api<K extends keyof ApiOperations>(
 ): Promise<ApiResponse<K>> {
   const serialized =
     options.body === undefined ? undefined : JSON.stringify(options.body);
-  if (serialized && new TextEncoder().encode(serialized).byteLength > 64 * 1024)
+  const maxBytes = ["createStrategyPlan", "updateStrategyPlan"].includes(operation) ? 2 * 1024 * 1024 : 64 * 1024;
+  if (serialized && new TextEncoder().encode(serialized).byteLength > maxBytes)
     throw new ApiError(
       413,
       "BODY_TOO_LARGE",
-      "O conjunto de textos excede o limite de 64 KiB. Reduza o conteúdo antes de enviar. Seu texto permanece nesta tela.",
+      "O conteúdo excede o limite da operação. Reduza o conteúdo antes de enviar. Seu texto permanece nesta tela.",
     );
   const route = apiRoutes[operation];
   const path = route.path.replace(/\{(\w+)\}/g, (_, key) =>

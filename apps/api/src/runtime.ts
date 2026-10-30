@@ -7,6 +7,7 @@ import type { PrismaClient } from '@prisma/client';
 import { fromNodeHeaders, toNodeHandler } from 'better-auth/node';
 import type { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
+import expressParser from 'express';
 import { ZodError } from 'zod';
 import { AppModule, type ProductRuntime } from './app.module.js';
 import { createAuth } from './auth.js';
@@ -36,7 +37,8 @@ export async function createApplication(db: PrismaClient, config: Config, provid
     try {
       if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers.origin !== config.origin) fail(403, 'INVALID_ORIGIN', 'Origem não autorizada.');
       if (!['GET', 'HEAD', 'OPTIONS', 'DELETE'].includes(req.method) && !req.is('application/json')) fail(415, 'JSON_REQUIRED', 'Envie dados em JSON.');
-      if (Number(req.headers['content-length'] ?? 0) > 65536) fail(413, 'BODY_TOO_LARGE', 'Conteúdo muito grande.');
+      const limit = /^\/v1\/missions\/[^/]+\/strategy-plans(?:\/[^/]+)?\/?$/.test(req.path) && ['POST', 'PATCH'].includes(req.method) ? 2 * 1024 * 1024 : 65536;
+      if (Number(req.headers['content-length'] ?? 0) > limit) fail(413, 'BODY_TOO_LARGE', 'Conteúdo muito grande.');
       // The auth handler consumes the raw stream. Require a bounded length there;
       // the frontend proxy must buffer its small JSON body instead of streaming it.
       if (req.path.startsWith('/api/auth/') && req.method === 'POST' && (!req.headers['content-length'] || req.headers['transfer-encoding'])) {
@@ -56,7 +58,10 @@ export async function createApplication(db: PrismaClient, config: Config, provid
       await toNodeHandler(auth)(req, res);
     } catch (error) { respondError(error, req, res); }
   });
-  app.useBodyParser('json', { limit: '64kb' });
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const large = /^\/v1\/missions\/[^/]+\/strategy-plans(?:\/[^/]+)?\/?$/.test(req.path) && ['POST', 'PATCH'].includes(req.method);
+    expressParser.json({ limit: large ? '2mb' : '64kb' })(req, res, next);
+  });
   runtime.handle = async (req, res) => {
     try {
       const match = mapped.find(m => m.route.method.toUpperCase() === req.method && m.regex.test(req.path));

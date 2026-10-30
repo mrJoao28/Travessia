@@ -108,14 +108,21 @@ try {
   const teacherVersion = teacherMission.publishedVersion;
   const strategyPath = `/api/v1/missions/${teacherMission.id}/strategy-plans`;
   const supportMarker = 'Apoio pedagógico preservado no volume PostgreSQL.';
+  const audio = Buffer.alloc(32044); audio.write('RIFF'); audio.writeUInt32LE(audio.length - 8, 4); audio.write('WAVEfmt ', 8);
+  audio.writeUInt32LE(16, 16); audio.writeUInt16LE(1, 20); audio.writeUInt16LE(1, 22); audio.writeUInt32LE(16000, 24);
+  audio.writeUInt32LE(32000, 28); audio.writeUInt16LE(2, 32); audio.writeUInt16LE(16, 34); audio.write('data', 36); audio.writeUInt32LE(32000, 40);
+  const audioBase64 = audio.toString('base64');
   if (verifyPersistence) {
     const plans = (await request(`${strategyPath}?versionId=${teacherVersion.id}`)).json.items;
-    check(plans.some(plan => plan.items.some(item => item.content === supportMarker)), 'Estratégias não sobreviveram à recriação dos containers.');
+    const persisted = plans.flatMap(plan => plan.items).find(item => item.content === supportMarker);
+    check(persisted?.hasAudio, 'Estratégia e áudio não sobreviveram à recriação dos containers.');
+    const storedAudio = (await request(`/api/v1/missions/${teacherMission.id}/support-audio/${persisted.id}`)).json;
+    check(storedAudio.base64 === audioBase64, 'Bytes do áudio mudaram após recriar os containers.');
   } else {
     const recipients = (await request(`/api/v1/missions/${teacherMission.id}/strategy-recipients`)).json.items;
     check(recipients.length > 0, 'Destinatários da estratégia indisponíveis.');
     await request(strategyPath, { method: 'POST', body: { versionId: teacherVersion.id, stepId: teacherVersion.steps[0].id,
-      audience: 'students', studentIds: [recipients[0].id], items: [{ strategyId: 'step-checklist', content: supportMarker }],
+      audience: 'students', studentIds: [recipients[0].id], items: [{ strategyId: 'step-checklist', content: supportMarker, audio: { base64: audioBase64 } }],
       reviewed: true, requestKey: crypto.randomUUID() } });
   }
   await request('/api/auth/sign-out', { method: 'POST', body: {} });

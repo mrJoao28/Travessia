@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { authRequest, hasSession } from "../lib/auth-client";
 export function LoginForm() {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setReady(true); }, []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const errorRef = useRef<HTMLDivElement>(null);
@@ -16,11 +18,14 @@ export function LoginForm() {
       <p className="eyebrow">BEM-VINDO AO TRAVESSIA</p>
       <h2>Seu próximo passo começa aqui.</h2>
       <p>Entre com a conta configurada para a demonstração.</p>
+      <noscript><p>Ative o JavaScript para entrar com segurança.</p></noscript>
       <form
         className="form-stack"
+        method="post"
+        action="/login"
         onSubmit={async (event) => {
           event.preventDefault();
-          if (pending) return;
+          if (!ready || pending) return;
           const form = new FormData(event.currentTarget);
           setPending(true);
           setError("");
@@ -66,7 +71,7 @@ export function LoginForm() {
           Email
           <input
             id="email"
-            disabled={pending}
+            disabled={!ready || pending}
             name="email"
             type="email"
             autoComplete="username"
@@ -78,14 +83,14 @@ export function LoginForm() {
           Senha
           <input
             id="password"
-            disabled={pending}
+            disabled={!ready || pending}
             name="password"
             type="password"
             autoComplete="current-password"
             required
           />
         </label>
-        <button className="button" disabled={pending}>
+        <button className="button" disabled={!ready || pending}>
           {pending ? "Entrando…" : "Entrar"}
         </button>
         <p role="status" className="sr-only">

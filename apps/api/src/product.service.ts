@@ -63,7 +63,7 @@ export class ProductService {
     const id = p.id;
     const paging = query as Paging;
     if (op === 'health') return { status: 'ok', service: 'travessia-api', stage: 'mvp' };
-    if (['strategyCatalog', 'strategyRecipients', 'strategyPlans', 'createStrategyPlan', 'updateStrategyPlan', 'removeStrategyPlan', 'missionSupports'].includes(op))
+    if (['strategyCatalog', 'strategyRecipients', 'strategyPlans', 'createStrategyPlan', 'updateStrategyPlan', 'removeStrategyPlan', 'missionSupports', 'supportAudio'].includes(op))
       return new StrategyService(this.db).execute(op, userId, p, body, query);
     if (op === 'me') {
       const user = await this.db.user.findUniqueOrThrow({ where: { id: userId }, include: { studentProfile: true, preferences: true } });
@@ -102,6 +102,7 @@ export class ProductService {
         return { id: c.id, name: c.name, role: 'student' };
       });
     }
+    if (op === 'generateSupports') return this.ai.generateSupports(userId, id, body as Body<'generateSupports'>);
     if (op === 'generate') return this.ai.generate(userId, id, body as Body<'generate'>);
     if (op === 'generation') return this.ai.get(userId, id);
     if (op === 'download') return this.download(userId, id);

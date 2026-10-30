@@ -5,7 +5,7 @@ import type { ApiBody, ApiResponse } from '../../apps/web/lib/api.generated';
 async function fixture(page: Page, failSave = false) {
   const version: NonNullable<ApiResponse<'mission'>['publishedVersion']> = { id: 'version-support', missionId: 'mission-support',
     title: 'Missão fictícia', description: 'Conteúdo de teste.', objectives: ['Comparar propostas.'], criteria: ['Justificar a escolha.'],
-    source: 'manual', dueAt: null, createdAt: '2026-10-30T00:00:00.000Z', materials: [],
+    source: 'manual', dueAt: null, createdAt: '2026-10-30T00:00:00.000Z', materials: [{ id: "material-support", title: "Material fictício", text: "Compare custo e clareza.", hasFile: false }],
     steps: [{ id: 'step-support', position: 1, title: 'Comparar', instructions: 'Compare propostas.', example: 'Compare duas propostas.' }] };
   const mission: ApiResponse<'mission'> = { id: version.missionId, classroomId: 'class-support', status: 'published', draftVersion: null, publishedVersion: version };
   const catalog: ApiResponse<'strategyCatalog'>['items'] = [
@@ -68,4 +68,46 @@ test('busca mantém estratégias selecionadas e a prévia é acessível por tecl
   await page.setViewportSize({ width: 320, height: 850 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+});
+
+test('Gemini exige seleção e consentimento e retorna rascunho sem publicar nem substituir o texto', async ({ page }) => {
+  const submitted = await fixture(page);
+  let providerBody: ApiBody<'generateSupports'> | undefined;
+  await page.route('**/api/v1/missions/mission-support/ai-supports', async route => {
+    providerBody = route.request().postDataJSON();
+    return route.fulfill({ json: { id: 'support-generation', status: 'succeeded', draft: { items: [{ strategyId: 'step-checklist', content: 'Confira os custos. Compare a clareza.' }] } } });
+  });
+  await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
+  const text = page.getByLabel('Texto do apoio: Checklist do próximo passo', { exact: true });
+  await text.fill('Texto original preservado.');
+  const button = page.getByRole('button', { name: 'Gerar apoios com Gemini', exact: true });
+  await expect(button).toBeDisabled();
+  await page.getByRole('checkbox', { name: 'Material fictício', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Conferi o conteúdo e autorizo seu envio ao Gemini.', exact: false }).check();
+  await button.click();
+  await expect(page.getByText('Rascunhos preparados. Confira cada texto antes de usá-lo.', { exact: true })).toBeVisible();
+  await expect(text).toHaveValue('Texto original preservado.');
+  expect(submitted()).toBeUndefined();
+  expect(providerBody?.materialIds).toEqual(['material-support']);
+  expect(providerBody?.strategyIds).toEqual(['step-checklist']);
+  expect(providerBody).not.toHaveProperty('studentIds');
+  await page.getByRole('button', { name: 'Usar este rascunho no apoio', exact: true }).click();
+  await expect(text).toHaveValue('Confira os custos. Compare a clareza.');
+  await expect(page.getByRole('checkbox', { name: 'Revisei os textos, o destino e os destinatários dos apoios.', exact: true })).not.toBeChecked();
+  await page.setViewportSize({ width: 320, height: 850 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
+});
+test('Gemini indisponível preserva a edição manual e não anuncia geração concluída', async ({ page }) => {
+  await fixture(page);
+  await page.route('**/api/v1/missions/mission-support/ai-supports', route => route.fulfill({ status: 503, json: { code: 'AI_UNAVAILABLE' } }));
+  await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
+  const text = page.getByLabel('Texto do apoio: Checklist do próximo passo', { exact: true });
+  await text.fill('Planejamento preservado.');
+  await page.getByRole('checkbox', { name: 'Material fictício', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Conferi o conteúdo e autorizo seu envio ao Gemini.', exact: false }).check();
+  await page.getByRole('button', { name: 'Gerar apoios com Gemini', exact: true }).click();
+  await expect(page.getByText('A assistência está desativada. Você pode continuar editando manualmente.', { exact: true })).toBeVisible();
+  await expect(text).toHaveValue('Planejamento preservado.');
+  await expect(page.getByRole('button', { name: 'Usar este rascunho no apoio', exact: true })).toHaveCount(0);
 });

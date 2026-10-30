@@ -46,6 +46,14 @@ export const apiRoutes = {
     "method": "GET",
     "path": "/missions/{id}/supports"
   },
+  "supportAudio": {
+    "method": "GET",
+    "path": "/missions/{id}/support-audio/{itemId}"
+  },
+  "generateSupports": {
+    "method": "POST",
+    "path": "/missions/{id}/ai-supports"
+  },
   "preferences": {
     "method": "PATCH",
     "path": "/me/preferences"

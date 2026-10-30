@@ -52,7 +52,9 @@ export const profileInput = z.strictObject({ name: z.string().trim().min(1).max(
   alternateEmail: z.email().max(150).nullable().optional(), student: studentInput.optional(), teacher: teacherInput.optional() });
 
 const strategyId = z.enum(strategyCatalog.map(s => s.id));
-const strategyItem = z.strictObject({ strategyId, content: z.string().trim().min(1).max(3000) });
+export const supportDraft = z.strictObject({ items: z.array(z.strictObject({ strategyId: z.enum(['step-checklist', 'worked-example', 'context-glossary', 'written-instructions', 'planning-outline']), content: z.string().trim().min(1).max(3000) })).min(1).max(5) });
+const audioInput = z.union([z.strictObject({ base64: z.string().min(60).max(1400000) }), z.strictObject({ itemId: id })]).nullable().optional();
+const strategyItem = z.strictObject({ strategyId, content: z.string().trim().min(1).max(3000), audio: audioInput });
 export const strategyPlanInput = z.strictObject({ versionId: id, stepId: id.nullable(), audience: z.enum(['classroom', 'students']),
   studentIds: z.array(id).max(50), items: z.array(strategyItem).min(1).max(8), reviewed: z.literal(true) }).superRefine((input, ctx) => {
   if ((input.audience === 'classroom' && input.studentIds.length !== 0) || (input.audience === 'students' && input.studentIds.length === 0))
@@ -61,7 +63,7 @@ export const strategyPlanInput = z.strictObject({ versionId: id, stepId: id.null
     ctx.addIssue({ code: 'custom', message: 'Itens ou destinatários repetidos.' });
 });
 const strategyPlan = z.strictObject({ id, versionId: id, stepId: id.nullable(), audience: z.enum(['classroom', 'students']), revision: z.number().int(),
-  items: z.array(z.strictObject({ id, strategyId, title: short, content: z.string() })),
+  items: z.array(z.strictObject({ id, strategyId, title: short, content: z.string(), hasAudio: z.boolean().optional() })),
   recipients: z.array(z.strictObject({ id, name: z.string() })) });
 
 export const routes = {
@@ -78,7 +80,9 @@ export const routes = {
   updateStrategyPlan: { method: 'patch', path: '/v1/missions/{id}/strategy-plans/{planId}', body: strategyPlanInput.safeExtend({ expectedRevision: z.number().int().min(1) }), query: empty, response: strategyPlan },
   removeStrategyPlan: { method: 'post', path: '/v1/missions/{id}/strategy-plans/{planId}/remove', body: z.strictObject({ expectedRevision: z.number().int().min(1) }), query: empty, response: z.strictObject({ removed: z.literal(true) }) },
   missionSupports: { method: 'get', path: '/v1/missions/{id}/supports', body: empty, query: z.strictObject({ versionId: id }), response: z.strictObject({ versionId: id,
-    items: z.array(z.strictObject({ id, stepId: id.nullable(), title: short, content: z.string() })) }) },
+    items: z.array(z.strictObject({ id, stepId: id.nullable(), title: short, content: z.string(), hasAudio: z.boolean().optional() })) }) },
+  supportAudio: { method: 'get', path: '/v1/missions/{id}/support-audio/{itemId}', body: empty, query: empty, response: z.strictObject({ base64: z.string(), mimeType: z.literal('audio/wav') }) },
+  generateSupports: { method: 'post', path: '/v1/missions/{id}/ai-supports', body: z.strictObject({ versionId: id, stepId: id.nullable(), materialIds: z.array(id).min(1).max(3), strategyIds: z.array(z.enum(['step-checklist', 'worked-example', 'context-glossary', 'written-instructions', 'planning-outline'])).min(1).max(5), approvedForProvider: z.literal(true), idempotencyKey: z.uuid() }), query: empty, response: z.strictObject({ id, status: z.enum(['running', 'succeeded', 'failed']), draft: supportDraft.nullable() }) },
   preferences: { method: 'patch', path: '/v1/me/preferences', body: preferences, query: empty, response: preferences },
   classrooms: { method: 'get', path: '/v1/classrooms', body: empty, query: page, response: list(classroom) },
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short }), query: empty, response: classroom },
