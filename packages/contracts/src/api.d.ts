@@ -148,6 +148,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/missions/{id}/support-audio/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["supportAudio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/ai-supports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["generateSupports"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/me/preferences": {
         parameters: {
             query?: never;
@@ -850,6 +882,7 @@ export interface operations {
                                 strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
                                 title: string;
                                 content: string;
+                                hasAudio?: boolean;
                             }[];
                             recipients: {
                                 id: string;
@@ -895,6 +928,11 @@ export interface operations {
                         /** @enum {string} */
                         strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
                         content: string;
+                        audio?: ({
+                            base64: string;
+                        } | {
+                            itemId: string;
+                        }) | null;
                     }[];
                     /** @constant */
                     reviewed: true;
@@ -923,6 +961,7 @@ export interface operations {
                             strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
                             title: string;
                             content: string;
+                            hasAudio?: boolean;
                         }[];
                         recipients: {
                             id: string;
@@ -968,6 +1007,11 @@ export interface operations {
                         /** @enum {string} */
                         strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
                         content: string;
+                        audio?: ({
+                            base64: string;
+                        } | {
+                            itemId: string;
+                        }) | null;
                     }[];
                     /** @constant */
                     reviewed: true;
@@ -995,6 +1039,7 @@ export interface operations {
                             strategyId: "step-checklist" | "worked-example" | "context-glossary" | "text-alternative" | "media-transcript" | "written-instructions" | "planning-outline" | "keyboard-guidance";
                             title: string;
                             content: string;
+                            hasAudio?: boolean;
                         }[];
                         recipients: {
                             id: string;
@@ -1089,7 +1134,107 @@ export interface operations {
                             stepId: string | null;
                             title: string;
                             content: string;
+                            hasAudio?: boolean;
                         }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    supportAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        base64: string;
+                        /** @constant */
+                        mimeType: "audio/wav";
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    generateSupports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    versionId: string;
+                    stepId: string | null;
+                    materialIds: string[];
+                    strategyIds: ("step-checklist" | "worked-example" | "context-glossary" | "written-instructions" | "planning-outline")[];
+                    /** @constant */
+                    approvedForProvider: true;
+                    /** Format: uuid */
+                    idempotencyKey: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        /** @enum {string} */
+                        status: "running" | "succeeded" | "failed";
+                        draft: {
+                            items: {
+                                /** @enum {string} */
+                                strategyId: "step-checklist" | "worked-example" | "context-glossary" | "written-instructions" | "planning-outline";
+                                content: string;
+                            }[];
+                        } | null;
                     };
                 };
             };

@@ -1035,6 +1035,9 @@
                                 },
                                 "content": {
                                   "type": "string"
+                                },
+                                "hasAudio": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -1204,6 +1207,45 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 3000
+                        },
+                        "audio": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "base64": {
+                                      "type": "string",
+                                      "minLength": 60,
+                                      "maxLength": 1400000
+                                    }
+                                  },
+                                  "required": [
+                                    "base64"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "itemId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 100
+                                    }
+                                  },
+                                  "required": [
+                                    "itemId"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -1310,6 +1352,9 @@
                           },
                           "content": {
                             "type": "string"
+                          },
+                          "hasAudio": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -1485,6 +1530,45 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 3000
+                        },
+                        "audio": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "base64": {
+                                      "type": "string",
+                                      "minLength": 60,
+                                      "maxLength": 1400000
+                                    }
+                                  },
+                                  "required": [
+                                    "base64"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "itemId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 100
+                                    }
+                                  },
+                                  "required": [
+                                    "itemId"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -1591,6 +1675,9 @@
                           },
                           "content": {
                             "type": "string"
+                          },
+                          "hasAudio": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -1850,6 +1937,9 @@
                           },
                           "content": {
                             "type": "string"
+                          },
+                          "hasAudio": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -1865,6 +1955,299 @@
                   "required": [
                     "versionId",
                     "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/missions/{id}/support-audio/{itemId}": {
+      "get": {
+        "operationId": "supportAudio",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "base64": {
+                      "type": "string"
+                    },
+                    "mimeType": {
+                      "type": "string",
+                      "const": "audio/wav"
+                    }
+                  },
+                  "required": [
+                    "base64",
+                    "mimeType"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/missions/{id}/ai-supports": {
+      "post": {
+        "operationId": "generateSupports",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "stepId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "materialIds": {
+                    "minItems": 1,
+                    "maxItems": 3,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
+                  "strategyIds": {
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "step-checklist",
+                        "worked-example",
+                        "context-glossary",
+                        "written-instructions",
+                        "planning-outline"
+                      ]
+                    }
+                  },
+                  "approvedForProvider": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "versionId",
+                  "stepId",
+                  "materialIds",
+                  "strategyIds",
+                  "approvedForProvider",
+                  "idempotencyKey"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "succeeded",
+                        "failed"
+                      ]
+                    },
+                    "draft": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "minItems": 1,
+                              "maxItems": 5,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "strategyId": {
+                                    "type": "string",
+                                    "enum": [
+                                      "step-checklist",
+                                      "worked-example",
+                                      "context-glossary",
+                                      "written-instructions",
+                                      "planning-outline"
+                                    ]
+                                  },
+                                  "content": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 3000
+                                  }
+                                },
+                                "required": [
+                                  "strategyId",
+                                  "content"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "items"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "draft"
                   ],
                   "additionalProperties": false
                 }
