@@ -22,7 +22,7 @@ function request(path, body, extra = {}) {
         },
   );
 }
-test("proxy denies missing config, unknown auth routes, cross-site writes and unsafe destination", async () => {
+test("proxy denies missing config, unknown auth routes, cross-site writes and unsafe destination", async (t) => {
   assert.equal(
     (await proxyBackend(request("/api/v1/me"), "v1", ["me"], {})).status,
     503,
@@ -30,13 +30,31 @@ test("proxy denies missing config, unknown auth routes, cross-site writes and un
   assert.equal(
     (
       await proxyBackend(
-        request("/api/auth/sign-up/email", {}),
+        request("/api/auth/reset-password", {}),
+        "auth",
+        ["reset-password"],
+        settings,
+      )
+    ).status,
+    404,
+  );
+  t.mock.method(globalThis, "fetch", async (url) => {
+    assert.equal(url.href, "https://api.example.invalid/api/auth/sign-up/email");
+    return new Response("{}", {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  });
+  assert.equal(
+    (
+      await proxyBackend(
+        request("/api/auth/sign-up/email", { name: "Ana" }),
         "auth",
         ["sign-up", "email"],
         settings,
       )
     ).status,
-    404,
+    200,
   );
   assert.equal(
     (

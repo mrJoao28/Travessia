@@ -29,3 +29,7 @@ Os documentos antigos específicos da Vercel são históricos. Sua configuraçã
 O domínio público é `https://travessia.maisacessoconecta.com.br`. O nginx do VPS encaminha esse host para `127.0.0.1:3020`, onde só o frontend escuta. A API não tem vhost: o Next fala com `http://api:3001` na rede Docker. O PostgreSQL do Travessia é um container próprio, sem porta no host, separado do Postgres compartilhado do servidor. A configuração privada fica em `.env.docker` no servidor e não entra no GitHub Actions.
 
 O workflow só passa a existir quando estes arquivos estão na branch `prod`. Secrets necessários: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`. `DEPLOY_PATH` é opcional e o padrão é `/home/cloud/Travessia`.
+
+## Separação de branches
+
+A `main` é a base para testes locais e revisão. A `prod` representa produção e aciona o workflow de deploy. Uma feature integrada à `main` não deve ser considerada publicada até sua integração deliberada à `prod`.

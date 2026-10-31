@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authRequest, hasSession } from "../lib/auth-client";
+import { pages } from "../lib/product-client";
 export function LoginForm() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -17,7 +18,7 @@ export function LoginForm() {
     <section className="login-form" id="conteudo" tabIndex={-1}>
       <p className="eyebrow">BEM-VINDO AO TRAVESSIA</p>
       <h2>Seu próximo passo começa aqui.</h2>
-      <p>Entre com a conta configurada para a demonstração.</p>
+      <p>Entre com o e-mail e a senha da sua conta.</p>
       <noscript><p>Ative o JavaScript para entrar com segurança.</p></noscript>
       <form
         className="form-stack"
@@ -39,7 +40,10 @@ export function LoginForm() {
               throw new Error(
                 "Não foi possível confirmar sua sessão. Tente novamente.",
               );
-            router.replace("/aluno");
+            const rooms = await pages("classrooms");
+            const hasStudent = rooms.some(room => room.role === "student");
+            const hasTeacher = rooms.some(room => room.role === "teacher");
+            router.replace(hasStudent ? "/aluno" : hasTeacher ? "/professor" : "/boas-vindas");
             router.refresh();
           } catch (reason) {
             setError(
@@ -98,8 +102,7 @@ export function LoginForm() {
         </p>
       </form>
       <p className="small">
-        O cadastro público está fechado. As credenciais são configuradas
-        privadamente.
+        Ainda não tem uma conta? <Link className="text-link" href="/cadastro">Criar uma conta</Link>
       </p>
       <Link className="text-link" href="/previa/aluno">
         Conhecer a prévia visual com dados fictícios

@@ -1174,6 +1174,15 @@ body {
 .login-form .form-stack > button {
   width: 100%;
 }
+.login-form button.text-link {
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .login-form input:focus-visible,
 .form-stack textarea:focus-visible {
   border-color: var(--primary);
@@ -1332,4 +1341,68 @@ body {
   .teacher-guide-footer .actions > .text-button { align-self: center; }
   .teacher-support-hub { grid-template-columns: minmax(0, 1fr); }
   .teacher-editor-panel, .teacher-student-preview { padding: 1rem; }
+}
+
+/* Cadastro e primeiros passos: mesma identidade do login, uma ação principal. */
+.registration-shell { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
+.registration-intro { justify-content: flex-start; }
+.auth-intro-title { font-size: clamp(2.25rem, 4vw, 4rem); font-weight: 750; line-height: 1.12; max-width: 12ch; margin: 2rem 0 0; }
+.registration-intro .login-art { width: min(100%, 28rem); margin-block: auto; }
+.registration-intro .login-network { margin-top: 1.5rem; }
+.registration-form { max-width: 36rem; padding: clamp(1.25rem, 3vw, 3rem); }
+.registration-form h1 { font-size: clamp(2rem, 3.5vw, 3rem); margin: 0.5rem 0 1.5rem; }
+.registration-form .form-stack { gap: 1rem; }
+.registration-context { margin: -0.25rem 0 0.25rem; color: var(--muted); }
+.starting-space { padding: 0; margin: 0; border: 0; min-width: 0; }
+.starting-space legend { font-size: 1rem; margin-bottom: 1rem; }
+.starting-space-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.starting-space-options .starting-space-option { display: flex; flex-direction: row; align-items: center; gap: 0.6rem; min-height: 4.5rem; padding: 0.8rem; border: 1px solid var(--border); border-radius: 0.65rem; cursor: pointer; font-size: 1rem; }
+.starting-space-option:has(input:checked) { border: 2px solid var(--primary); background: var(--sage); padding: calc(0.8rem - 1px); }
+.starting-space-option:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 3px; }
+.starting-space-option input[type="radio"] { padding: 0; width: 1.25rem; min-width: 1.25rem; height: 1.25rem; min-height: 0; margin: 0; accent-color: var(--primary); }
+.starting-space-option .icon { flex-shrink: 0; }
+.password-control { display: flex; align-items: stretch; }
+.password-control input { min-width: 0; border-radius: 0.65rem 0 0 0.65rem; }
+.password-toggle { display: grid; place-items: center; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-left: 0; border-radius: 0 0.65rem 0.65rem 0; min-width: 3rem; min-height: 3rem; cursor: pointer; }
+.password-control + .small { margin: 0.35rem 0 0; }
+.registration-login, .registration-later { text-align: center; }
+.welcome-shell { max-width: 48rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem); }
+.welcome-shell > .brand { display: inline-block; margin-bottom: 1.5rem; }
+.welcome-card { padding: clamp(1.25rem, 4vw, 3rem); }
+.welcome-card h1 { font-size: clamp(2rem, 4vw, 3rem); }
+.welcome-action { margin-top: 1.5rem; }
+@media (max-width: 800px) {
+  .registration-shell { grid-template-columns: minmax(0, 1fr); }
+  .registration-intro { padding: 1.25rem; }
+  .registration-intro .auth-intro-title, .registration-intro > p:not(.auth-intro-title), .registration-intro .login-network { display: none; }
+  .registration-form { max-width: 36rem; }
+}
+@media (max-width: 380px) {
+  .starting-space-options { grid-template-columns: minmax(0, 1fr); gap: 0.65rem; }
+  .starting-space-option { min-height: 3.5rem; }
+}
+@media (max-width: 800px) {
+  .registration-intro { padding: 16px 20px; }
+  .registration-intro .brand-lockup { flex-wrap: wrap; }
+  .registration-intro .brand-lockup > svg { width: 56px; height: 44px; }
+  .registration-intro .brand-lockup strong { white-space: nowrap; }
+  .registration-form { padding: 24px 20px; }
+  .registration-form .button { padding-inline: 16px; }
+}
+@media (max-width: 380px) {
+  .starting-space-options .starting-space-option { padding: 12px; gap: 12px; }
+  .starting-space-options .starting-space-option:has(input:checked) { padding: 11px; }
+  .starting-space-option .icon { display: none; }
+  .starting-space-option input[type="radio"] { width: 20px; min-width: 20px; height: 20px; }
+  .starting-space-option span { overflow-wrap: normal; }
+}
+@media (max-width: 380px) {
+  .welcome-shell { padding: 20px 16px; }
+  .welcome-card { padding: 20px 16px; }
+}
+@media (max-width: 800px) {
+  .welcome-shell > .brand { margin-inline: 0; max-width: 100%; }
+  .welcome-shell .brand-lockup { flex-wrap: wrap; }
+  .welcome-shell .brand-lockup > svg { width: 56px; height: 44px; }
+  .welcome-shell .brand-lockup strong { white-space: nowrap; }
 }

@@ -13,7 +13,7 @@ Conta e turmas são criadas pelo comando manual `npm run db:seed:demo`, implemen
 
 ## Isolamento
 
-Banco Supabase dedicado a demo, DEMO_MODE=true e DEMO_ONLY=true, sem dados reais de estudantes. Cadastro público e emails reais desabilitados. Better Auth com sessão persistida e hash da biblioteca; exceção de comprimento 5 apenas nesse ambiente para a credencial curta solicitada, nunca como padrão para usuários reais. Fora da demo, política forte e configuração que rejeita exceção. A conta pode ser estudante e professora em turmas distintas; contextos permitidos vêm da API, sem trocar papéis arbitrariamente.
+Banco Supabase dedicado a demo, DEMO_MODE=true e DEMO_ONLY=true, sem dados reais de estudantes. Cadastro disponível para testes com contas fictícias; emails reais desabilitados. Criar contas fora do dataset faz o seed recusar novas execuções, preservando essas contas. Better Auth com sessão persistida e hash da biblioteca; a credencial criada pelo seed pode ser curta apenas nesse ambiente; novos cadastros exigem de 8 a 128 caracteres. Fora da demo, política forte e configuração que rejeita exceção. A conta pode ser estudante e professora em turmas distintas; contextos permitidos vêm da API, sem trocar papéis arbitrariamente.
 
 ## Dataset inicial
 
