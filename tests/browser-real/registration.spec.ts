@@ -10,7 +10,7 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
   const student = await studentContext.newPage();
   const teacherEmail = `prof-${randomBytes(6).toString('hex')}@example.invalid`;
   const studentEmail = `aluno-${randomBytes(6).toString('hex')}@example.invalid`;
-  const password = randomBytes(18).toString('hex');
+  const password = randomBytes(4).toString('hex');
   async function register(page: typeof teacher, space: 'aluno' | 'professor', email: string) {
     await page.goto('/cadastro');
     await page.getByRole('radio', { name: `Sou ${space}`, exact: true }).check();
@@ -21,10 +21,12 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     await page.getByRole('button', { name: 'Criar minha conta', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/boas-vindas\\?espaco=${space}$`));
     await expect(page.getByRole('heading', { name: 'Vamos começar?', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: space === 'professor' ? 'Crie sua primeira turma' : 'Entre na sua turma', exact: true })).toBeVisible();
+    await expect(page.getByRole('radio')).toHaveCount(0);
   }
   try {
     await register(teacher, 'professor', teacherEmail);
-    await expect(teacher.getByRole('radio', { name: 'Sou professor', exact: true })).toBeChecked();
+    await expect(teacher.getByRole('heading', { name: 'Crie sua primeira turma', exact: true })).toBeVisible();
     expect((await teacher.request.get('/api/v1/classrooms').then(r => r.json())).items).toHaveLength(0);
     await teacher.getByLabel('Nome da turma', { exact: true }).fill('Turma de cadastro inclusivo');
     await teacher.getByRole('button', { name: 'Criar minha turma', exact: true }).click();

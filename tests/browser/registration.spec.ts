@@ -6,8 +6,8 @@ import AxeBuilder from "@axe-core/playwright";
 async function fillAccount(page: import('@playwright/test').Page) {
   await page.getByLabel('Nome completo', { exact: true }).fill('Pessoa fictícia');
   await page.getByLabel('E-mail', { exact: true }).fill('cadastro-ui@example.invalid');
-  await page.getByLabel('Senha', { exact: true }).fill('senha-ficticia-longa-123');
-  await page.getByLabel('Confirmar senha', { exact: true }).fill('senha-ficticia-longa-123');
+  await page.getByLabel('Senha', { exact: true }).fill('Abcd1234');
+  await page.getByLabel('Confirmar senha', { exact: true }).fill('Abcd1234');
 }
 
 test('cadastro mantém campos ao escolher espaço, opera por teclado e tem reflow', async ({ page }) => {
@@ -15,11 +15,14 @@ test('cadastro mantém campos ao escolher espaço, opera por teclado e tem reflo
   await page.getByRole('link', { name: 'Criar uma conta', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Crie sua conta', exact: true })).toBeVisible();
   await fillAccount(page);
+  await expect(page.getByLabel('Senha', { exact: true })).toHaveAttribute('minlength', '8');
+  await expect(page.getByLabel('Confirmar senha', { exact: true })).toHaveAttribute('minlength', '8');
+  await expect(page.locator('#register-password-help')).toHaveCount(0);
   await page.getByRole('radio', { name: 'Sou aluno', exact: true }).focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('radio', { name: 'Sou professor', exact: true })).toBeChecked();
   await expect(page.getByLabel('Nome completo')).toHaveValue('Pessoa fictícia');
-  await expect(page.getByLabel('Senha', { exact: true })).toHaveValue('senha-ficticia-longa-123');
+  await expect(page.getByLabel('Senha', { exact: true })).toHaveValue('Abcd1234');
   await page.getByRole('button', { name: 'Mostrar senhas', exact: true }).click();
   await expect(page.getByLabel('Senha', { exact: true })).toHaveAttribute('type', 'text');
   await page.getByRole('button', { name: 'Ocultar senhas', exact: true }).click();
@@ -47,11 +50,11 @@ test('senhas diferentes não chamam API; falha 429 preserva dados e foco', async
   expect(calls).toBe(0);
   await page.getByRole('button', { name: 'Conferir confirmação da senha', exact: true }).click();
   await expect(page.getByLabel('Confirmar senha', { exact: true })).toBeFocused();
-  await page.getByLabel('Confirmar senha', { exact: true }).fill('senha-ficticia-longa-123');
+  await page.getByLabel('Confirmar senha', { exact: true }).fill('Abcd1234');
   await page.getByRole('button', { name: 'Criar minha conta', exact: true }).click();
   await expect(page.getByRole('alert', { name: 'Erro ao criar conta', exact: true })).toContainText('Muitas tentativas');
   await expect(page.getByLabel('E-mail')).toHaveValue('cadastro-ui@example.invalid');
-  await expect(page.getByLabel('Senha', { exact: true })).toHaveValue('senha-ficticia-longa-123');
+  await expect(page.getByLabel('Senha', { exact: true })).toHaveValue('Abcd1234');
   expect(calls).toBe(1);
 });
 
@@ -82,7 +85,7 @@ test('cadastro sem JavaScript não envia credenciais por formulário nativo', as
 test('primeiros passos preservam convite recusado e continuam legíveis com texto ampliado', async ({ page }) => {
   await page.route('**/api/v1/me', route => route.fulfill({ json: { id: 'test-user', name: 'Pessoa fictícia', email: 'welcome@example.invalid', course: null, demo: true, preferences: {} } }));
   await page.route('**/api/v1/invitations/accept', route => route.fulfill({ status: 400, json: { code: 'INVALID_INVITATION' } }));
-  await page.goto('/boas-vindas?espaco=aluno');
+  await page.goto('/boas-vindas');
   const token = 'a'.repeat(64);
   await page.getByLabel('Código de convite', { exact: true }).fill(token);
   await page.getByRole('button', { name: 'Entrar na turma', exact: true }).click();

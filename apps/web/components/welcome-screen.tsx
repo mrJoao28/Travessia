@@ -6,9 +6,9 @@ import { api, ApiError, errorMessage } from "../lib/product-client";
 import { Brand } from "./icons";
 import { StartingSpaceChoice, type StartingSpace } from "./starting-space";
 
-export function WelcomeScreen({ initialSpace }: { initialSpace: StartingSpace }) {
+export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }) {
   const router = useRouter();
-  const [space, setSpace] = useState(initialSpace);
+  const [space, setSpace] = useState<StartingSpace>(initialSpace ?? "aluno");
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [name, setName] = useState("");
@@ -38,8 +38,8 @@ export function WelcomeScreen({ initialSpace }: { initialSpace: StartingSpace })
             {expired ? <Link className="text-link" href="/login">Entrar na minha conta</Link> : !authenticated && <button className="text-button" onClick={() => setRetry(retry + 1)}>Tentar novamente</button>}
           </div>}
           {authenticated && <>
-            <p>Bem-vindo ao Travessia, {name}. Escolha seu próximo passo.</p>
-            <StartingSpaceChoice value={space} onChange={next => { setSpace(next); setError(""); }} disabled={pending} />
+            <p>Bem-vindo ao Travessia, {name}. {initialSpace ? "Sua conta está pronta para começar." : "Escolha seu próximo passo."}</p>
+            {!initialSpace && <StartingSpaceChoice value={space} onChange={next => { setSpace(next); setError(""); }} disabled={pending} />}
             <form key={space} className="form-stack welcome-action" method="post" action="/boas-vindas" aria-busy={pending} onSubmit={async event => {
               event.preventDefault(); if (pending) return;
               const form = new FormData(event.currentTarget);

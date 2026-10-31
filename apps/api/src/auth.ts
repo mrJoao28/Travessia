@@ -9,7 +9,7 @@ export function createAuth(db: PrismaClient, config: Config) {
     appName: 'Travessia', baseURL: config.baseURL, basePath: '/api/auth',
     secret: config.secret, database: prismaAdapter(db, { provider: 'postgresql' }),
     trustedOrigins: [config.origin],
-    emailAndPassword: { enabled: true, disableSignUp: false, autoSignIn: true, minPasswordLength: 12, maxPasswordLength: 128 },
+    emailAndPassword: { enabled: true, disableSignUp: false, autoSignIn: true, minPasswordLength: 8, maxPasswordLength: 128 },
     hooks: { before: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== '/sign-up/email') return;
       const raw = ctx.body && typeof ctx.body === 'object' && 'name' in ctx.body ? ctx.body.name : '';

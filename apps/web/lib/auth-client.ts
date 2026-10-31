@@ -18,7 +18,7 @@ export async function authRequest(
   if (!response.ok) {
     if (response.status === 400 && path === "sign-up/email")
       throw new Error(
-        "Confira nome, e-mail e senha. A senha precisa ter de 12 a 128 caracteres.",
+        "Confira nome, e-mail e senha. A senha precisa ter de 8 a 128 caracteres.",
       );
     if (response.status === 422 && path === "sign-up/email")
       throw new Error("Já existe uma conta com esse e-mail.");

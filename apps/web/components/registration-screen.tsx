@@ -74,13 +74,12 @@ export function RegistrationScreen() {
           <div>
             <label htmlFor="register-password">Senha</label>
             <div className="password-control">
-              <input id="register-password" name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={12} maxLength={128} disabled={disabled} aria-describedby="register-password-help" />
+              <input id="register-password" name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={8} maxLength={128} disabled={disabled} />
               <button type="button" className="password-toggle" disabled={disabled} aria-label={showPassword ? "Ocultar senhas" : "Mostrar senhas"} aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}><Icon name="eye" /></button>
             </div>
-            <p className="small" id="register-password-help">Use de 12 a 128 caracteres.</p>
           </div>
           <label htmlFor="register-confirmation">Confirmar senha
-            <input id="register-confirmation" name="passwordConfirm" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={12} maxLength={128} disabled={disabled}
+            <input id="register-confirmation" name="passwordConfirm" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={8} maxLength={128} disabled={disabled}
               aria-invalid={confirmationError || undefined} aria-describedby={confirmationError ? "register-confirmation-help" : undefined} onChange={() => setConfirmationError(false)} />
           </label>
           {confirmationError && <p className="small" id="register-confirmation-help">Digite a mesma senha nos dois campos.</p>}

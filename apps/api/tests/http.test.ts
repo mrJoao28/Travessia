@@ -85,12 +85,12 @@ test('health público, sessão inválida, CSRF e cadastro na plataforma', async 
   await request('/v1/me', '', 'GET', undefined, 401);
   await request('/v1/me', 'better-auth.session_token=forged', 'GET', undefined, 401);
   await request('/api/auth/sign-up/email', '', 'POST', {}, 400);
-  await request('/api/auth/sign-up/email', '', 'POST', { name: 'Ana', email: 'ana-curta@example.invalid', password: 'curta' }, 400);
+  await request('/api/auth/sign-up/email', '', 'POST', { name: 'Ana', email: 'ana-curta@example.invalid', password: 'Abcd123' }, 400);
   await request('/api/auth/sign-up/email', '', 'POST', { name: 'Ana', email: 'csrf@example.invalid', password: testPassword }, 403, 'https://attacker.invalid');
   await request('/api/auth/sign-up/email', '', 'POST', { name: '  ', email: 'sem-nome@example.invalid', password: testPassword }, 400);
   await request('/api/auth/sign-up/email', '', 'POST', { name: 'A'.repeat(81), email: 'nome-longo@example.invalid', password: testPassword }, 400);
   const email = `ana-${randomUUID()}@example.invalid`;
-  const password = 'senha-de-cadastro-90817';
+  const password = 'Abcd1234';
   const created = await request('/api/auth/sign-up/email', '', 'POST', { name: '  Ana Costa  ', email, password, role: 'teacher' });
   const cookies = created.response.headers.getSetCookie();
   assert.ok(cookies.some(c => /HttpOnly/i.test(c) && /SameSite=Lax/i.test(c)));
@@ -545,8 +545,8 @@ test('IA indisponível clara; cota concorrente, deduplicação e revisão humana
 });
 test('limite de login persiste após recriar a aplicação e demo exige isolamento', { timeout: 30000 }, async () => {
   assert.throws(() => readConfig({ ...process.env, DEMO_ONLY: 'false' }));
-  assert.equal(createAuth(db, { ...config, demo: false }).options.emailAndPassword?.minPasswordLength, 12);
-  assert.equal(createAuth(db, config).options.emailAndPassword?.minPasswordLength, 12);
+  assert.equal(createAuth(db, { ...config, demo: false }).options.emailAndPassword?.minPasswordLength, 8);
+  assert.equal(createAuth(db, config).options.emailAndPassword?.minPasswordLength, 8);
   await db.rateBucket.deleteMany();
   for (let i = 0; i < 20; i++) await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 401);
   await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
