@@ -35,7 +35,7 @@ jobs:
         run: npm run docker:up
       - name: Criar demonstração isolada pela imagem de produção
         run: npm run docker:seed
-      - name: Testar os três containers reais
+      - name: Testar os quatro containers reais
         run: npm run docker:smoke
       - name: Recriar containers preservando o volume
         run: |

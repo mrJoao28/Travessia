@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
+import { MaterialWorker } from '../src/material-worker.js';
+import { materialPath } from '../src/material-files.js';
+import { writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { PrismaClient } from '@prisma/client';
@@ -542,6 +545,69 @@ test('IA indisponível clara; cota concorrente, deduplicação e revisão humana
   const unchanged = (await request(`/v1/missions/${mission.id}`, main)).json;
   assert.equal(unchanged.draftVersion.id, mission.draftVersion.id);
   config.aiEnabled = false;
+});
+test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privados A/B', { timeout: 30000 }, async () => {
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const versionId = created.draftVersion.id, path = `/v1/missions/${created.id}`;
+  await request(`${path}/publish`, main, 'POST', { versionId, reviewed: true });
+  const upload = { versionId, title: 'Documento de teste', base64: Buffer.from('%PDF-1.4\nfixture').toString('base64'), requestKey: randomUUID() };
+  await request(`${path}/material-sources`, '', 'POST', upload, 401);
+  await request(`${path}/material-sources`, a, 'POST', upload, 404);
+  await request(`${path}/material-sources`, otherTeacher, 'POST', upload, 404);
+  await request(`${path}/material-sources`, main, 'POST', { ...upload, base64: 'bm90LXBkZg==' }, 400);
+  const source = (await request(`${path}/material-sources`, main, 'POST', upload)).json;
+  assert.equal(source.status, 'queued'); assert.equal(source.pages.length, 0);
+  assert.equal((await request(`${path}/material-sources`, main, 'POST', upload)).json.id, source.id);
+  await request(`${path}/material-assets/${source.id}/original`, main, 'GET', undefined, 404);
+  const local = async (mode: 'extract' | 'audio', filename: string) => {
+    if (mode === 'extract') { await writeFile(materialPath(source.id, 'page-1.png'), 'visual fixture'); return { pages: [{ page: 1, text: 'Dados: 10 metros. Compare alternativas.', hasVisual: true, ocr: false }], warnings: ['Conferir tabela.'] }; }
+    await writeFile(filename, 'audio fixture'); return {};
+  };
+  const pdf = async (filename: string, html: string) => { assert.ok(html.includes('lang="pt-BR"')); assert.ok(!html.includes('<script>')); await writeFile(filename, '%PDF-render fixture'); };
+  let calls = 0, sent = '';
+  const worker = new MaterialWorker(db, config, async input => { calls++; sent=JSON.stringify(input); return { document: input.pages.map(p=>({ page:p.page,title:'Comparar dados',text:'Dados: 10 metros. Compare alternativas.',description:'Diagrama compara duas alternativas.' })), inputTokens: 123, outputTokens: 45 }; }, local, pdf);
+  await worker.tick();
+  const ready = (await request(`${path}/material-sources?versionId=${versionId}`, main)).json.items[0]; assert.equal(ready.status, 'ready');
+  const settings = { supports: ['large-print','narration'], fontSize:'22', color:'high', useAi:false, approvedForProvider:false };
+  const input = { versionId, sourceId:source.id, studentId:'demo-student-1', pages:[1], settings, requestKey:randomUUID() };
+  await request(`${path}/material-adaptations`, main, 'POST', { ...input, studentId:mainId }, 400);
+  await request(`${path}/material-adaptations`, main, 'POST', { ...input, pages:[2] }, 400);
+  const plan = (await request(`${path}/material-adaptations`, main, 'POST', input)).json;
+  assert.equal((await request(`${path}/material-adaptations`, main, 'POST', input)).json.id, plan.id);
+  await worker.tick(); assert.equal(calls,0,'Formatação e voz não chamam a IA');
+  let draft = (await request(`${path}/material-adaptations?versionId=${versionId}`, main)).json.items[0];
+  assert.equal(draft.status,'draft');
+  await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:1,reviewed:true},409);
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,0);
+  const malicious = [{page:1,title:'Teste',text:'<script>alert(1)</script> Dados: 10 metros.',description:'Diagrama.'}];
+  draft=(await request(`${path}/material-adaptations/${plan.id}`,main,'PATCH',{expectedRevision:1,document:malicious})).json;
+  await request(`${path}/material-adaptations/${plan.id}`,main,'PATCH',{expectedRevision:1,document:malicious},409);
+  await request(`${path}/material-adaptations/${plan.id}/render`,main,'POST',{expectedRevision:draft.revision});
+  await worker.tick();
+  let rendered = (await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items[0]; assert.equal(rendered.status,'ready');assert.equal(rendered.hasAudio,true);
+  await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:rendered.revision},400);
+  await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:rendered.revision,reviewed:true});
+  const student = (await request(`${path}/my-materials?versionId=${versionId}`,a)).json; assert.equal(student.items.length,1);assert.ok(!JSON.stringify(student).includes('studentId'));
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,0);
+  async function file(kind:string, cookie:string,status=200) { const r=await fetch(`${base}${path}/material-assets/${plan.id}/${kind}`,{headers:{cookie}});assert.equal(r.status,status);return r; }
+  assert.equal((await file('pdf',a)).headers.get('content-type'),'application/pdf');
+  await file('audio',a);await file('page-1',a);await file('page-2',a,404);await file('pdf',b,404);await file('audio',otherTeacher,404);
+  await request(`${path}/material-assets/${source.id}/original`,a,'GET',undefined,404);
+  await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:false}});await file('pdf',a,404);
+  await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:true}});
+  await request(`${path}/material-adaptations/${plan.id}`,main,'PATCH',{expectedRevision:rendered.revision,document:malicious});await file('pdf',a,404);
+  config.aiEnabled=true;
+  const aiInput={...input,settings:{...settings,supports:['image-description'],useAi:true,approvedForProvider:true},requestKey:randomUUID()};
+  const aiPlan=(await request(`${path}/material-adaptations`,main,'POST',aiInput)).json;
+  await worker.tick();assert.equal(calls,1);assert.ok(sent.includes('image'));assert.ok(!sent.includes('demo-student-1')&&!sent.includes('example.invalid')&&!sent.includes('blindness'));
+  const cached=(await request(`${path}/material-adaptations`,main,'POST',{...aiInput,requestKey:randomUUID()})).json;assert.equal(cached.id,aiPlan.id);assert.equal(calls,1);
+  const next=(await request(`${path}/material-adaptations`,main,'POST',{...aiInput,studentId:'demo-student-2',requestKey:randomUUID()})).json;
+  await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:false}});await worker.tick();assert.equal(calls,1);
+  assert.equal((await db.materialAdaptation.findUniqueOrThrow({where:{id:next.id}})).status,'failed');
+  await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:true}});
+  config.aiEnabled=false;
+  await request(`${path}/material-sources/${source.id}`,main,'DELETE');await file('pdf',a,404);await worker.collect();
+  assert.equal(await db.materialSource.count({where:{id:source.id}}),0);
 });
 test('limite de login persiste após recriar a aplicação e demo exige isolamento', { timeout: 30000 }, async () => {
   assert.throws(() => readConfig({ ...process.env, DEMO_ONLY: 'false' }));

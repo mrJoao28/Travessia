@@ -249,6 +249,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
   await page.goto('/professor/missoes/demo-class-oficina-mission/estrategias');
+  await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
   await page.getByLabel('Texto do apoio: Checklist do próximo passo', { exact: true }).fill('Apoio coletivo real: confira os requisitos antes de entregar.');

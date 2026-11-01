@@ -1,3 +1,4 @@
+import { materialSmoke } from './docker-material-smoke.mjs';
 import { readFileSync } from 'node:fs';
 import { parseEnv } from 'node:util';
 import { execFileSync } from 'node:child_process';
@@ -41,13 +42,13 @@ async function login() {
 
 try {
   const ids = compose('ps', '-q').trim().split(/\s+/).filter(Boolean);
-  check(ids.length === 3, 'São esperados três containers permanentes.');
+  check(ids.length === 4, 'São esperados quatro containers permanentes.');
   const containers = JSON.parse(execFileSync('docker', ['inspect', ...ids], { encoding: 'utf8' }));
   const names = containers.map(c => c.Config.Labels['com.docker.compose.service']).sort();
-  check(JSON.stringify(names) === JSON.stringify(['api', 'db', 'frontend']), 'Serviços inesperados no Compose.');
+  check(JSON.stringify(names) === JSON.stringify(['api', 'db', 'frontend', 'material-worker']), 'Serviços inesperados no Compose.');
   const shared = Object.keys(containers[0].NetworkSettings.Networks).filter(network =>
     containers.every(c => network in c.NetworkSettings.Networks));
-  check(shared.length > 0, 'Os três serviços precisam compartilhar a rede.');
+  check(shared.length > 0, 'Os quatro serviços precisam compartilhar a rede.');
   for (const c of containers) {
     const service = c.Config.Labels['com.docker.compose.service'];
     check(c.State.Health?.Status === 'healthy', `Container ${service} não está saudável.`);
@@ -138,6 +139,7 @@ try {
       audience: 'students', studentIds: [recipients[0].id], items: [{ strategyId: 'step-checklist', content: supportMarker, audio: { base64: audioBase64 } }],
       reviewed: true, requestKey: crypto.randomUUID() } });
   }
+  await materialSmoke(request, check, verifyPersistence);
   await request('/api/auth/sign-out', { method: 'POST', body: {} });
   await request('/api/v1/me', { status: 401 });
   await login();
@@ -146,7 +148,7 @@ try {
   await request('/api/auth/sign-out', { method: 'POST', body: {} });
   cookie = '';
   console.log(verifyPersistence
-    ? 'Persistência confirmada após recriar os três containers com o mesmo volume.'
+    ? 'Persistência confirmada após recriar os quatro containers com o mesmo volume.'
     : 'Frontend de produção, imagens, Prisma, login/logout, CSRF, permissões e persistência confirmados.');
 } catch (error) {
   // Never dump inspect payloads, auth responses, connection strings or credentials.

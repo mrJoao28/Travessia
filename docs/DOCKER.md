@@ -87,3 +87,7 @@ Não há importação do banco do Mais Acesso. As migrations do Travessia são e
 `.github/workflows/docker.yml` usa runner Ubuntu com Docker Compose e cria configuração aleatória, sem credenciais pessoais. Constrói ambas as imagens, aplica migrations, cria o dataset fictício, sobe os três containers, testa o fluxo real e recria todos preservando o volume para revalidar os dados. No fim remove apenas os recursos efêmeros do projeto daquele job. Não publica imagens nem faz deploy no servidor.
 
 Referências: [Compose networking](https://docs.docker.com/compose/how-tos/networking/), [startup order](https://docs.docker.com/compose/how-tos/startup-order/), [Next.js standalone](https://nextjs.org/docs/app/api-reference/config/next-config-js/output), [Prisma migrate deploy v6](https://www.prisma.io/docs/orm/v6/prisma-migrate/workflows/development-and-production).
+
+### Materiais individuais
+
+O Compose agora acrescenta `material-worker` e o volume privado `material-data` para PDF/OCR/narração local. A API permanece sem os binários pesados. Configuração, limites, retenção, licenças e roteiro: [INDIVIDUAL-MATERIALS.md](INDIVIDUAL-MATERIALS.md). O smoke verifica quatro containers e a persistência de PDFs/áudios. Não apagar `material-data` em atualizações normais.
