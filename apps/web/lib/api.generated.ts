@@ -2,6 +2,54 @@
 // Run node apps/web/scripts/generate-api.mjs. DTOs belong to the shared contract.
 import type { operations } from '@travessia/contracts/api';
 export const apiRoutes = {
+  "materialSources": {
+    "method": "GET",
+    "path": "/missions/{id}/material-sources"
+  },
+  "uploadMaterialSource": {
+    "method": "POST",
+    "path": "/missions/{id}/material-sources"
+  },
+  "deleteMaterialSource": {
+    "method": "DELETE",
+    "path": "/missions/{id}/material-sources/{sourceId}"
+  },
+  "materialAdaptations": {
+    "method": "GET",
+    "path": "/missions/{id}/material-adaptations"
+  },
+  "prepareMaterial": {
+    "method": "POST",
+    "path": "/missions/{id}/material-adaptations"
+  },
+  "releaseOriginalMaterial": {
+    "method": "POST",
+    "path": "/missions/{id}/original-materials"
+  },
+  "editMaterial": {
+    "method": "PATCH",
+    "path": "/missions/{id}/material-adaptations/{adaptationId}"
+  },
+  "removeMaterial": {
+    "method": "DELETE",
+    "path": "/missions/{id}/material-adaptations/{adaptationId}"
+  },
+  "renderMaterial": {
+    "method": "POST",
+    "path": "/missions/{id}/material-adaptations/{adaptationId}/render"
+  },
+  "releaseMaterial": {
+    "method": "POST",
+    "path": "/missions/{id}/material-adaptations/{adaptationId}/release"
+  },
+  "learnerMaterials": {
+    "method": "GET",
+    "path": "/missions/{id}/my-materials"
+  },
+  "materialAsset": {
+    "method": "GET",
+    "path": "/missions/{id}/material-assets/{assetId}/{kind}"
+  },
   "health": {
     "method": "GET",
     "path": "/health"
@@ -211,7 +259,7 @@ export const apiRoutes = {
     "path": "/ai-generations/{id}"
   }
 } as const;
-export type ApiResponse<K extends keyof operations> = operations[K]['responses'][200]['content']['application/json'];
+export type ApiResponse<K extends keyof operations> = operations[K]['responses'][200]['content']['application/json' & keyof operations[K]['responses'][200]['content']];
 export type ApiBody<K extends keyof operations> = operations[K] extends { requestBody: { content: { 'application/json': infer T } } } ? T : never;
 type Params<K extends keyof operations> = operations[K]['parameters'] extends { path: infer T } ? T : {};
 type Query<K extends keyof operations> = operations[K]['parameters'] extends { query?: infer T } ? NonNullable<T> : never;

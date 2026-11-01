@@ -13,18 +13,21 @@
     "test:http": "tsx --test tests/http.test.ts"
   },
   "dependencies": {
-    "@prisma/client": "6.19.3",
-    "prisma": "6.19.3",
-    "better-auth": "1.7.14",
     "@google/genai": "2.31.0",
-    "zod": "^4.1.0",
-    "express": "^5.1.0",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
+    "@prisma/client": "6.19.3",
+    "better-auth": "1.7.14",
+    "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "playwright-core": "1.56.1",
+    "prisma": "6.19.3",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "zod": "^4.1.0"
   },
-  "devDependencies": { "@types/express": "^5.0.0" }
+  "devDependencies": {
+    "@types/express": "^5.0.0"
+  }
 }

@@ -17,6 +17,7 @@ export function MissionSupports({ missionId, versionId, stepId }: { missionId: s
       .finally(() => { if (!controller.signal.aborted) setPending(false); });
     return () => controller.abort();
   }, [missionId, versionId, stepId, retry]);
+  if (!pending && !error && !items.length) return null;
   return <section className="mission-supports" aria-label="Apoios desta etapa">
     <h3>Apoios desta etapa</h3>
     {pending ? <p role="status">Consultando os apoios disponíveis…</p> : error ? <>

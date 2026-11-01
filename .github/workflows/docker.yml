@@ -1,5 +1,6 @@
 name: Docker Linux
 on:
+  workflow_call:
   pull_request:
   push:
     branches: [main]
@@ -35,13 +36,37 @@ jobs:
         run: npm run docker:up
       - name: Criar demonstração isolada pela imagem de produção
         run: npm run docker:seed
-      - name: Testar os três containers reais
+      - name: Verificar parser e OCR reais com arquivos seguros e maliciosos de teste
+        run: node scripts/docker-compose.mjs run --rm --no-deps --entrypoint /opt/material-venv/bin/python material-worker apps/api/material-tools/test_process.py
+      - name: Testar os quatro containers reais
         run: npm run docker:smoke
+      - name: Conferir marcação, idioma, paginação e áudio dos artefatos reais
+        run: node scripts/docker-compose.mjs run --rm --no-deps --entrypoint /opt/material-venv/bin/python material-worker apps/api/material-tools/verify_smoke_artifacts.py
       - name: Recriar containers preservando o volume
         run: |
           npm run docker:down
           npm run docker:start
           node scripts/docker-smoke.mjs --verify-persistence
+      - name: Instalar navegador para o fluxo completo da imagem de produção
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Professor cria e adapta missão, aluno realiza e recebe feedback nos quatro containers reais
+        run: node scripts/test-docker-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coherent-flow-previews
+          path: test-results/reference-coherent-*.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: material-processing-previews
+          path: test-results/materials/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Diagnóstico limitado em caso de falha
         if: failure()
         run: |

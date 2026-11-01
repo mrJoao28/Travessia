@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import type { ApiResponse } from "../../apps/web/lib/api.generated";
 
 test.afterEach(async ({ page }, info) => {
   if (info.status !== info.expectedStatus)
@@ -249,6 +250,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
   await page.goto('/professor/missoes/demo-class-oficina-mission/estrategias');
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
   await page.getByLabel('Texto do apoio: Checklist do próximo passo', { exact: true }).fill('Apoio coletivo real: confira os requisitos antes de entregar.');
@@ -271,6 +274,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Salvar apoios', exact: true }).click();
   await expect(page.getByText('Apoios salvos e disponíveis aos destinatários selecionados.', { exact: true })).toBeVisible();
   await page.reload();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('region', { name: 'Aplicações salvas', exact: true }).getByText('Alunos selecionados: Estudante Fictício 1', { exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
   await page.screenshot({ path: 'test-results/reference-strategies-desktop.png', fullPage: true });
@@ -327,7 +332,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   expect(createdMissionResponse.status()).toBe(200);
   const inclusiveMission = await createdMissionResponse.json();
   await page.getByRole('link', { name: 'Preparar apoios desta missão', exact: true }).click();
-  await page.getByRole('link', { name: 'Preparar adaptação', exact: true }).click();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  await page.getByText('Ajustar instruções ou entregas para a turma inteira', {exact:true}).click();
   await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
   await page.getByRole('checkbox', { name: 'Estudante Fictício 1', exact: true }).check();
@@ -375,7 +381,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.goto('/aluno/apoios');
       await page.getByRole('checkbox', { name: 'Tarefa dividida em passos curtos', exact: true }).check();
       await page.getByText('Informar deficiência autodeclarada (opcional)', { exact: true }).click();
-      await page.getByRole('checkbox', { name: 'Visual', exact: true }).check();
+      await page.getByRole('checkbox', { name: 'Baixa visão', exact: true }).check();
       await page.getByRole('button', { name: 'Salvar minhas escolhas', exact: true }).click();
       await expect(page.getByText('Escolhas salvas. Revise e autorize novamente as turmas com quem deseja compartilhar.', { exact: true })).toBeVisible();
       await page.getByRole('checkbox', { name: 'Compartilhar apoios e preferências com docentes de Oficina de Projetos Inclusivos', exact: true }).check();
@@ -411,12 +417,22 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByLabel('Senha', { exact: true }).fill(process.env.DEMO_USER_PASSWORD!);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
-  const sharedNeeds = await (await page.request.get('/api/v1/classrooms/demo-class-oficina/learning-needs')).json();
+  // The comprehensive dev-browser scenario can reach the real per-user quota.
+  // Wait for an authorized successful read; never reset or bypass the limiter.
+  let sharedNeeds: ApiResponse<'sharedLearningNeeds'> = {items:[],nextCursor:null};
+  let submittedItems: {userId:string;status:string}[]=[];
+  await expect(async()=>{
+    const response=await page.request.get('/api/v1/classrooms/demo-class-oficina/learning-needs');
+    expect(response.status()).toBe(200);
+    sharedNeeds=await response.json();
+    // These adjacent reads share the same quota: both must succeed in the window.
+    const submitted=await page.request.get(`/api/v1/missions/${inclusiveMission.id}/submissions`);
+    expect(submitted.status()).toBe(200);
+    submittedItems=(await submitted.json()).items;
+  }).toPass({timeout:75000,intervals:[5000,10000,15000]});
   const learnerA = sharedNeeds.items.find((n: { userId: string }) => n.userId === 'demo-student-1');
-  expect(learnerA.supports).toContain('short-steps'); expect(learnerA.disabilities).toBeNull();
-  const submittedResponse = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/submissions`);
-  expect(submittedResponse.status()).toBe(200);
-  expect((await submittedResponse.json()).items).toEqual(expect.arrayContaining([expect.objectContaining({ userId: 'demo-student-1', status: 'submitted' })]));
+  expect(learnerA).toMatchObject({supports:expect.arrayContaining(['short-steps']),disabilities:null});
+  expect(submittedItems).toEqual(expect.arrayContaining([expect.objectContaining({ userId: 'demo-student-1', status: 'submitted' })]));
   await page.goto('/professor/entregas');
   const deliveryHeading = page.getByRole('heading', { name: 'Entregas para acompanhar', exact: true });
   const limitNotice = page.getByText('O limite de solicitações foi atingido. Aguarde antes de tentar novamente.', { exact: true });

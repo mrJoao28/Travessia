@@ -8,6 +8,7 @@ import { BarrierComposer } from "./live-barriers";
 import { LearnerAdaptations } from "./learner-adaptations";
 import { AudioAttachment } from "./support-audio";
 import { SubmissionMedia } from "./submission-media";
+import { LearnerMaterials } from "./learner-materials";
 import { MissionSupports } from "./mission-supports";
 
 export function LiveMission({
@@ -161,8 +162,9 @@ export function LiveMission({
         )}
         <h3>Materiais</h3>
         {!version.materials.length && (
-          <p>Nenhum material adicional nesta missão.</p>
+          <p className="small">Os PDFs e áudios liberados para você aparecem neste espaço.</p>
         )}
+        {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
         {version.materials.map((material) => (
           <details className="example" key={material.id}>
             <summary>{material.title}</summary>
