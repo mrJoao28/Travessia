@@ -1,0 +1,1 @@
+Material fictício de prévia do Travessia. Considere um computador de 120 W usado 4 horas por dia durante 20 dias e uma luminária de 12 W usada 5 horas por dia durante 20 dias. Energia em kWh = potência em W × horas por dia × dias ÷ 1000. O computador consome 9,6 kWh e a luminária 1,2 kWh; o total é 10,8 kWh. Valores fictícios de uma atividade didática.
