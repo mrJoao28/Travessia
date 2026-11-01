@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/missions/{id}/original-materials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["releaseOriginalMaterial"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/missions/{id}/material-adaptations/{adaptationId}": {
         parameters: {
             query?: never;
@@ -1008,6 +1024,8 @@ export interface operations {
                 content: {
                     "application/json": {
                         items: {
+                            /** @enum {string} */
+                            mode?: "adapted" | "original";
                             id: string;
                             versionId: string;
                             sourceId: string;
@@ -1022,6 +1040,8 @@ export interface operations {
                                 color: "default" | "high" | "dark";
                                 useAi: boolean;
                                 approvedForProvider: boolean;
+                                /** @enum {string} */
+                                deliveryMode?: "adapted" | "original";
                             };
                             pages: number[];
                             document: {
@@ -1080,6 +1100,8 @@ export interface operations {
                         color: "default" | "high" | "dark";
                         useAi: boolean;
                         approvedForProvider: boolean;
+                        /** @enum {string} */
+                        deliveryMode?: "adapted" | "original";
                     };
                     /** Format: uuid */
                     requestKey: string;
@@ -1094,6 +1116,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        mode?: "adapted" | "original";
                         id: string;
                         versionId: string;
                         sourceId: string;
@@ -1108,6 +1132,89 @@ export interface operations {
                             color: "default" | "high" | "dark";
                             useAi: boolean;
                             approvedForProvider: boolean;
+                            /** @enum {string} */
+                            deliveryMode?: "adapted" | "original";
+                        };
+                        pages: number[];
+                        document: {
+                            page: number;
+                            title: string;
+                            text: string;
+                            description: string;
+                        }[];
+                        revision: number;
+                        error: string | null;
+                        hasAudio: boolean;
+                        inputTokens: number | null;
+                        outputTokens: number | null;
+                        /** Format: date-time */
+                        expiresAt: string;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    releaseOriginalMaterial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    versionId: string;
+                    sourceId: string;
+                    studentId: string;
+                    /** Format: uuid */
+                    requestKey: string;
+                    /** @constant */
+                    reviewed: true;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mode?: "adapted" | "original";
+                        id: string;
+                        versionId: string;
+                        sourceId: string;
+                        studentId: string;
+                        /** @enum {string} */
+                        status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        settings: {
+                            supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
+                            /** @enum {string} */
+                            fontSize: "18" | "22" | "26";
+                            /** @enum {string} */
+                            color: "default" | "high" | "dark";
+                            useAi: boolean;
+                            approvedForProvider: boolean;
+                            /** @enum {string} */
+                            deliveryMode?: "adapted" | "original";
                         };
                         pages: number[];
                         document: {
@@ -1211,6 +1318,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        mode?: "adapted" | "original";
                         id: string;
                         versionId: string;
                         sourceId: string;
@@ -1225,6 +1334,8 @@ export interface operations {
                             color: "default" | "high" | "dark";
                             useAi: boolean;
                             approvedForProvider: boolean;
+                            /** @enum {string} */
+                            deliveryMode?: "adapted" | "original";
                         };
                         pages: number[];
                         document: {
@@ -1283,6 +1394,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        mode?: "adapted" | "original";
                         id: string;
                         versionId: string;
                         sourceId: string;
@@ -1297,6 +1410,8 @@ export interface operations {
                             color: "default" | "high" | "dark";
                             useAi: boolean;
                             approvedForProvider: boolean;
+                            /** @enum {string} */
+                            deliveryMode?: "adapted" | "original";
                         };
                         pages: number[];
                         document: {
@@ -1357,6 +1472,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        mode?: "adapted" | "original";
                         id: string;
                         versionId: string;
                         sourceId: string;
@@ -1371,6 +1488,8 @@ export interface operations {
                             color: "default" | "high" | "dark";
                             useAi: boolean;
                             approvedForProvider: boolean;
+                            /** @enum {string} */
+                            deliveryMode?: "adapted" | "original";
                         };
                         pages: number[];
                         document: {
@@ -1427,6 +1546,8 @@ export interface operations {
                         items: {
                             id: string;
                             title: string;
+                            /** @enum {string} */
+                            mode?: "adapted" | "original";
                             document: {
                                 page: number;
                                 title: string;

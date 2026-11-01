@@ -489,6 +489,13 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "adapted",
+                              "original"
+                            ]
+                          },
                           "id": {
                             "type": "string",
                             "minLength": 1,
@@ -525,7 +532,6 @@
                             "type": "object",
                             "properties": {
                               "supports": {
-                                "minItems": 1,
                                 "maxItems": 8,
                                 "type": "array",
                                 "items": {
@@ -563,6 +569,13 @@
                               },
                               "approvedForProvider": {
                                 "type": "boolean"
+                              },
+                              "deliveryMode": {
+                                "type": "string",
+                                "enum": [
+                                  "adapted",
+                                  "original"
+                                ]
                               }
                             },
                             "required": [
@@ -762,7 +775,6 @@
                     "type": "object",
                     "properties": {
                       "supports": {
-                        "minItems": 1,
                         "maxItems": 8,
                         "type": "array",
                         "items": {
@@ -800,6 +812,13 @@
                       },
                       "approvedForProvider": {
                         "type": "boolean"
+                      },
+                      "deliveryMode": {
+                        "type": "string",
+                        "enum": [
+                          "adapted",
+                          "original"
+                        ]
                       }
                     },
                     "required": [
@@ -839,6 +858,13 @@
                   "$schema": "https://json-schema.org/draft/2020-12/schema",
                   "type": "object",
                   "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "adapted",
+                        "original"
+                      ]
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1,
@@ -875,7 +901,6 @@
                       "type": "object",
                       "properties": {
                         "supports": {
-                          "minItems": 1,
                           "maxItems": 8,
                           "type": "array",
                           "items": {
@@ -913,6 +938,311 @@
                         },
                         "approvedForProvider": {
                           "type": "boolean"
+                        },
+                        "deliveryMode": {
+                          "type": "string",
+                          "enum": [
+                            "adapted",
+                            "original"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "supports",
+                        "fontSize",
+                        "color",
+                        "useAi",
+                        "approvedForProvider"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "pages": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "document": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "page": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 20
+                          },
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 12000
+                          },
+                          "description": {
+                            "type": "string",
+                            "maxLength": 4000
+                          }
+                        },
+                        "required": [
+                          "page",
+                          "title",
+                          "text",
+                          "description"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "revision": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "error": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hasAudio": {
+                      "type": "boolean"
+                    },
+                    "inputTokens": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "outputTokens": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "versionId",
+                    "sourceId",
+                    "studentId",
+                    "status",
+                    "settings",
+                    "pages",
+                    "document",
+                    "revision",
+                    "error",
+                    "hasAudio",
+                    "inputTokens",
+                    "outputTokens",
+                    "expiresAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/missions/{id}/original-materials": {
+      "post": {
+        "operationId": "releaseOriginalMaterial",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "versionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "sourceId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "studentId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "requestKey": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "reviewed": {
+                    "type": "boolean",
+                    "const": true
+                  }
+                },
+                "required": [
+                  "versionId",
+                  "sourceId",
+                  "studentId",
+                  "requestKey",
+                  "reviewed"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "adapted",
+                        "original"
+                      ]
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "versionId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "sourceId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "studentId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "generating",
+                        "draft",
+                        "rendering",
+                        "ready",
+                        "released",
+                        "failed"
+                      ]
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "supports": {
+                          "maxItems": 8,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "large-print",
+                              "wide-spacing",
+                              "high-contrast",
+                              "literal-language",
+                              "short-sections",
+                              "glossary",
+                              "image-description",
+                              "narration"
+                            ]
+                          }
+                        },
+                        "fontSize": {
+                          "type": "string",
+                          "enum": [
+                            "18",
+                            "22",
+                            "26"
+                          ]
+                        },
+                        "color": {
+                          "type": "string",
+                          "enum": [
+                            "default",
+                            "high",
+                            "dark"
+                          ]
+                        },
+                        "useAi": {
+                          "type": "boolean"
+                        },
+                        "approvedForProvider": {
+                          "type": "boolean"
+                        },
+                        "deliveryMode": {
+                          "type": "string",
+                          "enum": [
+                            "adapted",
+                            "original"
+                          ]
                         }
                       },
                       "required": [
@@ -1148,6 +1478,13 @@
                   "$schema": "https://json-schema.org/draft/2020-12/schema",
                   "type": "object",
                   "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "adapted",
+                        "original"
+                      ]
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1,
@@ -1184,7 +1521,6 @@
                       "type": "object",
                       "properties": {
                         "supports": {
-                          "minItems": 1,
                           "maxItems": 8,
                           "type": "array",
                           "items": {
@@ -1222,6 +1558,13 @@
                         },
                         "approvedForProvider": {
                           "type": "boolean"
+                        },
+                        "deliveryMode": {
+                          "type": "string",
+                          "enum": [
+                            "adapted",
+                            "original"
+                          ]
                         }
                       },
                       "required": [
@@ -1504,6 +1847,13 @@
                   "$schema": "https://json-schema.org/draft/2020-12/schema",
                   "type": "object",
                   "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "adapted",
+                        "original"
+                      ]
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1,
@@ -1540,7 +1890,6 @@
                       "type": "object",
                       "properties": {
                         "supports": {
-                          "minItems": 1,
                           "maxItems": 8,
                           "type": "array",
                           "items": {
@@ -1578,6 +1927,13 @@
                         },
                         "approvedForProvider": {
                           "type": "boolean"
+                        },
+                        "deliveryMode": {
+                          "type": "string",
+                          "enum": [
+                            "adapted",
+                            "original"
+                          ]
                         }
                       },
                       "required": [
@@ -1782,6 +2138,13 @@
                   "$schema": "https://json-schema.org/draft/2020-12/schema",
                   "type": "object",
                   "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "adapted",
+                        "original"
+                      ]
+                    },
                     "id": {
                       "type": "string",
                       "minLength": 1,
@@ -1818,7 +2181,6 @@
                       "type": "object",
                       "properties": {
                         "supports": {
-                          "minItems": 1,
                           "maxItems": 8,
                           "type": "array",
                           "items": {
@@ -1856,6 +2218,13 @@
                         },
                         "approvedForProvider": {
                           "type": "boolean"
+                        },
+                        "deliveryMode": {
+                          "type": "string",
+                          "enum": [
+                            "adapted",
+                            "original"
+                          ]
                         }
                       },
                       "required": [
@@ -2045,8 +2414,14 @@
                           "title": {
                             "type": "string"
                           },
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "adapted",
+                              "original"
+                            ]
+                          },
                           "document": {
-                            "minItems": 1,
                             "maxItems": 4,
                             "type": "array",
                             "items": {
