@@ -64,8 +64,8 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   useEffect(()=>{
     if(!current || dirty)return;
     setDocument(current.document);
-    if(current.status === "ready" || current.status === "released") setStep(3);
-  },[current,dirty]);
+    if(step===2&&!activityOnly&&(current.status === "ready" || current.status === "released")) setStep(3);
+  },[current,dirty,step,activityOnly]);
   useEffect(()=>{if(current?.status==='draft'&&autoRender.current===current.id&&!dirty){autoRender.current=null;void saveAndRender();}},[current,dirty]);
   useEffect(()=>{if(source?.status==='ready'&&!selectedId){const all=source.pages;setPageNumbers(all.length<=4&&all.reduce((n,p)=>n+p.text.length,0)<=12000?all.map(p=>p.page):[]);}},[source?.id,source?.status]);
   useEffect(()=>{setReviewed(false);},[step,selectedId]);

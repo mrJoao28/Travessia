@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { ApiBody, ApiResponse } from '../../apps/web/lib/api.generated';
 import { materialPdfFixture } from '../../scripts/material-fixture.mjs';
 
-async function fixture(page: Page, failActivity = false, disabilities: string[] = ['low-vision'], requests: string[] = ['short-steps']) {
+async function fixture(page: Page, failActivity = false, disabilities: string[] = ['low-vision'], requests: string[] = ['short-steps'], backgroundWork=false) {
   const version = { id:'v-material',missionId:'m-material',title:'Comparar rotas acessíveis',description:'Material fictício.',objectives:['Comparar rotas.'],criteria:['Justificar escolha.'],source:'manual',dueAt:null,createdAt:'2026-11-01T00:00:00.000Z',materials:[],steps:[{id:'s-material',position:1,title:'Comparar',instructions:'Compare duas rotas.',example:'Use distâncias.'}] };
   const source: ApiResponse<'uploadMaterialSource'> = { id:'source-material',versionId:version.id,title:'rotas.pdf',status:'ready',pageCount:1,pages:[{page:1,text:'Compare duas rotas de 10 metros.',hasVisual:true,ocr:false}],warnings:['Confira a informação visual.'],expiresAt:'2027-01-30T00:00:00.000Z' };
   let sources: ApiResponse<'materialSources'>['items']=[], plans: ApiResponse<'prepareMaterial'>[]=[];
@@ -25,7 +25,7 @@ async function fixture(page: Page, failActivity = false, disabilities: string[] 
     if(path.endsWith('/material-sources')){if(method==='POST'){const file={...source,id:sources.length?'source-second':source.id,title:route.request().postDataJSON().title};sources=[...sources,file];return respond(file);}return respond({items:sources});}
     if(path.endsWith('/original-materials')){original=route.request().postDataJSON();plans=[{id:'original-material',mode:'original',versionId:version.id,sourceId:source.id,studentId:original!.studentId,settings:{supports:[],fontSize:'18',color:'default',useAi:false,approvedForProvider:false,deliveryMode:'original'},pages:[],document:[],status:'released',revision:1,error:null,hasAudio:false,inputTokens:0,outputTokens:0,expiresAt:source.expiresAt}];return respond(plans[0]);}
     if(path.endsWith('/material-adaptations')){
-      if(method==='POST'){sent=route.request().postDataJSON();plans=[{id:'adaptation-material',versionId:version.id,sourceId:source.id,studentId:sent!.studentId,settings:sent!.settings,pages:[1],document:[{page:1,title:'Compare as rotas',text:'Compare as rotas de 10 metros.',description:'O diagrama compara duas rotas.'}],status:'draft',revision:1,error:null,hasAudio:false,inputTokens:120,outputTokens:60,expiresAt:source.expiresAt}];return respond(plans[0]);}return respond({items:plans});
+      if(method==='POST'){sent=route.request().postDataJSON();plans=[{id:'adaptation-material',versionId:version.id,sourceId:source.id,studentId:sent!.studentId,settings:sent!.settings,pages:[1],document:[{page:1,title:'Compare as rotas',text:'Compare as rotas de 10 metros.',description:'O diagrama compara duas rotas.'}],status:'draft',revision:1,error:null,hasAudio:false,inputTokens:120,outputTokens:60,expiresAt:source.expiresAt}];return respond(plans[0]);}return respond({items:backgroundWork&&plans[0]?[...plans,{...plans[0],id:'background-material',studentId:'student-b',status:'queued'}]:plans});
     }
     if(path.endsWith('/material-adaptations/adaptation-material')&&method==='PATCH'){const body=route.request().postDataJSON();plans[0]={...plans[0],document:body.document,revision:2,status:'draft'};return respond(plans[0]);}
     if(path.endsWith('/render')){plans[0]={...plans[0],status:'ready',hasAudio:plans[0].settings.supports.includes('narration')};return respond(plans[0]);}
@@ -157,4 +157,18 @@ test('trocar o arquivo retira a prévia anterior e sua confirmação de revisão
  await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toHaveCount(0);
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toContainText('A versão preparada aparece aqui');
  await expect(page.getByRole('button',{name:/outro-material.pdf/})).toBeVisible();
+});
+
+
+test('consulta de processamento em segundo plano não abandona a escolha do aluno nem a atividade sem PDF',async({page})=>{
+ await fixture(page,false,['low-vision'],[],true);await addPdf(page);
+ await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
+ const isPoll=(r:import('@playwright/test').Response)=>new URL(r.url()).pathname.endsWith('/material-adaptations')&&r.request().method()==='GET';
+ const poll=page.waitForResponse(isPoll);
+ await page.getByRole('button',{name:'Alterar aluno',exact:true}).click();await poll;
+ await expect(page.getByLabel('Aluno da turma',{exact:true})).toBeVisible();
+ const nextPoll=page.waitForResponse(isPoll);
+ await page.getByRole('button',{name:'Ajustar atividade sem PDF',exact:true}).click();await nextPoll;
+ await expect(page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true})).toBeVisible();
 });
