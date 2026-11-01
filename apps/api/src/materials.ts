@@ -136,6 +136,15 @@ export class MaterialService {
         return { path: materialPath(source.id, 'original.pdf'), mime: 'application/pdf', name: 'original.pdf' };
       }
       if (!['pdf','audio'].includes(p.kind) && !/^page-(?:[1-9]|1[0-9]|20)$/.test(p.kind)) return missing();
+      // A teacher may compare verified source pages before creating an adaptation.
+      // Students still need a released, personally addressed adaptation below.
+      if (member.role === 'teacher' && p.kind.startsWith('page-')) {
+        const source=await tx.materialSource.findFirst({where:{id:p.assetId,version:{missionId:row.id},status:'ready',expiresAt:{gt:new Date()}}});
+        if(source){
+          if(![row.draftVersionId,row.publishedVersionId].includes(source.versionId)||!extractedPages.parse(source.pages).some(v=>v.page===Number(p.kind.slice(5))))return missing();
+          return {path:materialPath(source.id,`${p.kind}.png`),mime:'image/png',name:'pagina-original.png'};
+        }
+      }
       const a = await tx.materialAdaptation.findFirst({ where: { id: p.assetId, version: { missionId: row.id }, status: { in: ['ready', 'released'] }, expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } } });
       if (!a || ![row.draftVersionId, row.publishedVersionId].includes(a.versionId)) return missing();
       if (member.role === 'student' && (a.studentId !== userId || a.status !== 'released' || a.versionId !== row.publishedVersionId)) return missing();
