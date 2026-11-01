@@ -15,7 +15,7 @@ import { materialProvider, type MaterialProvider } from './material-provider.js'
 const tools = fileURLToPath(new URL('../material-tools/process.py', import.meta.url));
 export async function localProcess(mode: 'extract' | 'audio', path: string, input = ''): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.env.MATERIAL_PYTHON ?? 'python3', [tools, mode, path], { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, OMP_NUM_THREADS: '1' } });
+    const child = spawn(process.env.MATERIAL_PYTHON ?? 'python3', [tools, mode, path], { stdio: ['pipe', 'pipe', 'pipe'], env: { PATH: process.env.PATH, LANG: 'C.UTF-8', OMP_NUM_THREADS: '1', PIPER_MODEL: process.env.PIPER_MODEL } });
     const chunks: Buffer[] = []; let size = 0; let ended = false;
     const timer = setTimeout(() => { child.kill('SIGKILL'); }, 240000);
     child.stdout.on('data', (v: Buffer) => { size += v.length; if (size > 2 * 1024 * 1024) child.kill('SIGKILL'); else chunks.push(v); });
@@ -34,12 +34,13 @@ export function documentHtml(document: z.infer<typeof materialDocument>, setting
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Material adaptado</title><style>@page{size:A4;margin:18mm}body{font-family:Arial,sans-serif;font-size:${settings.supports.includes('large-print') ? settings.fontSize : '18'}pt;line-height:${settings.supports.includes('wide-spacing') ? '1.8' : '1.5'};color:${colors[0]};background:${colors[1]};overflow-wrap:anywhere}section{break-before:page}section:first-of-type{break-before:auto}h1{font-size:1.4em}h2{font-size:1.15em;break-after:avoid}p{white-space:pre-wrap}footer{font-size:12pt}</style></head><body><h1>Material adaptado</h1><p>Versão preparada e revisada pelo professor. Consulte também o material original e os objetivos da missão.</p>${document.map(p=>`<section><h2>${escapeHtml(p.title)}</h2><p>Referência: página ${p.page} do original</p><p>${escapeHtml(p.text)}</p>${images[p.page] ? `<figure><img style="max-width:100%;height:auto" alt="${escapeHtml(p.description || 'Página original: conferir informação visual com o texto e o professor.')}" src="data:image/png;base64,${images[p.page]}"><figcaption>Referência visual da página ${p.page}. Use zoom para ampliar.</figcaption></figure>` : ''}${p.description ? `<h3>Descrição das informações visuais</h3><p>${escapeHtml(p.description)}</p>` : ''}</section>`).join('')}<footer>Leitura em HTML e transcrição também disponíveis no Travessia.</footer></body></html>`;
 }
 export async function renderPdf(path: string, html: string) {
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', headless: true, args: ['--disable-dev-shm-usage', '--no-sandbox'] });
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', headless: true, args: ['--disable-dev-shm-usage', '--no-sandbox'], env: { PATH: process.env.PATH ?? '/usr/bin:/bin', LANG: 'C.UTF-8' } });
   try {
     const context = await browser.newContext({ javaScriptEnabled: false, serviceWorkers: 'block' });
     await context.route('**/*', route => route.abort()); // No network/file requests or model-supplied URLs.
     const page = await context.newPage(); await page.setContent(html, { timeout: 15000 });
-    await page.pdf({ path, format: 'A4', printBackground: true, tagged: true, outline: true });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try { await Promise.race([page.pdf({ path, format: 'A4', printBackground: true, tagged: true, outline: true }), new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('PDF render timeout')),30000);})]); } finally { if(timer) clearTimeout(timer); }
   } finally { await browser.close(); }
 }
 const instructions: Record<string,string> = {

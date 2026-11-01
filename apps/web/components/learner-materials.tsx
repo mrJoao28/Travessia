@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
-import { materialAssetUrl, PreparedDocument } from "./individual-materials";
+import { materialAssetUrl, PreparedDocument } from "./prepared-material";
 export function LearnerMaterials({ missionId, versionId }: { missionId: string; versionId: string }) {
   const [items,setItems]=useState<ApiResponse<"learnerMaterials">["items"]>([]),[error,setError]=useState(""),[retry,setRetry]=useState(0);
   useEffect(()=>{let active=true;setItems([]);setError("");void api("learnerMaterials",{params:{id:missionId},query:{versionId}}).then(v=>{if(active)setItems(v.items);}).catch(reason=>{if(active)setError(errorMessage(reason));});return()=>{active=false;};},[missionId,versionId,retry]);

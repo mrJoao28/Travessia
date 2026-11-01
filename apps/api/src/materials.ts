@@ -72,7 +72,7 @@ export class MaterialService {
         const requiresAi = input.settings.supports.some(s => ['literal-language', 'short-sections', 'glossary', 'image-description'].includes(s));
         if (requiresAi && !input.settings.useAi) return fail(400, 'AI_REQUIRED', 'Esses apoios precisam de rascunho IA. Você pode escolher apenas formatação e áudio locais.');
         if (input.settings.useAi && (!this.config.aiEnabled || !input.settings.approvedForProvider)) return fail(503, 'AI_UNAVAILABLE', 'Ative e autorize a assistência antes de gerar.');
-        const requestHash = digest(JSON.stringify({ ...input, requestKey: undefined, pages: [...input.pages].sort((a,b) => a-b) }));
+        const requestHash = digest(JSON.stringify({ ...input, requestKey: undefined, settings: { ...input.settings, supports: [...input.settings.supports].sort() }, pages: [...input.pages].sort((a,b) => a-b) }));
         const old = await tx.materialAdaptation.findUnique({ where: { versionId_requestKey: { versionId: input.versionId, requestKey: input.requestKey } } });
         if (old) { if (old.requestHash !== requestHash) return fail(409, 'IDEMPOTENCY_CONFLICT', 'Solicitação já utilizada.'); return adaptationPublic(old); }
         if (await tx.materialAdaptation.count({ where: { versionId: input.versionId } }) >= 100) return fail(409, 'MATERIAL_LIMIT', 'Até 100 adaptações por versão.');
