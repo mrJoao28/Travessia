@@ -48,7 +48,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   const missionId=new URL(teacher.url()).pathname.split('/')[3];
   let mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());const versionId=mission.draftVersion.id;
   await teacher.getByLabel('Aluno da turma',{exact:true}).selectOption(studentId);
-  await expect(teacher.getByText('Arquivo adicionado · 1 páginas',{exact:true})).toBeVisible({timeout:90000});
+  await expect(teacher.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible({timeout:90000});
   await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
   await expect(teacher.getByRole('checkbox',{name:/Texto ampliado/})).toBeChecked();
   await expect(teacher.getByRole('checkbox',{name:/Passos curtos e numerados/})).not.toBeVisible();

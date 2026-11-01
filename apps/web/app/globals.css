@@ -1451,3 +1451,20 @@ body {
 .simple-saved-materials { margin-top:1.5rem; }
 .simple-saved-materials article { margin-top:1rem; }
 @media(max-width:600px){.simple-material-file,.simple-student-context{padding:1rem;flex-wrap:wrap}.simple-material-actions{flex-wrap:wrap}.simple-material-actions .button{width:100%}}
+
+/* Keep native controls beside their text despite the generic stacked form rules. */
+.simple-material-preparation label.simple-choice,
+.simple-material-preparation label.simple-support-option { display:flex; align-items:flex-start; gap:.85rem; }
+.simple-material-preparation .simple-choice input,
+.simple-material-preparation .simple-support-option input { width:1.25rem; height:1.25rem; min-width:1.25rem; min-height:0; padding:0; margin:.2rem 0 0; accent-color:var(--primary); }
+.simple-material-preparation .simple-choice .small,
+.simple-material-preparation .simple-support-option .small { font-weight:400; }
+.simple-material-preparation > header h2 { margin:0 0 .5rem; }
+.simple-material-preparation > header p { margin:0; }
+.simple-material-file { display:grid; grid-template-columns:auto minmax(0,1fr) auto; }
+@media(max-width:600px){
+ .simple-material-file { grid-template-columns:auto minmax(0,1fr); }
+ .simple-material-file > button { grid-column:2; justify-self:start; }
+ .simple-student-context { display:grid; grid-template-columns:minmax(0,1fr); gap:.5rem; }
+ .simple-student-context > button { justify-self:start; }
+}

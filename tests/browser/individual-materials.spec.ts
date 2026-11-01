@@ -39,7 +39,7 @@ async function fixture(page: Page, failActivity = false, disabilities: string[] 
 async function addPdf(page:Page,student='student-a'){
  await page.getByLabel('Aluno da turma',{exact:true}).selectOption(student);
  await page.getByLabel('Adicionar arquivo PDF',{exact:true}).setInputFiles({name:'rotas.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
- await expect(page.getByText('Arquivo adicionado · 1 páginas',{exact:true})).toBeVisible();
+ await expect(page.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Continuar →',exact:true}).click();
 }
 test('sem deficiência informada: mantém original por padrão, permite apoio e exige revisão do destinatário',async({page})=>{
