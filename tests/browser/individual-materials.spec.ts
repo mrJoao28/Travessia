@@ -93,7 +93,7 @@ test('falha ao salvar ajuste individual preserva enunciado e permite corrigir',a
  await page.getByRole('button',{name:'Continuar para o material →',exact:true}).click();await page.getByRole('button',{name:'Ajustar somente a atividade e as formas de entrega →',exact:true}).click();
  const field=page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true});await field.fill('Texto que precisa ser preservado.');
  await page.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/}).check();await page.getByRole('button',{name:'Salvar ajustes da atividade deste aluno',exact:true}).click();
- await expect(page.getByRole('alert')).toContainText('O conteúdo mudou');await expect(field).toHaveValue('Texto que precisa ser preservado.');
+ await expect(page.getByRole('main').getByRole('alert')).toContainText('O conteúdo mudou');await expect(field).toHaveValue('Texto que precisa ser preservado.');
  await field.fill('Texto preservado e corrigido.');await expect(page.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/})).not.toBeChecked();
  await expect(page.getByRole('button',{name:'Concluir ajustes deste aluno →',exact:true})).toBeDisabled();
 });
