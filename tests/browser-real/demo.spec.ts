@@ -377,7 +377,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.goto('/aluno/apoios');
       await page.getByRole('checkbox', { name: 'Tarefa dividida em passos curtos', exact: true }).check();
       await page.getByText('Informar deficiência autodeclarada (opcional)', { exact: true }).click();
-      await page.getByRole('checkbox', { name: 'Visual', exact: true }).check();
+      await page.getByRole('checkbox', { name: 'Baixa visão', exact: true }).check();
       await page.getByRole('button', { name: 'Salvar minhas escolhas', exact: true }).click();
       await expect(page.getByText('Escolhas salvas. Revise e autorize novamente as turmas com quem deseja compartilhar.', { exact: true })).toBeVisible();
       await page.getByRole('checkbox', { name: 'Compartilhar apoios e preferências com docentes de Oficina de Projetos Inclusivos', exact: true }).check();
