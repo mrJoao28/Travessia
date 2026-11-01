@@ -31,6 +31,11 @@ function editable(version: Version): Input {
     })),
   };
 }
+function restorePdfSelection(field: HTMLInputElement, file: File | null) {
+  const selection = new DataTransfer();
+  if (file) selection.items.add(file);
+  field.files = selection.files;
+}
 const empty: Input = {
   title: "",
   description: "",
@@ -53,6 +58,10 @@ export function LiveEditor({
   const [stage, setStage] = useState(0);
   const [supportsDirty,setSupportsDirty]=useState(false);
   const [pendingPdf, setPendingPdf] = useState<File | null>(null);
+  const pdfField = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (pdfField.current) restorePdfSelection(pdfField.current, pendingPdf);
+  }, [stage, pendingPdf]);
   const [published, setPublished] = useState(false);
   const stageTitle = useRef<HTMLHeadingElement>(null);
   const invalidField = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -455,7 +464,16 @@ export function LiveEditor({
               </button>
               <section className="mission-file-entry form-stack" aria-label="Arquivos da missão">
                 <h3>Materiais da missão</h3><p>Acrescente um PDF. Ao continuar, o rascunho é salvo e você escolhe o aluno e prepara os apoios sem sair desta criação.</p>
-                <label htmlFor="editor-pdf-upload">Adicionar PDF à missão</label><input id="editor-pdf-upload" type="file" accept="application/pdf,.pdf" onChange={e=>{const file=e.target.files?.[0];if(!file)return;if(!/\.pdf$/i.test(file.name)||file.size>10*1024*1024){setMessage("Escolha um PDF de até 10 MB.");return;}setPendingPdf(file);e.target.value="";}}/>
+                <label htmlFor="editor-pdf-upload">Adicionar PDF à missão</label>
+                <input ref={pdfField} id="editor-pdf-upload" type="file" accept="application/pdf,.pdf" onChange={e=>{
+                  const file=e.currentTarget.files?.[0];
+                  if(!file){restorePdfSelection(e.currentTarget,pendingPdf);return;}
+                  if(!/\.pdf$/i.test(file.name)||file.size>10*1024*1024){
+                    restorePdfSelection(e.currentTarget,pendingPdf);
+                    setMessage("Escolha um PDF de até 10 MB.");return;
+                  }
+                  setPendingPdf(file);
+                }}/>
                 {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas e continue para enviar e adaptar.</p>}
                 <p className="small">PDF de até 10 MB e 20 páginas, sem senha ou conteúdo ativo. O original fica privado para os professores. O aluno recebe a versão que você revisar e liberar.</p>
               </section>

@@ -342,3 +342,25 @@ test('preparação guiada valida a etapa atual, volta por teclado e preserva con
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
 });
+
+
+test('PDF selecionado permanece no campo ao voltar e ao recusar outro arquivo',async({page})=>{
+ await fixture(page,'teacher');await page.goto('/professor/missoes/test-mission/editar');
+ await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();
+ const field=page.getByLabel('Adicionar PDF à missão',{exact:true});
+ const pdf={name:'material-escolhido.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\nfixture')};
+ await field.setInputFiles(pdf);
+ const filename=()=>field.evaluate((node:HTMLInputElement)=>node.files?.[0]?.name??'');
+ await expect.poll(filename).toBe(pdf.name);
+ await expect(page.getByText(/PDF escolhido: material-escolhido.pdf/)).toBeVisible();
+ await page.getByRole('button',{name:'← Voltar',exact:true}).click();
+ await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();
+ await expect.poll(filename).toBe(pdf.name);
+ await field.setInputFiles({name:'arquivo-invalido.txt',mimeType:'text/plain',buffer:Buffer.from('Texto')});
+ await expect(page.getByText('Escolha um PDF de até 10 MB.',{exact:true})).toBeVisible();
+ await expect.poll(filename).toBe(pdf.name);
+ await field.setInputFiles([]);await expect.poll(filename).toBe(pdf.name);
+ await field.setInputFiles({...pdf,name:'outro-material.pdf'});
+ await expect.poll(filename).toBe('outro-material.pdf');
+ await expect(page.getByText(/PDF escolhido: outro-material.pdf/)).toBeVisible();
+});
