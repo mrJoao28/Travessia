@@ -605,7 +605,7 @@ export function LiveEditor({
         )}
         {stage === 2 && <div className="form-stack">
           {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da missão",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
-          <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor.</p>
+          <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da missão, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
           <details className="teacher-ai"><summary>Pedir ajuda à IA para escrever a missão (opcional)</summary>
         <h2>Assistência Gemini</h2>
         <p>
