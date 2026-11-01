@@ -9,7 +9,7 @@ Oito pessoas fictícias participam de três turmas de exemplo. Marina Costa pref
 1. No professor, consulte turmas, alunos e convites de exemplo. Crie outra turma, gere um convite e experimente a entrada pelo aluno, se desejar.
 2. Abra **Missões → Criar missão**. Edite os objetivos ou peça o rascunho claramente identificado como **IA simulada**.
 3. Organize as etapas por teclado. Escolha um dos três PDFs fictícios e avance para os apoios.
-4. Escolha o aluno, o formato do material e o áudio opcional. Confira o original e o preparado; abra ou baixe os arquivos. Você também pode editar instruções e permitir respostas em áudio ou arquivo de texto.
+4. Escolha o aluno, o formato do material e o áudio opcional. Confira o original e o preparado; abra ou baixe os arquivos. Você também pode editar instruções e permitir respostas em áudio ou arquivo de texto. Em **Outros apoios da missão**, experimente os oito tipos de estratégia, para toda a turma ou para o aluno selecionado e em uma etapa específica.
 5. Confirme a revisão antes de disponibilizar. Revise a missão e confirme a publicação simulada. Um rascunho de nova versão preserva a publicação anterior até a revisão.
 6. Use **Ver no espaço do aluno**. Consulte PDF, áudio e transcrição. Marque etapas, escreva, salve o rascunho, recarregue a página e envie a atividade. Anexos são amostras fictícias, sem gravação ou upload pessoal.
 7. Volte a **Entregas** no professor e publique feedback local. O aluno pode consultar a orientação em sua missão e na lista de feedback.

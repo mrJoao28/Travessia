@@ -54,3 +54,14 @@ export function audioTranscript(source:Mission['source'],preset:Preset){
  if(preset==='description')return 'Descrição fictícia do material do Travessia. '+previewFiles[source].description+' '+(source==='campus'?'Na rota A há dois degraus. Na B, caixas ocupam parte da passagem. Na C, as placas são pequenas. O desenho não informa largura nem inclinação. Confirme essas condições antes de concluir sua análise.':previewFiles[source].text);
  return 'Material fictício de prévia do Travessia. '+readingText(source,preset==='glossary'?'clear':preset);
 }
+
+export const previewStrategies=[
+ {id:'step-checklist',title:'Checklist do próximo passo',content:'1. Leia os dados.\n2. Compare duas condições.\n3. Justifique sua decisão.'},
+ {id:'worked-example',title:'Exemplo comentado',content:'A rota A tem 180 m e dois degraus. A C tem 310 m e não tem degraus observados. Compare as condições antes de decidir, sem usar apenas a distância.'},
+ {id:'context-glossary',title:'Glossário contextual',content:'Percurso: caminho entre dois lugares. Barreira: condição que dificulta o uso. Justificar: explicar a decisão com dados.'},
+ {id:'text-alternative',title:'Descrição textual de imagens',content:previewFiles.campus.description},
+ {id:'media-transcript',title:'Transcrição de áudio ou vídeo',content:'A transcrição revisada acompanha cada áudio fictício na seção de materiais. Este exemplo não gera legendas de vídeo.'},
+ {id:'written-instructions',title:'Instruções claras por escrito',content:'Compare duas rotas, apresente dois dados e proponha uma melhoria. Confira se sua justificativa usa as condições observadas.'},
+ {id:'planning-outline',title:'Roteiro de planejamento',content:'Qual problema vou resolver? Quais dados já tenho? Que alternativas posso comparar? Como vou conferir minha proposta?'},
+ {id:'keyboard-guidance',title:'Orientação para uso por teclado',content:'Use Tab e Shift+Tab para percorrer os controles. Use Enter ou Espaço para acionar botões e abrir detalhes. As etapas podem ser consultadas sem arrastar itens.'},
+];

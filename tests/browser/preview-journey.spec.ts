@@ -121,3 +121,27 @@ test('materiais e aluno têm prévia visual, áudio válido e reflow acessível'
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  }
 });
+
+test('convites, entrada na turma e estratégias individuais/da turma completam o cenário',async({page})=>{
+ await page.goto('/previa/professor');
+ await page.getByLabel('Nome da turma',{exact:true}).fill('Laboratório de projetos · exemplo');
+ await page.getByRole('button',{name:'Criar turma',exact:true}).click();
+ const room=page.locator('section.paper').filter({has:page.getByRole('heading',{name:'Laboratório de projetos · exemplo',exact:true})});
+ await room.getByRole('button',{name:'Gerar convite de exemplo'}).click();
+ await page.goto('/previa/aluno/turmas');
+ await page.getByLabel('Código de convite fictício').fill('TRAVESSIA-4-EXEMPLO');
+ await page.getByRole('button',{name:'Entrar na turma',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Laboratório de projetos · exemplo',exact:true})).toBeVisible();
+ await page.goto('/previa/professor/missoes/campus/adaptacoes');
+ await page.getByText('Outros apoios da missão',{exact:true}).click();
+ await expect(page.getByLabel('Tipo de apoio').locator('option')).toHaveCount(8);
+ await page.getByLabel('Tipo de apoio').selectOption('planning-outline');
+ await page.getByLabel('Quem recebe esta orientação').selectOption('student');
+ await page.getByLabel('Texto do apoio',{exact:true}).fill('ORIENTAÇÃO EXCLUSIVA DO CENÁRIO DE MARINA');
+ await page.getByRole('button',{name:'Salvar orientação de exemplo'}).click();
+ await page.goto('/previa/aluno/missoes/campus');
+ await page.getByText('Roteiro de planejamento',{exact:true}).click();
+ await expect(page.getByText('ORIENTAÇÃO EXCLUSIVA DO CENÁRIO DE MARINA',{exact:true})).toBeVisible();
+ await page.getByLabel('Aluno fictício').selectOption('preview-student-2');
+ await expect(page.getByText('Roteiro de planejamento',{exact:true})).toHaveCount(0);
+});
