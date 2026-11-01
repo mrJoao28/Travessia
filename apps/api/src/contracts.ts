@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { materialRoutes } from './material-contracts.js';
 import { strategyCatalog } from './strategy-catalog.js';
 
 export const id = z.string().min(1).max(100);
@@ -52,10 +53,10 @@ export const profileInput = z.strictObject({ name: z.string().trim().min(1).max(
   alternateEmail: z.email().max(150).nullable().optional(), student: studentInput.optional(), teacher: teacherInput.optional() });
 
 export const needCode = z.enum(['image-description', 'transcript', 'clear-instructions', 'short-steps', 'worked-example', 'glossary', 'audio-response', 'text-file']);
-export const disabilityCode = z.enum(['visual', 'hearing', 'physical', 'intellectual', 'multiple', 'other']);
+export const disabilityCode = z.enum(['visual', 'hearing', 'physical', 'intellectual', 'multiple', 'other', 'blindness', 'low-vision', 'color-vision', 'deafness', 'hard-of-hearing', 'autism', 'dyslexia', 'adhd']);
 export const responseFormat = z.enum(['text', 'audio', 'text_file']);
 const unique = <T extends z.ZodType>(item: T, max: number) => z.array(item).max(max).refine(items => new Set(items).size === items.length, 'Seleção repetida.');
-const needsFields = { disabilities: unique(disabilityCode, 6), supports: unique(needCode, 8), preferredFormats: unique(responseFormat, 3) };
+const needsFields = { disabilities: unique(disabilityCode, 14), supports: unique(needCode, 8), preferredFormats: unique(responseFormat, 3) };
 export const learningNeedsInput = z.strictObject({ ...needsFields, expectedRevision: z.number().int().min(0) });
 const learningNeeds = z.strictObject({ ...needsFields, revision: z.number().int() });
 const needsShare = z.strictObject({ classroomId: id, shared: z.boolean(), includeDisabilities: z.boolean(), revision: z.number().int() });
@@ -82,6 +83,7 @@ const strategyPlan = z.strictObject({ id, versionId: id, stepId: id.nullable(), 
   recipients: z.array(z.strictObject({ id, name: z.string() })) });
 
 export const routes = {
+  ...materialRoutes,
   health: { method: 'get', path: '/v1/health', body: empty, query: empty, response: z.strictObject({ status: z.literal('ok'), service: z.literal('travessia-api'), stage: z.literal('mvp') }), public: true },
   me: { method: 'get', path: '/v1/me', body: empty, query: empty, response: z.strictObject({ id, name: z.string(), email: z.email(), course: z.string().nullable(), demo: z.boolean(), preferences: preferences }) },
   profile: { method: 'get', path: '/v1/me/profile', body: empty, query: empty, response: academicProfile },
@@ -155,7 +157,7 @@ export function openapi() {
     for (const [name, schema] of Object.entries(query.properties ?? {})) parameters.push({ name, in: 'query', required: query.required?.includes(name) ?? false, schema });
     (paths[route.path] ??= {})[route.method] = { operationId, security: 'public' in route && route.public === true ? [] : [{ session: [] }], parameters,
       ...(route.method === 'get' || route.method === 'delete' ? {} : { requestBody: { required: true, content: { 'application/json': { schema: z.toJSONSchema(route.body) } } } }),
-      responses: { '200': { description: 'Sucesso', content: { 'application/json': { schema: z.toJSONSchema(route.response) } } },
+      responses: { '200': { description: 'Sucesso', content: 'binary' in route ? { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } } : { 'application/json': { schema: z.toJSONSchema(route.response) } } },
         default: { description: 'Erro', content: { 'application/json': { schema: z.toJSONSchema(error) } } } } };
   }
   return { openapi: '3.1.0', info: { title: 'Travessia API', version: '1.0.0', description: 'Produto implementado; auth Better Auth em /api/auth, documentado em BACKEND-INTEGRATION.md.' },

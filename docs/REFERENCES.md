@@ -28,3 +28,16 @@ Quando chegar:
 5. Validar com estudantes e atualizar missões/documentação com histórico.
 
 Não indexar automaticamente arquivos com dados pessoais como base de conhecimento do Gemini. Aprovar material e finalidade antes de qualquer envio externo.
+
+## Pesquisa para materiais individuais (novembro de 2026)
+
+Revisão dirigida, não sistemática. Os perfis são pontos de partida opcionais; não são protocolos clínicos, não diagnosticam e não reduzem objetivos. O professor confirma apoios concretos e revisa o resultado com o estudante. A fonte específica do usuário continua pendente.
+
+- Cerga-Pashoja et al. (2019), OpenBook, estudo cruzado de compreensão de textos com pessoas autistas: https://pmc.ncbi.nlm.nih.gov/articles/PMC6692437/ — amostra específica; não generalizar a todo o espectro ou a necessidades elevadas de apoio.
+- Wood et al. (2018), meta-análise de leitura em voz alta/TTS: https://pubmed.ncbi.nlm.nih.gov/28112580/ — benefício médio com heterogeneidade; não garante resultado individual.
+- Joo et al. (2018), espaçamento e crowding: https://pubmed.ncbi.nlm.nih.gov/29679920/ — efeitos individuais, sem fonte ou espaçamento universal.
+- Buell et al. (2020), ensaio de Easy Read com adultos com deficiência intelectual: https://pubmed.ncbi.nlm.nih.gov/31652030/ — resultados limitados; simplificação sozinha não garante compreensão.
+- W3C COGA: https://www.w3.org/TR/coga-usable/ — orientação suplementar sobre linguagem literal, organização e personalização.
+- W3C, barreiras visuais: https://www.w3.org/WAI/people-use-web/abilities-barriers/visual/; auditivas: https://www.w3.org/WAI/people-use-web/abilities-barriers/auditory/; imagens complexas: https://www.w3.org/WAI/tutorials/images/complex/; técnicas PDF: https://www.w3.org/WAI/WCAG21/Techniques/.
+
+HTML e PDF marcado não comprovam conformidade PDF/UA. O escopo não inclui Libras, documentos Braille nem garantia de compreensão. OCR, fórmulas, tabelas e descrições exigem revisão humana.

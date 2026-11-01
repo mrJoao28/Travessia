@@ -13,7 +13,7 @@ export const learningOptions = {
     { id: 'worked-example', label: 'Exemplo comentado' }, { id: 'glossary', label: 'Explicação de termos' },
     { id: 'audio-response', label: 'Possibilidade de responder por áudio' }, { id: 'text-file', label: 'Possibilidade de anexar arquivo de texto' },
   ],
-  disabilities: [{ id: 'visual', label: 'Visual' }, { id: 'hearing', label: 'Auditiva' }, { id: 'physical', label: 'Física' },
+  disabilities: [{ id: 'blindness', label: 'Cegueira' }, { id: 'low-vision', label: 'Baixa visão' }, { id: 'color-vision', label: 'Alteração de percepção de cores / daltonismo' }, { id: 'deafness', label: 'Surdez' }, { id: 'hard-of-hearing', label: 'Perda auditiva parcial' }, { id: 'autism', label: 'Transtorno do espectro autista (TEA)' }, { id: 'dyslexia', label: 'Dislexia' }, { id: 'adhd', label: 'TDAH' }, { id: 'visual', label: 'Visual (sem detalhar)' }, { id: 'hearing', label: 'Auditiva' }, { id: 'physical', label: 'Física' },
     { id: 'intellectual', label: 'Intelectual' }, { id: 'multiple', label: 'Múltipla' }, { id: 'other', label: 'Outra deficiência autodeclarada' }],
   formats: [{ id: 'text', label: 'Texto no editor' }, { id: 'audio', label: 'Áudio de até 30 segundos' }, { id: 'text_file', label: 'Arquivo de texto (.txt)' }],
 } as const;

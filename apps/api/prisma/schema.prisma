@@ -211,6 +211,8 @@ model MissionVersion {
   submissions Submission[]
   strategyPlans StrategyPlan[]
   activityAdaptations ActivityAdaptation[]
+  materialSources MaterialSource[]
+  materialAdaptations MaterialAdaptation[]
   @@index([missionId])
 }
 model Step {
@@ -404,4 +406,51 @@ model AdaptationRecipient {
   adaptation ActivityAdaptation @relation(fields: [adaptationId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([adaptationId, userId])
+}
+
+// Private originals and durable single-attempt jobs. No clinical profile is stored here.
+model MaterialSource {
+  id String @id @default(uuid())
+  versionId String
+  creatorId String
+  title String
+  hash String
+  requestKey String
+  status String @default("queued")
+  pageCount Int @default(0)
+  pages Json @default("[]")
+  warnings Json @default("[]")
+  startedAt DateTime?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  adaptations MaterialAdaptation[]
+  @@unique([versionId, requestKey])
+  @@index([status, createdAt])
+}
+model MaterialAdaptation {
+  id String @id @default(uuid())
+  versionId String
+  sourceId String
+  studentId String
+  creatorId String
+  requestKey String
+  requestHash String
+  status String @default("queued")
+  settings Json
+  pages Json
+  document Json @default("[]")
+  revision Int @default(1)
+  error String?
+  hasAudio Boolean @default(false)
+  inputTokens Int?
+  outputTokens Int?
+  startedAt DateTime?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  source MaterialSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  @@unique([versionId, requestKey])
+  @@index([status, createdAt])
+  @@index([versionId, studentId, status])
 }
