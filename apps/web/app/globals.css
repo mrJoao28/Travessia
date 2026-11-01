@@ -1549,3 +1549,24 @@ body {
 .material-extra-tools { margin-top:1.5rem; }
 .material-extra-tools > summary { font-weight:700; }
 .material-extra-tools[open] > summary { margin-bottom:1rem; }
+
+/* Keep the documents above the fold and avoid duplicate visual hierarchy. */
+.teacher-shell .material-page-heading { margin-bottom:.75rem; }
+.material-page-heading h1 { font-size:1.75rem; margin:0; }
+.material-page-heading p { font-size:.95rem; margin:.35rem 0 0; }
+.teacher-shell:has(.material-page-heading) .topbar { margin-bottom:1rem; }
+.teacher-shell:has(.material-page-heading) .demo-banner { margin:.5rem 0; padding:.35rem .2rem; }
+.material-mission-workspace { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem 1rem; }
+.material-mission-workspace > .material-mission-selector { max-width:none; margin:0; }
+.material-mission-workspace > .mission-support-editor,.material-mission-workspace > .teacher-mission-context,.material-mission-workspace > .notice { grid-column:1/-1; }
+.material-mission-workspace > .teacher-mission-context { margin:0; }
+.material-mission-workspace:has(> .teacher-mission-context) > .material-mission-selector { grid-column:1/-1; max-width:35rem; }
+.material-source-button .pdf-file-badge { flex-shrink:0; min-width:1.8rem; white-space:nowrap; text-align:center; }
+.material-controls-panel > .paper { gap:.75rem; }
+.material-controls-panel p { margin:0; }
+.material-controls-panel label.check { display:flex; align-items:flex-start; gap:.65rem; }
+.material-controls-panel label.check input { flex-shrink:0; margin-top:.25rem; }
+.material-controls-panel .activity-with-material { display:block; margin:0; padding:.75rem 0; border:0; border-top:1px solid var(--border); border-radius:0; }
+.material-controls-panel .activity-with-material > summary { font-size:.9rem; padding:0; }
+.material-controls-panel .activity-with-material[open] > p { margin-block:1rem; }
+@media(max-width:650px){.material-mission-workspace{grid-template-columns:minmax(0,1fr)}}

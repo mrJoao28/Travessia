@@ -18,14 +18,14 @@ export function LiveStrategies({ entries, initialMissionId, initialVersionId }: 
   const [missionId, setMissionId] = useState(initialMissionId ?? entries[0]?.mission.id ?? "");
   const entry = entries.find(e => e.mission.id === missionId);
   if (!entry) return <section className="paper"><h2>Escolha uma missão da sua turma</h2><p>Crie e salve uma missão para preparar seus apoios.</p><Link className="text-link" href="/professor/missoes">Consultar minhas missões</Link></section>;
-  return <>
-    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/missoes/${entry.mission.id}/editar`}>← Voltar à missão</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector"><label htmlFor="strategy-mission">Missão</label>
+  return <div className="material-mission-workspace">
+    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/missoes/${entry.mission.id}/editar`}>← Voltar à missão</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector material-mission-selector"><label htmlFor="strategy-mission">Missão</label>
       <select id="strategy-mission" value={missionId} onChange={e => {if(!unsaved||window.confirm("Descartar os apoios ainda não salvos?")){setUnsaved(false);setMissionId(e.target.value);}}}>
         {entries.map(({ mission, classroom }) => <option key={mission.id} value={mission.id}>{classroom.name} · {(mission.publishedVersion ?? mission.draftVersion)?.title}</option>)}
       </select>
     </div>}
     <StrategyMission key={entry.mission.id} entry={entry} initialVersionId={initialVersionId} unsaved={unsaved} onUnsavedChange={setUnsaved} />
-  </>;
+  </div>;
 }
 
 function StrategyMission({ entry, initialVersionId, unsaved, onUnsavedChange }: { entry: MissionEntry; initialVersionId?: string; unsaved:boolean; onUnsavedChange:(value:boolean)=>void }) {
@@ -35,12 +35,11 @@ function StrategyMission({ entry, initialVersionId, unsaved, onUnsavedChange }: 
   if (!version) return <p className="paper">Salve uma versão da missão antes de preparar os apoios.</p>;
   return <>
     {initialVersionId && !versions.some(v => v.id === initialVersionId) && <p className="notice">A versão escolhida mudou. Confira a versão disponível antes de preparar o apoio.</p>}
-    <div className="classroom-selector"><label htmlFor="strategy-version">Versão da missão</label>
+    <div className="classroom-selector material-mission-selector"><label htmlFor="strategy-version">Versão da missão</label>
       <select id="strategy-version" value={versionId} onChange={e => {if(!unsaved||window.confirm("Descartar os apoios ainda não salvos e trocar de versão?")){onUnsavedChange(false);setVersionId(e.target.value);}}}>
         {versions.map(v => <option key={v.id} value={v.id}>{v.id === entry.mission.publishedVersion?.id ? "Publicada · visível aos alunos" : "Rascunho · aguarda publicação"} · {v.title}</option>)}
       </select>
     </div>
-    <p className="small">Os apoios pertencem à versão selecionada. Ao criar outra versão, revise e aplique os apoios novamente.</p>
     <MissionSupportsEditor entry={entry} version={version} onUnsavedChange={onUnsavedChange} />
   </>;
 }

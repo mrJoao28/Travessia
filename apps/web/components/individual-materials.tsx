@@ -177,7 +177,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         <h3>{released?'Material disponibilizado':delivery==='original'?'Confira o PDF original':'Confira a prévia'}</h3><p>Destinatário: <strong>{student.name}</strong>. {delivery==='original'?'O PDF será mantido sem alterações.':'Confira a leitura, as descrições e a pronúncia do áudio, quando houver.'}</p>
         {delivery==='adapted'&&current&&<ul className="material-applied-supports" aria-label="Apoios aplicados">{current.settings.supports.map(id=><li key={id}><span aria-hidden="true">✓</span>{supportLabels[id].label}</li>)}</ul>}
         {!dirty&&<a className="text-link" href={delivery==='original'?materialAssetUrl(missionId,sourceId,'original'):materialAssetUrl(missionId,current!.id,'pdf')} target="_blank" rel="noopener noreferrer">{delivery==='original'?'Conferir PDF original':'Conferir PDF gerado'}</a>}
-        {!dirty&&<a className="text-link" href={delivery==='original'?materialAssetUrl(missionId,sourceId,'original'):materialAssetUrl(missionId,current!.id,'pdf')} download>{delivery==='original'?'Baixar PDF original para conferir':'Baixar PDF adaptado'}</a>}
+
         {current?.hasAudio&&delivery!=='original'&&!dirty&&<section id="material-audio" className="form-stack"><h4>Ouvir prévia</h4><audio controls preload="none" aria-label="Ouvir a prévia do material" src={materialAssetUrl(missionId,current.id,'audio')}/></section>}
         {delivery==='adapted'&&current&&<>
           <button type="button" className="text-button" disabled={locked} onClick={()=>{setSelectedId('');setStep(1);setApproved(false);change();}}>Ajustar leitura</button>
