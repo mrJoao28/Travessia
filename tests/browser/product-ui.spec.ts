@@ -73,6 +73,8 @@ async function fixture(page: Page, role: "student" | "teacher") {
       "/api/v1".length,
     );
     const respond = (body: unknown) => route.fulfill({ json: body });
+    if (path.endsWith("/material-sources") || path.endsWith("/material-adaptations") || path.endsWith("/my-materials")) return respond({items:[]});
+    if(path.endsWith("/strategy-recipients") || path.endsWith("/learning-needs")) return respond({items:[],nextCursor:null});
     if (path === "/me") return respond(me);
     if (path === "/missions/test-mission/my-adaptations") return respond({ versionId: version.id, items: [], allowedFormats: ["text"] });
     if (path === "/missions/test-mission/supports") return respond({ versionId: version.id, items: [] });

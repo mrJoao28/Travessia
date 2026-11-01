@@ -17,6 +17,7 @@ async function fixture(page: Page) {
     if(path.endsWith('/submissions'))return respond({items:[],nextCursor:null});
     if(path.endsWith('/learning-needs'))return respond({items:[{userId:'student-a',name:'Marina fictícia',supports:['short-steps'],preferredFormats:[],disabilities:['low-vision']}],nextCursor:null});
     if(path.endsWith('/strategy-recipients'))return respond({items:[{id:'student-a',name:'Marina fictícia'},{id:'student-b',name:'Aluno B'}],nextCursor:null});
+    if(path.endsWith('/adaptations')) return respond({items:[]});
     if(path==='/strategies'||path.endsWith('/strategy-plans'))return respond({items:[]});
     if(path.endsWith('/material-sources')){if(method==='POST'){sources=[source];return respond(source);}return respond({items:sources});}
     if(path.endsWith('/material-adaptations')){

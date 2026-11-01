@@ -46,6 +46,19 @@ jobs:
           npm run docker:down
           npm run docker:start
           node scripts/docker-smoke.mjs --verify-persistence
+      - name: Instalar navegador para o fluxo completo da imagem de produção
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Professor cria e adapta missão, aluno realiza e recebe feedback nos quatro containers reais
+        run: node scripts/test-docker-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coherent-flow-previews
+          path: test-results/reference-coherent-*.png
+          if-no-files-found: ignore
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         if: always()
         with:

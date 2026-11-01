@@ -329,7 +329,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   expect(createdMissionResponse.status()).toBe(200);
   const inclusiveMission = await createdMissionResponse.json();
   await page.getByRole('link', { name: 'Preparar apoios desta missão', exact: true }).click();
-  await page.getByRole('link', { name: 'Preparar adaptação', exact: true }).click();
+  await page.getByText('Ajustar instruções ou entregas para a turma inteira', {exact:true}).click();
   await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
   await page.getByRole('checkbox', { name: 'Estudante Fictício 1', exact: true }).check();

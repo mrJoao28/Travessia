@@ -11,6 +11,7 @@ async function fixture(page: Page, role: 'student' | 'teacher') {
   await page.route('**/api/v1/**', async route => {
     const path = new URL(route.request().url()).pathname.slice('/api/v1'.length);
     const respond = (json: unknown) => route.fulfill({ json });
+    if (path.endsWith("/material-sources") || path.endsWith("/material-adaptations") || path.endsWith("/my-materials")) return respond({items:[]});
     if (path === '/me') return respond({ id: role, name: 'Pessoa fictícia', email: 'test@example.invalid', course: null, preferences: {}, demo: true });
     if (path === '/classrooms') return respond({ items: [{ id: 'c-inclusive', name: 'Turma inclusiva', role }], nextCursor: null });
     if (path === '/classrooms/c-inclusive/missions') return respond({ items: [mission], nextCursor: null });
@@ -62,6 +63,7 @@ test('aluno escolhe apoios sem diagnóstico obrigatório e compartilha deficiên
 });
 test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro preserva adaptação', async ({ page }) => {
   const captured = await fixture(page, 'teacher'); await page.goto('/professor/adaptacoes');
+  await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
   await page.getByRole('button', { name: 'Preparar adaptação com os apoios de Aluno A', exact: true }).click();
   await page.getByText('Pedir uma sugestão à IA (opcional)', { exact: true }).click();
   const generate = page.getByRole('button', { name: 'Sugerir um texto com IA', exact: true });
@@ -96,8 +98,8 @@ test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e prese
 test('apoios partem da missão e exigem destinatários e nova revisão após voltar para editar', async ({ page }) => {
   await fixture(page, 'teacher');
   await page.goto('/professor/missoes/m-inclusive/apoios');
-  await expect(page.getByRole('link', { name: 'Preparar adaptação', exact: true })).toHaveAttribute('href', /adaptacoes\?versao=v-inclusive$/);
-  await page.getByRole('link', { name: 'Preparar adaptação', exact: true }).click();
+  await expect(page.getByRole('heading',{name:'Prepare o material para este aluno',exact:true})).toBeVisible();
+  await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
   await expect(page.getByLabel('Missão para adaptar', { exact: true })).toHaveCount(0);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
   await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();

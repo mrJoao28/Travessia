@@ -34,3 +34,11 @@ Trocar de missão/versão, seguir links da interface ou recarregar com alteraç�
 Os testes de interface cobrem validação por etapa, teclado/foco, retorno sem perda de texto, conflito de versão, revisão obrigatória, IA controlada e reflow/axe. O cenário integrado percorre o formulário guiado, publicação, apoio individual, entrega por áudio/.txt e feedback com API, PostgreSQL e Better Auth reais. Registrar o resultado da execução no PR.
 
 A verificação automática e a revisão visual não substituem teste com leitores de tela nem observação de professores sem experiência tecnológica. A chamada ao Gemini real depende da chave privada e não é comprovada por testes com provedor controlado. Não há mudança de schema, credenciais ou infraestrutura nesta atualização.
+
+## Correção do fluxo de materiais e adaptações
+
+A criação permite escolher o PDF em “Etapas e materiais”. Ao continuar, salva a versão e envia o arquivo para a fila privada; em “Apoios”, o professor escolhe aluno, confirma apoios, seleciona páginas, revisa texto/descrições e gera PDF/áudio sem sair do editor. Os ajustes do enunciado e das formas de entrega usam o mesmo aluno e a mesma versão. Sem PDF, existe o caminho “Ajustar somente a atividade e as formas de entrega”.
+
+`/apoios`, `/adaptacoes` e `/estrategias` chegam ao mesmo preparador. Instruções para turma inteira e a biblioteca de checklists continuam disponíveis em seções opcionais, carregadas somente quando abertas. O aviso antigo de uploads desativados foi retirado do editor. Textos e ajustes em edição impedem avançar sem salvar ou descartar. Salvar/revisar a missão sem alterar seu conteúdo não cria outra versão nem perde os apoios preparados.
+
+O navegador Docker adicional cobre cadastro, convites, compartilhamento de apoios, criação da missão, upload no editor, PDF e voz reais, ajuste individual de instruções/entrega, publicação da mesma versão, aluno A/B, arquivos privados, rascunho multimodal, relato compartilhado, resposta docente, envio e feedback. O runner só aceita demonstração isolada em loopback. Não usa respostas simuladas nem credenciais pessoais. Gemini desativado nesse cenário; geração Gemini continua coberta por provedores controlados nas demais suítes.
