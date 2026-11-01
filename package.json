@@ -15,6 +15,7 @@
     "dev:api": "npm run dev --workspace @travessia/api",
     "db:migrate": "npm run db:migrate --workspace @travessia/api",
     "db:seed:demo": "npm run db:seed:demo --workspace @travessia/api --",
+    "test:production": "node scripts/check-production.mjs",
     "test:api": "tsx scripts/test-api.ts",
     "contracts:generate": "tsx apps/api/scripts/generate-contracts.ts && openapi-typescript packages/contracts/openapi.json -o packages/contracts/src/api.d.ts",
     "build": "npm run build --workspace @travessia/api && npm run build --workspace @travessia/web",

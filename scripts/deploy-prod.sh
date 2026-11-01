@@ -1,5 +1,5 @@
 #!/bin/bash
-# Publica API e frontend a partir da branch prod. O banco já isolado é reutilizado.
+# Publica aplicações e worker da branch prod. Banco e materiais persistentes são reutilizados.
 set -euo pipefail
 
 if [[ -n "${TRAVESSIA_ROOT:-}" ]]; then
@@ -16,6 +16,7 @@ if ! flock -n 9; then
   exit 1
 fi
 
+bash "$ROOT/scripts/check-prod-capacity.sh"
 bash "$ROOT/scripts/provision-prod-env.sh"
 
 unset DATABASE_URL DIRECT_URL POSTGRES_PASSWORD BETTER_AUTH_SECRET POSTGRES_USER POSTGRES_DB APP_PUBLIC_ORIGIN
@@ -23,11 +24,12 @@ compose() {
   docker compose --project-directory "$ROOT" --env-file "$ROOT/.env.docker" "$@"
 }
 
-compose build
+for service in api frontend material-worker; do compose build "$service"; done
+bash "$ROOT/scripts/check-prod-capacity.sh"
 compose run --rm --no-deps api node node_modules/prisma/build/index.js migrate deploy --schema apps/api/prisma/schema.prisma
 compose up -d --wait --wait-timeout 180
 
-for service in db api; do
+for service in db api material-worker; do
   service_id=$(compose ps -q "$service")
   bindings=$(docker inspect -f '{{json .HostConfig.PortBindings}}' "$service_id")
   if [[ "$bindings" != "null" && "$bindings" != "{}" ]]; then
@@ -45,4 +47,5 @@ fi
 
 bash "$ROOT/scripts/install-travessia-nginx.sh"
 curl --fail --silent --show-error --max-time 20 http://127.0.0.1:3020/login >/dev/null
-echo "API e frontend publicados. Nginx usa travessia.maisacessoconecta.com.br; a API não tem domínio próprio."
+curl --fail --silent --show-error --max-time 20 http://127.0.0.1:3020/api/v1/health >/dev/null
+echo "API, frontend e worker publicados. Nginx usa travessia.maisacessoconecta.com.br; a API não tem domínio próprio."
