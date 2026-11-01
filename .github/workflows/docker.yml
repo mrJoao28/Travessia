@@ -35,6 +35,8 @@ jobs:
         run: npm run docker:up
       - name: Criar demonstração isolada pela imagem de produção
         run: npm run docker:seed
+      - name: Verificar parser e OCR reais com arquivos seguros e maliciosos de teste
+        run: node scripts/docker-compose.mjs run --rm --no-deps --entrypoint /opt/material-venv/bin/python material-worker apps/api/material-tools/test_process.py
       - name: Testar os quatro containers reais
         run: npm run docker:smoke
       - name: Recriar containers preservando o volume
