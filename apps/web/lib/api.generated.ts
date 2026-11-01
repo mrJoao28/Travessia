@@ -22,6 +22,10 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/missions/{id}/material-adaptations"
   },
+  "releaseOriginalMaterial": {
+    "method": "POST",
+    "path": "/missions/{id}/original-materials"
+  },
   "editMaterial": {
     "method": "PATCH",
     "path": "/missions/{id}/material-adaptations/{adaptationId}"

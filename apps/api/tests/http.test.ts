@@ -611,6 +611,46 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   await request(`${path}/material-sources/${source.id}`,main,'DELETE');await file('pdf',a,404);await worker.collect();
   assert.equal(await db.materialSource.count({where:{id:source.id}}),0);
 });
+test('PDF original individual: revisão, isolamento A/B, quarentena, revogação, versão e retirada',async()=>{
+ const created=(await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
+ const versionId=created.draftVersion.id,path=`/v1/missions/${created.id}`;
+ const bytes=Buffer.from('%PDF-1.4\noriginal privado completo');
+ const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Original',base64:bytes.toString('base64'),requestKey:randomUUID()})).json;
+ const input={versionId,sourceId:source.id,studentId:'demo-student-1',requestKey:randomUUID(),reviewed:true};
+ await request(`${path}/original-materials`,a,'POST',input,404);
+ await request(`${path}/original-materials`,otherTeacher,'POST',input,404);
+ await request(`${path}/original-materials`,main,'POST',input,404);
+ await db.materialSource.update({where:{id:source.id},data:{status:'ready'}});
+ await request(`${path}/original-materials`,main,'POST',{...input,reviewed:false},400);
+ await request(`${path}/original-materials`,main,'POST',{...input,studentId:mainId},400);
+ const before=providerCalls,original=(await request(`${path}/original-materials`,main,'POST',input)).json;
+ assert.equal(original.mode,'original');assert.equal(original.status,'released');assert.deepEqual(original.document,[]);assert.deepEqual(original.settings.supports,[]);
+ assert.equal((await request(`${path}/original-materials`,main,'POST',input)).json.id,original.id);
+ await request(`${path}/original-materials`,main,'POST',{...input,studentId:'demo-student-2'},409);
+ assert.equal((await request(`${path}/original-materials`,main,'POST',{...input,requestKey:randomUUID()})).json.id,original.id);
+ async function file(cookie:string,status=200,kind='pdf'){const r=await fetch(`${base}${path}/material-assets/${original.id}/${kind}`,{headers:{cookie}});assert.equal(r.status,status);return r;}
+ await file(a,404);await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
+ assert.deepEqual(Buffer.from(await (await file(a)).arrayBuffer()),bytes);
+ assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items[0].mode,'original');
+ assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,0);
+ await file(b,404);await file(otherTeacher,404);await file(a,404,'audio');await file(a,404,'page-1');
+ await request(`${path}/material-assets/${source.id}/original`,a,'GET',undefined,404);
+ await request(`${path}/material-adaptations/${original.id}/render`,main,'POST',{expectedRevision:1},409);
+ await request(`${path}/material-adaptations/${original.id}`,main,'PATCH',{expectedRevision:1,document:[{page:1,title:'Outro',text:'Texto.',description:''}]},409);
+ await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:false}});await file(a,404);
+ await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:true}});
+ await request(`${path}/material-adaptations/${original.id}`,main,'DELETE');await file(a,404);
+ const renewed=(await request(`${path}/original-materials`,main,'POST',{...input,requestKey:randomUUID()})).json;
+ await db.materialSource.update({where:{id:source.id},data:{expiresAt:new Date(0)}});
+ const expired=await fetch(`${base}${path}/material-assets/${renewed.id}/pdf`,{headers:{cookie:a}});assert.equal(expired.status,404);
+ await db.materialSource.update({where:{id:source.id},data:{expiresAt:new Date(Date.now()+86400000)}});
+ const next=(await request(path,main,'PATCH',{...fixture,title:'Nova versão sem herdar arquivos',expectedDraftVersionId:null})).json;
+ await request(`${path}/publish`,main,'POST',{versionId:next.draftVersion.id,reviewed:true});
+ const previous=await fetch(`${base}${path}/material-assets/${renewed.id}/pdf`,{headers:{cookie:a}});assert.equal(previous.status,404);
+ assert.equal((await request(`${path}/my-materials?versionId=${next.draftVersion.id}`,a)).json.items.length,0);
+ assert.equal(providerCalls,before,'Disponibilizar original não chama IA');
+ assert.equal(await db.materialAdaptation.count({where:{sourceId:source.id,status:{in:['queued','generating','rendering']}}}),0);
+});
 test('limite de login persiste após recriar a aplicação e demo exige isolamento', { timeout: 30000 }, async () => {
   assert.throws(() => readConfig({ ...process.env, DEMO_ONLY: 'false' }));
   assert.equal(createAuth(db, { ...config, demo: false }).options.emailAndPassword?.minPasswordLength, 8);

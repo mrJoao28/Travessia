@@ -12,7 +12,7 @@ import type { Config } from './config.js';
 export const extractedPages = z.array(z.strictObject({ page: z.number().int().min(1).max(20), text: z.string().max(40000), hasVisual: z.boolean(), ocr: z.boolean() })).max(20);
 export const sourcePublic = (s: MaterialSource) => ({ id: s.id, versionId: s.versionId, title: s.title, status: s.status, pageCount: s.pageCount,
   pages: s.status === 'ready' ? extractedPages.parse(s.pages) : [], warnings: z.array(z.string()).parse(s.warnings), expiresAt: s.expiresAt });
-export const adaptationPublic = (s: MaterialAdaptation) => ({ id: s.id, versionId: s.versionId, sourceId: s.sourceId, studentId: s.studentId,
+export const adaptationPublic = (s: MaterialAdaptation) => ({ mode: materialSettings.parse(s.settings).deliveryMode??'adapted', id: s.id, versionId: s.versionId, sourceId: s.sourceId, studentId: s.studentId,
   status: s.status, settings: materialSettings.parse(s.settings), pages: z.array(z.number()).parse(s.pages), document: z.array(documentPage).parse(s.document), revision: s.revision,
   error: s.error, hasAudio: s.hasAudio, inputTokens: s.inputTokens, outputTokens: s.outputTokens, expiresAt: s.expiresAt });
 export class MaterialService {
@@ -28,7 +28,7 @@ export class MaterialService {
         const { versionId } = query as { versionId: string };
         if (row.publishedVersionId !== versionId) return missing();
         const rows = await tx.materialAdaptation.findMany({ where: { versionId, studentId: userId, status: 'released', expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
-        return { items: rows.map(a => ({ id: a.id, title: a.source.title, document: materialDocument.parse(a.document), hasAudio: a.hasAudio })) };
+        return { items: rows.map(a => ({ id: a.id, title: a.source.title, mode: materialSettings.parse(a.settings).deliveryMode??'adapted', document: materialSettings.parse(a.settings).deliveryMode==='original' ? [] : materialDocument.parse(a.document), hasAudio: a.hasAudio })) };
       }
       if (['materialSources', 'materialAdaptations'].includes(op)) {
         const { versionId } = query as { versionId: string }; current(versionId);
@@ -62,6 +62,19 @@ export class MaterialService {
         await tx.materialAdaptation.updateMany({ where: { sourceId: source.id }, data: { expiresAt: new Date(0) } });
         return { removed: true };
       }
+      if (op === 'releaseOriginalMaterial') {
+        const input=body as Body<'releaseOriginalMaterial'>;current(input.versionId);
+        const source=await tx.materialSource.findFirst({where:{id:input.sourceId,versionId:input.versionId,status:'ready',expiresAt:{gt:new Date()}}});if(!source)return missing();
+        if(!await tx.membership.findFirst({where:{classroomId:row.classroomId,userId:input.studentId,role:'student',active:true}}))return fail(400,'INVALID_RECIPIENTS','Escolha um aluno ativo desta turma.');
+        const hash=digest(JSON.stringify({mode:'original',versionId:input.versionId,sourceId:input.sourceId,studentId:input.studentId}));
+        const old=await tx.materialAdaptation.findUnique({where:{versionId_requestKey:{versionId:input.versionId,requestKey:input.requestKey}}});
+        if(old){if(old.requestHash!==hash)return fail(409,'IDEMPOTENCY_CONFLICT','Solicitação já utilizada.');if(old.expiresAt<=new Date())return missing();return adaptationPublic(old);}
+        const cached=await tx.materialAdaptation.findFirst({where:{versionId:input.versionId,requestHash:hash,studentId:input.studentId,status:'released',expiresAt:{gt:new Date()}}});if(cached)return adaptationPublic(cached);
+        if(await tx.materialAdaptation.count({where:{versionId:input.versionId}})>=100)return fail(409,'MATERIAL_LIMIT','Até 100 materiais por versão.');
+        await budget(tx,`material-original:${userId}`,30,86400);
+        const saved=await tx.materialAdaptation.create({data:{versionId:input.versionId,sourceId:source.id,studentId:input.studentId,creatorId:userId,requestKey:input.requestKey,requestHash:hash,status:'released',settings:{supports:[],fontSize:'18',color:'default',useAi:false,approvedForProvider:false,deliveryMode:'original'},pages:[],document:[],expiresAt:source.expiresAt}});
+        await tx.auditEvent.create({data:{actorId:userId,action:'material.original-release',resourceId:saved.id}});return adaptationPublic(saved);
+      }
       if (op === 'prepareMaterial') {
         const input = body as Body<'prepareMaterial'>; current(input.versionId);
         const source = await tx.materialSource.findFirst({ where: { id: input.sourceId, versionId: input.versionId, status: 'ready', expiresAt: { gt: new Date() } } }); if (!source) return missing();
@@ -89,6 +102,7 @@ export class MaterialService {
       const old = await tx.materialAdaptation.findFirst({ where: { id: p.adaptationId, version: { missionId: row.id }, expiresAt: { gt: new Date() } } }); if (!old) return missing(); current(old.versionId);
       if (['queued', 'generating', 'rendering'].includes(old.status)) return fail(409, 'MATERIAL_BUSY', 'Aguarde o processamento.');
       if (op === 'removeMaterial') { await tx.materialAdaptation.update({ where: { id: old.id }, data: { expiresAt: new Date(0), status: 'draft' } }); return { removed: true }; }
+      if(materialSettings.parse(old.settings).deliveryMode==='original')return fail(409,'ORIGINAL_UNCHANGED','O original permanece inalterado. Prepare outra versão para adaptar.');
       const input = body as Body<'editMaterial'> | Body<'releaseMaterial'>;
       if (old.revision !== input.expectedRevision) return fail(409, 'REVISION_CONFLICT', 'A revisão mudou. Reabra a adaptação.');
       if (op === 'editMaterial') {
@@ -125,6 +139,7 @@ export class MaterialService {
       const a = await tx.materialAdaptation.findFirst({ where: { id: p.assetId, version: { missionId: row.id }, status: { in: ['ready', 'released'] }, expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } } });
       if (!a || ![row.draftVersionId, row.publishedVersionId].includes(a.versionId)) return missing();
       if (member.role === 'student' && (a.studentId !== userId || a.status !== 'released' || a.versionId !== row.publishedVersionId)) return missing();
+      if(materialSettings.parse(a.settings).deliveryMode==='original'){if(p.kind!=='pdf')return missing();return {path:materialPath(a.sourceId,'original.pdf'),mime:'application/pdf',name:'material-original.pdf'};}
       if (p.kind.startsWith('page-')) {
         const page = Number(p.kind.slice(5)); if (!z.array(z.number()).parse(a.pages).includes(page)) return missing();
         return { path: materialPath(a.sourceId, `page-${page}.png`), mime: 'image/png', name: 'pagina-original.png' };

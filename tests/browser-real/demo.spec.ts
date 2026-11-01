@@ -417,16 +417,19 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   // The comprehensive dev-browser scenario can reach the real per-user quota.
   // Wait for an authorized successful read; never reset or bypass the limiter.
   let sharedNeeds: ApiResponse<'sharedLearningNeeds'> = {items:[],nextCursor:null};
+  let submittedItems: {userId:string;status:string}[]=[];
   await expect(async()=>{
     const response=await page.request.get('/api/v1/classrooms/demo-class-oficina/learning-needs');
     expect(response.status()).toBe(200);
     sharedNeeds=await response.json();
+    // These adjacent reads share the same quota: both must succeed in the window.
+    const submitted=await page.request.get(`/api/v1/missions/${inclusiveMission.id}/submissions`);
+    expect(submitted.status()).toBe(200);
+    submittedItems=(await submitted.json()).items;
   }).toPass({timeout:75000,intervals:[5000,10000,15000]});
   const learnerA = sharedNeeds.items.find((n: { userId: string }) => n.userId === 'demo-student-1');
   expect(learnerA).toMatchObject({supports:expect.arrayContaining(['short-steps']),disabilities:null});
-  const submittedResponse = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/submissions`);
-  expect(submittedResponse.status()).toBe(200);
-  expect((await submittedResponse.json()).items).toEqual(expect.arrayContaining([expect.objectContaining({ userId: 'demo-student-1', status: 'submitted' })]));
+  expect(submittedItems).toEqual(expect.arrayContaining([expect.objectContaining({ userId: 'demo-student-1', status: 'submitted' })]));
   await page.goto('/professor/entregas');
   const deliveryHeading = page.getByRole('heading', { name: 'Entregas para acompanhar', exact: true });
   const limitNotice = page.getByText('O limite de solicitações foi atingido. Aguarde antes de tentar novamente.', { exact: true });

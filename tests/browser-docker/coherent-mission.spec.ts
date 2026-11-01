@@ -24,6 +24,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
    const invitation=await post(teacher,`/api/v1/classrooms/${classroom.id}/invitations`,{});
    await register(page,'aluno',name);await page.getByLabel('Código de convite',{exact:true}).fill(invitation.token);await page.getByRole('button',{name:'Entrar na turma',exact:true}).click();await expect(page).toHaveURL(/\/aluno\?turma=/);
   }
+  const otherId=(await other.request.get('/api/v1/me').then(r=>r.json())).id;
   const studentId=(await student.request.get('/api/v1/me').then(r=>r.json())).id;
   await student.goto('/aluno/apoios');await student.getByRole('checkbox',{name:'Tarefa dividida em passos curtos',exact:true}).check();
   await student.getByText('Informar deficiência autodeclarada (opcional)',{exact:true}).click();await student.getByRole('checkbox',{name:'Baixa visão',exact:true}).check();
@@ -43,17 +44,19 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await expect(teacher.getByText(/Uploads permanecem desativados/)).toHaveCount(0);
   await teacher.getByLabel('Adicionar PDF à missão',{exact:true}).setInputFiles({name:'rotas-campus.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
   await teacher.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();
-  await expect(teacher.getByRole('heading',{name:'Prepare o material para este aluno',exact:true})).toBeVisible();
+  await expect(teacher.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();
   const missionId=new URL(teacher.url()).pathname.split('/')[3];
   let mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());const versionId=mission.draftVersion.id;
   await teacher.getByLabel('Aluno da turma',{exact:true}).selectOption(studentId);
-  await teacher.getByText('Usar sugestões por perfil informado',{exact:true}).click();await teacher.getByRole('checkbox',{name:'Baixa visão',exact:true}).check();
-  await teacher.getByRole('button',{name:'Usar sugestões destes perfis',exact:true}).click();
-  await teacher.getByRole('checkbox',{name:/Áudio com transcrição/}).check();await teacher.getByRole('button',{name:'Continuar para o material →',exact:true}).click();
-  await expect(teacher.getByRole('status').filter({hasText:'Pronto para revisar'})).toBeVisible({timeout:90000});
-  await expect(teacher.getByLabel('Arquivo para adaptar',{exact:true})).toContainText('rotas-campus.pdf');
-  await teacher.getByRole('checkbox',{name:/Página 1 ·/}).check();await teacher.getByRole('button',{name:'Preparar rascunho para revisão →',exact:true}).click();
-  await expect(teacher.getByLabel('Texto da página 1',{exact:true})).toBeVisible({timeout:60000});
+  await expect(teacher.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible({timeout:90000});
+  await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
+  await expect(teacher.getByRole('checkbox',{name:/Texto ampliado/})).toBeChecked();
+  await expect(teacher.getByRole('checkbox',{name:/Passos curtos e numerados/})).not.toBeVisible();
+  await teacher.getByText('Outras opções',{exact:true}).click();
+  await teacher.getByRole('checkbox',{name:/Áudio com transcrição/}).check();
+  await teacher.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+  await expect(teacher.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible({timeout:90000});
+  await teacher.getByText('Ajustar o texto da prévia',{exact:true}).click();
   await teacher.getByLabel('Texto da página 1',{exact:true}).fill('Compare duas rotas de 10 metros. Identifique os obstáculos e justifique uma escolha acessível.');
   await teacher.getByLabel('Descrição das informações visuais da página 1',{exact:true}).fill('Um retângulo representa a área usada na comparação das rotas.');
   await teacher.getByText('Também ajustar a atividade e as formas de entrega de Marina do fluxo',{exact:true}).click();
@@ -63,15 +66,26 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await teacher.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/}).check();await teacher.getByRole('button',{name:'Salvar ajustes da atividade deste aluno',exact:true}).click();
   await expect(teacher.getByRole('status').filter({hasText:'Atividade e formas de entrega salvas'})).toBeVisible();
   await teacher.screenshot({path:'test-results/reference-coherent-teacher-review.png',fullPage:true});
-  await teacher.getByRole('button',{name:'Salvar revisão e gerar PDF e áudio →',exact:true}).click();
+  await teacher.getByRole('button',{name:'Atualizar prévia →',exact:true}).click();
+  await expect(teacher.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible({timeout:90000});
   await expect(teacher.getByRole('button',{name:'Disponibilizar para Marina do fluxo →',exact:true})).toBeVisible({timeout:90000});
-  await teacher.getByRole('checkbox',{name:/Conferi o PDF, o conteúdo/}).check();await teacher.getByRole('button',{name:'Disponibilizar para Marina do fluxo →',exact:true}).click();
-  await expect(teacher.getByRole('heading',{name:'Material liberado',exact:true})).toBeVisible();
+  await teacher.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();await teacher.getByRole('button',{name:'Disponibilizar para Marina do fluxo →',exact:true}).click();
+  await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
+  await teacher.getByRole('button',{name:'Preparar outro material',exact:true}).click();
+  await teacher.getByLabel('Aluno da turma',{exact:true}).selectOption(otherId);
+  await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
+  await expect(teacher.getByText('Nenhuma deficiência informada',{exact:true})).toBeVisible();
+  await expect(teacher.getByRole('radio',{name:/Manter o PDF original/})).toBeChecked();
+  await teacher.screenshot({path:'test-results/reference-coherent-no-disclosure.png',fullPage:true});
+  await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
+  await teacher.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
+  await teacher.getByRole('button',{name:'Disponibilizar para Aluno B do fluxo →',exact:true}).click();
+  await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
   await teacher.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await teacher.getByRole('checkbox',{name:'Revisei objetivos, critérios, etapas e materiais.',exact:true}).check();
   await teacher.getByRole('button',{name:'Publicar missão',exact:true}).click();await expect(teacher.getByRole('heading',{name:'Pronto para sua turma!',exact:true})).toBeVisible();
   mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());expect(mission.publishedVersion.id).toBe(versionId);
-  for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/missoes/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Prepare o material para este aluno',exact:true})).toBeVisible();}
-  // A receives released files and adjusted activity; B receives the original activity only.
+  for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/missoes/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();}
+  // A receives the reviewed PDF/voice and activity. B receives only the unchanged original PDF.
   await student.goto(`/aluno/missoes/${missionId}`);await student.getByRole('button',{name:'Comparar rotas',exact:true}).click();
   const prepared=student.getByRole('region',{name:'Materiais preparados para você',exact:true});await prepared.getByText('rotas-campus.pdf',{exact:true}).click();
   await expect(prepared.getByText('Compare duas rotas de 10 metros. Identifique os obstáculos e justifique uma escolha acessível.',{exact:true})).toBeVisible();
@@ -80,7 +94,13 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await student.getByText('Consultar enunciado adaptado',{exact:true}).click();await expect(student.getByText('Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.',{exact:true})).toBeVisible();
   const privateMaterials=(await student.request.get(`/api/v1/missions/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items;
   await other.goto(`/aluno/missoes/${missionId}`);await other.getByRole('button',{name:'Comparar rotas',exact:true}).click();
-  await expect(other.getByRole('region',{name:'Materiais preparados para você',exact:true})).toHaveCount(0);
+  const originalRegion=other.getByRole('region',{name:'Materiais preparados para você',exact:true});
+  await originalRegion.getByText('rotas-campus.pdf',{exact:true}).click();
+  const originalLink=originalRegion.getByRole('link',{name:'Baixar PDF original',exact:true});await expect(originalLink).toBeVisible();
+  const originalResponse=await other.request.get((await originalLink.getAttribute('href'))!);expect(originalResponse.status()).toBe(200);expect(await originalResponse.body()).toEqual(materialPdfFixture());
+  await expect(originalRegion.locator('audio')).toHaveCount(0);
+  const ownOriginal=(await other.request.get(`/api/v1/missions/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items[0];expect(ownOriginal.mode).toBe('original');expect(ownOriginal.document).toEqual([]);
+  expect((await student.request.get(`/api/v1/missions/${missionId}/material-assets/${ownOriginal.id}/pdf`)).status()).toBe(404);
   expect((await other.request.get(`/api/v1/missions/${missionId}/material-assets/${privateMaterials[0].id}/pdf`)).status()).toBe(404);
   await expect(other.getByLabel('Áudio da atividade (opcional)',{exact:true})).toHaveCount(0);
   const wav=Buffer.alloc(32044);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(16000,24);wav.writeUInt32LE(32000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(32000,40);

@@ -1432,3 +1432,39 @@ body {
 .activity-with-material > summary { font-weight: 700; padding: .5rem 0; }
 .activity-with-material[open] > summary { margin-bottom: 1rem; }
 .activity-with-material fieldset { min-width: 0; }
+
+.simple-material-preparation { max-width: 60rem; margin: 0 auto 1.5rem; }
+.simple-material-preparation > header p { color: var(--color-muted, #50657A); }
+.simple-student-context,.simple-material-file { display:flex; gap:1rem; align-items:center; padding:1.15rem 1.4rem; border:1px solid #D6E1ED; border-radius:.8rem; background:#fff; }
+.simple-student-context { background:#EAF2FC; }
+.simple-student-context > div,.simple-material-file > div { flex:1; min-width:0; overflow-wrap:anywhere; }
+.simple-student-context p,.simple-material-file p { margin:.25rem 0 0; }
+.pdf-file-badge { background:#B42318;color:#fff;font-size:.8rem;font-weight:700;border-radius:.35rem;padding:.9rem .55rem; }
+.simple-choice,.simple-support-option { display:flex;align-items:flex-start;gap:.9rem;padding:1.1rem 0;cursor:pointer; }
+.simple-choice { border:1px solid #D6E1ED;border-radius:.7rem;padding:1rem;margin-bottom:.7rem; }
+.simple-choice.selected { background:#EAF2FC;border-color:#075A9C; }
+.simple-choice input,.simple-support-option input { flex-shrink:0;margin-top:.3rem; }
+.simple-choice span.small,.simple-support-option span.small { display:block;margin-top:.3rem; }
+.simple-support-option + .simple-support-option { border-top:1px solid #D6E1ED; }
+.simple-material-actions { display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:1rem; }
+.simple-more-options { border-top:1px solid #D6E1ED;padding-block:.8rem; }
+.simple-saved-materials { margin-top:1.5rem; }
+.simple-saved-materials article { margin-top:1rem; }
+@media(max-width:600px){.simple-material-file,.simple-student-context{padding:1rem;flex-wrap:wrap}.simple-material-actions{flex-wrap:wrap}.simple-material-actions .button{width:100%}}
+
+/* Keep native controls beside their text despite the generic stacked form rules. */
+.simple-material-preparation label.simple-choice,
+.simple-material-preparation label.simple-support-option { display:flex; align-items:flex-start; gap:.85rem; }
+.simple-material-preparation .simple-choice input,
+.simple-material-preparation .simple-support-option input { width:1.25rem; height:1.25rem; min-width:1.25rem; min-height:0; padding:0; margin:.2rem 0 0; accent-color:var(--primary); }
+.simple-material-preparation .simple-choice .small,
+.simple-material-preparation .simple-support-option .small { font-weight:400; }
+.simple-material-preparation > header h2 { margin:0 0 .5rem; }
+.simple-material-preparation > header p { margin:0; }
+.simple-material-file { display:grid; grid-template-columns:auto minmax(0,1fr) auto; }
+@media(max-width:600px){
+ .simple-material-file { grid-template-columns:auto minmax(0,1fr); }
+ .simple-material-file > button { grid-column:2; justify-self:start; }
+ .simple-student-context { display:grid; grid-template-columns:minmax(0,1fr); gap:.5rem; }
+ .simple-student-context > button { justify-self:start; }
+}

@@ -37,8 +37,24 @@ A verificação automática e a revisão visual não substituem teste com leitor
 
 ## Correção do fluxo de materiais e adaptações
 
-A criação permite escolher o PDF em “Etapas e materiais”. Ao continuar, salva a versão e envia o arquivo para a fila privada; em “Apoios”, o professor escolhe aluno, confirma apoios, seleciona páginas, revisa texto/descrições e gera PDF/áudio sem sair do editor. Os ajustes do enunciado e das formas de entrega usam o mesmo aluno e a mesma versão. Sem PDF, existe o caminho “Ajustar somente a atividade e as formas de entrega”.
+A criação permite escolher o PDF em “Etapas e materiais”. Ao continuar, salva a versão e envia o arquivo para a fila privada; em “Apoios”, o professor escolhe aluno, confirma apoios, seleciona páginas, revisa texto/descrições e gera PDF/áudio sem sair do editor. Os ajustes do enunciado e das formas de entrega usam o mesmo aluno e a mesma versão. Sem PDF, existe o caminho “Ajustar atividade sem PDF”.
 
 `/apoios`, `/adaptacoes` e `/estrategias` chegam ao mesmo preparador. Instruções para turma inteira e a biblioteca de checklists continuam disponíveis em seções opcionais, carregadas somente quando abertas. O aviso antigo de uploads desativados foi retirado do editor. Textos e ajustes em edição impedem avançar sem salvar ou descartar. Salvar/revisar a missão sem alterar seu conteúdo não cria outra versão nem perde os apoios preparados.
 
 O navegador Docker adicional cobre cadastro, convites, compartilhamento de apoios, criação da missão, upload no editor, PDF e voz reais, ajuste individual de instruções/entrega, publicação da mesma versão, aluno A/B, arquivos privados, rascunho multimodal, relato compartilhado, resposta docente, envio e feedback. O runner só aceita demonstração isolada em loopback. Não usa respostas simuladas nem credenciais pessoais. Gemini desativado nesse cenário; geração Gemini continua coberta por provedores controlados nas demais suítes.
+
+## Preparação individual simplificada
+
+O professor escolhe aluno e PDF, confirma como disponibilizar e confere o resultado. Não há um segundo indicador de etapas dentro do editor da missão.
+
+- Sem deficiência compartilhada: “Nenhuma deficiência informada”, com original selecionado. “Preparar uma versão com apoio” oferece três intenções: facilitar a leitura, ouvir ou organizar a explicação. Pedidos de apoio compartilhados podem orientar sugestões mesmo sem informar deficiência.
+- TEA compartilhado: explicação direta e passos curtos inicialmente selecionados; explicar termos disponível para confirmar. Tamanho de fonte e contraste não aparecem como sugestões principais.
+- Baixa visão compartilhada: texto ampliado, espaçamento e contraste. Outros pedidos efetivamente compartilhados ficam em “Outras opções”; não são incluídos automaticamente por associação com outra condição.
+
+As sugestões são editáveis e não representam necessidades universais de um diagnóstico. Somente informações compartilhadas para aquela turma chegam ao professor. A escolha do aluno não é enviada ao Gemini; o pedido de geração contém os apoios genéricos e o conteúdo didático autorizado.
+
+“Preparar prévia” também gera os arquivos de leitura e áudio, quando escolhido. Edição detalhada do texto, transcrição e ajustes da atividade ficam recolhidos. Depois de editar, atualizar a prévia invalida a revisão anterior. “Disponibilizar” exige confirmar material e destinatário. No rascunho, a entrega só aparece ao aluno depois da publicação daquela versão.
+
+O caminho original entrega o arquivo completo verificado, sem IA nem uma nova cópia física. O endpoint `POST /v1/missions/{id}/original-materials` cria uma autorização individual com revisão explícita, expiração e versão. O aluno baixa pelo identificador dessa autorização; o endereço original da fonte continua exclusivo do professor. Não há migração. Remoção, expiração, vínculo revogado e troca da versão publicada retiram acesso. Arquivo adaptado continua limitado a quatro páginas/12 mil caracteres por preparação; o professor vê essa seleção antes de gerar.
+
+Cobertura adicionada: ausência de declaração, TEA, baixa visão, pedido sem diagnóstico, falha preservando texto, reflow/teclado/axe; API verifica original privado, quarentena, revisão, idempotência, A/B, versão e revogação. O fluxo Docker entrega PDF/voz adaptados a A e o original a B, seguido de entrega e feedback. A execução real do Gemini continua dependendo de chave autorizada; o cenário Docker usa processamento local.
