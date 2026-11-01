@@ -1,5 +1,6 @@
 name: Foundation checks
 on:
+  workflow_call:
   pull_request:
   push:
     branches: [main]

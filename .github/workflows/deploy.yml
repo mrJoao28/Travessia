@@ -9,17 +9,27 @@ concurrency:
   group: deploy-prod
   cancel-in-progress: false
 jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+  containers:
+    uses: ./.github/workflows/docker.yml
   deploy:
+    needs: [checks, containers]
+    if: github.ref == 'refs/heads/prod'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Publicar API e frontend no servidor Mais Acesso
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Publicar os quatro serviços no servidor Mais Acesso
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           if [[ -z "$DEPLOY_HOST" || -z "$DEPLOY_USER" || -z "$DEPLOY_SSH_KEY" ]]; then
@@ -34,4 +44,6 @@ jobs:
             -o UserKnownHostsFile="$GITHUB_WORKSPACE/deploy/ssh_known_hosts" \
             -o StrictHostKeyChecking=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "set -euo pipefail; cd '$path'; git fetch origin prod; git checkout -B prod origin/prod; bash scripts/deploy-prod.sh"
+            "set -euo pipefail; cd '$path'; git fetch origin prod; git merge-base --is-ancestor '$DEPLOY_SHA' origin/prod; git checkout -B prod '$DEPLOY_SHA'; bash scripts/deploy-prod.sh"
+      - name: Conferir HTTPS, páginas públicas, arquivos estáticos e acesso anônimo
+        run: node scripts/check-production.mjs
