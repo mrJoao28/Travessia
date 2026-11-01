@@ -1,3 +1,4 @@
+import { mkdir, writeFile } from 'node:fs/promises';
 import { materialPdfFixture } from './material-fixture.mjs';
 export async function materialSmoke(request, check, verifyPersistence) {
   const mission='demo-class-oficina-mission', base=`/api/v1/missions/${mission}`;
@@ -30,6 +31,8 @@ export async function materialSmoke(request, check, verifyPersistence) {
     await request(`${base}/material-assets/${adaptation.id}/${kind}`,{authenticated:false,status:401});
     const response=(await request(`${base}/material-assets/${adaptation.id}/${kind}`)).response;
     const bytes=new Uint8Array(await response.arrayBuffer());check(bytes.length>100,'Artefato real ausente.');
+    await mkdir('test-results/materials',{recursive:true});
+    await writeFile(`test-results/materials/${kind==='pdf'?'material-adaptado.pdf':kind==='audio'?'material-narrado.mp3':'pagina-original.png'}`,bytes);
     if(kind==='pdf')check(new TextDecoder().decode(bytes.slice(0,5))==='%PDF-','PDF real inválido.');
     if(kind==='audio')check(response.headers.get('content-type')==='audio/mpeg','Narração real ausente.');
     if(studentCookie){const studentResponse=(await request(`${base}/material-assets/${adaptation.id}/${kind}`,{sessionCookie:studentCookie})).response;check((await studentResponse.arrayBuffer()).byteLength===bytes.length,'Aluno não recebeu os mesmos artefatos liberados.');}

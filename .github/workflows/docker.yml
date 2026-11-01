@@ -44,6 +44,13 @@ jobs:
           npm run docker:down
           npm run docker:start
           node scripts/docker-smoke.mjs --verify-persistence
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: material-processing-previews
+          path: test-results/materials/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Diagnóstico limitado em caso de falha
         if: failure()
         run: |
