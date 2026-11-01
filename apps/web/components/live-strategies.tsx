@@ -49,10 +49,12 @@ export function MissionSupportsEditor({ entry, version, initialFile, onFileRecei
  const [showStrategies,setShowStrategies]=useState(false),[showCollective,setShowCollective]=useState(false);
  return <div className="mission-support-editor">
     <IndividualMaterials key={`materials-${version.id}`} missionId={entry.mission.id} versionId={version.id} classroomId={entry.classroom.id} archived={entry.mission.status === "archived"} version={version} initialFile={initialFile} onFileReceived={onFileReceived} onUnsavedChange={onUnsavedChange} />
+    <details className="paper material-extra-tools"><summary>Outros apoios da missão</summary><div className="form-stack">
     <details className="paper legacy-strategies" onToggle={e=>{if(e.currentTarget.open)setShowStrategies(true);}}><summary>Outros apoios: checklists, exemplos e orientações para a turma</summary>
     {showStrategies&&<StrategyForm key={version.id} entry={entry} version={version} />}
     </details>
     <details className="paper legacy-strategies" onToggle={e=>{if(e.currentTarget.open)setShowCollective(true);}}><summary>Ajustar instruções ou entregas para a turma inteira</summary><p>Para ajustes individuais, use o aluno escolhido na preparação do material acima.</p>{showCollective&&<LiveAdaptations entries={[entry]} initialMissionId={entry.mission.id} initialVersionId={version.id}/>}</details>
+    </div></details>
   </div>;
 }
 
