@@ -17,6 +17,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
  const origin={Origin:baseURL!};
  async function post(page:Page,path:string,data:unknown){const r=await page.request.post(path,{headers:origin,data});expect(r.status()).toBe(200);return r.json();}
  try{
+  await teacher.setViewportSize({width:1920,height:1080});
   await register(teacher,'professor','Professora de teste inclusivo');await teacher.getByLabel('Nome da turma',{exact:true}).fill('Turma do fluxo completo');
   await teacher.getByRole('button',{name:'Criar minha turma',exact:true}).click();await expect(teacher).toHaveURL(/\/professor\?turma=/);
   const classroom=(await teacher.request.get('/api/v1/classrooms').then(r=>r.json())).items[0];
@@ -65,10 +66,12 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await expect(teacher.getByRole('button',{name:'Salvar e revisar',exact:true})).toBeDisabled();
   await teacher.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/}).check();await teacher.getByRole('button',{name:'Salvar ajustes da atividade deste aluno',exact:true}).click();
   await expect(teacher.getByRole('status').filter({hasText:'Atividade e formas de entrega salvas'})).toBeVisible();
-  await teacher.screenshot({path:'test-results/reference-coherent-teacher-review.png',fullPage:true});
   await teacher.getByRole('button',{name:'Atualizar prévia →',exact:true}).click();
   await expect(teacher.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible({timeout:90000});
   await expect(teacher.getByRole('button',{name:'Disponibilizar para Marina do fluxo →',exact:true})).toBeVisible({timeout:90000});
+  await expect.poll(()=>teacher.locator('img.comparison-source-page').evaluate((image:HTMLImageElement)=>image.naturalWidth)).toBeGreaterThan(0);
+  await expect(teacher.getByRole('region',{name:'Documento preparado',exact:true})).toContainText('Compare duas rotas de 10 metros. Identifique os obstáculos');
+  await teacher.screenshot({path:'test-results/reference-coherent-comparison-desktop.png',fullPage:true});
   await teacher.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();await teacher.getByRole('button',{name:'Disponibilizar para Marina do fluxo →',exact:true}).click();
   await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
   await teacher.getByRole('button',{name:'Preparar outro material',exact:true}).click();
