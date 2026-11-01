@@ -5,6 +5,7 @@ import { api, pages, errorMessage, type ApiResponse } from "../lib/product-clien
 import type { MissionEntry } from "./live-workspace";
 import { AudioAttachment, SupportAudio, type AudioValue } from "./support-audio";
 import { SupportGenerator } from "./support-generator";
+import { LiveAdaptations } from "./live-adaptations";
 import { IndividualMaterials } from "./individual-materials";
 import { OperationStatus } from "./operation-status";
 
@@ -13,20 +14,21 @@ type Plan = ApiResponse<"createStrategyPlan">;
 type Student = ApiResponse<"strategyRecipients">["items"][number];
 
 export function LiveStrategies({ entries, initialMissionId, initialVersionId }: { entries: MissionEntry[]; initialMissionId?: string; initialVersionId?: string }) {
+  const [unsaved,setUnsaved]=useState(false);
   const [missionId, setMissionId] = useState(initialMissionId ?? entries[0]?.mission.id ?? "");
   const entry = entries.find(e => e.mission.id === missionId);
   if (!entry) return <section className="paper"><h2>Escolha uma missão da sua turma</h2><p>Crie e salve uma missão para preparar seus apoios.</p><Link className="text-link" href="/professor/missoes">Consultar minhas missões</Link></section>;
   return <>
-    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/missoes/${entry.mission.id}/apoios`}>← Apoios da missão</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector"><label htmlFor="strategy-mission">Missão</label>
-      <select id="strategy-mission" value={missionId} onChange={e => setMissionId(e.target.value)}>
+    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/missoes/${entry.mission.id}/editar`}>← Voltar à missão</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector"><label htmlFor="strategy-mission">Missão</label>
+      <select id="strategy-mission" value={missionId} onChange={e => {if(!unsaved||window.confirm("Descartar os apoios ainda não salvos?")){setUnsaved(false);setMissionId(e.target.value);}}}>
         {entries.map(({ mission, classroom }) => <option key={mission.id} value={mission.id}>{classroom.name} · {(mission.publishedVersion ?? mission.draftVersion)?.title}</option>)}
       </select>
     </div>}
-    <StrategyMission key={entry.mission.id} entry={entry} initialVersionId={initialVersionId} />
+    <StrategyMission key={entry.mission.id} entry={entry} initialVersionId={initialVersionId} unsaved={unsaved} onUnsavedChange={setUnsaved} />
   </>;
 }
 
-function StrategyMission({ entry, initialVersionId }: { entry: MissionEntry; initialVersionId?: string }) {
+function StrategyMission({ entry, initialVersionId, unsaved, onUnsavedChange }: { entry: MissionEntry; initialVersionId?: string; unsaved:boolean; onUnsavedChange:(value:boolean)=>void }) {
   const versions = [entry.mission.publishedVersion, entry.mission.draftVersion].filter((v): v is NonNullable<typeof v> => !!v);
   const [versionId, setVersionId] = useState(versions.find(v => v.id === initialVersionId)?.id ?? versions[0]?.id ?? "");
   const version = versions.find(v => v.id === versionId);
@@ -34,16 +36,24 @@ function StrategyMission({ entry, initialVersionId }: { entry: MissionEntry; ini
   return <>
     {initialVersionId && !versions.some(v => v.id === initialVersionId) && <p className="notice">A versão escolhida mudou. Confira a versão disponível antes de preparar o apoio.</p>}
     <div className="classroom-selector"><label htmlFor="strategy-version">Versão da missão</label>
-      <select id="strategy-version" value={versionId} onChange={e => setVersionId(e.target.value)}>
+      <select id="strategy-version" value={versionId} onChange={e => {if(!unsaved||window.confirm("Descartar os apoios ainda não salvos e trocar de versão?")){onUnsavedChange(false);setVersionId(e.target.value);}}}>
         {versions.map(v => <option key={v.id} value={v.id}>{v.id === entry.mission.publishedVersion?.id ? "Publicada · visível aos alunos" : "Rascunho · aguarda publicação"} · {v.title}</option>)}
       </select>
     </div>
     <p className="small">Os apoios pertencem à versão selecionada. Ao criar outra versão, revise e aplique os apoios novamente.</p>
-    <IndividualMaterials key={`materials-${versionId}`} missionId={entry.mission.id} versionId={versionId} classroomId={entry.classroom.id} archived={entry.mission.status === "archived"} />
-    <details className="paper legacy-strategies"><summary>Outros apoios: checklists, exemplos e orientações para a turma</summary>
-    <StrategyForm key={versionId} entry={entry} version={version} />
-    </details>
+    <MissionSupportsEditor entry={entry} version={version} onUnsavedChange={onUnsavedChange} />
   </>;
+}
+
+export function MissionSupportsEditor({ entry, version, initialFile, onFileReceived, onUnsavedChange }: { entry: MissionEntry; version: NonNullable<MissionEntry["mission"]["draftVersion"]>; initialFile?: File | null; onFileReceived?: () => void; onUnsavedChange?:(value:boolean)=>void }) {
+ const [showStrategies,setShowStrategies]=useState(false),[showCollective,setShowCollective]=useState(false);
+ return <div className="mission-support-editor">
+    <IndividualMaterials key={`materials-${version.id}`} missionId={entry.mission.id} versionId={version.id} classroomId={entry.classroom.id} archived={entry.mission.status === "archived"} version={version} initialFile={initialFile} onFileReceived={onFileReceived} onUnsavedChange={onUnsavedChange} />
+    <details className="paper legacy-strategies" onToggle={e=>{if(e.currentTarget.open)setShowStrategies(true);}}><summary>Outros apoios: checklists, exemplos e orientações para a turma</summary>
+    {showStrategies&&<StrategyForm key={version.id} entry={entry} version={version} />}
+    </details>
+    <details className="paper legacy-strategies" onToggle={e=>{if(e.currentTarget.open)setShowCollective(true);}}><summary>Ajustar instruções ou entregas para a turma inteira</summary><p>Para ajustes individuais, use o aluno escolhido na preparação do material acima.</p>{showCollective&&<LiveAdaptations entries={[entry]} initialMissionId={entry.mission.id} initialVersionId={version.id}/>}</details>
+  </div>;
 }
 
 function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNullable<MissionEntry["mission"]["publishedVersion"]> }) {

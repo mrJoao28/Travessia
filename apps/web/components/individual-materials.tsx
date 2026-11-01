@@ -4,29 +4,34 @@ import { api, pages, errorMessage, type ApiResponse, type ApiBody } from "../lib
 import { materialProfiles, materialSupports, type MaterialSupport } from "../lib/material-profiles";
 import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { materialAssetUrl, PreparedDocument } from "./prepared-material";
+import { StudentActivitySupport } from "./student-activity-support";
 import { OperationStatus } from "./operation-status";
 
 type Source = ApiResponse<"uploadMaterialSource">;
 type Adaptation = ApiResponse<"prepareMaterial">;
 type Document = ApiBody<"editMaterial">["document"];
-export function IndividualMaterials({ missionId, versionId, classroomId, archived }: { missionId: string; versionId: string; classroomId: string; archived: boolean }) {
+export function IndividualMaterials({ missionId, versionId, classroomId, archived, version, initialFile, onFileReceived, onUnsavedChange }: { missionId: string; versionId: string; classroomId: string; archived: boolean; version?: NonNullable<ApiResponse<"mission">["draftVersion"]>; initialFile?: File | null; onFileReceived?: () => void; onUnsavedChange?: (dirty:boolean)=>void }) {
   const [students, setStudents] = useState<ApiResponse<"strategyRecipients">["items"]>([]);
   const [shared, setShared] = useState<ApiResponse<"sharedLearningNeeds">["items"]>([]);
   const [sources, setSources] = useState<Source[]>([]);
   const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
   const [loading, setLoading] = useState(true), [error, setError] = useState(""), [message, setMessage] = useState("");
   const [retry, setRetry] = useState(0), [busy, setBusy] = useState(false);
+  const [activityOnly,setActivityOnly]=useState(false),[activitySaved,setActivitySaved]=useState(false),[activityDirty,setActivityDirty]=useState(false);
   const [step, setStep] = useState(0), [studentId, setStudentId] = useState("");
   const [profiles, setProfiles] = useState<string[]>([]), [supports, setSupports] = useState<MaterialSupport[]>(["large-print"]);
   const [fontSize, setFontSize] = useState<"18" | "22" | "26">("22"), [color, setColor] = useState<"default" | "high" | "dark">("default");
   const [sourceId, setSourceId] = useState(""), [pageNumbers, setPageNumbers] = useState<number[]>([]), [approved, setApproved] = useState(false);
   const [selectedId, setSelectedId] = useState(""), [document, setDocument] = useState<Document>([]), [dirty, setDirty] = useState(false), [reviewed, setReviewed] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const receivedFile = useRef<File | null>(null);
+  useEffect(()=>{ if(!loading && initialFile && receivedFile.current!==initialFile){receivedFile.current=initialFile;void upload(initialFile);} },[initialFile,loading]);
   const key = useRef<string | null>(null), uploadKey = useRef<string | null>(null), heading = useRef<HTMLHeadingElement>(null);
   const current = adaptations.find(a => a.id === selectedId), source = sources.find(s=>s.id===sourceId);
   const pending = current && ["queued","generating","rendering"].includes(current.status);
   const ai = supports.some(s=>["literal-language","short-sections","glossary","image-description"].includes(s));
-  useTeacherDraftGuard(dirty);
+  useTeacherDraftGuard(dirty||activityDirty);
+  useEffect(()=>{onUnsavedChange?.(dirty||activityDirty);},[dirty,activityDirty,onUnsavedChange]);
   function change() { key.current = null; setReviewed(false); setError(""); setMessage(""); }
   useEffect(()=>{ heading.current?.focus(); },[step]);
   useEffect(()=>()=>{ if(previewUrl) URL.revokeObjectURL(previewUrl); },[previewUrl]);
@@ -65,7 +70,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       const bytes=new Uint8Array(await file.arrayBuffer()); if(new TextDecoder().decode(bytes.slice(0,5))!=="%PDF-")throw new Error("Esse arquivo não é um PDF válido.");
       let binary="";for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
       const result=await api("uploadMaterialSource",{params:{id:missionId},body:{versionId,title:file.name.slice(0,150),base64:btoa(binary),requestKey:uploadKey.current!}});
-      setSources(old=>[...old.filter(s=>s.id!==result.id),result]);setSourceId(result.id);setPageNumbers([]);change();setMessage("Arquivo recebido. Aguarde a verificação e extração das páginas.");
+      setSources(old=>[...old.filter(s=>s.id!==result.id),result]);setSourceId(result.id);onFileReceived?.();setPageNumbers([]);change();setMessage("Arquivo recebido. Aguarde a verificação e extração das páginas.");
     });
   }
   async function prepare() {
@@ -73,7 +78,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       if(!studentId || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha o aluno, o PDF, as páginas e pelo menos um apoio.");
       if(ai&&!approved)throw new Error("Confirme que as páginas selecionadas podem ser enviadas ao Gemini.");
       const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,studentId,pages:pageNumbers,settings:{supports,fontSize,color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
-      update(a);setStep(a.status==="ready"||a.status==="released"?3:2);
+      setActivityOnly(false);update(a);setStep(a.status==="ready"||a.status==="released"?3:2);
     });
   }
   async function saveAndRender() {
@@ -95,7 +100,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   if(loading)return <p role="status">Carregando alunos e materiais…</p>;
   return <section className="individual-materials form-stack" aria-label="Adaptar material para um aluno">
     <div><p className="eyebrow">Estratégias · Material individual</p><h2 ref={heading} tabIndex={-1}>Prepare o material para este aluno</h2><p>Escolha os apoios, acrescente o PDF e revise o resultado. Só o aluno escolhido recebe a versão liberada.</p></div>
-    <TeacherSteps labels={["Aluno e perfil","Material","Revisão","Disponibilizar"]} current={step} onBack={n=>{setStep(n);setReviewed(false);}} disabled={busy||!!pending}/>
+    <TeacherSteps labels={["Aluno e perfil","Material","Revisão","Disponibilizar"]} current={step} onBack={n=>{if((dirty||activityDirty)&&!window.confirm("Descartar os ajustes da atividade ainda não salvos?"))return;setActivityDirty(false);setDirty(false);if(current)setDocument(current.document);setStep(n);setReviewed(false);}} disabled={busy||!!pending}/>
     <OperationStatus message={error||message} error={!!error}/>
     {error && <button className="text-button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo novamente</button>}
     {archived ? <p className="notice">Missão arquivada: os materiais podem ser consultados.</p> : <fieldset className="strategy-fields" disabled={busy||!!pending}>
@@ -112,6 +117,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         <p className="small">Confirme as preferências com o aluno. Os objetivos e critérios da missão são preservados.</p>
       </aside><div className="material-flow-actions"><button className="button" type="button" disabled={!studentId||!supports.length} onClick={()=>{change();setStep(1);}}>Continuar para o material →</button></div></div>}
       {step===1 && <section className="paper form-stack"><h3>Acrescente o material de {student?.name}</h3><p>Envie um PDF de até 10 MB e 20 páginas, sem senha, links ativos ou formulários. O original fica privado para os professores desta turma.</p>
+        {initialFile && <p className="notice">PDF escolhido na missão: {initialFile.name}. {error&&<button type="button" className="text-button" onClick={()=>void upload(initialFile)}>Tentar enviar este PDF novamente</button>}</p>}
         <label htmlFor="material-upload">Adicionar arquivo PDF</label><input id="material-upload" type="file" accept="application/pdf,.pdf" onChange={e=>{void upload(e.target.files?.[0]);e.target.value="";}}/>
         <label htmlFor="material-source">Arquivo para adaptar</label><select id="material-source" value={sourceId} onChange={e=>{setSourceId(e.target.value);setPageNumbers([]);change();}}><option value="">Escolha um PDF</option>{sources.map(s=><option value={s.id} key={s.id}>{s.title} · {labels[s.status]}</option>)}</select>
         {source && <><p role="status">{labels[source.status]} · {source.pageCount} páginas</p>{source.warnings.map(w=><p className="small" key={w}>{w}</p>)}{source.status==="ready" && <>
@@ -122,18 +128,22 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <p className="small">O documento é uma fonte de consulta, não uma instrução para a IA. Fórmulas, tabelas e descrições precisam da sua revisão.</p>
           <button type="button" className="button" disabled={!pageNumbers.length||ai&&!approved||source.pages.filter(p=>pageNumbers.includes(p.page)).reduce((n,p)=>n+p.text.length,0)>12000} onClick={()=>void prepare()}>Preparar rascunho para revisão →</button>
         </>}{!["queued","extracting"].includes(source.status)&&<button className="text-button" type="button" onClick={()=>{if(window.confirm("Remover este PDF e retirar todas as adaptações dele dos alunos?"))void operation(async()=>{await api("deleteMaterialSource",{params:{id:missionId,sourceId:source.id}});setSources(old=>old.filter(s=>s.id!==source.id));setAdaptations(old=>old.filter(a=>a.sourceId!==source.id));setSourceId("");});}}>Remover arquivo e suas adaptações</button>}</>}
+        <button type="button" className="button button-outline" disabled={!student||!version} onClick={()=>{setActivityOnly(true);setActivitySaved(false);setStep(2);}}>Ajustar somente a atividade e as formas de entrega →</button>
       </section>}
-      {step===2 && current && <section className="form-stack"><h3>Revise o conteúdo antes de gerar os arquivos</h3><p>Destinatário: <strong>{student?.name}</strong>. Confira todas as páginas, números, fórmulas e descrições. Não reduza o objetivo avaliado.</p>
+      {step===2 && activityOnly && version && student && <section className="form-stack"><h3>Prepare a atividade para {student.name}</h3><p>Este caminho não precisa de PDF. As instruções e as formas de resposta ficam nesta mesma versão da missão.</p><StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} defaultOpen onDirty={setActivityDirty} onSaved={()=>setActivitySaved(true)}/><button type="button" className="button" disabled={!activitySaved||activityDirty} onClick={()=>setStep(3)}>Concluir ajustes deste aluno →</button></section>}
+      {step===3 && activityOnly && student && <section className="paper"><h3>Ajustes preparados para {student.name}</h3><p>Os ajustes revisados ficam disponíveis quando esta versão da missão for publicada.</p><button type="button" className="button button-outline" onClick={()=>{setStep(0);setActivityOnly(false);}}>Preparar apoios para outro aluno</button></section>}
+      {step===2 && !activityOnly && current && <section className="form-stack"><h3>Revise o conteúdo antes de gerar os arquivos</h3><p>Destinatário: <strong>{student?.name}</strong>. Confira todas as páginas, números, fórmulas e descrições. Não reduza o objetivo avaliado.</p>
         {current.error&&<p role="alert">{current.error}</p>}
         {!!document.length && <div className="material-review-grid"><section className="paper"><h4>Texto do original</h4><a className="text-link" href={materialAssetUrl(missionId,current.sourceId,"original")} download>Baixar PDF original</a>{source?.pages.filter(p=>current.pages.includes(p.page)).map(p=><section key={p.page}><h5>Página {p.page}</h5><p className="submission-content">{p.text}</p></section>)}</section>
           <section className="paper form-stack"><h4>Versão adaptada · editável</h4>{document.map((p,i)=><section className="form-stack" key={p.page}><h5>Página {p.page}</h5><label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} maxLength={200} value={p.title} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/>
             <label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} rows={12} maxLength={12000} value={p.text} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/>
             <label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} rows={5} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/><p className="small">Descreva relações e dados relevantes. Se não houver informação visual relevante, indique isso. Não invente detalhes ilegíveis.</p>
           </section>)}</section></div>}
-        {!!document.length&&<button className="button" type="button" onClick={()=>void saveAndRender()}>Salvar revisão e gerar PDF{current.settings.supports.includes("narration")?" e áudio":""} →</button>}
+        {version && student && <StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} disabled={archived||!!pending||busy} onDirty={setActivityDirty}/>}
+        {!!document.length&&<button className="button" type="button" disabled={activityDirty} onClick={()=>void saveAndRender()}>Salvar revisão e gerar PDF{current.settings.supports.includes("narration")?" e áudio":""} →</button>}
         {current.status==="failed"&&<button className="button button-outline" type="button" onClick={()=>{setSelectedId("");key.current=null;setStep(1);}}>Voltar ao material e conferir</button>}
       </section>}
-      {step===3 && current && <section className="paper form-stack"><h3>{current.status==="released"?"Material liberado":"Confira os arquivos e disponibilize"}</h3><p>Somente <strong>{student?.name}</strong> receberá este material nesta versão da missão, depois de publicada.</p>
+      {step===3 && !activityOnly && current && <section className="paper form-stack"><h3>{current.status==="released"?"Material liberado":"Confira os arquivos e disponibilize"}</h3><p>Somente <strong>{student?.name}</strong> receberá este material nesta versão da missão, depois de publicada.</p>
         <div className="actions"><button className="button button-outline" type="button" onClick={()=>void preview()}>Abrir prévia do PDF</button><a className="text-link" href={materialAssetUrl(missionId,current.id,"pdf")} download>Baixar PDF adaptado</a></div>
         {previewUrl&&<object className="material-pdf-preview" data={previewUrl} type="application/pdf" aria-label="Prévia do PDF adaptado"><p>Seu navegador não mostra PDFs aqui. Use o link para baixar e conferir.</p></object>}
         {current.hasAudio&&<div className="form-stack"><label htmlFor="material-audio-preview">Ouça a narração e confira a pronúncia</label><audio id="material-audio-preview" controls preload="none" src={materialAssetUrl(missionId,current.id,"audio")}/><a className="text-link" href={materialAssetUrl(missionId,current.id,"audio")} download>Baixar áudio</a></div>}

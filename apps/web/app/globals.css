@@ -1422,3 +1422,13 @@ body {
 .individual-materials audio, .mission-supports audio { width: min(100%, 32rem); }
 .legacy-strategies > summary { font-weight: 700; padding-block: .5rem; }
 @media (max-width: 850px) { .material-workflow-grid, .material-review-grid { grid-template-columns: minmax(0, 1fr); } .material-flow-actions { justify-content: stretch; } .material-flow-actions .button { width: 100%; } .material-pdf-preview { min-height: 22rem; } }
+
+.teacher-guide-grid.teacher-support-stage { grid-template-columns: minmax(0, 1fr); }
+.teacher-support-stage > .teacher-guidance { display: none; }
+.mission-file-entry { background: #EAF2FC; border: 1px solid #D6E1ED; border-radius: 1rem; padding: 1.25rem; margin-block: 1rem; }
+.mission-support-editor { min-width: 0; }
+.mission-support-editor .individual-materials { margin-top: 0; }
+.activity-with-material { margin-block: 1rem; }
+.activity-with-material > summary { font-weight: 700; padding: .5rem 0; }
+.activity-with-material[open] > summary { margin-bottom: 1rem; }
+.activity-with-material fieldset { min-width: 0; }
