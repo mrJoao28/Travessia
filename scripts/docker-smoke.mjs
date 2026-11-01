@@ -19,10 +19,10 @@ function compose(...args) {
   return execFileSync('docker', ['compose', '--env-file', '.env.docker', ...args], { cwd: root, encoding: 'utf8', env: { ...process.env, ...env } });
 }
 let cookie = '';
-async function request(path, { method = 'GET', body, status = 200, origin = base.origin, authenticated = true } = {}) {
+async function request(path, { method = 'GET', body, status = 200, origin = base.origin, authenticated = true, sessionCookie } = {}) {
   const response = await fetch(new URL(path, base), {
     method, redirect: 'error', signal: AbortSignal.timeout(15000),
-    headers: { Origin: origin, ...(authenticated && cookie ? { Cookie: cookie } : {}),
+    headers: { Origin: origin, ...(authenticated && (sessionCookie || cookie) ? { Cookie: sessionCookie ?? cookie } : {}),
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
@@ -104,7 +104,7 @@ try {
     check(profile.student.registration === 'docker-profile-test' && profile.teacher.teachings.length === 2, 'Perfis acadêmicos não foram salvos.');
   }
   const members = (await request('/api/v1/classrooms/demo-class-oficina/members')).json.items;
-  check(members.filter(m => m.role === 'student').length === 8, 'Contexto docente indisponível.');
+  check(members.filter(m => m.role === 'student').length === (verifyPersistence ? 9 : 8), 'Contexto docente indisponível.');
   const teacherMission = (await request('/api/v1/missions/demo-class-oficina-mission')).json;
   const teacherVersion = teacherMission.publishedVersion;
   const strategyPath = `/api/v1/missions/${teacherMission.id}/strategy-plans`;
