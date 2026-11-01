@@ -39,6 +39,8 @@ jobs:
         run: node scripts/docker-compose.mjs run --rm --no-deps --entrypoint /opt/material-venv/bin/python material-worker apps/api/material-tools/test_process.py
       - name: Testar os quatro containers reais
         run: npm run docker:smoke
+      - name: Conferir marcação, idioma, paginação e áudio dos artefatos reais
+        run: node scripts/docker-compose.mjs run --rm --no-deps --entrypoint /opt/material-venv/bin/python material-worker apps/api/material-tools/verify_smoke_artifacts.py
       - name: Recriar containers preservando o volume
         run: |
           npm run docker:down

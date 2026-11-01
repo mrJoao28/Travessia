@@ -44,8 +44,8 @@ export function documentHtml(document: z.infer<typeof materialDocument>, setting
     h1{font-size:1.3em;margin:0 0 .6em}h2{font-size:1.15em;margin:1em 0 .5em;break-after:avoid}h3{font-size:1em;break-after:avoid}
     p{white-space:pre-wrap;margin:.65em 0}.document-note,.source-note{font-size:.85em}
     figure{break-inside:avoid;margin:1em 0}img{display:block;max-width:100%;max-height:125mm;object-fit:contain;height:auto;width:auto}
-    figcaption{font-size:.85em;margin-top:.5em}footer{font-size:12pt;margin-top:1em}
-    </style></head><body><h1>Material adaptado</h1><p class="document-note">Material preparado a partir das páginas indicadas. Consulte os objetivos e critérios na missão.</p>${sections}<footer>Leitura em HTML e transcrição também disponíveis no Travessia.</footer></body></html>`;
+    figcaption{font-size:.85em;margin-top:.5em}
+    </style></head><body><h1>Material adaptado</h1><p class="document-note">Material preparado a partir das páginas indicadas. Consulte os objetivos e critérios na missão.</p>${sections}</body></html>`;
 }
 export async function renderPdf(path: string, html: string) {
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', headless: true, args: ['--disable-dev-shm-usage', '--no-sandbox'], env: { PATH: process.env.PATH ?? '/usr/bin:/bin', LANG: 'C.UTF-8' } });
