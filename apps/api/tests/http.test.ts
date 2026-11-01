@@ -640,6 +640,14 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
  await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:false}});await file(a,404);
  await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:true}});
  await request(`${path}/material-adaptations/${original.id}`,main,'DELETE');await file(a,404);
+ const renewed=(await request(`${path}/original-materials`,main,'POST',{...input,requestKey:randomUUID()})).json;
+ await db.materialSource.update({where:{id:source.id},data:{expiresAt:new Date(0)}});
+ const expired=await fetch(`${base}${path}/material-assets/${renewed.id}/pdf`,{headers:{cookie:a}});assert.equal(expired.status,404);
+ await db.materialSource.update({where:{id:source.id},data:{expiresAt:new Date(Date.now()+86400000)}});
+ const next=(await request(path,main,'PATCH',{...fixture,title:'Nova versão sem herdar arquivos',expectedDraftVersionId:null})).json;
+ await request(`${path}/publish`,main,'POST',{versionId:next.draftVersion.id,reviewed:true});
+ const previous=await fetch(`${base}${path}/material-assets/${renewed.id}/pdf`,{headers:{cookie:a}});assert.equal(previous.status,404);
+ assert.equal((await request(`${path}/my-materials?versionId=${next.draftVersion.id}`,a)).json.items.length,0);
  assert.equal(providerCalls,before,'Disponibilizar original não chama IA');
  assert.equal(await db.materialAdaptation.count({where:{sourceId:source.id,status:{in:['queued','generating','rendering']}}}),0);
 });
