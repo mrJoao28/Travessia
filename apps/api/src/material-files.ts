@@ -3,7 +3,7 @@ import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 export const materialRoot = () => resolve(process.env.MATERIAL_STORAGE_DIR ?? '/tmp/travessia-materials');
 export function materialPath(id: string, file: string) {
-  if (!/^[a-f0-9-]{36}$/.test(id) || !/^(original\.pdf|page-\d+\.png|adapted-\d+\.pdf|audio-\d+\.mp3)$/.test(file)) throw new Error('Invalid internal asset path');
+  if (!/^[a-f0-9-]{36}$/.test(id) || !/^(original\.pdf|page-\d+\.png|preview-\d+\.png|adapted-\d+\.pdf|audio-\d+\.mp3)$/.test(file)) throw new Error('Invalid internal asset path');
   return join(materialRoot(), id, file);
 }
 export async function storeOriginal(id: string, bytes: Buffer) {
@@ -12,7 +12,10 @@ export async function storeOriginal(id: string, bytes: Buffer) {
   await writeFile(temporary, bytes, { mode: 0o600, flag: 'wx' }); await rename(temporary, materialPath(id, 'original.pdf'));
 }
 export async function removeMaterialFiles(id: string) { materialPath(id, 'original.pdf'); await rm(join(materialRoot(), id), { recursive: true, force: true }); }
-export async function visualPage(id: string, page: number) { return readFile(materialPath(id, `page-${page}.png`)); }
+export async function visualPage(id: string, page: number, cropped = false) {
+  if (cropped) { try { return await readFile(materialPath(id, `preview-${page}.png`)); } catch (error) { if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) throw error; } }
+  return readFile(materialPath(id, `page-${page}.png`));
+}
 export async function checkDiskBudget() {
   await mkdir(materialRoot(), { recursive: true, mode: 0o700 });
   let bytes = 0;

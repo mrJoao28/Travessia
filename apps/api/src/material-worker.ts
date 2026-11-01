@@ -31,7 +31,21 @@ export async function localProcess(mode: 'extract' | 'audio', path: string, inpu
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 export function documentHtml(document: z.infer<typeof materialDocument>, settings: z.infer<typeof materialSettings>, images: Record<number,string> = {}) {
   const colors = settings.color === 'dark' ? ['#fff','#173651'] : settings.color === 'high' ? ['#000','#fff'] : ['#173651','#fff'];
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Material adaptado</title><style>@page{size:A4;margin:18mm}body{font-family:Arial,sans-serif;font-size:${settings.supports.includes('large-print') ? settings.fontSize : '18'}pt;line-height:${settings.supports.includes('wide-spacing') ? '1.8' : '1.5'};color:${colors[0]};background:${colors[1]};overflow-wrap:anywhere}section{break-before:page}section:first-of-type{break-before:auto}h1{font-size:1.4em}h2{font-size:1.15em;break-after:avoid}p{white-space:pre-wrap}footer{font-size:12pt}</style></head><body><h1>Material adaptado</h1><p>Versão preparada e revisada pelo professor. Consulte também o material original e os objetivos da missão.</p>${document.map(p=>`<section><h2>${escapeHtml(p.title)}</h2><p>Referência: página ${p.page} do original</p><p>${escapeHtml(p.text)}</p>${images[p.page] ? `<figure><img style="max-width:100%;height:auto" alt="${escapeHtml(p.description || 'Página original: conferir informação visual com o texto e o professor.')}" src="data:image/png;base64,${images[p.page]}"><figcaption>Referência visual da página ${p.page}. Use zoom para ampliar.</figcaption></figure>` : ''}${p.description ? `<h3>Descrição das informações visuais</h3><p>${escapeHtml(p.description)}</p>` : ''}</section>`).join('')}<footer>Leitura em HTML e transcrição também disponíveis no Travessia.</footer></body></html>`;
+  const sections = document.map(p => `<section>
+    <h2>${escapeHtml(p.title)}</h2><p class="source-note">Referência: página ${p.page} do original</p>
+    <p>${escapeHtml(p.text)}</p>
+    ${p.description ? `<h3>Descrição das informações visuais</h3><p>${escapeHtml(p.description)}</p>` : ''}
+    ${images[p.page] ? `<figure><img alt="${escapeHtml(p.description || 'Referência visual da página original; confira o texto e as orientações do professor.')}" src="data:image/png;base64,${images[p.page]}"><figcaption>Referência visual da página ${p.page}. Use zoom para ampliar.</figcaption></figure>` : ''}
+  </section>`).join('');
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Material adaptado</title><style>
+    @page{size:A4;margin:18mm}
+    body{font-family:Arial,sans-serif;font-size:${settings.supports.includes('large-print') ? settings.fontSize : '18'}pt;line-height:${settings.supports.includes('wide-spacing') ? '1.8' : '1.5'};color:${colors[0]};background:${colors[1]};overflow-wrap:anywhere}
+    section{break-before:page}section:first-of-type{break-before:auto}
+    h1{font-size:1.3em;margin:0 0 .6em}h2{font-size:1.15em;margin:1em 0 .5em;break-after:avoid}h3{font-size:1em;break-after:avoid}
+    p{white-space:pre-wrap;margin:.65em 0}.document-note,.source-note{font-size:.85em}
+    figure{break-inside:avoid;margin:1em 0}img{display:block;max-width:100%;max-height:125mm;object-fit:contain;height:auto;width:auto}
+    figcaption{font-size:.85em;margin-top:.5em}footer{font-size:12pt;margin-top:1em}
+    </style></head><body><h1>Material adaptado</h1><p class="document-note">Material preparado a partir das páginas indicadas. Consulte os objetivos e critérios na missão.</p>${sections}<footer>Leitura em HTML e transcrição também disponíveis no Travessia.</footer></body></html>`;
 }
 export async function renderPdf(path: string, html: string) {
   const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', headless: true, args: ['--disable-dev-shm-usage', '--no-sandbox'], env: { PATH: process.env.PATH ?? '/usr/bin:/bin', LANG: 'C.UTF-8' } });
@@ -113,7 +127,7 @@ export class MaterialWorker {
     await mkdir(join(materialRoot(), a.id), { recursive: true, mode: 0o700 });
     const source = await this.db.materialSource.findUniqueOrThrow({ where: { id: a.sourceId } });
     const images: Record<number,string> = {};
-    for (const p of extractedPages.parse(source.pages)) if (p.hasVisual && document.some(d=>d.page===p.page)) images[p.page] = (await visualPage(source.id,p.page)).toString('base64');
+    for (const p of extractedPages.parse(source.pages)) if (p.hasVisual && document.some(d=>d.page===p.page)) images[p.page] = (await visualPage(source.id,p.page,true)).toString('base64');
     await this.pdf(materialPath(a.id, `adapted-${a.revision}.pdf`), documentHtml(document, settings, images));
     const audio = settings.supports.includes('narration');
     if (audio) await this.local('audio', materialPath(a.id, `audio-${a.revision}.mp3`), document.map(p=>`${p.title}. Página ${p.page} do original.\n${p.text}\n${p.description ? 'Descrição das informações visuais. '+p.description : ''}`).join('\n\n'));
