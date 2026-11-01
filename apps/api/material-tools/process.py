@@ -41,7 +41,7 @@ try:
                 # Remove only uniform outer margins for PDF reference images; keep full page for Gemini/OCR.
                 with Image.open(image).convert('RGB') as rendered:
                     background = Image.new('RGB', rendered.size, rendered.getpixel((0, 0)))
-                    bbox = ImageChops.difference(rendered, background).convert('L').point(lambda v: 255 if v > 12 else 0).getbbox()
+                    bbox = ImageChops.difference(rendered, background).convert('L').point(lambda v: 255 if v > 0 else 0).getbbox()
                     if bbox:
                         x0,y0,x1,y1=bbox
                         bbox=(max(0,x0-15),max(0,y0-15),min(rendered.width,x1+15),min(rendered.height,y1+15))

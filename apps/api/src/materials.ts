@@ -27,7 +27,7 @@ export class MaterialService {
         if (member.role !== 'student') return missing();
         const { versionId } = query as { versionId: string };
         if (row.publishedVersionId !== versionId) return missing();
-        const rows = await tx.materialAdaptation.findMany({ where: { versionId, studentId: userId, status: 'released', expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 40 });
+        const rows = await tx.materialAdaptation.findMany({ where: { versionId, studentId: userId, status: 'released', expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
         return { items: rows.map(a => ({ id: a.id, title: a.source.title, document: materialDocument.parse(a.document), hasAudio: a.hasAudio })) };
       }
       if (['materialSources', 'materialAdaptations'].includes(op)) {

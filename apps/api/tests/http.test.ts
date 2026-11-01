@@ -606,6 +606,8 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   assert.equal((await db.materialAdaptation.findUniqueOrThrow({where:{id:next.id}})).status,'failed');
   await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:true}});
   config.aiEnabled=false;
+  await db.materialAdaptation.createMany({data:Array.from({length:41},()=>({versionId,sourceId:source.id,studentId:'demo-student-1',creatorId:mainId,requestKey:randomUUID(),requestHash:randomUUID(),settings,pages:[1],document:malicious,status:'released',expiresAt:new Date(Date.now()+86400000)}))});
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,41,'Nenhum material liberado deve sumir além do quadragésimo item');
   await request(`${path}/material-sources/${source.id}`,main,'DELETE');await file('pdf',a,404);await worker.collect();
   assert.equal(await db.materialSource.count({where:{id:source.id}}),0);
 });
