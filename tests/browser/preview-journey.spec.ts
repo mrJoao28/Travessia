@@ -136,6 +136,9 @@ test('convites, entrada na turma e estratégias individuais/da turma completam o
  await page.getByLabel('Código de convite fictício').fill('TRAVESSIA-4-EXEMPLO');
  await page.getByRole('button',{name:'Entrar na turma',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Laboratório de projetos · exemplo',exact:true})).toBeVisible();
+ const joined=page.locator('section.paper').filter({has:page.getByRole('heading',{name:'Laboratório de projetos · exemplo',exact:true})});
+ await expect(joined.getByText('Ainda não há missões publicadas nesta turma de exemplo.',{exact:true})).toBeVisible();
+ await expect(joined.getByRole('link',{name:'Ver missões',exact:true})).toHaveCount(0);
  await page.goto('/previa/professor/missoes/campus/adaptacoes');
  await page.getByText('Outros apoios da missão',{exact:true}).click();
  await expect(page.getByLabel('Tipo de apoio').locator('option')).toHaveCount(8);
