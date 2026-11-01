@@ -27,12 +27,13 @@ export function Workspace({
         [`${base}/aluno/turmas`, "Minhas turmas", "users"],
         [`${base}/aluno/entregas`, "Entregas", "document"],
         [`${base}/aluno/feedback`, "Feedback", "message"],
-        ["/aluno/apoios", "Meus apoios", "message"],
+        [`${base}/aluno/apoios`, "Meus apoios", "message"],
       ]
     : [
         [`${base}/professor`, "Minhas turmas", "users"],
         [`${base}/professor/missoes`, "Missões", "book"],
         [`${base}/professor/entregas`, "Entregas", "document"],
+        ...(preview ? [[`${base}/professor/barreiras`, "Apoios e barreiras", "message"] as [string,string,IconName]] : []),
       ];
   return (
     <>

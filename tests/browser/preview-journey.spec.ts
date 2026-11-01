@@ -73,7 +73,9 @@ test('publicação conserva a versão anterior enquanto o professor prepara um r
 });
 
 test('pedidos são opcionais, perfil não compartilhado não gera recomendações por diagnóstico e relatos respeitam a escolha',async({page})=>{
- await page.goto('/previa/aluno/apoios');
+ await page.goto('/previa/aluno');
+ await page.getByRole('link',{name:'Meus apoios',exact:true}).click();
+ await expect(page).toHaveURL(/\/previa\/aluno\/apoios$/);
  await page.getByLabel('Compartilhar meus pedidos de apoio com a professora').uncheck();
  await page.getByRole('button',{name:'Salvar no cenário'}).click();
  await page.goto('/previa/professor/missoes/campus/adaptacoes');
@@ -113,6 +115,8 @@ test('materiais e aluno têm prévia visual, áudio válido e reflow acessível'
  for(const route of ['/previa/professor/missoes/campus/adaptacoes','/previa/aluno/missoes/campus']){
   await page.setViewportSize({width:1440,height:1000});await page.goto(route);await expect(page.getByRole('heading',{level:1})).toBeVisible();
   await expect(page.locator('audio').first()).toHaveAttribute('src',/campus-narracao.mp3/);
+  const duration=await page.locator('audio').first().evaluate((audio:HTMLAudioElement)=>new Promise<number>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Áudio fictício não carregou')),10000);audio.addEventListener('loadedmetadata',()=>{clearTimeout(timer);resolve(audio.duration);},{once:true});audio.addEventListener('error',()=>{clearTimeout(timer);reject(new Error('Áudio fictício inválido'));},{once:true});audio.load();}));
+  expect(duration).toBeGreaterThan(1);
   if(route.includes('professor')){await expect(page.locator('.comparison-source-page')).toBeVisible();await expect.poll(()=>page.locator('.comparison-source-page').evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBeGreaterThan(0);}
   const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();expect(results.violations).toEqual([]);
   await page.screenshot({path:`test-results/reference-preview-${route.includes('professor')?'teacher':'student'}-desktop.png`,fullPage:true});
