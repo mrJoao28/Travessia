@@ -13,6 +13,7 @@ async function fixture(page: Page, failActivity = false, disabilities: string[] 
   await page.route('**/api/v1/**',async route=>{
     const path=new URL(route.request().url()).pathname.slice('/api/v1'.length), method=route.request().method();
     const respond=(json:unknown)=>route.fulfill({json});
+    if(path.endsWith('/material-assets/source-material/page-1'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="840"><rect width="600" height="840" fill="white"/><text x="50" y="90" fill="#173651" font-size="28">Compare as rotas</text><text x="50" y="145" font-size="18">Compare duas rotas de 10 metros.</text></svg>'});
     if(path==='/me')return respond({id:'teacher-material',name:'Professora fictícia',email:'teacher@example.invalid',demo:true,course:null,preferences:{}});
     if(path==='/classrooms')return respond({items:[{id:'c-material',name:'Turma fictícia',role:'teacher'}],nextCursor:null});
     if(path==='/classrooms/c-material/missions')return respond({items:[{id:version.missionId,classroomId:'c-material',status:'published',publishedVersion:version,draftVersion:null}],nextCursor:null});
@@ -21,7 +22,7 @@ async function fixture(page: Page, failActivity = false, disabilities: string[] 
     if(path.endsWith('/strategy-recipients'))return respond({items:[{id:'student-a',name:'Marina fictícia'},{id:'student-b',name:'Aluno B'}],nextCursor:null});
     if(path.endsWith('/adaptations')) { if(method==='POST'){activity=route.request().postDataJSON();return failActivity?route.fulfill({status:409,json:{code:'REVISION_CONFLICT'}}):respond({...activity,id:'activity-material',revision:1});}return respond({items:[]}); }
     if(path==='/strategies'||path.endsWith('/strategy-plans'))return respond({items:[]});
-    if(path.endsWith('/material-sources')){if(method==='POST'){sources=[source];return respond(source);}return respond({items:sources});}
+    if(path.endsWith('/material-sources')){if(method==='POST'){const file={...source,id:sources.length?'source-second':source.id,title:route.request().postDataJSON().title};sources=[...sources,file];return respond(file);}return respond({items:sources});}
     if(path.endsWith('/original-materials')){original=route.request().postDataJSON();plans=[{id:'original-material',mode:'original',versionId:version.id,sourceId:source.id,studentId:original!.studentId,settings:{supports:[],fontSize:'18',color:'default',useAi:false,approvedForProvider:false,deliveryMode:'original'},pages:[],document:[],status:'released',revision:1,error:null,hasAudio:false,inputTokens:0,outputTokens:0,expiresAt:source.expiresAt}];return respond(plans[0]);}
     if(path.endsWith('/material-adaptations')){
       if(method==='POST'){sent=route.request().postDataJSON();plans=[{id:'adaptation-material',versionId:version.id,sourceId:source.id,studentId:sent!.studentId,settings:sent!.settings,pages:[1],document:[{page:1,title:'Compare as rotas',text:'Compare as rotas de 10 metros.',description:'O diagrama compara duas rotas.'}],status:'draft',revision:1,error:null,hasAudio:false,inputTokens:120,outputTokens:60,expiresAt:source.expiresAt}];return respond(plans[0]);}return respond({items:plans});
@@ -59,6 +60,7 @@ test('sem deficiência informada: mantém original por padrão, permite apoio e 
  expect(captured()).toBeUndefined();expect(captured.original()?.studentId).toBe('student-a');expect(captured.original()?.reviewed).toBe(true);
 });
 test('TEA compartilhado: somente sugestões pertinentes, prévia automática e revisão sem enviar perfil à IA',async({page})=>{
+ await page.setViewportSize({width:1920,height:1080});
  const captured=await fixture(page,false,['autism'],[]);await addPdf(page);
  await expect(page.getByRole('checkbox',{name:/Explicação mais direta/})).toBeChecked();
  await expect(page.getByRole('checkbox',{name:/Passos curtos e numerados/})).toBeChecked();
@@ -67,6 +69,9 @@ test('TEA compartilhado: somente sugestões pertinentes, prévia automática e r
  await page.screenshot({path:'test-results/reference-material-tea.png',fullPage:true});
  await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toBeVisible();
+ await page.screenshot({path:'test-results/reference-comparison-teacher-desktop.png',fullPage:true});
  expect(captured()?.settings.supports).toEqual(['literal-language','short-sections']);
  expect(JSON.stringify(captured())).not.toMatch(/autism|Marina|low-vision/);
  await page.getByText('Ajustar o texto da prévia',{exact:true}).click();
@@ -113,4 +118,43 @@ test('falha ao salvar ajuste individual preserva enunciado e permite corrigir',a
  await expect(page.getByRole('main').getByRole('alert')).toContainText('O conteúdo mudou');await expect(field).toHaveValue('Texto que precisa ser preservado.');
  await field.fill('Texto preservado e corrigido.');await expect(page.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/})).not.toBeChecked();
  await expect(page.getByRole('button',{name:'Concluir ajustes deste aluno →',exact:true})).toBeDisabled();
+});
+
+
+test('comparação no celular alterna documentos, mantém leitura ampliável e invalida revisão ao editar',async({page})=>{
+ await fixture(page,false,['low-vision'],[]);await addPdf(page);
+ await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
+ await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
+ await page.getByText('Ajustar o texto da prévia',{exact:true}).click();
+ await page.getByLabel('Texto da página 1',{exact:true}).fill('Texto em edição ainda não disponibilizado.');
+ await expect(page.getByRole('checkbox',{name:/Conferi o material e o destinatário/})).not.toBeChecked();
+ await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toBeDisabled();
+ await expect(page.getByRole('link',{name:'Conferir PDF gerado',exact:true})).toHaveCount(0);
+ await page.getByRole('button',{name:'Atualizar prévia →',exact:true}).click();
+ await page.setViewportSize({width:320,height:900});
+ const toggles=page.getByRole('group',{name:'Documento exibido no celular',exact:true});
+ await toggles.getByRole('button',{name:'Original',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).not.toBeVisible();
+ await page.getByRole('button',{name:'Leitura preparada',exact:true}).click();
+ await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Aumentar ampliação da comparação',exact:true}).click();
+ await expect(page.getByText('125%',{exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:'test-results/reference-comparison-teacher-mobile.png',fullPage:true});
+ expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+});
+
+
+test('trocar o arquivo retira a prévia anterior e sua confirmação de revisão',async({page})=>{
+ await fixture(page,false,['low-vision'],[]);await addPdf(page);
+ await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
+ await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
+ await page.getByLabel('Adicionar arquivo PDF',{exact:true}).setInputFiles({name:'outro-material.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
+ await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toContainText('A versão preparada aparece aqui');
+ await expect(page.getByRole('button',{name:/outro-material.pdf/})).toBeVisible();
 });

@@ -58,3 +58,16 @@ As sugestões são editáveis e não representam necessidades universais de um d
 O caminho original entrega o arquivo completo verificado, sem IA nem uma nova cópia física. O endpoint `POST /v1/missions/{id}/original-materials` cria uma autorização individual com revisão explícita, expiração e versão. O aluno baixa pelo identificador dessa autorização; o endereço original da fonte continua exclusivo do professor. Não há migração. Remoção, expiração, vínculo revogado e troca da versão publicada retiram acesso. Arquivo adaptado continua limitado a quatro páginas/12 mil caracteres por preparação; o professor vê essa seleção antes de gerar.
 
 Cobertura adicionada: ausência de declaração, TEA, baixa visão, pedido sem diagnóstico, falha preservando texto, reflow/teclado/axe; API verifica original privado, quarentena, revisão, idempotência, A/B, versão e revogação. O fluxo Docker entrega PDF/voz adaptados a A e o original a B, seguido de entrega e feedback. A execução real do Gemini continua dependendo de chave autorizada; o cenário Docker usa processamento local.
+
+
+## Comparação do material e revisão individual
+
+A área de adaptações agora utiliza o espaço aprovado de comparação: arquivos privados à esquerda, original e leitura preparada no centro e preparação/revisão à direita. A criação de missão utiliza o mesmo componente. No celular, os documentos alternam por botões identificados; zoom e paginação não provocam rolagem horizontal da página inteira.
+
+O original é mostrado por imagens das páginas verificadas pelo worker, com texto extraído consultável. A prévia preparada utiliza HTML semântico, fonte, espaçamento e cores da configuração salva; o PDF final tem link próprio para conferir a diagramação e baixar. A prévia de leitura não pretende reproduzir a paginação do PDF exportado. Áudio, quando preparado, tem controles sem reprodução automática. Qualquer aluno pode receber apoio e os perfis continuam sendo informações compartilhadas opcionalmente.
+
+O acesso a `material-assets/{sourceId}/page-N` é exclusivo de docentes ativos da turma, com fonte verificada, página existente, prazo válido e versão atual. Os alunos continuam usando somente adaptações liberadas e destinadas a eles. Não há ampliação de acesso ao original nem nova migração/dependência.
+
+Trocar o PDF limpa a adaptação anteriormente selecionada; uma revisão antiga não acompanha outro arquivo. Alterar o texto ou ajustes da atividade invalida a confirmação de revisão. A leitura em edição não oferece um PDF antigo como se estivesse atualizado; é necessário gerar e conferir a nova prévia. Páginas salvas não são substituídas pela seleção padrão ao reabrir uma preparação.
+
+As ferramentas coletivas e a biblioteca anterior permanecem em uma única seção recolhida: “Outros apoios da missão”. O fluxo principal individual permanece concentrado nos três painéis, com apenas uma ação de preparação ou disponibilização em destaque.
