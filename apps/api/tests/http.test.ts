@@ -559,6 +559,7 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   assert.equal(source.status, 'queued'); assert.equal(source.pages.length, 0);
   assert.equal((await request(`${path}/material-sources`, main, 'POST', upload)).json.id, source.id);
   await request(`${path}/material-assets/${source.id}/original`, main, 'GET', undefined, 404);
+  await request(`${path}/material-assets/${source.id}/page-1`, main, 'GET', undefined, 404);
   const local = async (mode: 'extract' | 'audio', filename: string) => {
     if (mode === 'extract') { await writeFile(materialPath(source.id, 'page-1.png'), 'visual fixture'); return { pages: [{ page: 1, text: 'Dados: 10 metros. Compare alternativas.', hasVisual: true, ocr: false }], warnings: ['Conferir tabela.'] }; }
     await writeFile(filename, 'audio fixture'); return {};
@@ -568,6 +569,9 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   const worker = new MaterialWorker(db, config, async input => { calls++; sent=JSON.stringify(input); return { document: input.pages.map(p=>({ page:p.page,title:'Comparar dados',text:'Dados: 10 metros. Compare alternativas.',description:'Diagrama compara duas alternativas.' })), inputTokens: 123, outputTokens: 45 }; }, local, pdf);
   await worker.tick();
   const ready = (await request(`${path}/material-sources?versionId=${versionId}`, main)).json.items[0]; assert.equal(ready.status, 'ready');
+  const sourceImage=await fetch(`${base}${path}/material-assets/${source.id}/page-1`,{headers:{cookie:main}});assert.equal(sourceImage.status,200);assert.equal(sourceImage.headers.get('content-type'),'image/png');
+  for(const cookie of [a,b,otherTeacher])await request(`${path}/material-assets/${source.id}/page-1`,cookie,'GET',undefined,404);
+  await request(`${path}/material-assets/${source.id}/page-2`,main,'GET',undefined,404);
   const settings = { supports: ['large-print','narration'], fontSize:'22', color:'high', useAi:false, approvedForProvider:false };
   const input = { versionId, sourceId:source.id, studentId:'demo-student-1', pages:[1], settings, requestKey:randomUUID() };
   await request(`${path}/material-adaptations`, main, 'POST', { ...input, studentId:mainId }, 400);

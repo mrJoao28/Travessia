@@ -63,6 +63,7 @@ test('aluno escolhe apoios sem diagnóstico obrigatório e compartilha deficiên
 });
 test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro preserva adaptação', async ({ page }) => {
   const captured = await fixture(page, 'teacher'); await page.goto('/professor/adaptacoes');
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
   await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
   await page.getByRole('button', { name: 'Preparar adaptação com os apoios de Aluno A', exact: true }).click();
   await page.getByText('Pedir uma sugestão à IA (opcional)', { exact: true }).click();
@@ -99,6 +100,7 @@ test('apoios partem da missão e exigem destinatários e nova revisão após vol
   await fixture(page, 'teacher');
   await page.goto('/professor/missoes/m-inclusive/apoios');
   await expect(page.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
   await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
   await expect(page.getByLabel('Missão para adaptar', { exact: true })).toHaveCount(0);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');

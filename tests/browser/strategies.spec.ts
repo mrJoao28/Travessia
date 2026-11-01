@@ -35,6 +35,7 @@ async function fixture(page: Page, failSave = false) {
     return route.fulfill({ status: 404, json: {} });
   });
   await page.goto('/professor/estrategias');
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
   await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
   return () => submitted;

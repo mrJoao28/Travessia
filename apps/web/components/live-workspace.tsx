@@ -121,7 +121,8 @@ function WorkspaceView({
   );
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
-  const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : ({ adaptacoes: "Prepare os apoios da missão", estrategias: "Prepare os apoios da missão", apoios: "Prepare os apoios da missão", missoes: "Suas missões", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
+  const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : ({ adaptacoes: "Adaptar material", estrategias: "Adaptar material", apoios: "Adaptar material", missoes: "Suas missões", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
+  const materialWorkspace=role==="professor"&&["adaptacoes","estrategias","apoios"].includes(section);
   const guidedEditor = role === "professor" && ["editor", "nova"].includes(section);
   return (
     <Workspace
@@ -138,10 +139,10 @@ function WorkspaceView({
           : undefined
       }
     >
-      {!guidedEditor && <div className="page-heading">
+      {!guidedEditor && <div className={`page-heading${materialWorkspace?" material-page-heading":""}`}>
         <h1>{title}</h1>
         <p>
-          {section === "adaptacoes" ? "Escolha o aluno, prepare os materiais e ajuste sua atividade no mesmo lugar." : section === "estrategias" ? "Prepare apoios para uma etapa ou missão, com destinatários definidos por você." : role === "aluno"
+          {materialWorkspace ? "Prepare, compare e confira antes de disponibilizar ao aluno." : role === "aluno"
             ? "Retome sua missão de onde parou."
             : "Organize objetivos, etapas e devolutivas para sua turma."}
         </p>
