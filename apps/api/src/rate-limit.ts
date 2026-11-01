@@ -3,7 +3,7 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import { fail } from './errors.js';
 
 export const digest = (value: string) => createHash('sha256').update(value).digest('hex');
-export async function budget(db: PrismaClient, key: string, limit: number, seconds: number) {
+export async function budget(db: Pick<PrismaClient, '$queryRaw'>, key: string, limit: number, seconds: number) {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + seconds * 1000);
   const hashed = digest(key);

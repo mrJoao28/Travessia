@@ -255,7 +255,7 @@ export const apiRoutes = {
     "path": "/ai-generations/{id}"
   }
 } as const;
-export type ApiResponse<K extends keyof operations> = operations[K]['responses'][200]['content'] extends { 'application/json': infer T } ? T : string;
+export type ApiResponse<K extends keyof operations> = operations[K]['responses'][200]['content']['application/json' & keyof operations[K]['responses'][200]['content']];
 export type ApiBody<K extends keyof operations> = operations[K] extends { requestBody: { content: { 'application/json': infer T } } } ? T : never;
 type Params<K extends keyof operations> = operations[K]['parameters'] extends { path: infer T } ? T : {};
 type Query<K extends keyof operations> = operations[K]['parameters'] extends { query?: infer T } ? NonNullable<T> : never;
