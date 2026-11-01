@@ -3,11 +3,12 @@ import AxeBuilder from '@axe-core/playwright';
 import type { ApiBody, ApiResponse } from '../../apps/web/lib/api.generated';
 import { materialPdfFixture } from '../../scripts/material-fixture.mjs';
 
-async function fixture(page: Page) {
+async function fixture(page: Page, failActivity = false) {
   const version = { id:'v-material',missionId:'m-material',title:'Comparar rotas acessíveis',description:'Material fictício.',objectives:['Comparar rotas.'],criteria:['Justificar escolha.'],source:'manual',dueAt:null,createdAt:'2026-11-01T00:00:00.000Z',materials:[],steps:[{id:'s-material',position:1,title:'Comparar',instructions:'Compare duas rotas.',example:'Use distâncias.'}] };
   const source: ApiResponse<'uploadMaterialSource'> = { id:'source-material',versionId:version.id,title:'rotas.pdf',status:'ready',pageCount:1,pages:[{page:1,text:'Compare duas rotas de 10 metros.',hasVisual:true,ocr:false}],warnings:['Confira a informação visual.'],expiresAt:'2027-01-30T00:00:00.000Z' };
   let sources: ApiResponse<'materialSources'>['items']=[], plans: ApiResponse<'prepareMaterial'>[]=[];
   let sent: ApiBody<'prepareMaterial'> | undefined;
+  let activity: ApiBody<'createAdaptation'> | undefined;
   await page.route('**/api/v1/**',async route=>{
     const path=new URL(route.request().url()).pathname.slice('/api/v1'.length), method=route.request().method();
     const respond=(json:unknown)=>route.fulfill({json});
@@ -17,6 +18,7 @@ async function fixture(page: Page) {
     if(path.endsWith('/submissions'))return respond({items:[],nextCursor:null});
     if(path.endsWith('/learning-needs'))return respond({items:[{userId:'student-a',name:'Marina fictícia',supports:['short-steps'],preferredFormats:[],disabilities:['low-vision']}],nextCursor:null});
     if(path.endsWith('/strategy-recipients'))return respond({items:[{id:'student-a',name:'Marina fictícia'},{id:'student-b',name:'Aluno B'}],nextCursor:null});
+    if(path.endsWith('/adaptations')) { if(method==='POST'){activity=route.request().postDataJSON();return failActivity?route.fulfill({status:409,json:{code:'REVISION_CONFLICT'}}):respond({...activity,id:'activity-material',revision:1});}return respond({items:[]}); }
     if(path==='/strategies'||path.endsWith('/strategy-plans'))return respond({items:[]});
     if(path.endsWith('/material-sources')){if(method==='POST'){sources=[source];return respond(source);}return respond({items:sources});}
     if(path.endsWith('/material-adaptations')){
@@ -29,7 +31,7 @@ async function fixture(page: Page) {
   });
   await page.goto('/professor/estrategias');
   await expect(page.getByRole('heading',{name:'Prepare o material para este aluno',exact:true})).toBeVisible();
-  return ()=>sent;
+  return Object.assign(()=>sent,{activity:()=>activity});
 }
 
 test('professor prepara material individual, combina apoios, revisa e libera sem enviar perfil à IA',async({page})=>{
@@ -68,4 +70,30 @@ test('apoios individuais: teclado, perfis opcionais e reflow estreito',async({pa
   await page.screenshot({path:'test-results/reference-material-mobile.png',fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
   expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+});
+
+
+test('adaptação sem PDF mantém aluno e versão, salva formatos e exige revisão',async({page})=>{
+ const captured=await fixture(page);
+ await page.getByLabel('Aluno da turma',{exact:true}).selectOption('student-a');
+ await page.getByRole('button',{name:'Continuar para o material →',exact:true}).click();
+ await page.getByRole('button',{name:'Ajustar somente a atividade e as formas de entrega →',exact:true}).click();
+ await page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true}).fill('Compare uma rota por vez e explique sua escolha.');
+ await page.getByRole('checkbox',{name:'Áudio de até 30 segundos',exact:true}).check();
+ const save=page.getByRole('button',{name:'Salvar ajustes da atividade deste aluno',exact:true});await expect(save).toBeDisabled();
+ await page.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/}).check();await save.click();
+ await expect(page.getByRole('status').filter({hasText:'Atividade e formas de entrega salvas'})).toBeVisible();
+ expect(captured.activity()?.studentIds).toEqual(['student-a']);expect(captured.activity()?.versionId).toBe('v-material');expect(captured.activity()?.allowedFormats).toEqual(['text','audio']);
+ await page.getByRole('button',{name:'Concluir ajustes deste aluno →',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Ajustes preparados para Marina fictícia',exact:true})).toBeVisible();
+});
+
+test('falha ao salvar ajuste individual preserva enunciado e permite corrigir',async({page})=>{
+ await fixture(page,true);await page.getByLabel('Aluno da turma',{exact:true}).selectOption('student-a');
+ await page.getByRole('button',{name:'Continuar para o material →',exact:true}).click();await page.getByRole('button',{name:'Ajustar somente a atividade e as formas de entrega →',exact:true}).click();
+ const field=page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true});await field.fill('Texto que precisa ser preservado.');
+ await page.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/}).check();await page.getByRole('button',{name:'Salvar ajustes da atividade deste aluno',exact:true}).click();
+ await expect(page.getByRole('main').getByRole('alert')).toContainText('O conteúdo mudou');await expect(field).toHaveValue('Texto que precisa ser preservado.');
+ await field.fill('Texto preservado e corrigido.');await expect(page.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/})).not.toBeChecked();
+ await expect(page.getByRole('button',{name:'Concluir ajustes deste aluno →',exact:true})).toBeDisabled();
 });

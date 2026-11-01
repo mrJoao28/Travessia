@@ -162,8 +162,9 @@ export function LiveMission({
         )}
         <h3>Materiais</h3>
         {!version.materials.length && (
-          <p>Nenhum material adicional nesta missão.</p>
+          <p className="small">Os PDFs e áudios liberados para você aparecem neste espaço.</p>
         )}
+        {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
         {version.materials.map((material) => (
           <details className="example" key={material.id}>
             <summary>{material.title}</summary>
@@ -224,7 +225,6 @@ export function LiveMission({
               </button>
             </div>
             {role === "aluno" && <LearnerAdaptations missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
-            {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
             {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
               <label className="check">

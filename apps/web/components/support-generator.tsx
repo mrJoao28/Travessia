@@ -16,7 +16,7 @@ export function SupportGenerator({ missionId, version, stepId, selected, onApply
   return <section className="paper form-stack" aria-label="Assistência Gemini para apoios">
     <h3>Gerar rascunhos com Gemini</h3>
     <p>Gere checklist, exemplo comentado, glossário, instruções ou roteiro para as estratégias selecionadas. Revise e edite antes de salvar os apoios.</p>
-    <p className="small">Descrições de imagens e transcrições devem ser preparadas pelo professor. Esta geração recebe somente texto e não analisa imagens nem áudios.</p>
+    <p className="small">Esta assistência prepara somente apoios em texto. Para descrever imagens de um PDF e gerar áudio, use a preparação de material individual acima. Você revisa os resultados antes de liberar.</p>
     <fieldset disabled={busy} className="strategy-fields form-stack"><legend>Material didático para enviar ao Gemini (até 3)</legend>
       {version.materials.map(m => <label className="check" key={m.id}><input type="checkbox" checked={materialIds.includes(m.id)} onChange={e => {
         setApproved(false); setDraft(null); requestKey.current = null;

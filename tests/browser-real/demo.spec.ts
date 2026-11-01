@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import type { ApiResponse } from "../../apps/web/lib/api.generated";
 
 test.afterEach(async ({ page }, info) => {
   if (info.status !== info.expectedStatus)
@@ -329,7 +330,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   expect(createdMissionResponse.status()).toBe(200);
   const inclusiveMission = await createdMissionResponse.json();
   await page.getByRole('link', { name: 'Preparar apoios desta missão', exact: true }).click();
-  await page.getByRole('link', { name: 'Preparar adaptação', exact: true }).click();
+  await page.getByText('Ajustar instruções ou entregas para a turma inteira', {exact:true}).click();
   await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
   await page.getByRole('checkbox', { name: 'Estudante Fictício 1', exact: true }).check();
@@ -413,9 +414,16 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByLabel('Senha', { exact: true }).fill(process.env.DEMO_USER_PASSWORD!);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
-  const sharedNeeds = await (await page.request.get('/api/v1/classrooms/demo-class-oficina/learning-needs')).json();
+  // The comprehensive dev-browser scenario can reach the real per-user quota.
+  // Wait for an authorized successful read; never reset or bypass the limiter.
+  let sharedNeeds: ApiResponse<'sharedLearningNeeds'> = {items:[],nextCursor:null};
+  await expect(async()=>{
+    const response=await page.request.get('/api/v1/classrooms/demo-class-oficina/learning-needs');
+    expect(response.status()).toBe(200);
+    sharedNeeds=await response.json();
+  }).toPass({timeout:75000,intervals:[5000,10000,15000]});
   const learnerA = sharedNeeds.items.find((n: { userId: string }) => n.userId === 'demo-student-1');
-  expect(learnerA.supports).toContain('short-steps'); expect(learnerA.disabilities).toBeNull();
+  expect(learnerA).toMatchObject({supports:expect.arrayContaining(['short-steps']),disabilities:null});
   const submittedResponse = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/submissions`);
   expect(submittedResponse.status()).toBe(200);
   expect((await submittedResponse.json()).items).toEqual(expect.arrayContaining([expect.objectContaining({ userId: 'demo-student-1', status: 'submitted' })]));
