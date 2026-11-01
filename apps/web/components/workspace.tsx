@@ -27,7 +27,7 @@ export function Workspace({
         [`${base}/aluno/turmas`, "Minhas turmas", "users"],
         [`${base}/aluno/entregas`, "Entregas", "document"],
         [`${base}/aluno/feedback`, "Feedback", "message"],
-        ...(!preview ? [["/aluno/apoios", "Meus apoios", "message"] as [string, string, IconName]] : []),
+        ["/aluno/apoios", "Meus apoios", "message"],
       ]
     : [
         [`${base}/professor`, "Minhas turmas", "users"],

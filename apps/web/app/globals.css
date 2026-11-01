@@ -1570,3 +1570,32 @@ body {
 .material-controls-panel .activity-with-material > summary { font-size:.9rem; padding:0; }
 .material-controls-panel .activity-with-material[open] > p { margin-block:1rem; }
 @media(max-width:650px){.material-mission-workspace{grid-template-columns:minmax(0,1fr)}}
+
+/* Fictional interactive preview; production workspaces retain their own state. */
+.preview-scenario-toolbar { background: var(--paper, #fff); border: 1px solid #bfd3e9; border-left: 4px solid #075a9c; border-radius: 16px; padding: 1.1rem 1.3rem; margin-bottom: 1.8rem; }
+.preview-scenario-toolbar p { margin: .5rem 0; }
+.preview-persona { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; margin-top: .8rem; }
+.preview-persona select { flex: 1; max-width: 24rem; min-width: 0; }
+.preview-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
+.interactive-preview .card-list > li.form-stack { display: flex; align-items: stretch; flex-direction: column; }
+.interactive-preview .preview-editor { max-width: none; }
+.preview-editor > .editor-step { min-width: 0; padding: 1.1rem; border: 1px solid #cbdcf0; border-radius: 12px; }
+.preview-editor legend { font-weight: 700; padding: 0 .4rem; }
+.preview-local-form { max-width: 44rem; margin-top: 1.5rem; }
+.preview-material-item { border: 1px solid #cbdcf0; padding: 1rem; border-radius: 12px; }
+.preview-material-item[open] > summary { margin-bottom: 1rem; }
+.interactive-preview audio { width: 100%; max-width: 32rem; min-width: 0; }
+.interactive-preview .actions { flex-wrap: wrap; }
+.interactive-preview .paper, .interactive-preview fieldset, .interactive-preview input, .interactive-preview select, .interactive-preview textarea { min-width: 0; }
+.interactive-preview .material-controls-panel fieldset[disabled] { opacity: .85; }
+.interactive-preview .material-controls-panel .strategy-fields { margin: 0; }
+.interactive-preview .submission-content { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+ .preview-scenario-toolbar { padding: 1rem; }
+ .preview-persona { display: block; }
+ .preview-persona select { width: 100%; margin-top: .5rem; }
+ .interactive-preview .teacher-guide-footer { flex-wrap: wrap; gap: 1rem; }
+}
+@media (forced-colors: active) {
+ .preview-scenario-toolbar, .preview-material-item, .preview-editor > .editor-step { border-color: CanvasText; }
+}
