@@ -1406,3 +1406,19 @@ body {
   .welcome-shell .brand-lockup > svg { width: 56px; height: 44px; }
   .welcome-shell .brand-lockup strong { white-space: nowrap; }
 }
+
+/* Individual material preparation follows the existing Mais Acesso palette. */
+.individual-materials { margin-block: 1.5rem 2.5rem; }
+.material-workflow-grid, .material-review-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.material-workflow-grid > *, .material-review-grid > * { min-width: 0; }
+.material-suggestions { background: var(--color-primary-soft, #EAF2FC); }
+.material-support-choice { align-items: start; margin-block: .75rem; }
+.material-support-choice .small { display: block; margin-top: .25rem; }
+.material-profile-options { display: grid; gap: .65rem; margin-block: 1rem; }
+.material-flow-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+.material-pdf-preview { width: 100%; min-height: 35rem; border: 1px solid #50657A; border-radius: .75rem; }
+.prepared-page { margin-block: 1.5rem; max-width: 70ch; }
+.prepared-page p { overflow-wrap: anywhere; }
+.individual-materials audio, .mission-supports audio { width: min(100%, 32rem); }
+.legacy-strategies > summary { font-weight: 700; padding-block: .5rem; }
+@media (max-width: 850px) { .material-workflow-grid, .material-review-grid { grid-template-columns: minmax(0, 1fr); } .material-flow-actions { justify-content: stretch; } .material-flow-actions .button { width: 100%; } .material-pdf-preview { min-height: 22rem; } }

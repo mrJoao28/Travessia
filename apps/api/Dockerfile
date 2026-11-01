@@ -34,6 +34,21 @@ COPY --from=build --chown=node:node /app/apps/api/dist ./apps/api/dist
 COPY --chown=node:node apps/api/prisma ./apps/api/prisma
 COPY --chown=node:node apps/api/package.json ./apps/api/package.json
 COPY --chown=node:node package.json ./package.json
+RUN mkdir -p /data/materials && chown node:node /data/materials
 USER node
 EXPOSE 3001
 CMD ["node", "apps/api/dist/main.js"]
+
+
+# Heavy document/voice tools belong only to the worker image, not the API.
+FROM runtime AS material-worker
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv poppler-utils tesseract-ocr tesseract-ocr-por chromium ffmpeg fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+COPY apps/api/material-tools /app/apps/api/material-tools
+RUN python3 -m venv /opt/material-venv \
+    && /opt/material-venv/bin/pip install --no-cache-dir -r /app/apps/api/material-tools/requirements.txt \
+    && /opt/material-venv/bin/python /app/apps/api/material-tools/download-voice.py
+ENV MATERIAL_PYTHON=/opt/material-venv/bin/python PIPER_MODEL=/opt/voices/pt_BR-faber-medium.onnx CHROMIUM_PATH=/usr/bin/chromium
+USER node
+CMD ["node", "apps/api/dist/material-worker-cli.js"]

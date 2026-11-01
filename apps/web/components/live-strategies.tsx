@@ -5,6 +5,7 @@ import { api, pages, errorMessage, type ApiResponse } from "../lib/product-clien
 import type { MissionEntry } from "./live-workspace";
 import { AudioAttachment, SupportAudio, type AudioValue } from "./support-audio";
 import { SupportGenerator } from "./support-generator";
+import { IndividualMaterials } from "./individual-materials";
 import { OperationStatus } from "./operation-status";
 
 type Strategy = ApiResponse<"strategyCatalog">["items"][number];
@@ -38,7 +39,10 @@ function StrategyMission({ entry, initialVersionId }: { entry: MissionEntry; ini
       </select>
     </div>
     <p className="small">Os apoios pertencem à versão selecionada. Ao criar outra versão, revise e aplique os apoios novamente.</p>
+    <IndividualMaterials key={`materials-${versionId}`} missionId={entry.mission.id} versionId={versionId} classroomId={entry.classroom.id} archived={entry.mission.status === "archived"} />
+    <details className="paper legacy-strategies"><summary>Outros apoios: checklists, exemplos e orientações para a turma</summary>
     <StrategyForm key={versionId} entry={entry} version={version} />
+    </details>
   </>;
 }
 

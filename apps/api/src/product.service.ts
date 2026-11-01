@@ -1,3 +1,5 @@
+import { materialRoutes } from './material-contracts.js';
+import { MaterialService } from './materials.js';
 import { randomBytes } from 'node:crypto';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { missionInput, type Body, type MissionInput, type Operation, type Paging } from './contracts.js';
@@ -62,6 +64,7 @@ export class ProductService {
   constructor(readonly db: PrismaClient, readonly config: Config, provider?: DraftProvider) { this.ai = new AiService(db, config, provider); }
 
   async execute(op: Operation, userId: string, p: Record<string, string>, body: unknown, query: unknown): Promise<unknown> {
+    if (op in materialRoutes) return new MaterialService(this.db, this.config).execute(op, userId, p, body, query);
     const id = p.id;
     const paging = query as Paging;
     if (op === 'health') return { status: 'ok', service: 'travessia-api', stage: 'mvp' };

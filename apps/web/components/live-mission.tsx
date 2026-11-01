@@ -8,6 +8,7 @@ import { BarrierComposer } from "./live-barriers";
 import { LearnerAdaptations } from "./learner-adaptations";
 import { AudioAttachment } from "./support-audio";
 import { SubmissionMedia } from "./submission-media";
+import { LearnerMaterials } from "./learner-materials";
 import { MissionSupports } from "./mission-supports";
 
 export function LiveMission({
@@ -223,6 +224,7 @@ export function LiveMission({
               </button>
             </div>
             {role === "aluno" && <LearnerAdaptations missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
+            {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
             {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
               <label className="check">

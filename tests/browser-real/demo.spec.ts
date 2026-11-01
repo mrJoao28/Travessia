@@ -249,6 +249,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
   await page.goto('/professor/missoes/demo-class-oficina-mission/estrategias');
+  await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
   await page.getByLabel('Texto do apoio: Checklist do próximo passo', { exact: true }).fill('Apoio coletivo real: confira os requisitos antes de entregar.');
@@ -271,6 +272,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Salvar apoios', exact: true }).click();
   await expect(page.getByText('Apoios salvos e disponíveis aos destinatários selecionados.', { exact: true })).toBeVisible();
   await page.reload();
+  await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('region', { name: 'Aplicações salvas', exact: true }).getByText('Alunos selecionados: Estudante Fictício 1', { exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
   await page.screenshot({ path: 'test-results/reference-strategies-desktop.png', fullPage: true });
@@ -375,7 +377,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.goto('/aluno/apoios');
       await page.getByRole('checkbox', { name: 'Tarefa dividida em passos curtos', exact: true }).check();
       await page.getByText('Informar deficiência autodeclarada (opcional)', { exact: true }).click();
-      await page.getByRole('checkbox', { name: 'Visual', exact: true }).check();
+      await page.getByRole('checkbox', { name: 'Baixa visão', exact: true }).check();
       await page.getByRole('button', { name: 'Salvar minhas escolhas', exact: true }).click();
       await expect(page.getByText('Escolhas salvas. Revise e autorize novamente as turmas com quem deseja compartilhar.', { exact: true })).toBeVisible();
       await page.getByRole('checkbox', { name: 'Compartilhar apoios e preferências com docentes de Oficina de Projetos Inclusivos', exact: true }).check();

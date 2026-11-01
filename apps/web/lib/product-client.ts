@@ -26,7 +26,7 @@ export async function api<K extends keyof ApiOperations>(
 ): Promise<ApiResponse<K>> {
   const serialized =
     options.body === undefined ? undefined : JSON.stringify(options.body);
-  const maxBytes = ["createStrategyPlan", "updateStrategyPlan", "saveSubmission"].includes(operation) ? 2 * 1024 * 1024 : 64 * 1024;
+  const maxBytes = operation === "uploadMaterialSource" ? 14 * 1024 * 1024 : ["createStrategyPlan", "updateStrategyPlan", "saveSubmission"].includes(operation) ? 2 * 1024 * 1024 : 64 * 1024;
   if (serialized && new TextEncoder().encode(serialized).byteLength > maxBytes)
     throw new ApiError(
       413,

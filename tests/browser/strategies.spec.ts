@@ -20,6 +20,8 @@ async function fixture(page: Page, failSave = false) {
     if (path === '/classrooms') return respond({ items: [{ id: 'class-support', name: 'Turma fictícia', role: 'teacher' }], nextCursor: null });
     if (path === '/classrooms/class-support/missions') return respond({ items: [mission], nextCursor: null });
     if (path === '/missions/mission-support/submissions') return respond({ items: [], nextCursor: null });
+    if (path.endsWith('/material-sources') || path.endsWith('/material-adaptations')) return respond({ items: [] });
+    if (path.endsWith('/learning-needs')) return respond({ items: [], nextCursor: null });
     if (path === '/strategies') return respond({ items: catalog });
     if (path.endsWith('/strategy-recipients')) return respond({ items: [{ id: 'student-support', name: 'Estudante fictício' }], nextCursor: null });
     if (path.endsWith('/strategy-plans') && route.request().method() === 'GET') return respond({ items: [] });
@@ -33,6 +35,7 @@ async function fixture(page: Page, failSave = false) {
     return route.fulfill({ status: 404, json: {} });
   });
   await page.goto('/professor/estrategias');
+  await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
   return () => submitted;
 }
