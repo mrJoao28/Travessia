@@ -8,7 +8,7 @@ if len(files) != 1: raise AssertionError('Expected the single smoke fixture')
 reader=PdfReader(files[0])
 assert len(reader.pages)==4, 'Each selected page must be present without orphan pages'
 for index,page in enumerate(reader.pages,1):
-    assert f'Página {index}' in (page.extract_text() or ''), 'Page reference/order missing'
+    assert f'página {index} do original' in (page.extract_text() or '').casefold(), 'Page reference/order missing'
 assert 'End of page 4.' in (reader.pages[3].extract_text() or ''), 'Last page content missing'
 assert reader.trailer['/Root'].get('/StructTreeRoot') is not None, 'Missing PDF tags'
 text='\n'.join(p.extract_text() or '' for p in reader.pages)
