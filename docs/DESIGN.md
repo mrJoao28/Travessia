@@ -2,7 +2,7 @@
 
 ## Direção
 
-Identidade próxima ao Mais Acesso Conecta, conforme nova solicitação do usuário e assets do arquivo `public.zip`. Interface universitária clara, superfícies brancas, azul institucional, azul suave e amarelo pontual. Manter a marca Travessia e a organização por missões. Usar o logo original Mais Acesso Conecta como assinatura, sem recolorir ou redesenhar esse arquivo.
+Identidade próxima ao Mais Acesso Conecta, conforme nova solicitação do usuário e assets do arquivo `public.zip`. Interface universitária clara, superfícies brancas, azul institucional, azul suave e amarelo pontual. Manter a marca Travessia e a organização por missões. Preservar o logo original Mais Acesso Conecta; usar uma variante separada com azul clareado sobre superfícies escuras.
 
 ## Tokens
 
@@ -20,11 +20,30 @@ Identidade próxima ao Mais Acesso Conecta, conforme nova solicitação do usuá
 
 A fonte compartilhada continua em packages/design-tokens. Cores de texto e botões foram escurecidas em relação à arte para garantir contraste. Não usar amarelo claro como texto no branco. Modo de contraste ampliado tem tokens próprios. O script check:foundation verifica os oito pares de texto usados na base.
 
+## Modo escuro
+
+O tema escuro é opcional e fica no painel “Tema e contraste”, separado dos ajustes de texto e espaçamento. É independente da preferência “Mais contraste”. A escolha é persistida localmente no navegador; o tema não faz parte do contrato atual de preferências da conta. Os tokens são aplicados globalmente e também ajustam os controles nativos com `color-scheme: dark`. O alto contraste permanece disponível sobre os temas claro e escuro.
+
+| Token | Escuro | Alto contraste escuro |
+|---|---|---|
+| background | #111A24 | #000000 |
+| surface | #1B2A38 | #000000 |
+| primary / on-primary | #8CC8FF / #10283A | #9AEAFF / #000000 |
+| text | #F3F6F8 | #FFFFFF |
+| muted | #C0CBD5 | #F3F3F3 |
+| sage | #294052 | #161616 |
+| terracotta | #FFB58C | #FFD3B5 |
+| gold / on-gold | #F8D879 / #173651 | #FFEB00 / #000000 |
+| border | #6F8292 | #FFFFFF |
+| focus | #FFD166 | #FFFF00 |
+
+Pares de contraste do tema escuro: texto/fundo 16,16:1; texto/superfície 13,48:1; texto secundário/fundo 10,65:1; texto secundário/superfície 8,88:1; texto de ação/fundo azul 8,52:1; destaque/superfície 8,53:1; texto/azul suave 9,93:1; texto sobre amarelo 8,97:1; foco/fundo 12,17:1. São cálculos dos tokens, não uma auditoria de cada estado ou validação completa WCAG.
+
 ## Composição
 
-Sidebar branca com marca Travessia, navegação azul e assinatura Mais Acesso Conecta. Cabeçalho separa contexto, leitura e conta. Missão principal usa texto e etapas reais à esquerda e arte decorativa à direita. Área docente usa arte própria de planejamento. Login combina apresentação azul suave, ilustração fornecida e formulário branco. Botões principais arredondados, ícones de linha e tipografia do sistema sem download externo.
+No tema claro, a sidebar é branca com marca Travessia, navegação azul e assinatura Mais Acesso Conecta. No tema escuro, superfícies, controles e artes usam as variantes escuras. O cabeçalho separa contexto, leitura, aparência e conta. Missão principal usa texto e etapas reais à esquerda e arte decorativa à direita. Área docente usa arte própria de planejamento. Login combina apresentação azul suave, ilustração fornecida e formulário branco no tema claro. Botões principais arredondados, ícones de linha e tipografia do sistema sem download externo.
 
-No mobile, navegação passa para o topo, colunas viram uma e artes laterais são ocultadas. Conteúdo e controles permanecem disponíveis. As preferências de contraste, tamanho e espaçamento são independentes; reduzir decoração remove as ilustrações. Testar também reflow a 320px, texto 200%, cores do sistema e movimento reduzido. As artes não contêm dados reais nem métricas.
+No mobile, navegação passa para o topo, colunas viram uma e artes laterais são ocultadas. Conteúdo e controles permanecem disponíveis. As preferências de tema, contraste, tamanho e espaçamento são independentes; reduzir decoração remove as ilustrações. Testar também reflow a 320px, texto 200%, cores do sistema e movimento reduzido. As artes não contêm dados reais nem métricas.
 
 ## Escopo
 

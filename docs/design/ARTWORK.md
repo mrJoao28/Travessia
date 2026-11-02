@@ -7,11 +7,15 @@ O usuário forneceu `public.zip` com a identidade Mais Acesso Conecta e solicito
 | Arquivo em apps/web/public/brand | Origem | Uso |
 |---|---|---|
 | mais-acesso-conecta.png | public/mais-acesso-logo.png, fornecido pelo usuário | Assinatura da plataforma |
+| mais-acesso-conecta-dark.png | Variante local do logo original; azul ajustado a #8CC8FF e detalhes neutros a #F3F6F8, com transparência preservada | Assinatura no tema escuro |
 | mais-acesso-auth.webp | public/professor/auth-illustration.png, fornecido pelo usuário | Login |
+| mais-acesso-auth-dark.webp | Variante local com fundo escuro e sombras levantadas | Login no tema escuro |
 | learning-together.webp | Nova arte gerada com a ferramenta image_gen integrada | Home aluno, real e prévia |
+| learning-together-dark.webp | Variante local com fundo escuro e detalhes ajustados para leitura | Home aluno no tema escuro |
 | teaching-pathways.webp | Nova arte gerada com a ferramenta image_gen integrada | Visão docente, real e prévia |
+| teaching-pathways-dark.webp | Variante local com fundo escuro e detalhes ajustados para leitura | Visão docente no tema escuro |
 
-As duas novas artes foram geradas individualmente, usando `professor/auth-illustration.png` e `landing/hero-illustration.png` como referências visuais. Imagens geradas: 1536 × 1024. Conversão local para WebP com qualidade 88, preservando a composição. O logo original não foi alterado. Novas artes e imagem de login são decorativas e não transmitem informação indispensável; HTML contém todas as instruções, objetivos e progresso.
+As duas novas artes foram geradas individualmente, usando `professor/auth-illustration.png` e `landing/hero-illustration.png` como referências visuais. Imagens geradas: 1536 × 1024. Conversão local para WebP com qualidade 88, preservando a composição. As quatro variantes escuras são derivadas localmente com segmentação de fundo e ajuste de paleta; não alteram composição ou conteúdo. Os arquivos claros originais permanecem intactos. A variante escura do logo mantém o alpha e os elementos da marca, clareando o azul para leitura sobre superfícies escuras. `ThemeImage` escolhe a variante de acordo com o tema atual; `ThemeBootstrap` reaplica a escolha salva também na tela de login. Novas artes e imagens decorativas não transmitem informação indispensável; o HTML contém todas as instruções, objetivos e progresso.
 
 ## Prompt — learning-together
 

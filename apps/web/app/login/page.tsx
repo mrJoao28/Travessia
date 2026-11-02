@@ -1,6 +1,6 @@
-import Image from "next/image";
 import { Brand } from "../../components/icons";
 import { LoginForm } from "../../components/login-form";
+import { ThemeImage } from "../../components/theme-image";
 export const metadata = { title: "Entrar · Travessia" };
 export default function LoginPage() {
   return (
@@ -16,17 +16,19 @@ export default function LoginPage() {
             Aprendizagem com caminhos claros e espaço para o seu jeito de
             aprender.
           </p>
-          <Image
+          <ThemeImage
             className="login-art decorative"
-            src="/brand/mais-acesso-auth.webp"
+            lightSrc="/brand/mais-acesso-auth.webp"
+            darkSrc="/brand/mais-acesso-auth-dark.webp"
             width={512}
             height={512}
             sizes="(max-width: 800px) 1px, 34vw"
             alt=""
           />
           <div className="login-network">
-            <Image
-              src="/brand/mais-acesso-conecta.png"
+            <ThemeImage
+              lightSrc="/brand/mais-acesso-conecta.png"
+              darkSrc="/brand/mais-acesso-conecta-dark.png"
               width={132}
               height={66}
               alt="Mais Acesso Conecta"
