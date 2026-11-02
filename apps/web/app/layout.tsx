@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ThemeBootstrap } from "../components/theme-bootstrap";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,8 +11,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR">
-      <body>{children}</body>
+    <html lang="pt-BR" data-theme="light" data-contrast="false">
+      <body>
+        <ThemeBootstrap />
+        {children}
+      </body>
     </html>
   );
 }

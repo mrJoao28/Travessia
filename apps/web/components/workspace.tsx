@@ -1,9 +1,9 @@
 "use client";
 import {useEffect,useId,useState} from "react";
 import {NavigationHint} from "./navigation-hint";
-import Image from "next/image";
 import Link from "next/link";
 import { ReadingPreferences } from "./reading-preferences";
+import { ThemeImage } from "./theme-image";
 import { Brand, Icon, type IconName } from "./icons";
 import { NavLink } from "./nav-link";
 import type { ApiResponse } from "../lib/product-client";
@@ -70,14 +70,18 @@ export function Workspace({
             <NavigationHint label="Preferências de leitura" enabled={collapsed}><a href="#preferencias" aria-label="Preferências de leitura">
               <Icon name="settings" /><span className="sidebar-label">Preferências de leitura</span>
             </a></NavigationHint>
+            <NavigationHint label="Tema e contraste" enabled={collapsed}><a href="#temas" aria-label="Tema e contraste">
+              <Icon name="settings" /><span className="sidebar-label">Tema e contraste</span>
+            </a></NavigationHint>
             <NavigationHint label="Ajuda" enabled={collapsed}><Link href={`${base}/${role}/ajuda`} aria-label="Ajuda">
               <Icon name="help" /><span className="sidebar-label">Ajuda</span>
             </Link></NavigationHint>
           </div>
           <div className="network-brand">
             <span>Uma iniciativa</span>
-            <Image
-              src="/brand/mais-acesso-conecta.png"
+            <ThemeImage
+              lightSrc="/brand/mais-acesso-conecta.png"
+              darkSrc="/brand/mais-acesso-conecta-dark.png"
               width={160}
               height={80}
               alt="Mais Acesso Conecta"
@@ -121,11 +125,16 @@ export function PathIllustration({
 }) {
   return (
     <figure className="path-art decorative" aria-hidden="true">
-      <Image
-        src={
+      <ThemeImage
+        lightSrc={
           variant === "teacher"
             ? "/brand/teaching-pathways.webp"
             : "/brand/learning-together.webp"
+        }
+        darkSrc={
+          variant === "teacher"
+            ? "/brand/teaching-pathways-dark.webp"
+            : "/brand/learning-together-dark.webp"
         }
         width={1536}
         height={1024}

@@ -585,6 +585,7 @@ nav a:hover,
 }
 .pending {
   background: var(--gold);
+  color: var(--on-gold);
 }
 .current-lesson {
   background: var(--sage) !important;
@@ -1411,12 +1412,12 @@ body {
 .individual-materials { margin-block: 1.5rem 2.5rem; }
 .material-workflow-grid, .material-review-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
 .material-workflow-grid > *, .material-review-grid > * { min-width: 0; }
-.material-suggestions { background: var(--color-primary-soft, #EAF2FC); }
+.material-suggestions { background: var(--sage); }
 .material-support-choice { align-items: start; margin-block: .75rem; }
 .material-support-choice .small { display: block; margin-top: .25rem; }
 .material-profile-options { display: grid; gap: .65rem; margin-block: 1rem; }
 .material-flow-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
-.material-pdf-preview { width: 100%; min-height: 35rem; border: 1px solid #50657A; border-radius: .75rem; }
+.material-pdf-preview { width: 100%; min-height: 35rem; border: 1px solid var(--muted); border-radius: .75rem; }
 .prepared-page { margin-block: 1.5rem; max-width: 70ch; }
 .prepared-page p { overflow-wrap: anywhere; }
 .individual-materials audio, .mission-supports audio { width: min(100%, 32rem); }
@@ -1425,7 +1426,7 @@ body {
 
 .teacher-guide-grid.teacher-support-stage { grid-template-columns: minmax(0, 1fr); }
 .teacher-support-stage > .teacher-guidance { display: none; }
-.mission-file-entry { background: #EAF2FC; border: 1px solid #D6E1ED; border-radius: 1rem; padding: 1.25rem; margin-block: 1rem; }
+.mission-file-entry { background: var(--sage); border: 1px solid var(--border); border-radius: 1rem; padding: 1.25rem; margin-block: 1rem; }
 .mission-support-editor { min-width: 0; }
 .mission-support-editor .individual-materials { margin-top: 0; }
 .activity-with-material { margin-block: 1rem; }
@@ -1434,20 +1435,20 @@ body {
 .activity-with-material fieldset { min-width: 0; }
 
 .simple-material-preparation { max-width: 60rem; margin: 0 auto 1.5rem; }
-.simple-material-preparation > header p { color: var(--color-muted, #50657A); }
-.simple-student-context,.simple-material-file { display:flex; gap:1rem; align-items:center; padding:1.15rem 1.4rem; border:1px solid #D6E1ED; border-radius:.8rem; background:#fff; }
-.simple-student-context { background:#EAF2FC; }
+.simple-material-preparation > header p { color: var(--muted); }
+.simple-student-context,.simple-material-file { display:flex; gap:1rem; align-items:center; padding:1.15rem 1.4rem; border:1px solid var(--border); border-radius:.8rem; background:var(--surface); }
+.simple-student-context { background:var(--sage); }
 .simple-student-context > div,.simple-material-file > div { flex:1; min-width:0; overflow-wrap:anywhere; }
 .simple-student-context p,.simple-material-file p { margin:.25rem 0 0; }
 .pdf-file-badge { background:#B42318;color:#fff;font-size:.8rem;font-weight:700;border-radius:.35rem;padding:.9rem .55rem; }
 .simple-choice,.simple-support-option { display:flex;align-items:flex-start;gap:.9rem;padding:1.1rem 0;cursor:pointer; }
-.simple-choice { border:1px solid #D6E1ED;border-radius:.7rem;padding:1rem;margin-bottom:.7rem; }
-.simple-choice.selected { background:#EAF2FC;border-color:#075A9C; }
+.simple-choice { border:1px solid var(--border);border-radius:.7rem;padding:1rem;margin-bottom:.7rem; }
+.simple-choice.selected { background:var(--sage);border-color:var(--primary); }
 .simple-choice input,.simple-support-option input { flex-shrink:0;margin-top:.3rem; }
 .simple-choice span.small,.simple-support-option span.small { display:block;margin-top:.3rem; }
-.simple-support-option + .simple-support-option { border-top:1px solid #D6E1ED; }
+.simple-support-option + .simple-support-option { border-top:1px solid var(--border); }
 .simple-material-actions { display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:1rem; }
-.simple-more-options { border-top:1px solid #D6E1ED;padding-block:.8rem; }
+.simple-more-options { border-top:1px solid var(--border);padding-block:.8rem; }
 .simple-saved-materials { margin-top:1.5rem; }
 .simple-saved-materials article { margin-top:1rem; }
 @media(max-width:600px){.simple-material-file,.simple-student-context{padding:1rem;flex-wrap:wrap}.simple-material-actions{flex-wrap:wrap}.simple-material-actions .button{width:100%}}
@@ -1572,17 +1573,17 @@ body {
 @media(max-width:650px){.material-mission-workspace{grid-template-columns:minmax(0,1fr)}}
 
 /* Fictional interactive preview; production workspaces retain their own state. */
-.preview-scenario-toolbar { background: var(--paper, #fff); border: 1px solid #bfd3e9; border-left: 4px solid #075a9c; border-radius: 16px; padding: 1.1rem 1.3rem; margin-bottom: 1.8rem; }
+.preview-scenario-toolbar { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 16px; padding: 1.1rem 1.3rem; margin-bottom: 1.8rem; }
 .preview-scenario-toolbar p { margin: .5rem 0; }
 .preview-persona { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; margin-top: .8rem; }
 .preview-persona select { flex: 1; max-width: 24rem; min-width: 0; }
 .preview-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
 .interactive-preview .card-list > li.form-stack { display: flex; align-items: stretch; flex-direction: column; }
 .interactive-preview .preview-editor { max-width: none; }
-.preview-editor > .editor-step { min-width: 0; padding: 1.1rem; border: 1px solid #cbdcf0; border-radius: 12px; }
+.preview-editor > .editor-step { min-width: 0; padding: 1.1rem; border: 1px solid var(--border); border-radius: 12px; }
 .preview-editor legend { font-weight: 700; padding: 0 .4rem; }
 .preview-local-form { max-width: 44rem; margin-top: 1.5rem; }
-.preview-material-item { border: 1px solid #cbdcf0; padding: 1rem; border-radius: 12px; }
+.preview-material-item { border: 1px solid var(--border); padding: 1rem; border-radius: 12px; }
 .preview-material-item[open] > summary { margin-bottom: 1rem; }
 .interactive-preview audio { width: 100%; max-width: 32rem; min-width: 0; }
 .interactive-preview .actions { flex-wrap: wrap; }

@@ -1,4 +1,4 @@
-"""Assertions for the fictional one-page Docker smoke fixture only."""
+"""Assertions for the fictional four-page Docker smoke fixture only."""
 import os, pathlib, subprocess
 from pypdf import PdfReader
 if os.environ.get('DEMO_MODE') != 'true' or os.environ.get('DEMO_ONLY') != 'true':
@@ -6,7 +6,10 @@ if os.environ.get('DEMO_MODE') != 'true' or os.environ.get('DEMO_ONLY') != 'true
 files=list(pathlib.Path('/data/materials').glob('*/adapted-*.pdf'))
 if len(files) != 1: raise AssertionError('Expected the single smoke fixture')
 reader=PdfReader(files[0])
-assert len(reader.pages)==1, 'The small material must not create an orphan page'
+assert len(reader.pages)==4, 'Each selected page must be present without orphan pages'
+for index,page in enumerate(reader.pages,1):
+    assert f'página {index} do original' in (page.extract_text() or '').casefold(), 'Page reference/order missing'
+assert 'End of page 4.' in ' '.join((reader.pages[3].extract_text() or '').split()), 'Last page content missing'
 assert reader.trailer['/Root'].get('/StructTreeRoot') is not None, 'Missing PDF tags'
 text='\n'.join(p.extract_text() or '' for p in reader.pages)
 assert '10 meters' in text and 'Material Docker persistente' in text
