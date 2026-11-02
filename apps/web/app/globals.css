@@ -1599,3 +1599,17 @@ body {
 @media (forced-colors: active) {
  .preview-scenario-toolbar, .preview-material-item, .preview-editor > .editor-step { border-color: CanvasText; }
 }
+
+/* First classroom: one clear path without hiding the regular workspace. */
+.onboarding-guide, .onboarding-student { margin-block: 1.3rem; }
+.onboarding-grid { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; margin-top: 1.4rem; }
+.onboarding-grid li { border: 1px solid var(--border); border-radius: .8rem; padding: 1.25rem; min-width: 0; }
+.onboarding-grid h3 { margin-block: .8rem; }
+.onboarding-number { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--sage); color: var(--primary); font-weight: 700; }
+.invite-sharing { min-width: 0; }
+.invite-sharing .notice { padding: 1.2rem; }
+.invite-sharing input { width: 100%; min-width: 0; }
+.invite-sharing input[readonly] { font-size: 1rem; }
+.invite-active-list { padding-left: 1.2rem; }
+.invite-active-list li { margin-block: 1rem; overflow-wrap: anywhere; }
+@media (max-width: 1050px) { .onboarding-grid { grid-template-columns: 1fr; } }
