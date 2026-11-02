@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   api,
   pages,
@@ -15,6 +15,7 @@ import { LiveEditor } from "./live-editor";
 import { LiveBarriers } from "./live-barriers";
 import { OperationStatus } from "./operation-status";
 import { ClassroomTools, ClassroomMembers } from "./classroom-tools";
+import {TeacherFirstSteps} from "./teacher-first-steps";
 import { LearningNeeds } from "./learning-needs";
 import { LiveAdaptations } from "./live-adaptations";
 import { SubmissionMedia } from "./submission-media";
@@ -250,7 +251,7 @@ function WorkspaceView({
                   ))}
                 </ul>
               ) : role === "aluno" && !section ? (
-                <StudentDashboard entries={entries} />
+                <StudentDashboard entries={entries} classrooms={selected?permitted.filter(c=>c.id===selected):permitted} />
               ) : section === "feedback" || section === "entregas" ? (
                 <SubmissionList role={role} entries={entries} />
               ) : section === "ajuda" ? (
@@ -281,7 +282,7 @@ function WorkspaceView({
   );
 }
 
-function StudentDashboard({ entries }: { entries: MissionEntry[] }) {
+function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];classrooms:Classroom[] }) {
   const entriesWithVersion = entries.filter(
     (entry) => entry.mission.publishedVersion,
   );
@@ -297,8 +298,8 @@ function StudentDashboard({ entries }: { entries: MissionEntry[] }) {
   if (!entry?.mission.publishedVersion)
     return (
       <section className="paper">
-        <h2>Seu percurso está sendo preparado.</h2>
-        <p>As missões publicadas pelos docentes aparecerão aqui.</p>
+        <h2>{classrooms.length===1?`Você entrou na turma ${classrooms[0].name}.`:"Você já está nas suas turmas."}</h2>
+        <p>A primeira missão ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Você não precisa cadastrar uma missão. Por enquanto, pode conhecer os ajustes de leitura ou completar seu perfil.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
       </section>
     );
   const version = entry.mission.publishedVersion;
@@ -308,8 +309,10 @@ function StudentDashboard({ entries }: { entries: MissionEntry[] }) {
     version.steps.findIndex((step) => step.id === submission?.currentStepId),
   );
   const current = version.steps[index];
+  const firstMission=entries.every(e=>e.submissions.length===0);
   return (
     <>
+      {firstMission&&<section className="paper onboarding-student" aria-label="Como realizar sua primeira missão"><h2>Sua primeira missão está pronta</h2><p>Leia o desafio, faça uma etapa por vez e envie sua atividade quando estiver pronta. Seus materiais e apoios ficam dentro da missão.</p></section>}
       <section className="mission-hero" aria-labelledby="mission-title">
         <div className="hero-copy">
           <p className="eyebrow accent">{entry.classroom.name}</p>
@@ -356,7 +359,7 @@ function StudentDashboard({ entries }: { entries: MissionEntry[] }) {
               className="button"
               href={`/aluno/missoes/${entry.mission.id}`}
             >
-              Continuar missão
+              {firstMission?"Começar minha primeira missão":"Continuar missão"}
               <Icon name="arrow" />
             </Link>
             <Link
@@ -448,6 +451,9 @@ function TeacherDashboard({
   classroom?: Classroom;
   classrooms: Classroom[];
 }) {
+  const invitationsRef=useRef<HTMLDetailsElement>(null);
+  const hasPublished=entries.some(e=>e.mission.status==='published');
+  const draft=entries.find(e=>e.mission.status==='draft');
   if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para criar missões, preparar apoios e acompanhar as entregas.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul><Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link></section>;
   return (
     <>
@@ -456,11 +462,10 @@ function TeacherDashboard({
           <p className="eyebrow accent">Planejar, acompanhar e incluir</p>
           <h2>{classroom?.name ?? "Minhas missões"}</h2>
           <p>
-            Consulte as entregas e os relatos compartilhados. Rascunhos permanecem
-            privados até a publicação.
+            {hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira missão seguindo os passos abaixo."}
           </p>
           <div className="actions">
-            {classroom && (
+            {classroom && hasPublished && (
               <Link
                 className="button"
                 href={`/professor/missoes/nova?turma=${encodeURIComponent(classroom.id)}`}
@@ -479,7 +484,8 @@ function TeacherDashboard({
         </div>
         <PathIllustration variant="teacher" />
       </section>
-      {classroom && <details className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
+      {!hasPublished&&<TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id} onInvite={()=>{if(invitationsRef.current){invitationsRef.current.open=true;invitationsRef.current.querySelector('summary')?.focus();invitationsRef.current.scrollIntoView({block:'start'});}}}/>}
+      {classroom && <details ref={invitationsRef} className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
           <li className="paper" key={mission.id}>

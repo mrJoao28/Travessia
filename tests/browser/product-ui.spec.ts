@@ -106,6 +106,7 @@ async function fixture(page: Page, role: "student" | "teacher") {
         ],
         nextCursor: null,
       });
+    if (path === "/classrooms/test-classroom/invitations" && route.request().method() === "GET") return respond({items:[],nextCursor:null});
     if (
       path === "/classrooms/test-classroom/invitations" &&
       route.request().method() === "POST"
@@ -113,6 +114,7 @@ async function fixture(page: Page, role: "student" | "teacher") {
       return respond({
         id: "test-invitation",
         token: "a".repeat(64),
+        code: "ABCD2345", reusable: true, createdAt: version.createdAt,
         expiresAt: version.createdAt,
       });
     if (
@@ -304,11 +306,12 @@ test("convite usa vínculo docente e revogação envia JSON ao proxy — transpo
   await page.getByText('Alunos da turma e convites', { exact: true }).click();
   await page.getByRole("button", { name: "Gerar convite de aluno" }).click();
   await expect(page.getByLabel("Código de convite")).toHaveValue(
-    "a".repeat(64),
+    "ABCD2345",
   );
-  await page.getByRole("button", { name: "Revogar este convite" }).click();
+  await page.getByText("Convites ativos · 1", { exact: true }).click();
+  await page.getByRole("button", { name: /^Desativar convite criado/ }).click();
   await expect(
-    page.getByText("Convite revogado pelo servidor.", { exact: true }),
+    page.getByText("Convite desativado. O código e o link deixam de aceitar novas entradas. Quem já entrou continua na turma.", { exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("Código de convite")).toHaveCount(0);
 });
