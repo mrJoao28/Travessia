@@ -61,7 +61,7 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     const createdResponse=await teacher.request.post(`/api/v1/classrooms/${classroomId}/missions`,{headers:{Origin:baseURL!},data:input});expect(createdResponse.status()).toBe(200);const created=await createdResponse.json();
     expect((await teacher.request.post(`/api/v1/missions/${created.id}/publish`,{headers:{Origin:baseURL!},data:{versionId:created.draftVersion.id,reviewed:true}})).status()).toBe(200);
     await student.reload();await expect(student.getByRole('link',{name:'Começar minha primeira missão',exact:true})).toBeVisible();
-    await student.getByRole('link',{name:'Começar minha primeira missão',exact:true}).click();await expect(student.getByRole('heading',{level:1})).toHaveText(input.title);
+    await student.getByRole('link',{name:'Começar minha primeira missão',exact:true}).click();await expect(student.getByRole('heading',{name:input.title,exact:true})).toBeVisible();
 
     const stillForbidden = await student.request.post(`/api/v1/classrooms/${classroomId}/invitations`, { headers: { Origin: baseURL! }, data: {} });
     expect(stillForbidden.status()).toBe(404);
