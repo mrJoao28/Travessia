@@ -95,13 +95,15 @@ export class ProductService {
     }
     if (op === 'acceptInvite') {
       await budget(this.db, `accept-invite:${userId}`, 20, 3600);
+      await budget(this.db, 'accept-invite-global', 300, 60);
       return serial(this.db, async tx => {
-        const invite = await tx.invitation.findUnique({ where: { tokenHash: digest((body as Body<'acceptInvite'>).token) } });
-        if (!invite || invite.revokedAt || invite.consumedAt || invite.expiresAt <= new Date()) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
+        const token=(body as Body<'acceptInvite'>).token;
+        const invite = await tx.invitation.findUnique({ where: token.length===8 ? { codeHash: digest(token) } : { tokenHash: digest(token) } });
+        if (!invite || invite.revokedAt || (!invite.reusable && invite.consumedAt) || invite.expiresAt <= new Date()) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
         const old = await tx.membership.findUnique({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } } });
         // Revoked accounts cannot regain access by consuming another invitation.
         if (old) return fail(409, 'MEMBERSHIP_EXISTS', 'Vínculo já existente. Consulte o docente.');
-        const changed = await tx.invitation.updateMany({ where: { id: invite.id, consumedAt: null, revokedAt: null, expiresAt: { gt: new Date() } }, data: { consumedAt: new Date(), consumedBy: userId } });
+        const changed = await tx.invitation.updateMany({ where: { id: invite.id, consumedAt: null, revokedAt: null, expiresAt: { gt: new Date() } }, data: invite.reusable ? { expiresAt: invite.expiresAt } : { consumedAt: new Date(), consumedBy: userId } });
         if (!changed.count) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
         await tx.membership.create({ data: { userId, classroomId: invite.classroomId, role: 'student' } });
         const c = await tx.classroom.findUniqueOrThrow({ where: { id: invite.classroomId } });
@@ -114,8 +116,8 @@ export class ProductService {
     if (op === 'download') return this.download(userId, id);
 
     return serial(this.db, async tx => {
-      if (['members', 'revokeMember', 'invite', 'revokeInvite', 'missions', 'createMission', 'barriers', 'upload'].includes(op)) {
-        const member = await membership(tx, userId, id, ['members', 'revokeMember', 'invite', 'revokeInvite', 'createMission', 'upload'].includes(op));
+      if (['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'missions', 'createMission', 'barriers', 'upload'].includes(op)) {
+        const member = await membership(tx, userId, id, ['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'createMission', 'upload'].includes(op));
         if (op === 'members') {
           const rows = await tx.membership.findMany({ ...pageArgs(paging), where: { ...after(paging), classroomId: id }, include: { user: { select: { name: true } } } });
           return pagination(rows.map(m => ({ id: m.id, name: m.user.name, role: m.role, active: m.active })), paging.limit);
@@ -127,12 +129,19 @@ export class ProductService {
           await tx.auditEvent.create({ data: { actorId: userId, resourceId: target.id, action: 'membership.revoke' } });
           return { revoked: true };
         }
+        if (op === 'invitations') {
+          const rows = await tx.invitation.findMany({ ...pageArgs(paging), where: { ...after(paging), classroomId: id, revokedAt: null, consumedAt: null, expiresAt: { gt: new Date() } }, select: { id: true, reusable: true, createdAt: true, expiresAt: true } });
+          return pagination(rows, paging.limit);
+        }
         if (op === 'invite') {
           // Count within the same serializable transaction to bound issuance across instances.
           if (await tx.invitation.count({ where: { classroomId: id, createdAt: { gt: new Date(Date.now() - 3600000) } } }) >= 30) return fail(429, 'RATE_LIMITED', 'Limite de convites atingido.');
           const token = randomBytes(32).toString('hex');
-          const invite = await tx.invitation.create({ data: { classroomId: id, tokenHash: digest(token), expiresAt: new Date(Date.now() + 7 * 86400000) } });
-          return { id: invite.id, token, expiresAt: invite.expiresAt };
+          const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+          const code=Array.from(randomBytes(8),byte=>alphabet[byte & 31]).join('');
+          const reusable=(body as Body<'invite'>).reusable??false;
+          const invite = await tx.invitation.create({ data: { classroomId: id, tokenHash: digest(token), codeHash: digest(code), reusable, expiresAt: new Date(Date.now() + 7 * 86400000) } });
+          return { id: invite.id, token, code, reusable, createdAt: invite.createdAt, expiresAt: invite.expiresAt };
         }
         if (op === 'revokeInvite') {
           const result = await tx.invitation.updateMany({ where: { id: p.invitationId, classroomId: id }, data: { revokedAt: new Date() } });

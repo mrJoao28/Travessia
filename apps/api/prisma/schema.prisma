@@ -172,6 +172,8 @@ model Invitation {
   id String @id @default(uuid())
   classroomId String
   tokenHash String @unique
+  codeHash String? @unique
+  reusable Boolean @default(false)
   expiresAt DateTime
   revokedAt DateTime?
   consumedAt DateTime?

@@ -555,7 +555,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["invitations"];
         put?: never;
         post: operations["invite"];
         delete?: never;
@@ -3169,6 +3169,54 @@ export interface operations {
             };
         };
     };
+    invitations: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            reusable: boolean;
+                            /** Format: date-time */
+                            createdAt: string;
+                            /** Format: date-time */
+                            expiresAt: string;
+                        }[];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     invite: {
         parameters: {
             query?: never;
@@ -3180,7 +3228,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": Record<string, never>;
+                "application/json": {
+                    reusable?: boolean;
+                };
             };
         };
         responses: {
@@ -3193,6 +3243,10 @@ export interface operations {
                     "application/json": {
                         id: string;
                         token: string;
+                        code: string;
+                        reusable: boolean;
+                        /** Format: date-time */
+                        createdAt: string;
                         /** Format: date-time */
                         expiresAt: string;
                     };

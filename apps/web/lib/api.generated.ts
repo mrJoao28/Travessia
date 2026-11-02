@@ -174,6 +174,10 @@ export const apiRoutes = {
     "method": "DELETE",
     "path": "/classrooms/{id}/members/{memberId}"
   },
+  "invitations": {
+    "method": "GET",
+    "path": "/classrooms/{id}/invitations"
+  },
   "invite": {
     "method": "POST",
     "path": "/classrooms/{id}/invitations"
