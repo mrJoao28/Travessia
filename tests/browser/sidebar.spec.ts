@@ -35,7 +35,7 @@ test('recolher o menu preserva rascunho, preferências de leitura e dados do cen
  const requests:string[]=[];let dialogs=0;page.on('request',r=>{if(new URL(r.url()).pathname.startsWith('/api/'))requests.push(r.url());});page.on('dialog',async d=>{dialogs++;await d.dismiss();});
  await page.goto('/previa/professor/missoes/editor');await page.getByLabel('Título da missão',{exact:true}).fill('Rascunho fictício preservado');
  await page.getByRole('button',{name:'Recolher menu',exact:true}).click();await expect(page.getByLabel('Título da missão',{exact:true})).toHaveValue('Rascunho fictício preservado');
- await page.getByText('Aa · Ajustar leitura',{exact:true}).click();await page.getByLabel('Mais contraste',{exact:true}).check();await page.keyboard.press('Escape');
+ await page.getByText('Aa · Ajustar leitura',{exact:true}).click();await page.locator('#temas > summary').click();await page.getByLabel('Mais contraste',{exact:true}).check();await page.keyboard.press('Escape');
  await page.getByRole('button',{name:'Abrir menu',exact:true}).click();await expect(page.getByLabel('Título da missão',{exact:true})).toHaveValue('Rascunho fictício preservado');
  await expect(page.locator('html')).toHaveAttribute('data-contrast','true');expect(dialogs).toBe(0);expect(requests).toEqual([]);
 });

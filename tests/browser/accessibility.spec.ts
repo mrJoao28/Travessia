@@ -68,7 +68,14 @@ test("preferências por teclado, Escape, persistência local e skip link", async
   await expect(page.locator("main")).toBeFocused();
   await page.getByText("Aa · Ajustar leitura", { exact: true }).focus();
   await page.keyboard.press("Enter");
+  const themeSummary = page.locator("#temas > summary");
+  await themeSummary.focus();
+  await page.keyboard.press("Enter");
   await page.getByLabel("Mais contraste", { exact: true }).check();
+  await page.keyboard.press("Escape");
+  const readingSummary = page.locator("#preferencias > summary");
+  await readingSummary.focus();
+  await page.keyboard.press("Enter");
   await page.getByLabel("Tamanho do texto").selectOption("1.25");
   await page.keyboard.press("Escape");
   await expect(
