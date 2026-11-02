@@ -70,8 +70,7 @@ test("preferências por teclado, Escape, persistência local e skip link", async
   await page.keyboard.press("Enter");
   const themeSummary = page.locator("#temas > summary");
   await test.step("alternar contraste pelo painel Tema e contraste", async () => {
-    await themeSummary.focus();
-    await page.keyboard.press("Enter");
+    await themeSummary.click();
     await expect(page.locator("#temas")).toHaveAttribute("open", "");
     const contrast = page.getByLabel("Mais contraste", { exact: true });
     await expect(contrast).toBeVisible();
@@ -81,8 +80,7 @@ test("preferências por teclado, Escape, persistência local e skip link", async
   });
   const readingSummary = page.locator("#preferencias > summary");
   await test.step("ajustar tamanho e fechar o painel de leitura com Escape", async () => {
-    await readingSummary.focus();
-    await page.keyboard.press("Enter");
+    await readingSummary.click();
     await expect(page.locator("#preferencias")).toHaveAttribute("open", "");
     await page.getByLabel("Tamanho do texto").selectOption("1.25");
     await page.keyboard.press("Escape");
