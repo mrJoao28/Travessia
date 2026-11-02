@@ -1,0 +1,5 @@
+Material fictício de prévia do Travessia. 1. Consulte o livro pelo código.
+2. Confira se existe e está disponível.
+3. Se estiver disponível, registre leitor, livro e data de devolução.
+4. Caso contrário, explique o motivo sem registrar o empréstimo.
+5. Teste o código B01 disponível, B02 indisponível e um código inexistente.

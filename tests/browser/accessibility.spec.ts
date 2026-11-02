@@ -41,6 +41,10 @@ const routes = [
   "/previa/professor/entregas",
   "/previa/professor/barreiras",
   "/previa/professor/missoes/editor",
+  "/previa/professor/missoes/campus/adaptacoes",
+  "/previa/aluno/missoes/campus",
+  "/previa/aluno/apoios",
+  "/previa/professor/perfil",
 ];
 for (const route of routes) {
   test(`axe — ${route}`, async ({ page }) => {
@@ -121,19 +125,21 @@ test("barreira informa destinatário antes do envio", async ({ page }) => {
     .getByLabel("Compartilhar este relato com os docentes desta turma")
     .check();
   await expect(page.locator("#recipients")).toContainText(
-    "docentes com vínculo ativo em Programação I",
+    "docentes com vínculo ativo em Oficina de Projetos Inclusivos",
   );
 });
-test("editor ordena etapas por teclado e exige revisão sem simular publicação", async ({
+test("editor ordena por teclado e exige revisão antes da publicação local", async ({
   page,
 }) => {
   await page.goto("/previa/professor/missoes/editor");
+  await page.getByRole("button", { name: "Continuar para as etapas →" }).click();
   await page.getByRole("button", { name: "Mover etapa 1 para baixo" }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Título da etapa").first()).toHaveValue(
-    "Preparar uma alternativa",
+    "Comparar as rotas",
   );
   await expect(page.getByLabel("Título da etapa").nth(1)).toBeFocused();
+  await page.getByRole("button", { name: "Salvar e continuar →" }).click();
   await page.getByRole("button", { name: "Revisar missão" }).click();
   await expect(
     page.getByRole("heading", { name: "Revisão antes de publicar" }),
@@ -144,9 +150,8 @@ test("editor ordena etapas por teclado e exige revisão sem simular publicação
   await page
     .getByRole("button", { name: "Publicar missão", exact: true })
     .click();
-  await expect(page.getByRole("status").last()).toContainText(
-    "Nenhuma missão foi publicada",
-  );
+  await expect(page.getByRole("heading", {name: "Publicação simulada concluída"})).toBeVisible();
+  await expect(page.getByText("Nenhuma missão foi publicada no servidor. O cenário local foi atualizado.")).toBeVisible();
 });
 test("erro real de login mantém campos e foco no resumo — transporte controlado no teste", async ({
   page,
