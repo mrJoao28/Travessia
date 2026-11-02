@@ -132,8 +132,9 @@ test('convites, entrada na turma e estratégias individuais/da turma completam o
  await page.getByRole('button',{name:'Criar turma',exact:true}).click();
  const room=page.locator('section.paper').filter({has:page.getByRole('heading',{name:'Laboratório de projetos · exemplo',exact:true})});
  await room.getByRole('button',{name:'Gerar convite de exemplo'}).click();
- await page.goto('/previa/aluno/turmas');
- await page.getByLabel('Código de convite fictício').fill('TRAVESSIA-4-EXEMPLO');
+ const code=await room.locator('p.notice strong').textContent();expect(code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
+ await room.getByRole('link',{name:'Experimentar link fictício de convite',exact:true}).click();
+ await expect(page.getByLabel('Código de convite fictício')).toHaveValue(code!);
  await page.getByRole('button',{name:'Entrar na turma',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Laboratório de projetos · exemplo',exact:true})).toBeVisible();
  const joined=page.locator('section.paper').filter({has:page.getByRole('heading',{name:'Laboratório de projetos · exemplo',exact:true})});
