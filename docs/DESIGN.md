@@ -33,3 +33,9 @@ Login, aluno, professor, leitor, editor, entregas e barreiras compartilham os me
 ## Preparação guiada docente
 
 Em 30/10/2026 o usuário aprovou aplicar as propostas de criação de missão em passos e adaptação com prévia. O professor vê três destinos principais, uma ação dominante por etapa e ajuda da IA opcional/recolhida. Os apoios ficam no contexto da missão, com versão e destinatários explícitos. Detalhes de persistência, revisão e validação: [TEACHER-INTERFACE.md](TEACHER-INTERFACE.md).
+
+## Menu lateral recolhível
+
+O botão no início do cabeçalho alterna o menu completo e uma faixa com o símbolo da marca e os ícones. Mantém a indicação da página atual, nomes acessíveis e dicas visuais no hover ou foco por teclado. Escape dispensa as dicas; o ponteiro pode alcançá-las sem que desapareçam. O conteúdo aproveita a largura disponível e os componentes de formulários permanecem montados.
+
+A escolha fica somente na chave local `travessia:sidebar:v1`; sem armazenamento, o controle funciona na página atual. Não altera preferências de leitura, sessões ou permissões. Em telas pequenas, a navegação continua no topo, com ícones em linhas que se ajustam à largura e com acesso a Ajuda e Preferências de leitura. As dicas usam os tokens de texto/superfície (contraste já verificado na fundação), respeitam as cores do sistema e não animam automaticamente. Testes incluem professor/aluno, teclado, dicas dispensáveis/alcançáveis, persistência, rascunho, axe e reflow de 320px com texto a 200%. Isso não substitui validação com usuários de leitores de tela.

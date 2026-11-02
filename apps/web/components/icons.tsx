@@ -8,8 +8,12 @@ export type IconName =
   | "arrow"
   | "clock"
   | "list"
-  | "eye";
+  | "eye"
+  | "panel-open"
+  | "panel-close";
 const paths: Record<IconName, string> = {
+  "panel-open": "M3 3h18v18H3V3Zm6 0v18m4-13 4 4-4 4",
+  "panel-close": "M3 3h18v18H3V3Zm6 0v18m8-13-4 4 4 4",
   book: "M12 6C8 3 4 3 1 4v16c4-1 7-1 11 2 4-3 7-3 11-2V4c-3-1-7-1-11 2Zm0 0v16",
   users:
     "M16 21v-3c0-3-2-5-6-5s-6 2-6 5v3M10 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8 1a4 4 0 0 1 0 8m1 2c3 1 4 3 4 6",
