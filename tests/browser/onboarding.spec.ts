@@ -52,11 +52,11 @@ test('convite antes do login mantém o código sem aceitar automaticamente a tur
  await page.getByLabel('Email',{exact:true}).fill(profile.email);await page.getByLabel('Senha',{exact:true}).fill('Fictional123');await page.getByRole('button',{name:'Entrar',exact:true}).click();
  await expect(page.getByLabel('Código de convite',{exact:true})).toHaveValue(code);expect(accepts).toBe(0);
  await page.getByLabel('Código de convite',{exact:true}).fill('abcd-2345');await page.getByRole('button',{name:'Entrar na turma',exact:true}).click();
- await expect(page.getByRole('alert')).toContainText('Peça um novo código ao professor');expect(accepts).toBe(1);
+ await expect(page.getByRole('main').getByRole('alert')).toContainText('Peça um novo código ao professor');expect(accepts).toBe(1);
  await expect(page.getByLabel('Código de convite',{exact:true})).toHaveValue('abcd-2345');
  await page.evaluate(()=>{window.location.hash='convite=EFGH6789';});
  await expect(page.getByLabel('Código de convite',{exact:true})).toHaveValue('EFGH6789');
- await expect(page.getByRole('alert')).toHaveCount(0);
+ await expect(page.getByRole('main').getByRole('alert')).toHaveCount(0);
  await page.evaluate(()=>{window.location.hash='convite=invalid';});
  await expect(page.getByLabel('Código de convite',{exact:true})).toHaveValue('');
 });
