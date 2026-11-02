@@ -7,7 +7,7 @@ import { previewId,publishedMission } from '../../lib/preview/data';
 import { PathIllustration } from '../workspace';
 export function PreviewHome({role,route}:{role:'aluno'|'professor';route:string}){
  const {state,update}=usePreview(),[name,setName]=useState(''),[invite,setInvite]=useState(''),[message,setMessage]=useState('');
- useEffect(()=>{if(role==='aluno'&&route==='turmas'){const code=new URLSearchParams(window.location.hash.slice(1)).get('convite');if(code)setInvite(code);}},[role,route]);
+ useEffect(()=>{if(role!=='aluno'||route!=='turmas')return;const sync=()=>setInvite(new URLSearchParams(window.location.hash.slice(1)).get('convite')??'');sync();window.addEventListener('hashchange',sync);return()=>window.removeEventListener('hashchange',sync);},[role,route]);
  const student=state.students.find(s=>s.id===state.studentId)!;
  const published=state.missions.flatMap(m=>{const current=publishedMission(m);return current&&state.classrooms.find(c=>c.id===current.classroomId)?.students.includes(student.id)?[current]:[];});
  if(route==='turmas'||role==='professor'&&!route)return <>

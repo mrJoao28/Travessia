@@ -12,7 +12,7 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
   const router = useRouter();
   const {invitation,clearInvitation}=usePendingInvitation();
   const [value,setValue]=useState("");
-  useEffect(()=>{if(invitation){setSpace("aluno");setValue(invitation);}},[invitation]);
+  useEffect(()=>{if(invitation){setSpace("aluno");setValue(invitation);setError("");}else setValue("");},[invitation]);
   const [space, setSpace] = useState<StartingSpace>(initialSpace ?? "aluno");
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
