@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
-import { MaterialWorker } from '../src/material-worker.js';
+import { MaterialWorker, materialNarration } from '../src/material-worker.js';
 import { materialPath } from '../src/material-files.js';
 import { writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
@@ -706,4 +706,40 @@ test('vínculo revogado impede novas leituras e sessão revogada/expirada não a
   await request('/v1/me', a, 'GET', undefined, 401);
   await db.session.updateMany({ where: { userId: mainId }, data: { expiresAt: new Date(0) } });
   await request('/v1/me', main, 'GET', undefined, 401);
+});
+
+
+test('narração integral: quatro páginas preservadas, descrição IA separada e voz exclusivamente local', { timeout: 30000 }, async () => {
+  const mission = (await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
+  const versionId=mission.draftVersion.id, path=`/v1/missions/${mission.id}`;
+  await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
+  const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Quatro páginas fictícias',base64:Buffer.from('%PDF-1.4\nfixture').toString('base64'),requestKey:randomUUID()})).json;
+  const pages=[1,2,3,4].map(page=>({page,text:`Texto integral da página ${page}. Valor: ${page*10} metros. Última frase ${page}.`,hasVisual:true,ocr:false}));
+  let aiCalls=0, audioCalls=0, spoken='';
+  const worker=new MaterialWorker(db,config,async input=>{
+    aiCalls++; assert.equal(input.descriptionsOnly,true);
+    assert.deepEqual(input.pages.map(p=>p.text),pages.map(p=>p.text));
+    return {document:input.pages.map(p=>({page:p.page,title:'Título inventado',text:'Resumo que deve ser ignorado.',description:`Descrição visual da página ${p.page}.`}))};
+  },async(mode,filename,input)=>{
+    if(mode==='extract') {for(const p of pages)await writeFile(materialPath(source.id,`page-${p.page}.png`),'visual fixture');return {pages,warnings:[]};}
+    audioCalls++; spoken=input??''; await writeFile(filename,'audio fixture');return {};
+  },async(filename)=>{await writeFile(filename,'%PDF-fixture');});
+  await worker.tick(); config.aiEnabled=true;
+  try {
+    const plan=(await request(`${path}/material-adaptations`,main,'POST',{versionId,sourceId:source.id,studentId:'demo-student-1',pages:[1,2,3,4],settings:{supports:['image-description','narration'],fontSize:'18',color:'default',useAi:true,approvedForProvider:true},requestKey:randomUUID()})).json;
+    await worker.tick(); assert.equal(aiCalls,1);
+    const draft=(await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items.find((p:{id:string})=>p.id===plan.id);
+    assert.deepEqual(draft.document.map((p:{text:string})=>p.text),pages.map(p=>p.text));
+    await request(`${path}/material-adaptations/${plan.id}/render`,main,'POST',{expectedRevision:draft.revision});
+    await worker.tick();assert.equal(audioCalls,1);assert.equal(aiCalls,1,'Gerar voz não chama Gemini novamente');
+    assert.equal(spoken,materialNarration(draft.document));
+    for(const p of pages){assert.ok(spoken.includes(p.text));assert.ok(spoken.includes(`Descrição visual da página ${p.page}.`));assert.ok(spoken.includes(`Fim da página ${p.page}.`));}
+    assert.ok(spoken.indexOf('Fim da página 1.')<spoken.indexOf('Página 2 do original.'));
+    assert.ok(!spoken.includes('Resumo que deve ser ignorado.'));
+    await request(`${path}/material-assets/${plan.id}/audio`,a,'GET',undefined,404);
+    await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:draft.revision,reviewed:true});
+    const own=(await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items[0];assert.equal(own.hasAudio,true);assert.equal(own.document.length,4);
+    assert.equal((await fetch(`${base}${path}/material-assets/${plan.id}/audio`,{headers:{cookie:a}})).status,200);
+    await request(`${path}/material-assets/${plan.id}/audio`,b,'GET',undefined,404);
+  } finally { config.aiEnabled=false; }
 });
