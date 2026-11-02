@@ -1,0 +1,4 @@
+Material fictício de prévia do Travessia. 1. Converta a potência: 120 W = 0,12 kW; 12 W = 0,012 kW.
+2. Multiplique a potência pelo tempo. Computador: 0,12 × 4 × 20 = 9,6 kWh. Luminária: 0,012 × 5 × 20 = 1,2 kWh.
+3. Some: 9,6 + 1,2 = 10,8 kWh.
+4. Explique o cálculo e confira as unidades.

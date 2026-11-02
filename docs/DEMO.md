@@ -38,3 +38,7 @@ Status, etapas, entregas e feedback precisam ser entidades reais no banco. Não 
 6. Se Gemini estiver habilitado, gerar um rascunho com material fictício, revisar e publicar; se indisponível, usar rascunho pré-criado claramente identificado.
 
 Não expor senha/email em gravações, prints ou console. Usar banner discreto “Ambiente de demonstração · dados fictícios”. Os fluxos principais continuam utilizáveis com IA desativada. Reset de demo via CLI, nunca por endpoint público.
+
+## Prévia pública sem conta
+
+Para explorar as telas sem configurar o banco ou consumir IA, há uma [prévia interativa local](INTERACTIVE-PREVIEW.md) em `/previa/professor` e `/previa/aluno`. Ela usa nomes, PDF, áudio e resultados de IA fictícios e explicitamente simulados. O roteiro autenticado acima continua dependente da API, do banco e do seed reais; a prévia não o substitui.

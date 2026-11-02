@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { Workspace } from "../../../../components/workspace";
-import { StudentHomePreview } from "../../../../components/student-home";
 import { PreviewFlows } from "../../../../components/preview-flows";
 
 export const metadata = {
@@ -15,26 +14,12 @@ export default async function PreviewPage({
   const { role, path = [] } = await params;
   if (role !== "aluno" && role !== "professor") notFound();
   const route = path.join("/");
-  const allowed =
-    role === "aluno"
-      ? [
-          "",
-          "turmas",
-          "entregas",
-          "feedback",
-          "barreiras",
-          "missoes/biblioteca",
-          "ajuda",
-        ]
-      : ["", "missoes", "missoes/editor", "entregas", "barreiras", "ajuda"];
-  if (!allowed.includes(route)) notFound();
+  const common = ["", "turmas", "entregas", "feedback", "barreiras", "ajuda", "perfil", "apoios"];
+  const dynamic = role === "aluno" ? /^missoes\/[a-zA-Z0-9-]{1,100}$/ : /^missoes\/[a-zA-Z0-9-]{1,100}\/(editor|adaptacoes|apoios|estrategias)$/;
+  if (!common.includes(route) && !(role === 'professor' && ['missoes','missoes/editor'].includes(route)) && !dynamic.test(route)) notFound();
   return (
     <Workspace role={role} preview>
-      {role === "aluno" && !route ? (
-        <StudentHomePreview />
-      ) : (
-        <PreviewFlows role={role} route={route} />
-      )}
+      <PreviewFlows role={role} route={route} />
     </Workspace>
   );
 }

@@ -1,0 +1,6 @@
+Material fictício de prévia do Travessia. 1. Leia os dados das três rotas.
+Rota A: 180 metros e dois degraus. Rota B: 240 metros e caixas em parte da passagem. Rota C: 310 metros, sem degraus observados e com placas pequenas.
+
+2. Compare distância e condições do caminho. A rota mais curta pode não ser a melhor para todas as pessoas.
+
+3. Escolha uma rota e justifique com dois dados do material. Proponha uma melhoria concreta e diga como conferir o resultado.

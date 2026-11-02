@@ -34,15 +34,16 @@ export function AccountMenu({
     >
       <summary aria-label="Menu da conta">
         {preview
-          ? "J"
+          ? "P"
           : (account?.name.slice(0, 1).toUpperCase() ?? <Icon name="users" />)}
         <span aria-hidden="true">⌄</span>
       </summary>
       <div className="account-panel">
         {preview ? (
           <>
-            <strong>Prévia visual</strong>
+            <strong>Prévia interativa</strong>
             <p className="small">Dados fictícios, sem sessão.</p>
+            <Link href={`/previa/${student ? "aluno" : "professor"}/perfil`}>Perfil fictício</Link>
             <Link href={`/previa/${student ? "professor" : "aluno"}`}>
               Ver prévia {student ? "do professor" : "do aluno"}
             </Link>
