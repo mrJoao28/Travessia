@@ -1,3 +1,6 @@
+"use client";
+import {useEffect,useId,useState} from "react";
+import {NavigationHint} from "./navigation-hint";
 import Image from "next/image";
 import Link from "next/link";
 import { ReadingPreferences } from "./reading-preferences";
@@ -19,6 +22,11 @@ export function Workspace({
   preferences?: ApiResponse<"preferences">;
   account?: AccountView;
 }) {
+  const [collapsed,setCollapsed]=useState(false),[ready,setReady]=useState(false);
+  const sidebarId=useId();
+  useEffect(()=>{try{setCollapsed(localStorage.getItem('travessia:sidebar:v1')==='collapsed');}catch{}setReady(true);},[]);
+  useEffect(()=>{if(ready)try{localStorage.setItem('travessia:sidebar:v1',collapsed?'collapsed':'expanded');}catch{}},[collapsed,ready]);
+  const toggleLabel=collapsed?'Abrir menu':'Recolher menu';
   const base = preview ? "/previa" : "";
   const student = role === "aluno";
   const links: [string, string, IconName][] = student
@@ -40,8 +48,8 @@ export function Workspace({
       <a className="skip-link" href="#conteudo">
         Pular para o conteúdo
       </a>
-      <div className={`shell${student ? "" : " teacher-shell"}`}>
-        <aside className="sidebar">
+      <div className={`shell${student ? "" : " teacher-shell"}${collapsed ? " is-sidebar-collapsed" : ""}`}>
+        <aside className="sidebar" id={sidebarId} aria-label="Menu lateral">
           <Link
             className="brand"
             href={`${base}/${role}`}
@@ -53,20 +61,18 @@ export function Workspace({
             <ul>
               {links.map(([href, label, icon]) => (
                 <li key={href}>
-                  <NavLink href={href} label={label} icon={icon} />
+                  <NavLink href={href} label={label} icon={icon} compact={collapsed} />
                 </li>
               ))}
             </ul>
           </nav>
           <div className="sidebar-tools">
-            <a href="#preferencias">
-              <Icon name="settings" />
-              Preferências de leitura
-            </a>
-            <Link href={`${base}/${role}/ajuda`}>
-              <Icon name="help" />
-              Ajuda
-            </Link>
+            <NavigationHint label="Preferências de leitura" enabled={collapsed}><a href="#preferencias" aria-label="Preferências de leitura">
+              <Icon name="settings" /><span className="sidebar-label">Preferências de leitura</span>
+            </a></NavigationHint>
+            <NavigationHint label="Ajuda" enabled={collapsed}><Link href={`${base}/${role}/ajuda`} aria-label="Ajuda">
+              <Icon name="help" /><span className="sidebar-label">Ajuda</span>
+            </Link></NavigationHint>
           </div>
           <div className="network-brand">
             <span>Uma iniciativa</span>
@@ -81,9 +87,9 @@ export function Workspace({
         </aside>
         <div className="workspace">
           <header className="topbar">
-            <span className="eyebrow">
-              ÁREA {student ? "DO ALUNO" : "DO PROFESSOR"}
-            </span>
+            <div className="workspace-topbar-start"><NavigationHint label={toggleLabel} below>
+              <button type="button" className="sidebar-toggle" aria-label={toggleLabel} aria-expanded={!collapsed} aria-controls={sidebarId} disabled={!ready} onClick={()=>setCollapsed(v=>!v)}><Icon name={collapsed?'panel-open':'panel-close'}/></button>
+            </NavigationHint><span className="eyebrow workspace-context">ÁREA {student ? "DO ALUNO" : "DO PROFESSOR"}</span></div>
             <div className="topbar-actions">
               <ReadingPreferences accountPreferences={preferences} />
               <AccountMenu
