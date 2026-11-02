@@ -172,3 +172,40 @@ test('consulta de processamento em segundo plano não abandona a escolha do alun
  await page.getByRole('button',{name:'Ajustar atividade sem PDF',exact:true}).click();await nextPoll;
  await expect(page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true})).toBeVisible();
 });
+
+
+test('cegueira: áudio integral no fluxo existente, descrições e voz local sem reorganização automática',async({page})=>{
+ const captured=await fixture(page,false,['blindness'],[]);await addPdf(page);
+ await expect(page.getByRole('checkbox',{name:/Descrição das imagens/})).toBeChecked();
+ await expect(page.getByRole('checkbox',{name:/Áudio com transcrição/})).toBeChecked();
+ await expect(page.getByRole('checkbox',{name:/Passos curtos e numerados/})).toHaveCount(0);
+ await expect(page.getByText(/A voz é gerada localmente, sem Gemini/)).toBeVisible();
+ await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();
+ await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
+ expect(captured()?.settings.supports).toEqual(['image-description','narration']);
+ await expect(page.locator('#material-audio audio')).toHaveAttribute('src',/material-assets\/adaptation-material\/audio$/);
+ await expect(page.getByText(/Narração integral das páginas preparadas/)).toBeVisible();
+ await page.getByText('Leitura em texto e transcrição',{exact:true}).click();
+ await expect(page.getByText('Leitura em texto e transcrição',{exact:true}).locator('..').getByText('O diagrama compara duas rotas.',{exact:true})).toBeVisible();
+ await page.getByText('Ajustar o texto da prévia',{exact:true}).click();
+ await page.getByLabel('Descrição das informações visuais da página 1',{exact:true}).fill('Descrição revisada pelo professor.');
+ await expect(page.locator('#material-audio audio')).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Atualizar prévia →',exact:true}).click();
+ await expect(page.locator('#material-audio audio')).toBeVisible();
+ await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
+ await page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
+});
+
+test('somente narração mantém o fluxo sem autorização ou chamada Gemini',async({page})=>{
+ const captured=await fixture(page,false,['blindness'],[]);await addPdf(page);
+ await page.getByRole('checkbox',{name:/Descrição das imagens/}).uncheck();
+ await expect(page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/})).toHaveCount(0);
+ await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
+ expect(captured()?.settings.supports).toEqual(['narration']);
+ expect(captured()?.settings.useAi).toBe(false);expect(captured()?.settings.approvedForProvider).toBe(false);
+ await expect(page.locator('#material-audio audio')).toBeVisible();
+});

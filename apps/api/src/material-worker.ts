@@ -63,6 +63,12 @@ const instructions: Record<string,string> = {
   glossary: 'Explicar termos técnicos no contexto, mantendo o termo original.',
   'image-description': 'Descrever relações, informações e dados relevantes das imagens recebidas, indicando incerteza.',
 };
+/** The exact ordered script spoken locally; no summarisation or external voice API. */
+export function materialNarration(document: z.infer<typeof materialDocument>) {
+  const text = document.map(p => `Página ${p.page} do original.\n${p.title}\n${p.text}${p.description.trim() ? '\nDescrição das informações visuais.\n'+p.description : ''}\nFim da página ${p.page}.`).join('\n\n');
+  if (!text.trim() || text.length > 22000) throw new Error('Narration budget');
+  return text;
+}
 export class MaterialWorker {
   constructor(readonly db: PrismaClient, readonly config: Config, readonly provider: MaterialProvider = materialProvider(config),
     readonly local = localProcess, readonly pdf = renderPdf) {}
@@ -111,10 +117,18 @@ export class MaterialWorker {
     if (settings.useAi) {
       if (!this.config.aiEnabled || !settings.approvedForProvider) throw new Error('Disabled');
       const version = await this.db.missionVersion.findUniqueOrThrow({ where: { id: a.versionId }, select: { objectives: true } });
-      const input = { objectives: z.array(z.string()).parse(version.objectives), supports: settings.supports.filter(s=>instructions[s]).map(s=>instructions[s]),
+      const descriptionsOnly = !settings.supports.some(s => ['literal-language','short-sections','glossary'].includes(s));
+      const input = { descriptionsOnly, objectives: z.array(z.string()).parse(version.objectives), supports: settings.supports.filter(s=>instructions[s]).map(s=>instructions[s]),
         pages: await Promise.all(pages.map(async p => ({ page: p.page, text: p.text, ...(settings.supports.includes('image-description') ? { image: await visualPage(source.id, p.page) } : {}) }))) };
       if (input.pages.some(p=>p.image && p.image.length>2*1024*1024)) throw new Error('Image budget');
-      const generated = await this.provider(input, AbortSignal.timeout(45000)); document = generated.document; inputTokens = generated.inputTokens; outputTokens = generated.outputTokens;
+      const generated = await this.provider(input, AbortSignal.timeout(45000)); document = generated.document;
+      // Preserve every extracted character when only visual descriptions were requested.
+      if (descriptionsOnly) {
+        const descriptions = materialDocument.parse(document);
+        if (JSON.stringify(descriptions.map(p=>p.page)) !== JSON.stringify(selected)) throw new Error('Missing pages');
+        document = pages.map((p,i) => ({ page: p.page, title: `Página ${p.page}`, text: p.text, description: descriptions[i].description }));
+      }
+      inputTokens = generated.inputTokens; outputTokens = generated.outputTokens;
     }
     const parsed = materialDocument.parse(document);
     if (JSON.stringify(parsed.map(p=>p.page))!==JSON.stringify(selected) || parsed.reduce((n,p)=>n+p.text.length+p.description.length,0)>20000) throw new Error('Output budget');
@@ -130,7 +144,7 @@ export class MaterialWorker {
     for (const p of extractedPages.parse(source.pages)) if (p.hasVisual && document.some(d=>d.page===p.page)) images[p.page] = (await visualPage(source.id,p.page,true)).toString('base64');
     await this.pdf(materialPath(a.id, `adapted-${a.revision}.pdf`), documentHtml(document, settings, images));
     const audio = settings.supports.includes('narration');
-    if (audio) await this.local('audio', materialPath(a.id, `audio-${a.revision}.mp3`), document.map(p=>`${p.title}. Página ${p.page} do original.\n${p.text}\n${p.description ? 'Descrição das informações visuais. '+p.description : ''}`).join('\n\n'));
+    if (audio) await this.local('audio', materialPath(a.id, `audio-${a.revision}.mp3`), materialNarration(document));
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
     await this.db.materialAdaptation.updateMany({ where: { id: a.id, status: 'rendering', revision: a.revision, expiresAt: { gt: new Date() } }, data: { status: 'ready', hasAudio: audio } });
   }

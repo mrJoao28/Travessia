@@ -44,3 +44,5 @@ O SSH faz checkout do SHA exato testado, confirmado como ancestral de origin/pro
 Não executar `down -v`, limpar volumes ou recriar banco para acrescentar o worker. O Compose reutiliza postgres-data, cria/preserva material-data e acrescenta o serviço interno com limite de 1536 MiB/1 CPU. Todos os serviços precisam ficar saudáveis; banco, API e worker não podem publicar portas. O frontend permanece no loopback. O .env.docker existente é preservado e nenhum seed de demonstração é executado no servidor.
 
 Após publicar, `npm run test:production` verifica somente por GET: HTTPS de login/cadastro, API saudável, acesso anônimo negado, sessão anônima vazia e assets JavaScript/CSS referenciados pela página. Não cria usuários nem altera dados reais. Os fluxos com contas e entregas são testados no banco isolado antes de publicar. Gemini real depende da configuração privada existente; esses testes não afirmam uma geração real com a chave do servidor.
+
+A narração integral das até quatro páginas usa o worker e a voz Piper já existentes, sem novo serviço ou chave de voz. Fluxo, consumo Gemini e limites: [LOCAL-MATERIAL-NARRATION.md](LOCAL-MATERIAL-NARRATION.md).
