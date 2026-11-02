@@ -35,6 +35,7 @@ test('aluno que entrou em uma turma vazia recebe orientação clara',async({page
  await classroomFixture(page,'student');await page.goto('/aluno?turma=first-class');
  await expect(page.getByRole('heading',{name:'Você entrou na turma Laboratório de projetos.',exact:true})).toBeVisible();
  await expect(page.getByRole('link',{name:'Consultar minhas turmas',exact:true})).toHaveAttribute('href','/aluno/turmas');
+ await expect(page.getByText('Retome sua missão de onde parou.',{exact:true})).toHaveCount(0);
  await expect(page.getByRole('link',{name:'Começar minha primeira missão',exact:true})).toHaveCount(0);
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  await page.screenshot({path:'test-results/reference-first-steps-student-empty.png',fullPage:true});

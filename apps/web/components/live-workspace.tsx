@@ -144,7 +144,7 @@ function WorkspaceView({
         <h1>{title}</h1>
         <p>
           {materialWorkspace ? "Prepare, compare e confira antes de disponibilizar ao aluno." : role === "aluno"
-            ? "Retome sua missão de onde parou."
+            ? (entries.some(entry=>entry.mission.publishedVersion)?"Retome sua missão de onde parou.":"Suas atividades serão mostradas aqui.")
             : "Organize objetivos, etapas e devolutivas para sua turma."}
         </p>
       </div>}
@@ -299,7 +299,7 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
     return (
       <section className="paper">
         <h2>{classrooms.length===1?`Você entrou na turma ${classrooms[0].name}.`:"Você já está nas suas turmas."}</h2>
-        <p>A primeira missão ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Você não precisa cadastrar uma missão. Por enquanto, pode conhecer os ajustes de leitura ou completar seu perfil.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
+        <p>A primeira missão ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Enquanto isso, use Ajustar leitura, no início da página, se quiser mudar o tamanho do texto.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
       </section>
     );
   const version = entry.mission.publishedVersion;
