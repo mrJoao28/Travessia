@@ -9,7 +9,7 @@ reader=PdfReader(files[0])
 assert len(reader.pages)==4, 'Each selected page must be present without orphan pages'
 for index,page in enumerate(reader.pages,1):
     assert f'página {index} do original' in (page.extract_text() or '').casefold(), 'Page reference/order missing'
-assert 'End of page 4.' in (reader.pages[3].extract_text() or ''), 'Last page content missing'
+assert 'End of page 4.' in ' '.join((reader.pages[3].extract_text() or '').split()), 'Last page content missing'
 assert reader.trailer['/Root'].get('/StructTreeRoot') is not None, 'Missing PDF tags'
 text='\n'.join(p.extract_text() or '' for p in reader.pages)
 assert '10 meters' in text and 'Material Docker persistente' in text
