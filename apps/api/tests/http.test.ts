@@ -682,33 +682,6 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
  assert.equal(providerCalls,before,'Disponibilizar original não chama IA');
  assert.equal(await db.materialAdaptation.count({where:{sourceId:source.id,status:{in:['queued','generating','rendering']}}}),0);
 });
-test('limite de login persiste após recriar a aplicação e demo exige isolamento', { timeout: 30000 }, async () => {
-  assert.throws(() => readConfig({ ...process.env, DEMO_ONLY: 'false' }));
-  assert.equal(createAuth(db, { ...config, demo: false }).options.emailAndPassword?.minPasswordLength, 8);
-  assert.equal(createAuth(db, config).options.emailAndPassword?.minPasswordLength, 8);
-  await db.rateBucket.deleteMany();
-  for (let i = 0; i < 20; i++) await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 401);
-  await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
-  for (let i = 0; i < 10; i++) await request('/api/auth/sign-up/email', '', 'POST', {}, 400);
-  await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
-  await runtime.app.close();
-  runtime = await createApplication(db, config);
-  await runtime.app.listen(0, '127.0.0.1'); base = await runtime.app.getUrl();
-  await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
-  await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
-});
-test('vínculo revogado impede novas leituras e sessão revogada/expirada não autentica', async () => {
-  const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } } });
-  await request(`/v1/classrooms/${workshop}/members/${member.id}`, main, 'DELETE');
-  await request(`/v1/missions/${workshop}-mission`, b, 'GET', undefined, 404);
-  await request('/v1/barriers/demo-barrier-shared', b, 'GET', undefined, 404);
-  await request('/api/auth/sign-out', a, 'POST', {});
-  await request('/v1/me', a, 'GET', undefined, 401);
-  await db.session.updateMany({ where: { userId: mainId }, data: { expiresAt: new Date(0) } });
-  await request('/v1/me', main, 'GET', undefined, 401);
-});
-
-
 test('narração integral: quatro páginas preservadas, descrição IA separada e voz exclusivamente local', { timeout: 30000 }, async () => {
   const mission = (await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
   const versionId=mission.draftVersion.id, path=`/v1/missions/${mission.id}`;
@@ -743,3 +716,31 @@ test('narração integral: quatro páginas preservadas, descrição IA separada 
     await request(`${path}/material-assets/${plan.id}/audio`,b,'GET',undefined,404);
   } finally { config.aiEnabled=false; }
 });
+
+test('limite de login persiste após recriar a aplicação e demo exige isolamento', { timeout: 30000 }, async () => {
+  assert.throws(() => readConfig({ ...process.env, DEMO_ONLY: 'false' }));
+  assert.equal(createAuth(db, { ...config, demo: false }).options.emailAndPassword?.minPasswordLength, 8);
+  assert.equal(createAuth(db, config).options.emailAndPassword?.minPasswordLength, 8);
+  await db.rateBucket.deleteMany();
+  for (let i = 0; i < 20; i++) await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 401);
+  await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
+  for (let i = 0; i < 10; i++) await request('/api/auth/sign-up/email', '', 'POST', {}, 400);
+  await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
+  await runtime.app.close();
+  runtime = await createApplication(db, config);
+  await runtime.app.listen(0, '127.0.0.1'); base = await runtime.app.getUrl();
+  await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
+  await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
+});
+test('vínculo revogado impede novas leituras e sessão revogada/expirada não autentica', async () => {
+  const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } } });
+  await request(`/v1/classrooms/${workshop}/members/${member.id}`, main, 'DELETE');
+  await request(`/v1/missions/${workshop}-mission`, b, 'GET', undefined, 404);
+  await request('/v1/barriers/demo-barrier-shared', b, 'GET', undefined, 404);
+  await request('/api/auth/sign-out', a, 'POST', {});
+  await request('/v1/me', a, 'GET', undefined, 401);
+  await db.session.updateMany({ where: { userId: mainId }, data: { expiresAt: new Date(0) } });
+  await request('/v1/me', main, 'GET', undefined, 401);
+});
+
+
