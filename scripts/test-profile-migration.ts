@@ -27,7 +27,9 @@ export async function verifyProfileMigration(directory: string, run: (file: stri
     await db.$executeRaw`INSERT INTO "Session" (id, "userId", token, "expiresAt", "updatedAt") VALUES ('legacy-session', 'legacy-person', 'fixture-token-unchanged', CURRENT_TIMESTAMP + interval '1 day', CURRENT_TIMESTAMP)`;
     await db.$executeRaw`INSERT INTO "Classroom" (id, name) VALUES ('legacy-class-student', 'Turma anterior'), ('legacy-class-teacher', 'Docência anterior')`;
     await db.$executeRaw`INSERT INTO "Membership" (id, "userId", "classroomId", role) VALUES ('legacy-member-student', 'legacy-person', 'legacy-class-student', 'student'), ('legacy-member-teacher', 'legacy-person', 'legacy-class-teacher', 'teacher')`;
+    await db.$executeRaw`INSERT INTO "Invitation" (id, "classroomId", "tokenHash", "expiresAt") VALUES ('legacy-invite', 'legacy-class-teacher', 'legacy-invite-hash', CURRENT_TIMESTAMP + interval '7 days')`;
     await run('node_modules/prisma/build/index.js', ['migrate', 'deploy', '--schema', 'apps/api/prisma/schema.prisma']);
+    const invite=await db.invitation.findUniqueOrThrow({where:{id:'legacy-invite'}});assert.equal(invite.tokenHash,'legacy-invite-hash');assert.equal(invite.codeHash,null);assert.equal(invite.reusable,false);assert.equal(invite.revokedAt,null);
     assert.equal((await db.studentProfile.findUniqueOrThrow({ where: { userId: 'legacy-person' } })).course, course);
     assert.ok(await db.teacherProfile.findUnique({ where: { userId: 'legacy-person' } }));
     assert.equal((await db.profile.findUniqueOrThrow({ where: { userId: 'legacy-person' } })).phone, null);

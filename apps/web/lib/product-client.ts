@@ -109,7 +109,7 @@ export function errorMessage(error: unknown) {
 }
 
 export async function pages<
-  K extends "classrooms" | "missions" | "submissions" | "barriers" | "members" | "strategyRecipients" | "sharedLearningNeeds",
+  K extends "classrooms" | "missions" | "submissions" | "barriers" | "members" | "invitations" | "strategyRecipients" | "sharedLearningNeeds",
 >(operation: K, id?: string) {
   const items: Array<ApiResponse<K>["items"][number]> = [];
   let cursor: string | undefined;

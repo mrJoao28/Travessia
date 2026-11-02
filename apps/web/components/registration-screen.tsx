@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { authRequest, hasSession } from "../lib/auth-client";
 import { AuthIntro } from "./auth-intro";
 import { Icon } from "./icons";
+import {usePendingInvitation} from "./use-pending-invitation";
+import {invitationHref} from "../lib/invitation";
 import { StartingSpaceChoice, type StartingSpace } from "./starting-space";
 
 export function RegistrationScreen() {
   const router = useRouter();
+  const {invitation}=usePendingInvitation();
   const [space, setSpace] = useState<StartingSpace>("aluno");
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState(false);
@@ -20,6 +23,7 @@ export function RegistrationScreen() {
   const formRef = useRef<HTMLFormElement>(null);
   useEffect(() => { setReady(true); }, []);
   useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
+  useEffect(()=>{if(invitation)setSpace("aluno");},[invitation]);
   const disabled = !ready || pending || created;
   return <>
     <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
@@ -50,20 +54,20 @@ export function RegistrationScreen() {
               // Account creation is not retried when only session confirmation fails.
               if (!hasSession(await authRequest("get-session"))) throw new Error("Sua conta foi criada. Entre para continuar.");
               formRef.current?.reset();
-              router.replace(`/boas-vindas?espaco=${space}`);
+              router.replace(invitationHref(`/boas-vindas?espaco=${invitation?"aluno":space}`,invitation));
               router.refresh();
             } catch (reason) {
               setError(reason instanceof Error && !["TimeoutError", "TypeError"].includes(reason.name)
                 ? reason.message : "Não foi possível confirmar a conexão. Se a conta já foi criada, entre com seu e-mail e senha. Seus dados permanecem nesta tela.");
             } finally { setPending(false); }
           }}>
-          <StartingSpaceChoice value={space} onChange={setSpace} disabled={disabled} />
+          {invitation?<p className="notice">Você recebeu um convite de aluno. Depois do cadastro, confirme sua entrada na turma.</p>:<StartingSpaceChoice value={space} onChange={setSpace} disabled={disabled} />}
           <p className="registration-context">{space === "aluno" ? "Entre na sua turma e avance no seu ritmo." : "Prepare suas turmas e acompanhe cada aluno."}</p>
           {error && <div className="form-error" role="alert" aria-label="Erro ao criar conta" tabIndex={-1} ref={errorRef}>
             <strong>{created ? "Sua conta foi criada" : "Não foi possível concluir o cadastro"}</strong>
             <p>{error}</p>
             {confirmationError && <button type="button" className="text-button" onClick={() => formRef.current?.querySelector<HTMLInputElement>('[name="passwordConfirm"]')?.focus()}>Conferir confirmação da senha</button>}
-            <Link className="text-link" href="/login">Entrar na minha conta</Link>
+            <Link className="text-link" href={invitationHref("/login",invitation)}>Entrar na minha conta</Link>
           </div>}
           <label htmlFor="register-name">Nome completo
             <input id="register-name" name="name" autoComplete="name" required minLength={2} maxLength={80} disabled={disabled} placeholder="Seu nome completo" />
@@ -86,7 +90,7 @@ export function RegistrationScreen() {
           <button className="button" disabled={disabled}>{pending ? "Criando conta…" : created ? "Conta criada" : "Criar minha conta"}</button>
           <p className="sr-only" role="status">{pending ? "Criando sua conta. Aguarde a confirmação." : ""}</p>
         </form>
-        <p className="registration-login">Já tem uma conta? <Link className="text-link" href="/login">Entrar</Link></p>
+        <p className="registration-login">Já tem uma conta? <Link className="text-link" href={invitationHref("/login",invitation)}>Entrar</Link></p>
         <p className="small registration-later">{space === "aluno" ? "Você pode completar seu perfil depois." : "Disciplinas e cursos podem ser preenchidos depois."}</p>
       </section>
     </main>

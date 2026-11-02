@@ -230,6 +230,33 @@ test('convite opaco: papel fixo, consumo atômico, expiração e revogação', a
   await request(`/v1/classrooms/${workshop}/invitations/${revoked.id}`, main, 'DELETE');
   await request('/v1/invitations/accept', outsider1.cookie, 'POST', { token: revoked.token }, 400);
 });
+test('código curto da turma é privado, reutilizável, transacional e desativável', async()=>{
+ const one=await provision('short-invite-one'),two=await provision('short-invite-two'),three=await provision('short-invite-three');
+ await request(`/v1/classrooms/${workshop}/invitations`,a,'GET',undefined,404);
+ await request(`/v1/classrooms/${workshop}/invitations`,otherTeacher,'GET',undefined,404);
+ await request(`/v1/classrooms/${workshop}/invitations`,a,'POST',{reusable:true},404);
+ const invite=(await request(`/v1/classrooms/${workshop}/invitations`,main,'POST',{reusable:true})).json;
+ assert.match(invite.code,/^[A-HJ-NP-Z2-9]{8}$/);assert.equal(invite.reusable,true);
+ const stored=await db.invitation.findUniqueOrThrow({where:{id:invite.id}});
+ assert.ok(stored.codeHash&&stored.codeHash!==invite.code);assert.equal(stored.reusable,true);
+ const list=(await request(`/v1/classrooms/${workshop}/invitations`,main)).json.items;
+ assert.ok(list.some((r:any)=>r.id===invite.id));assert.ok(list.every((r:any)=>!('token' in r)&&!('code' in r)&&!('tokenHash' in r)&&!('codeHash' in r)));
+ const joined=await Promise.all([request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code}),request('/v1/invitations/accept',two.cookie,'POST',{token:invite.token})]);
+ assert.ok(joined.every(r=>r.json.role==='student'));assert.equal((await db.invitation.findUniqueOrThrow({where:{id:invite.id}})).consumedAt,null);
+ await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code},409);
+ const member=await db.membership.findUniqueOrThrow({where:{userId_classroomId:{userId:one.user.id,classroomId:workshop}}});
+ await request(`/v1/classrooms/${workshop}/members/${member.id}`,main,'DELETE');
+ await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code},409);
+ await request(`/v1/classrooms/${workshop}/invitations/${invite.id}`,main,'DELETE');
+ await request('/v1/invitations/accept',three.cookie,'POST',{token:invite.code},400);
+ await request('/v1/invitations/accept',three.cookie,'POST',{token:invite.token},400);
+ assert.ok(!(await request(`/v1/classrooms/${workshop}/invitations`,main)).json.items.some((r:any)=>r.id===invite.id));
+ const expired=(await request(`/v1/classrooms/${workshop}/invitations`,main,'POST',{reusable:true})).json;
+ await db.invitation.update({where:{id:expired.id},data:{expiresAt:new Date(0)}});
+ await request('/v1/invitations/accept',three.cookie,'POST',{token:expired.code},400);
+ // Failed attempts, including valid-shaped guesses, are bounded per authenticated account.
+ for(let i=0;i<21;i++){const response=await fetch(base+'/v1/invitations/accept',{method:'POST',headers:{cookie:three.cookie,origin:config.origin,'Content-Type':'application/json'},body:JSON.stringify({token:'ZZZZZZZZ'})});assert.ok([400,429].includes(response.status));if(i===20)assert.equal(response.status,429);}
+});
 test('barreiras só chegam ao professor com compartilhamento explícito', async () => {
   await request('/v1/barriers/demo-barrier-private', main, 'GET', undefined, 404);
   await request('/v1/barriers/demo-barrier-private', a);

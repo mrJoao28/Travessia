@@ -45,3 +45,7 @@ Better Auth valida sessões persistidas em cada rota privada; queries resolvem v
 Áudio privado de apoios e geração Gemini: contratos implementados `supportAudio` e `generateSupports`, descritos em [STRATEGIES.md](STRATEGIES.md#áudio-privado-e-assistência-gemini).
 
 Adaptações, escolhas voluntárias e entregas alternativas: [INCLUSIVE-ACTIVITIES.md](INCLUSIVE-ACTIVITIES.md). Contratos gerados a partir dos endpoints implementados.
+
+## Convites da turma
+
+A interface pode emitir convite reutilizável com `POST /v1/classrooms/{id}/invitations` e `{ "reusable": true }`, usando código de oito caracteres ou link com fragmento. `GET` no mesmo caminho lista metadados de convites ativos, restritos ao docente. O formato anterior permanece de uso único. Validação, migração e limites: [FIRST-STEPS-INVITES.md](FIRST-STEPS-INVITES.md). OpenAPI continua sendo a definição executável dos endpoints implementados.
