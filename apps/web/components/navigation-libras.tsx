@@ -40,10 +40,9 @@ export function NavigationLibras() {
         {status==='loading'&&<p role="status">Carregando o botão do VLibras… O avatar será carregado ao ativar o botão azul dentro do guia.</p>}
         {status==='ready'&&<p role="status">Guia disponível. Ative o botão azul do VLibras e selecione uma orientação.</p>}
         {status==='error'&&<p role="alert">Não foi possível carregar ou usar o VLibras. O serviço externo pode estar indisponível. Você pode tentar novamente ou continuar usando a plataforma.</p>}
-        {!session&&<button ref={activation} type="button" className="button" onClick={activate}>{status==='error'?'Tentar carregar VLibras novamente':'Ativar VLibras'}</button>}
         {session&&<iframe key={session.token} ref={frame} className="libras-frame" title="Guia de navegação com VLibras" sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={session.document}/>}
       </div>
-      <footer className="libras-footer"><button type="button" className="text-button" onClick={close}>Fechar e voltar à plataforma</button></footer>
+      <footer className="libras-footer">{!session&&<button ref={activation} type="button" className="button" onClick={activate}>{status==='error'?'Tentar carregar VLibras novamente':'Ativar VLibras'}</button>}<button type="button" className="text-button" onClick={close}>Fechar e voltar à plataforma</button></footer>
     </dialog>
   </>;
 }

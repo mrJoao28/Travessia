@@ -1669,9 +1669,10 @@ body {
 .libras-dialog::backdrop { background: #0008; }
 .libras-header { flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: 1rem; border-bottom: 1px solid var(--border); }
 .libras-header h2 { font-size: 1.25rem; margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.libras-body { flex: 1 1 auto; min-height: 0; overflow: auto; display: grid; gap: .9rem; padding: 1rem; }
+.libras-body { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: .9rem; padding: 1rem; }
+.libras-body > * { flex-shrink: 0; }
 .libras-body p { margin: 0; }
 .libras-frame { display: block; width: 100%; min-width: 0; height: min(38rem, 65dvh); border: 1px solid var(--border); border-radius: .5rem; background: var(--surface); }
-.libras-footer { flex-shrink: 0; padding: .75rem 1rem; border-top: 1px solid var(--border); }
-@media (max-width: 600px) { .libras-header, .libras-body, .libras-footer { flex-shrink: 0; padding: .75rem; } }
+.libras-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; flex-shrink: 0; padding: .75rem 1rem; border-top: 1px solid var(--border); }
+@media (max-width: 600px) { .libras-header, .libras-body, .libras-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; flex-shrink: 0; padding: .75rem; } }
 @media (forced-colors: active) { .libras-launcher { border-color: ButtonText; background: ButtonFace; color: ButtonText; } }
