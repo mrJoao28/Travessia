@@ -29,7 +29,21 @@ export function MobileNavigation({open,onClose,role,links,helpHref,preferences}:
   return()=>{document.body.style.overflow=previous;};
  },[open]);
  return <dialog ref={dialog} className="mobile-navigation" id="mobile-workspace-navigation"
-  aria-labelledby={titleId} onCancel={event=>{event.preventDefault();onClose();}} onClose={onClose}
+  aria-labelledby={titleId}
+  onKeyDown={event=>{
+   if(event.key!=="Tab")return;
+   const targets=[...event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])')].filter(node=>{
+    if(!node.getClientRects().length||getComputedStyle(node).visibility==="hidden")return false;
+    for(let parent=node.parentElement;parent;parent=parent.parentElement){
+     if(parent instanceof HTMLDetailsElement&&!parent.open&&!parent.querySelector(":scope > summary")?.contains(node))return false;
+    }
+    return true;
+   });
+   const first=targets[0],last=targets[targets.length-1];
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+  }}
+  onCancel={event=>{event.preventDefault();onClose();}} onClose={onClose}
   onClick={event=>{
    if(event.target!==event.currentTarget)return;
    const rect=event.currentTarget.getBoundingClientRect();
