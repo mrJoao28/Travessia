@@ -2,10 +2,10 @@ import {test,expect,type Page} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 // Controlled loader exercises the integration and sandbox, not translation quality.
-const loader=`const button=document.createElement('button');button.textContent='Ativar avatar de teste';document.body.appendChild(button);window.VLibrasWidget={initBtn:button};window.parentBlocked=false;try{parent.document.body.textContent}catch{window.parentBlocked=true}window.storageBlocked=false;try{parent.localStorage.getItem('private-marker')}catch{window.storageBlocked=true}`;
+const loader=`const button=document.createElement('button');button.textContent='Ativar avatar de teste';document.body.appendChild(button);window.VLibrasWidget={initBtn:button};`;
 async function mock(page:Page,fail=false){
  let calls=0;
- await page.route('https://vlibras.gov.br/app/vlibras-plugin.js',async route=>{calls++;if(fail&&calls===1)return route.abort();await route.fulfill({status:302,headers:{location:'https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/vlibras-portal@v7.12.2/app/vlibras-plugin.js','access-control-allow-origin':'*'}});});
+ await page.route('https://vlibras.gov.br/app/vlibras-plugin.js',async route=>{calls++;if(fail&&calls===1)return route.abort();await route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:loader});});
  await page.route('https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/**',route=>route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:loader}));
  return ()=>calls;
 }
@@ -30,7 +30,7 @@ test('quadro isolado não lê pai, dados da conta, rascunho, query ou seleção'
  await page.evaluate(()=>{localStorage.setItem('private-marker','PRIVATE_ACCOUNT_MARKER');const p=document.createElement('p');p.id='private-fixture';p.textContent='PRIVATE_REPORT_MARKER';document.body.appendChild(p);const range=document.createRange();range.selectNodeContents(p);const selection=window.getSelection();selection?.removeAllRanges();selection?.addRange(range);});
  await open(page);await page.getByRole('button',{name:'Ativar VLibras',exact:true}).click();await expect(page.getByRole('dialog').getByRole('status')).toContainText('Guia disponível');
  const iframe=page.locator('iframe[title="Guia de navegação com VLibras"]');const doc=await iframe.getAttribute('srcdoc');expect(doc).not.toMatch(/PRIVATE_|Marina|Ana Paula/);
- const child=await iframe.elementHandle().then(h=>h!.contentFrame());expect(await child!.evaluate(()=>({parent:(window as unknown as {parentBlocked:boolean}).parentBlocked,storage:(window as unknown as {storageBlocked:boolean}).storageBlocked}))).toEqual({parent:true,storage:true});
+ const child=await iframe.elementHandle().then(h=>h!.contentFrame());expect(await child!.evaluate(()=>{let parentBlocked=false,storageBlocked=false;try{void window.parent.document.body.textContent;}catch{parentBlocked=true;}try{void window.parent.localStorage.getItem('private-marker');}catch{storageBlocked=true;}return {parent:parentBlocked,storage:storageBlocked};})).toEqual({parent:true,storage:true});
  await page.evaluate(()=>window.postMessage({channel:'travessia-navigation-libras',state:'close',token:'forged'},'*'));await expect(page.getByRole('dialog')).toBeVisible();
  await child!.getByRole('button',{name:/^Missões/}).focus();await child!.press('body','Escape');await expect(page.getByRole('dialog')).not.toBeVisible();await expect(input).toHaveValue('PRIVATE_MATERIAL_MARKER');
  await page.getByRole('button',{name:'Recolher menu',exact:true}).click();await open(page);await page.getByRole('button',{name:'Fechar Libras',exact:true}).click();await expect(page.getByRole('button',{name:'Abrir menu',exact:true})).toBeVisible();
