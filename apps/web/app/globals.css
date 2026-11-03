@@ -1664,7 +1664,7 @@ body {
 .has-libras-navigation { padding-bottom: max(5rem, env(safe-area-inset-bottom)); }
 .libras-launcher { position: fixed; right: max(1rem, env(safe-area-inset-right)); bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 80; display: flex; align-items: center; gap: .45rem; min-height: 3rem; padding: .65rem .9rem; border: 2px solid var(--primary); border-radius: .8rem; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px #0002; }
 .libras-launcher svg { width: 1.65rem; height: 1.65rem; flex: none; }
-.libras-dialog { width: calc(100% - 1rem); max-width: 68rem; max-height: calc(100dvh - 1rem); padding: 0; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); color: var(--text); overflow: hidden; }
+.libras-dialog { position: fixed; inset: .5rem; margin: auto; height: min(52rem, calc(100dvh - 1rem)); width: calc(100% - 1rem); max-width: 68rem; max-height: calc(100dvh - 1rem); padding: 0; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); color: var(--text); overflow: clip; }
 .libras-dialog[open] { display: flex; flex-direction: column; }
 .libras-dialog::backdrop { background: #0008; }
 .libras-header { flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: 1rem; border-bottom: 1px solid var(--border); }
