@@ -48,13 +48,13 @@ for(const theme of ['light','dark'] as const){
   await mock(page);await page.setViewportSize({width:theme==='dark'?320:1440,height:900});await page.goto('/previa/professor');await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
   if(theme==='dark'){await page.addStyleTag({content:'html{font-size:200%!important}'});await page.emulateMedia({forcedColors:'active',reducedMotion:'reduce'});}
   const dialog=await open(page);expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
-  await page.screenshot({path:`test-results/reference-libras-${theme}-before-activation.png`,fullPage:true});
+  await test.step('capturar painel antes da ativação',async()=>{await page.screenshot({path:`test-results/reference-libras-${theme}-before-activation.png`,fullPage:false});});
   await dialog.getByRole('button',{name:'Ativar VLibras',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('Guia disponível');
   expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
   const closeBox=(await dialog.getByRole('button',{name:'Fechar Libras',exact:true}).boundingBox())!;expect(closeBox.y).toBeGreaterThanOrEqual(0);expect(closeBox.y+closeBox.height).toBeLessThanOrEqual(900);
   const frame=page.frameLocator('iframe[title="Guia de navegação com VLibras"]');await expect(frame.getByRole('button',{name:/^Preferências de leitura/})).toBeVisible();
   expect(await frame.locator('html').evaluate(el=>el.scrollWidth<=innerWidth+1)).toBe(true);
-  await page.screenshot({path:`test-results/reference-libras-${theme}-guide.png`,fullPage:true});
+  await test.step('capturar guia na área visível',async()=>{await page.screenshot({path:`test-results/reference-libras-${theme}-guide.png`,fullPage:false});});
  });
 }
 
