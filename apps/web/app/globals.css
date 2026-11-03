@@ -1727,3 +1727,11 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   .teacher-ai, .editor-step, .preview-editor > .editor-step, .preview-material-item { padding: 12px; }
   .teacher-support-hub, .profile-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Popovers need reading room too: rem-based gutters grew with enlarged text. */
+@media (max-width: 40rem) {
+  .preferences[open] .preferences-panel {
+    width: min(24rem, calc(100vw - 32px)); max-width: calc(100vw - 32px); padding: 12px;
+  }
+  .account-panel { width: min(17rem, calc(100vw - 32px)); padding: 12px; }
+}

@@ -3,6 +3,7 @@
 ## Alterações
 
 - A navegação passa para o topo em larguras de até 1024 CSS px. O menu continua recolhível para ícones; rótulos e nomes acessíveis são preservados.
+- Painéis de leitura e conta mantêm margens laterais de 16 px no celular, sem multiplicar o espaço perdido quando o texto aumenta.
 - Cabeçalho e ações podem quebrar linha. Os cartões e campos usam menos espaço lateral em telas estreitas, inclusive quando aninhados.
 - Grades do editor, perfil e leitura também respondem à largura disponível dentro do espaço de trabalho, em vez de depender apenas da janela. Isso evita manter duas colunas quando a barra lateral e o texto ampliado deixam pouco espaço.
 - A bancada de materiais adapta arquivos, controles e comparação à largura do seu próprio contêiner. Em telas pequenas, a comparação apresenta Original/Preparado por alternância. A ampliação do PDF rola dentro do leitor; a página inteira não deve ganhar rolagem horizontal.

@@ -22,6 +22,7 @@ async function measure(page:Page){
   const overflow=[...document.querySelectorAll('main *,header *,aside *')].filter(e=>visible(e)&&!e.closest('.comparison-reader')&&!e.classList.contains('sr-only')).filter(e=>e.getBoundingClientRect().right>innerWidth+2).slice(0,12).map(e=>({tag:e.tagName,classes:e.className,...rect(e)}));
   return {title:document.querySelector('h1')?.textContent,url:location.pathname,viewport:innerWidth,rootWidth:document.documentElement.scrollWidth,fields,overflow,
    navigation:document.querySelector('.sidebar')?rect(document.querySelector('.sidebar')!):null,
+   readingPanels:[...document.querySelectorAll('.preferences-panel')].filter(visible).map(rect),
    documentPanels:[...document.querySelectorAll('.comparison-document')].filter(visible).map(rect)};
  });
 }
@@ -41,6 +42,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   }
   if(!process.env.RESPONSIVE_BASELINE){
    expect.soft(result.rootWidth,`${name}: page horizontal overflow ${JSON.stringify(result.overflow)}`).toBeLessThanOrEqual(profile.width+2);
+   if(name==='reading-panel'&&profile.width<=430)for(const panel of result.readingPanels)expect.soft(panel.width,'Reading popover leaves room for enlarged labels').toBeGreaterThanOrEqual(profile.width-64);
    for(const field of result.fields)expect.soft(field.width,`${name}: writing area ${field.label}`).toBeGreaterThanOrEqual(130);
   }
  }
