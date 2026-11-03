@@ -1527,7 +1527,7 @@ body {
 .comparison-empty h4,.comparison-empty p { margin:0; }
 .comparison-empty p { font-size:.95rem; color:var(--muted); line-height:1.6; }
 .comparison-preview-icon { font-size:2rem; color:var(--primary); background:var(--sage); padding:.75rem; border-radius:.75rem; }
-@container (max-width:1100px) {
+@container (max-width:75rem) {
  .material-desk { grid-template-columns:minmax(0,1fr) 18rem; grid-template-areas:"files files" "comparison controls"; }
  .material-files-panel { display:grid; grid-template-columns:auto minmax(10rem,1fr) auto; align-items:center; gap:.75rem; }
  .material-files-panel > p { margin:0; }
@@ -1535,7 +1535,7 @@ body {
  .material-source-list { grid-column:1/-1; grid-template-columns:repeat(auto-fit,minmax(min(12rem,100%),1fr)); }
  .material-file-outputs { grid-column:1/-1; display:flex; gap:1rem; flex-wrap:wrap; }
 }
-@container (max-width:760px) {
+@container (max-width:58rem) {
  .material-desk { grid-template-columns:minmax(0,1fr); grid-template-areas:"files" "controls" "comparison"; }
  .material-files-panel { grid-template-columns:minmax(0,1fr); }
  .comparison-documents { grid-template-columns:minmax(0,1fr); }
@@ -1703,4 +1703,15 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   .lesson-list { padding-left: 0; }
   .lesson-list li { padding: 12px; }
   .lesson-number { position: static; margin-bottom: .5rem; }
+}
+
+/* Document zoom scrolls inside its reader; the workspace itself must reflow. */
+.comparison-page-control, .comparison-zoom { min-width: 0; flex-wrap: wrap; }
+.comparison-page-control select { max-width: 100%; min-width: 0; }
+.comparison-reader { min-width: 0; overscroll-behavior: contain; }
+@container (max-width:58rem) {
+  .material-files-panel, .material-controls-panel > .paper { padding: 12px; }
+  .comparison-document > header, .comparison-reader, .comparison-paper { padding: 12px; }
+  .comparison-reader { min-height: min(20rem, 60svh); max-height: 65svh; }
+  .comparison-empty { min-height: min(18rem, 55svh); }
 }
