@@ -60,3 +60,13 @@ for(const role of ['aluno','professor'] as const){
   }
  });
 }
+
+
+test('ativar o menu dispensa a dica e deixa Ajustar leitura disponível no celular',async({page})=>{
+ await page.setViewportSize({width:360,height:800});await page.goto('/previa/aluno');
+ const toggle=page.getByRole('button',{name:'Recolher menu',exact:true});await expect(toggle).toBeEnabled();
+ await toggle.hover();await expect(page.locator('.navigation-tooltip').filter({hasText:/^Recolher menu$/})).toBeVisible();
+ await toggle.click();await expect(page.locator('.navigation-tooltip')).toHaveCount(0);
+ await page.getByRole('button',{name:'Abrir menu',exact:true}).click();await expect(page.locator('.navigation-tooltip')).toHaveCount(0);
+ await page.locator('#preferencias > summary').click();await expect(page.getByLabel('Tamanho do texto')).toBeVisible();
+});
