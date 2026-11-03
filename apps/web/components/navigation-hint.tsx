@@ -30,7 +30,7 @@ export function NavigationHint({label,enabled=true,below=false,children}:{label:
   place();window.addEventListener('resize',place);window.addEventListener('scroll',place,true);window.addEventListener('keydown',dismiss);
   return()=>{observer.disconnect();window.removeEventListener('resize',place);window.removeEventListener('scroll',place,true);window.removeEventListener('keydown',dismiss);};
  },[visible,enabled,below,label]);
- return <span ref={anchor} className="navigation-hint" onPointerEnter={()=>{pointer.current=true;show();}} onPointerLeave={()=>{pointer.current=false;scheduleHide();}} onFocus={()=>{focused.current=true;show();}} onBlur={()=>{focused.current=false;scheduleHide();}}>
+ return <span ref={anchor} className="navigation-hint" onClick={()=>{cancelHide();setVisible(false);overTip.current=false;}} onPointerEnter={()=>{pointer.current=true;show();}} onPointerLeave={()=>{pointer.current=false;scheduleHide();}} onFocus={()=>{focused.current=true;show();}} onBlur={()=>{focused.current=false;scheduleHide();}}>
   {children}
   {enabled&&visible&&createPortal(<span ref={tip} role="tooltip" aria-hidden="true" className="navigation-tooltip" style={position} onPointerEnter={()=>{overTip.current=true;cancelHide();}} onPointerLeave={()=>{overTip.current=false;scheduleHide();}}>{label}</span>,document.body)}
  </span>;
