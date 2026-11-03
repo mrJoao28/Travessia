@@ -29,7 +29,7 @@ A primeira matriz Chromium completou 325 observações (25 estados × 13 formato
 
 Configuração: `playwright.responsive.config.ts`; cenários: `tests/responsive/layout.spec.ts`.
 
-A matriz ampliada tem 15 perfis por engine: 320×568, 360×800, 390×844, 430×932, 844×390, 768×1024, 1024×768, 1280×720, 1440×900, 1920×1080, 2560×1440, texto 200% em 320/1024/1280 px e tema escuro em 390 px. São 45 testes, em Chromium, Firefox e WebKit. Cada teste percorre 31 estados de interface, incluindo:
+A matriz ampliada tem 15 perfis por engine: 320×568, 360×800, 390×844, 430×932, 844×390, 768×1024, 1024×768, 1280×720, 1440×900, 1920×1080, 2560×1440, texto 200% em 320/1024/1280 px e tema escuro em 390 px. São 45 testes, em Chromium, Firefox e WebKit. Cada teste percorre 32 estados de interface, incluindo:
 
 - login, cadastro e espaços públicos de prévia;
 - turmas, missões, entregas, feedback, apoios, barreiras e ajuda;

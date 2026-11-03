@@ -1735,3 +1735,10 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   }
   .account-panel { width: min(17rem, calc(100vw - 32px)); padding: 12px; }
 }
+
+@media (max-width: 40rem) {
+  .topbar .account { position: static; }
+  .topbar .preferences[open] .preferences-panel, .topbar .account-panel {
+    right: 0; top: calc(100% + 8px);
+  }
+}

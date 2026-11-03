@@ -28,7 +28,7 @@ async function measure(page:Page){
   const overflow=[...document.querySelectorAll('main *,header *,aside *')].filter(e=>visible(e)&&!e.closest('.comparison-reader')&&!e.classList.contains('sr-only')).filter(e=>e.getBoundingClientRect().right>innerWidth+2).slice(0,12).map(e=>({tag:e.tagName,classes:e.className,...rect(e)}));
   return {title:document.querySelector('h1')?.textContent,url:location.pathname,viewport:innerWidth,rootWidth:document.documentElement.scrollWidth,fields,overflow,
    navigation:document.querySelector('.sidebar')?rect(document.querySelector('.sidebar')!):null,
-   readingPanels:[...document.querySelectorAll('.preferences-panel')].filter(visible).map(rect),
+   readingPanels:[...document.querySelectorAll('.preferences-panel,.account-panel')].filter(visible).map(rect),
    documentPanels:[...document.querySelectorAll('.comparison-document')].filter(visible).map(rect)};
  });
 }
@@ -48,7 +48,11 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   }
   if(!process.env.RESPONSIVE_BASELINE){
    expect.soft(result.rootWidth,`${name}: page horizontal overflow ${JSON.stringify(result.overflow)}`).toBeLessThanOrEqual(profile.width+2);
-   if(name==='reading-panel'&&profile.width<=430)for(const panel of result.readingPanels)expect.soft(panel.width,'Reading popover leaves room for enlarged labels').toBeGreaterThanOrEqual(profile.width-64);
+   if(name==='reading-panel'||name==='account-panel')for(const panel of result.readingPanels){
+    expect.soft(panel.x,'Popover must remain inside the left edge').toBeGreaterThanOrEqual(0);
+    expect.soft(panel.x+panel.width,'Popover must remain inside the right edge').toBeLessThanOrEqual(profile.width+1);
+    if(name==='reading-panel'&&profile.width<=430)expect.soft(panel.width,'Popover leaves room for enlarged labels').toBeGreaterThanOrEqual(profile.width-64);
+   }
    for(const field of result.fields)expect.soft(field.width,`${name}: writing area ${field.label}`).toBeGreaterThanOrEqual(130);
   }
  }
@@ -71,6 +75,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await page.getByRole('button',{name:'Recolher menu',exact:true}).click();await capture('student-menu-collapsed');
   await page.getByRole('button',{name:'Abrir menu',exact:true}).click();
   await page.locator('#preferencias > summary').click();await capture('reading-panel');await page.keyboard.press('Escape');
+  await page.locator('.account > summary').click();await capture('account-panel');await page.keyboard.press('Escape');
   await productFixture(page,'teacher');await page.goto('/professor/missoes/test-mission/editar');
   await expect(page.getByLabel('Título da missão',{exact:true})).toBeVisible();await capture('real-editor-about');
   await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();await expect(page.getByRole('heading',{name:'Como o aluno vai realizar a atividade?',exact:true})).toBeVisible();await capture('real-editor-steps');
