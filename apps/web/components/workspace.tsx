@@ -1,5 +1,7 @@
 "use client";
-import {useEffect,useId,useState} from "react";
+import {useCallback,useEffect,useId,useRef,useState} from "react";
+import {usePathname} from "next/navigation";
+import {MobileNavigation} from "./mobile-navigation";
 import {NavigationHint} from "./navigation-hint";
 import Link from "next/link";
 import { ReadingPreferences } from "./reading-preferences";
@@ -23,10 +25,29 @@ export function Workspace({
   account?: AccountView;
 }) {
   const [collapsed,setCollapsed]=useState(false),[ready,setReady]=useState(false);
-  const sidebarId=useId();
+  const sidebarId=useId(),pathname=usePathname();
+  const [mobile,setMobile]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
+  const menuTrigger=useRef<HTMLButtonElement>(null);
+  const closeMobile=useCallback(()=>{
+    setMobileOpen(false);
+    requestAnimationFrame(()=>{if(window.matchMedia("(max-width: 64rem)").matches)menuTrigger.current?.focus();});
+  },[]);
+  useEffect(()=>{
+    const media=window.matchMedia("(max-width: 64rem)");
+    const update=()=>{setMobile(media.matches);if(!media.matches)setMobileOpen(false);};
+    update();media.addEventListener("change",update);
+    return()=>media.removeEventListener("change",update);
+  },[]);
+  useEffect(()=>{setMobileOpen(false);},[pathname]);
+  useEffect(()=>{
+    if(!mobile)return;
+    const openSettings=()=>{if(["#preferencias","#temas"].includes(window.location.hash))setMobileOpen(true);};
+    openSettings();window.addEventListener("hashchange",openSettings);
+    return()=>window.removeEventListener("hashchange",openSettings);
+  },[mobile]);
   useEffect(()=>{try{setCollapsed(localStorage.getItem('travessia:sidebar:v1')==='collapsed');}catch{}setReady(true);},[]);
   useEffect(()=>{if(ready)try{localStorage.setItem('travessia:sidebar:v1',collapsed?'collapsed':'expanded');}catch{}},[collapsed,ready]);
-  const toggleLabel=collapsed?'Abrir menu':'Recolher menu';
+  const toggleLabel=mobile?'Abrir menu':collapsed?'Abrir menu':'Recolher menu';
   const base = preview ? "/previa" : "";
   const student = role === "aluno";
   const links: [string, string, IconName][] = student
@@ -67,7 +88,7 @@ export function Workspace({
             </ul>
           </nav>
           <div className="sidebar-tools">
-            <NavigationHint label="Preferências de leitura" enabled={collapsed}><a href="#preferencias" aria-label="Preferências de leitura">
+            <NavigationHint label="Preferências de leitura" enabled={collapsed&&!mobile}><a href="#preferencias" aria-label="Preferências de leitura">
               <Icon name="settings" /><span className="sidebar-label">Preferências de leitura</span>
             </a></NavigationHint>
             <NavigationHint label="Tema e contraste" enabled={collapsed}><a href="#temas" aria-label="Tema e contraste">
@@ -91,11 +112,14 @@ export function Workspace({
         </aside>
         <div className="workspace">
           <header className="topbar">
-            <div className="workspace-topbar-start"><NavigationHint label={toggleLabel} below>
-              <button type="button" className="sidebar-toggle" aria-label={toggleLabel} aria-expanded={!collapsed} aria-controls={sidebarId} disabled={!ready} onClick={()=>setCollapsed(v=>!v)}><Icon name={collapsed?'panel-open':'panel-close'}/></button>
-            </NavigationHint><span className="eyebrow workspace-context">ÁREA {student ? "DO ALUNO" : "DO PROFESSOR"}</span></div>
+            <Link className="brand mobile-workspace-brand" href={`${base}/${role}`} aria-label="Travessia, início"><Brand/></Link>
+            <div className="workspace-topbar-start"><NavigationHint label={toggleLabel} below enabled={!mobile}>
+              <button ref={menuTrigger} type="button" className="sidebar-toggle" aria-label={toggleLabel} aria-expanded={mobile?mobileOpen:!collapsed} aria-controls={mobile?"mobile-workspace-navigation":sidebarId} aria-haspopup={mobile?"dialog":undefined} disabled={!ready} onClick={()=>mobile?setMobileOpen(true):setCollapsed(v=>!v)}>
+                {mobile?<><span className="menu-bars" aria-hidden="true">☰</span><span>Menu</span></>:<Icon name={collapsed?'panel-open':'panel-close'}/>}
+              </button>
+            </NavigationHint><span className="eyebrow workspace-context">Área {student ? "do aluno" : "do professor"}</span></div>
             <div className="topbar-actions">
-              <ReadingPreferences accountPreferences={preferences} />
+              {!mobile&&<ReadingPreferences accountPreferences={preferences} />}
               <AccountMenu
                 account={account}
                 preview={preview}
@@ -113,6 +137,7 @@ export function Workspace({
           </footer>
         </div>
       </div>
+      {mobile&&<MobileNavigation open={mobileOpen} onClose={closeMobile} role={role} links={links} helpHref={`${base}/${role}/ajuda`} preferences={preferences}/>}
     </>
   );
 }
