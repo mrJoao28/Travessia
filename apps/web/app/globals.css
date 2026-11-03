@@ -1797,3 +1797,43 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   .mobile-navigation, .mobile-navigation-heading, .mobile-navigation-close { border-color: ButtonText; }
   .mobile-navigation::backdrop { background: Canvas; opacity: .7; }
 }
+
+/* A dedicated row prevents the role label from shrinking into individual letters. */
+.workspace-topbar-start { flex: 1 1 20rem; min-width: min(100%, 16rem); }
+.workspace-context { overflow-wrap: normal; word-break: normal; }
+@media (max-width: 64rem) {
+  .workspace .topbar {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "brand menu account" "context context context";
+    align-items: center; gap: 8px; padding-bottom: 12px; margin-bottom: 16px;
+  }
+  .topbar .mobile-workspace-brand { grid-area: brand; min-width: 0; margin: 0; }
+  .mobile-workspace-brand .brand-lockup { flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 6px; }
+  .mobile-workspace-brand .brand-lockup > svg { width: 1.75rem; height: 1.5rem; flex-shrink: 0; margin: 0; }
+  .mobile-workspace-brand .brand-lockup strong { font-size: 1.125rem; white-space: nowrap; }
+  .mobile-workspace-brand .brand-lockup small { display: none; }
+  .topbar .workspace-topbar-start { display: contents; }
+  .topbar .workspace-topbar-start > .navigation-hint { grid-area: menu; }
+  .topbar .sidebar-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: auto; height: auto; min-width: 44px; min-height: 44px; padding: 10px;
+    font-size: .9rem; font-weight: 650; line-height: 1.3;
+  }
+  .menu-bars { font-size: 1.35em; line-height: 1; }
+  .topbar .workspace-context {
+    grid-area: context; font-size: .8rem; letter-spacing: .03em;
+    text-transform: none; line-height: 1.5; margin: 0;
+  }
+  .topbar .topbar-actions { grid-area: account; width: auto; display: block; justify-self: end; }
+  .topbar .account { position: static; }
+  .topbar .account > summary {
+    min-width: 44px; min-height: 44px; padding: 8px; gap: 0; font-size: 1rem; line-height: 1.25; justify-content: center;
+  }
+  .topbar .account > summary > span { display: none; }
+  .topbar .account-panel { right: 0; top: calc(100% + 8px); max-width: 100%; }
+  @container (max-width: 17rem) {
+    .workspace .topbar { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand account" "menu menu" "context context"; }
+    .topbar .sidebar-toggle { width: 100%; }
+    .mobile-workspace-brand .brand-lockup > svg { display: none; }
+  }
+}
