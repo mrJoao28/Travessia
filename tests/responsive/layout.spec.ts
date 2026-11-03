@@ -16,7 +16,13 @@ const profiles=[
 async function measure(page:Page){
  await page.evaluate(()=>document.fonts.ready);
  return page.evaluate(()=>{
-  const visible=(e:Element)=>e.getClientRects().length>0&&getComputedStyle(e).visibility!=='hidden';
+  const visible=(e:Element)=>{
+   if(!e.getClientRects().length||getComputedStyle(e).visibility==='hidden')return false;
+   for(let parent=e.parentElement;parent;parent=parent.parentElement){
+    if(parent instanceof HTMLDetailsElement&&!parent.open&&!parent.querySelector(':scope > summary')?.contains(e))return false;
+   }
+   return true;
+  };
   const rect=(e:Element)=>{const r=e.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height)};};
   const fields=[...document.querySelectorAll('main textarea,main input:not([type=checkbox]):not([type=radio]):not([type=hidden])')].filter(visible).map(e=>({label:e.getAttribute('aria-label')||e.id,...rect(e)}));
   const overflow=[...document.querySelectorAll('main *,header *,aside *')].filter(e=>visible(e)&&!e.closest('.comparison-reader')&&!e.classList.contains('sr-only')).filter(e=>e.getBoundingClientRect().right>innerWidth+2).slice(0,12).map(e=>({tag:e.tagName,classes:e.className,...rect(e)}));
