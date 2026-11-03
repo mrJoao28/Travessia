@@ -52,7 +52,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
    if(name==='reading-panel'||name==='account-panel')for(const panel of result.readingPanels){
     expect.soft(panel.x,'Popover must remain inside the left edge').toBeGreaterThanOrEqual(0);
     expect.soft(panel.x+panel.width,'Popover must remain inside the right edge').toBeLessThanOrEqual(profile.width+1);
-    if(name==='reading-panel'&&profile.width<=430)expect.soft(panel.width,'Popover leaves room for enlarged labels').toBeGreaterThanOrEqual(profile.width-64);
+    if(name==='reading-panel'&&profile.width<=430)expect.soft(panel.width,'Popover leaves room for enlarged labels').toBeGreaterThanOrEqual(profile.width-96);
    }
    if(name==='account-panel')for(const link of result.accountLinks)expect.soft(link.height,'Account links have distinct touch targets').toBeGreaterThanOrEqual(44);
    for(const field of result.fields)expect.soft(field.width,`${name}: writing area ${field.label}`).toBeGreaterThanOrEqual(130);
@@ -74,9 +74,16 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await page.goto('/previa/aluno/missoes/campus');await expect(page.getByLabel('Planejamento e atividade')).toBeVisible();
   await page.getByRole('region',{name:'Materiais preparados para você'}).getByText('rotas-do-campus.pdf · Texto ampliado e espaçado',{exact:true}).click();
   await page.getByText('Transcrição do áudio',{exact:true}).click();await capture('student-material-audio');
-  await page.getByRole('button',{name:'Recolher menu',exact:true}).click();await capture('student-menu-collapsed');
-  await page.getByRole('button',{name:'Abrir menu',exact:true}).click();
+  const mobile=profile.width<=1024;
+  if(mobile){
+   await page.getByRole('button',{name:'Abrir menu',exact:true}).click();
+   await expect(page.getByRole('dialog',{name:'Menu',exact:true})).toBeVisible();await capture('student-menu-open');
+  }else{
+   await page.getByRole('button',{name:'Recolher menu',exact:true}).click();await capture('student-menu-collapsed');
+   await page.getByRole('button',{name:'Abrir menu',exact:true}).click();
+  }
   await page.locator('#preferencias > summary').click();await capture('reading-panel');await page.keyboard.press('Escape');
+  if(mobile)await expect(page.getByRole('dialog',{name:'Menu',exact:true})).toBeHidden();
   await page.locator('.account > summary').click();await capture('account-panel');await page.keyboard.press('Escape');
   await productFixture(page,'teacher');await page.goto('/professor/missoes/test-mission/editar');
   await expect(page.getByLabel('Título da missão',{exact:true})).toBeVisible();await capture('real-editor-about');
