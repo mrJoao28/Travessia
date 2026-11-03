@@ -1681,3 +1681,26 @@ body {
   .topbar-actions { max-width: 100%; gap: .5rem; }
   .preferences[open] .preferences-panel { max-width: calc(100vw - 32px); }
 }
+
+/* Keep usable writing space when nested cards meet narrow screens or 200% text. */
+.form-stack, .form-stack > *, fieldset, input, select, textarea { min-width: 0; }
+img, video, audio { max-width: 100%; }
+input[type="file"] { width: 100%; }
+input[type="file"]::file-selector-button { max-width: 100%; white-space: normal; }
+.actions > .button, .teacher-guide-footer .button { min-width: 0; white-space: normal; text-align: center; }
+@media (max-width: 40rem) {
+  .paper, .teacher-editor-panel, .teacher-student-preview, .teacher-guidance,
+  .teacher-disclosure, .teacher-ai, .editor-step, .preview-editor > .editor-step,
+  .preview-material-item, .preview-scenario-toolbar, .simple-material-file,
+  .simple-student-context, .material-controls-panel > .paper { padding: 12px; }
+  .form-stack input:not([type="checkbox"]):not([type="radio"]),
+  .form-stack textarea, .form-stack select { padding: 10px; }
+  .starting-space-options { grid-template-columns: minmax(0, 1fr); }
+  .teacher-guide-footer { padding: 12px; }
+  .teacher-guide-footer > div, .teacher-guide-footer > .button { width: 100%; }
+  .teacher-guide-footer > div { align-items: stretch; }
+  .teacher-guide-footer .button { width: 100%; }
+  .lesson-list { padding-left: 0; }
+  .lesson-list li { padding: 12px; }
+  .lesson-number { position: static; margin-bottom: .5rem; }
+}
