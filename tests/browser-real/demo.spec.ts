@@ -74,11 +74,15 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
   await page.getByText("Aa · Ajustar leitura", { exact: true }).click();
   await page.getByLabel("Tamanho do texto").selectOption("1.125");
+  await page.locator("#temas > summary").click();
   await page
-    .getByRole("button", { name: "Salvar preferências na conta" })
+    .getByRole("button", { name: "Salvar preferências compatíveis na conta" })
     .click();
   await expect(
-    page.getByText("Preferências salvas na sua conta.", { exact: true }),
+    page.getByText(
+      "Preferências de acessibilidade salvas na conta. O tema fica salvo neste navegador.",
+      { exact: true },
+    ),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await page

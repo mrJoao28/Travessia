@@ -254,6 +254,9 @@ nav a:hover,
   width: auto;
 }
 .preferences summary {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   width: fit-content;
   margin-left: auto;
   border: 1px solid var(--border);
