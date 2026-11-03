@@ -51,6 +51,7 @@ for(const theme of ['light','dark'] as const){
   await page.screenshot({path:`test-results/reference-libras-${theme}-before-activation.png`,fullPage:true});
   await dialog.getByRole('button',{name:'Ativar VLibras',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('Guia disponível');
   expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+  const closeBox=(await dialog.getByRole('button',{name:'Fechar Libras',exact:true}).boundingBox())!;expect(closeBox.y).toBeGreaterThanOrEqual(0);expect(closeBox.y+closeBox.height).toBeLessThanOrEqual(900);
   const frame=page.frameLocator('iframe[title="Guia de navegação com VLibras"]');await expect(frame.getByRole('button',{name:/^Preferências de leitura/})).toBeVisible();
   expect(await frame.locator('html').evaluate(el=>el.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:`test-results/reference-libras-${theme}-guide.png`,fullPage:true});

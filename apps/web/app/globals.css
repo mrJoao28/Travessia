@@ -1664,13 +1664,14 @@ body {
 .has-libras-navigation { padding-bottom: max(5rem, env(safe-area-inset-bottom)); }
 .libras-launcher { position: fixed; right: max(1rem, env(safe-area-inset-right)); bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 80; display: flex; align-items: center; gap: .45rem; min-height: 3rem; padding: .65rem .9rem; border: 2px solid var(--primary); border-radius: .8rem; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px #0002; }
 .libras-launcher svg { width: 1.65rem; height: 1.65rem; flex: none; }
-.libras-dialog { width: min(68rem, calc(100% - 1rem)); max-height: calc(100dvh - 1rem); padding: 0; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); color: var(--text); overflow: auto; }
+.libras-dialog { width: calc(100% - 1rem); max-width: 68rem; max-height: calc(100dvh - 1rem); padding: 0; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); color: var(--text); overflow: hidden; }
+.libras-dialog[open] { display: flex; flex-direction: column; }
 .libras-dialog::backdrop { background: #0008; }
-.libras-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: 1rem; border-bottom: 1px solid var(--border); }
-.libras-header h2 { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.libras-body { display: grid; gap: .9rem; padding: 1rem; }
+.libras-header { flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: 1rem; border-bottom: 1px solid var(--border); }
+.libras-header h2 { font-size: 1.25rem; margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.libras-body { flex: 1 1 auto; min-height: 0; overflow: auto; display: grid; gap: .9rem; padding: 1rem; }
 .libras-body p { margin: 0; }
 .libras-frame { display: block; width: 100%; min-width: 0; height: min(38rem, 65dvh); border: 1px solid var(--border); border-radius: .5rem; background: var(--surface); }
-.libras-footer { padding: .75rem 1rem; border-top: 1px solid var(--border); }
-@media (max-width: 600px) { .libras-header, .libras-body, .libras-footer { padding: .75rem; } }
+.libras-footer { flex-shrink: 0; padding: .75rem 1rem; border-top: 1px solid var(--border); }
+@media (max-width: 600px) { .libras-header, .libras-body, .libras-footer { flex-shrink: 0; padding: .75rem; } }
 @media (forced-colors: active) { .libras-launcher { border-color: ButtonText; background: ButtonFace; color: ButtonText; } }
