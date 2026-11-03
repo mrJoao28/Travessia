@@ -3,6 +3,11 @@ on:
   pull_request:
     paths: ['apps/web/**', 'tests/responsive/**', 'tests/fixtures/**', 'playwright.responsive.config.ts', '.github/workflows/responsive.yml']
   workflow_dispatch:
+    inputs:
+      compare_baseline:
+        description: 'Comparar também com o CSS anterior (pode falhar por defeitos antigos)'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -12,15 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - browser: chromium
-            version: improved
-          - browser: firefox
-            version: improved
-          - browser: webkit
-            version: improved
-          - browser: chromium
-            version: baseline
+        include: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.compare_baseline && '[{"browser":"chromium","version":"improved"},{"browser":"firefox","version":"improved"},{"browser":"webkit","version":"improved"},{"browser":"chromium","version":"baseline"}]' || '[{"browser":"chromium","version":"improved"},{"browser":"firefox","version":"improved"},{"browser":"webkit","version":"improved"}]') }}
     steps:
       - uses: actions/checkout@v4
         with:
