@@ -1747,3 +1747,93 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .account-panel { display: grid; gap: .5rem; }
 .account-panel > p { margin: 0; }
 .account-panel > a { display: flex; align-items: center; min-height: 44px; }
+
+/* Mobile navigation is a modal drawer; the workspace stays mounted behind it. */
+.mobile-workspace-brand { display: none; }
+.mobile-navigation {
+  position: fixed; inset: 0 auto 0 0; margin: 0; width: min(24rem, 100vw);
+  max-width: 100vw; height: 100dvh; max-height: 100dvh; padding: 0;
+  border: 0; border-right: 1px solid var(--border); background: var(--surface); color: var(--text);
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.mobile-navigation::backdrop { background: #07152299; }
+.mobile-navigation-heading {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center;
+  justify-content: space-between; gap: 12px; padding: 16px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.mobile-navigation-heading h2 { margin: 0; font-size: 1.25rem; min-width: 0; }
+.mobile-navigation-close {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 10px 12px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); border-radius: .6rem;
+}
+.mobile-navigation-content { padding: 16px; min-width: 0; }
+.mobile-navigation nav ul { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.mobile-navigation nav a {
+  display: flex; gap: 12px; min-height: 48px; padding: 12px; font-size: 1rem;
+  line-height: 1.5; align-items: center; text-align: start;
+}
+.mobile-navigation .icon { flex-shrink: 0; }
+.mobile-navigation .sidebar-label { display: block; overflow-wrap: normal; word-break: normal; }
+.mobile-navigation-settings { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; }
+.mobile-navigation-settings h3 { margin-bottom: 12px; }
+.mobile-navigation .preferences { display: block; width: 100%; margin-top: 10px; }
+.mobile-navigation .preferences > summary {
+  width: 100%; margin: 0; padding: 12px; min-height: 48px; text-align: start; font-size: 1rem;
+}
+.mobile-navigation .preferences[open] .preferences-panel {
+  position: static; width: 100%; max-width: 100%; margin-top: 8px; padding: 12px;
+  box-shadow: none;
+}
+.mobile-navigation .check { align-items: flex-start; gap: 12px; }
+.mobile-navigation-help { display: flex; align-items: center; min-height: 48px; padding: 12px; margin-top: 12px; }
+.mobile-navigation :focus-visible { scroll-margin-block: 7rem 1rem; }
+@media (max-width: 64rem) {
+  .shell > .sidebar { display: none; }
+  .mobile-workspace-brand { display: flex; }
+}
+@media (forced-colors: active) {
+  .mobile-navigation, .mobile-navigation-heading, .mobile-navigation-close { border-color: ButtonText; }
+  .mobile-navigation::backdrop { background: Canvas; opacity: .7; }
+}
+
+/* A dedicated row prevents the role label from shrinking into individual letters. */
+.workspace-topbar-start { flex: 1 1 20rem; min-width: min(100%, 16rem); }
+.workspace-context { overflow-wrap: normal; word-break: normal; }
+@media (max-width: 64rem) {
+  .workspace .topbar {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "brand menu account" "context context context";
+    align-items: center; gap: 8px; padding-bottom: 12px; margin-bottom: 16px;
+  }
+  .topbar .mobile-workspace-brand { grid-area: brand; min-width: 0; margin: 0; }
+  .mobile-workspace-brand .brand-lockup { flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 6px; }
+  .mobile-workspace-brand .brand-lockup > svg { width: 1.75rem; height: 1.5rem; flex-shrink: 0; margin: 0; }
+  .mobile-workspace-brand .brand-lockup strong { font-size: 1.125rem; white-space: nowrap; }
+  .mobile-workspace-brand .brand-lockup small { display: none; }
+  .topbar .workspace-topbar-start { display: contents; }
+  .topbar .workspace-topbar-start > .navigation-hint { grid-area: menu; }
+  .topbar .sidebar-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: auto; height: auto; min-width: 44px; min-height: 44px; padding: 10px;
+    font-size: .9rem; font-weight: 650; line-height: 1.3;
+  }
+  .menu-bars { font-size: 1.35em; line-height: 1; }
+  .topbar .workspace-context {
+    grid-area: context; font-size: .8rem; letter-spacing: .03em;
+    text-transform: none; line-height: 1.5; margin: 0;
+  }
+  .topbar .topbar-actions { grid-area: account; width: auto; display: block; justify-self: end; }
+  .topbar .account { position: static; }
+  .topbar .account > summary {
+    min-width: 44px; min-height: 44px; padding: 8px; gap: 0; font-size: 1rem; line-height: 1.25; justify-content: center;
+  }
+  .topbar .account > summary > span { display: none; }
+  .topbar .account-panel { right: 0; top: calc(100% + 8px); max-width: 100%; }
+  @container (max-width: 17rem) {
+    .workspace .topbar { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand account" "menu menu" "context context"; }
+    .topbar .sidebar-toggle { width: 100%; }
+    .mobile-workspace-brand .brand-lockup > svg { display: none; }
+  }
+}
