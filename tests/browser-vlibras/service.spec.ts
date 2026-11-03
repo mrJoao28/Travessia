@@ -4,6 +4,10 @@ import {test,expect} from '@playwright/test';
 // Translation quality and human comprehension are outside this operational check.
 test('VLibras oficial carrega no sandbox e recebe somente uma orientação pública',async({page})=>{
  const sent:string[]=[];
+ page.on('requestfailed',r=>console.log('VLibras network',new URL(r.url()).hostname,new URL(r.url()).pathname,r.failure()?.errorText));
+ page.on('console',m=>{if(m.type()==='error')console.log('VLibras browser',m.text().slice(0,350));});
+ page.on('pageerror',e=>console.log('VLibras runtime',e.message.slice(0,350)));
+ page.on('response',r=>{if(r.url()==='https://vlibras.gov.br/app/vlibras-plugin.js')console.log('VLibras loader',r.status(),r.headers()['access-control-allow-origin']);});
  page.on('request',r=>{if(new URL(r.url()).hostname.endsWith('.vlibras.gov.br')&&new URL(r.url()).pathname==='/translate'&&r.method()==='POST')sent.push(r.postData()??'');});
  await page.setViewportSize({width:1440,height:1000});await page.goto('/login');
  await page.getByRole('button',{name:'Libras para navegação',exact:true}).click();await page.getByRole('button',{name:'Ativar VLibras',exact:true}).click();
@@ -17,3 +21,5 @@ test('VLibras oficial carrega no sandbox e recebe somente uma orientação públ
  await page.screenshot({path:'test-results/reference-libras-official-service.png',fullPage:true});
  await page.getByRole('button',{name:'Fechar Libras',exact:true}).click();await expect(page.getByRole('button',{name:'Libras para navegação',exact:true})).toBeFocused();
 });
+
+test.afterEach(async({page},info)=>{if(info.status!==info.expectedStatus)await page.screenshot({path:'test-results/reference-libras-service-error.png',fullPage:true});});
