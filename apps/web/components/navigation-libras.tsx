@@ -39,7 +39,7 @@ export function NavigationLibras() {
         {!session&&<><p>Ao ativar, seu navegador carrega o serviço externo VLibras. Somente os textos fixos deste guia ficam disponíveis para tradução.</p><p className="small"><a href="https://www.vlibras.gov.br/privacy.html" target="_blank" rel="noopener noreferrer">Termos e privacidade do VLibras</a>. Tradução automática, sujeita a imprecisões.</p></>}
         {status==='loading'&&<p role="status">Carregando o botão do VLibras… O avatar será carregado ao ativar o botão azul dentro do guia.</p>}
         {status==='ready'&&<p role="status">Guia disponível. Ative o botão azul do VLibras e selecione uma orientação.</p>}
-        {status==='error'&&<p role="alert">Não foi possível carregar o VLibras. Você pode tentar novamente ou continuar usando a plataforma.</p>}
+        {status==='error'&&<p role="alert">Não foi possível carregar ou usar o VLibras. O serviço externo pode estar indisponível. Você pode tentar novamente ou continuar usando a plataforma.</p>}
         {!session&&<button ref={activation} type="button" className="button" onClick={activate}>{status==='error'?'Tentar carregar VLibras novamente':'Ativar VLibras'}</button>}
         {session&&<iframe key={session.token} ref={frame} className="libras-frame" title="Guia de navegação com VLibras" sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={session.document}/>}
       </div>

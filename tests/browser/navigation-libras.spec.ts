@@ -5,7 +5,8 @@ import AxeBuilder from '@axe-core/playwright';
 const loader=`const button=document.createElement('button');button.textContent='Ativar avatar de teste';document.body.appendChild(button);window.VLibrasWidget={initBtn:button};window.parentBlocked=false;try{parent.document.body.textContent}catch{window.parentBlocked=true}window.storageBlocked=false;try{parent.localStorage.getItem('private-marker')}catch{window.storageBlocked=true}`;
 async function mock(page:Page,fail=false){
  let calls=0;
- await page.route('https://vlibras.gov.br/app/vlibras-plugin.js',async route=>{calls++;if(fail&&calls===1)return route.abort();await route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:loader});});
+ await page.route('https://vlibras.gov.br/app/vlibras-plugin.js',async route=>{calls++;if(fail&&calls===1)return route.abort();await route.fulfill({status:302,headers:{location:'https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/vlibras-portal@v7.12.2/app/vlibras-plugin.js','access-control-allow-origin':'*'}});});
+ await page.route('https://cdn.jsdelivr.net/gh/spbgovbr-vlibras/**',route=>route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:loader}));
  return ()=>calls;
 }
 async function open(page:Page){await page.getByRole('button',{name:'Libras para navegação',exact:true}).click();return page.getByRole('dialog',{name:'Libras para navegação',exact:true});}
@@ -55,3 +56,11 @@ for(const theme of ['light','dark'] as const){
   await page.screenshot({path:`test-results/reference-libras-${theme}-guide.png`,fullPage:true});
  });
 }
+
+
+test('falha da tradução real é anunciada sem liberar captura da página',async({page})=>{
+ await mock(page);await page.route('https://traducao2.vlibras.gov.br/translate',r=>r.abort());await page.goto('/previa/aluno');const dialog=await open(page);await dialog.getByRole('button',{name:'Ativar VLibras',exact:true}).click();await expect(dialog.getByRole('status')).toContainText('Guia disponível');
+ const child=await page.locator('iframe[title="Guia de navegação com VLibras"]').elementHandle().then(h=>h!.contentFrame());
+ await child!.evaluate(()=>{void fetch('https://traducao2.vlibras.gov.br/translate',{method:'POST',body:JSON.stringify({text:'Ajuda'})}).catch(()=>{});});
+ await expect(dialog.getByRole('alert')).toContainText('serviço externo pode estar indisponível');await expect(dialog.locator('iframe')).toHaveCount(0);await expect(dialog.getByRole('button',{name:'Tentar carregar VLibras novamente',exact:true})).toBeFocused();
+});

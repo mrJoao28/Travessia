@@ -44,6 +44,8 @@ export function navigationLibrasDocument(theme: 'light' | 'dark', token: string)
 const token=${signal};
 const send=state=>parent.postMessage({channel:'travessia-navigation-libras',token,state},'*');
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();send('close');}},true);
+const originalFetch=window.fetch.bind(window);
+window.fetch=async(...args)=>{const request=args[0];const address=typeof request==='string'?request:request.url||String(request);const translation=address==='https://traducao2.vlibras.gov.br/translate';try{const response=await originalFetch(...args);if(translation&&!response.ok)send('error');return response;}catch(error){if(translation)send('error');throw error;}};
 const script=document.createElement('script');script.src='https://vlibras.gov.br/app/vlibras-plugin.js';script.crossOrigin='anonymous';
 script.onerror=()=>send('error');
 script.onload=()=>{let attempts=0;const timer=setInterval(()=>{if(window.VLibrasWidget?.initBtn){clearInterval(timer);document.getElementById('status').textContent='Botão disponível. Ative o VLibras para carregar o avatar e selecionar uma orientação.';send('ready');}else if(++attempts>=100){clearInterval(timer);send('error');}},100);};
