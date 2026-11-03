@@ -20,7 +20,7 @@ export function NavigationLibras() {
     function receive(event:MessageEvent) {
       if(event.source!==frame.current?.contentWindow || event.origin!=='null' || !event.data || event.data.channel!=='travessia-navigation-libras' || event.data.token!==session!.token)return;
       if(event.data.state==='close')close();
-      if(event.data.state==='ready'){clearTimeout(timeout);setStatus('ready');}
+      if(event.data.state==='ready'){clearTimeout(timeout);setStatus('ready');const child=frame.current,body=child?.parentElement;if(child&&body){body.scrollTop+=child.getBoundingClientRect().top-body.getBoundingClientRect().top;child.focus({preventScroll:true});}}
       if(event.data.state==='error'){clearTimeout(timeout);setStatus('error');}
     }
     window.addEventListener('message',receive);
