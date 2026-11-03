@@ -47,26 +47,30 @@ test('armazenamento bloqueado não impede abrir e recolher',async({page})=>{
 
 for(const role of ['aluno','professor'] as const){
  test(`menu de ${role} em 320px, texto 200% e cores do sistema`,async({page})=>{
-  await page.setViewportSize({width:320,height:850});await page.emulateMedia({forcedColors:'active',reducedMotion:'reduce'});await page.goto(`/previa/${role}`);await expect(page.getByRole('button',{name:'Recolher menu',exact:true})).toBeEnabled();
+  await page.setViewportSize({width:320,height:850});await page.emulateMedia({forcedColors:'active',reducedMotion:'reduce'});await page.goto(`/previa/${role}`);
+  const open=page.getByRole('button',{name:'Abrir menu',exact:true});await expect(open).toBeEnabled();
   await page.addStyleTag({content:'html {font-size:200% !important;}'});
-  for(const compact of [false,true]){
-   if(compact)await page.getByRole('button',{name:'Recolher menu',exact:true}).click();
-   const help=page.getByRole('link',{name:'Ajuda',exact:true});await expect(help).toBeVisible();
-   if(compact){await help.focus();await expect(page.locator('.navigation-tooltip').filter({hasText:/^Ajuda$/})).toBeVisible();}
-   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-   expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
-   await page.screenshot({path:`test-results/reference-sidebar-${role}-mobile-${compact?'icons':'expanded'}.png`,fullPage:true});
-   await page.keyboard.press('Escape');
-  }
+  await expect(page.getByRole('complementary',{name:'Menu lateral'})).toBeHidden();
+  await open.click();const menu=page.getByRole('dialog',{name:'Menu',exact:true});await expect(menu).toBeVisible();
+  await expect(menu.getByRole('link',{name:'Ajuda e orientações',exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+  await page.screenshot({path:`test-results/reference-menu-${role}-mobile-200.png`});
+  await page.keyboard.press('Escape');await expect(menu).toBeHidden();await expect(open).toBeFocused();
+  await page.screenshot({path:`test-results/reference-menu-${role}-mobile-closed.png`});
  });
 }
 
-
-test('ativar o menu dispensa a dica e deixa Ajustar leitura disponível no celular',async({page})=>{
- await page.setViewportSize({width:360,height:800});await page.goto('/previa/aluno');
- const toggle=page.getByRole('button',{name:'Recolher menu',exact:true});await expect(toggle).toBeEnabled();
- await toggle.hover();await expect(page.locator('.navigation-tooltip').filter({hasText:/^Recolher menu$/})).toBeVisible();
- await toggle.click();await expect(page.locator('.navigation-tooltip')).toHaveCount(0);
- await page.getByRole('button',{name:'Abrir menu',exact:true}).click();await expect(page.locator('.navigation-tooltip')).toHaveCount(0);
- await page.locator('#preferencias > summary').click();await expect(page.getByLabel('Tamanho do texto')).toBeVisible();
+test('menu no celular abre leitura sem encobrir controles nem perder o rascunho',async({page})=>{
+ await page.setViewportSize({width:360,height:800});await page.goto('/previa/professor/missoes/editor');
+ await page.getByLabel('Título da missão',{exact:true}).fill('Meu rascunho continua aqui');
+ const open=page.getByRole('button',{name:'Abrir menu',exact:true});await open.click();
+ const menu=page.getByRole('dialog',{name:'Menu',exact:true});
+ await menu.locator('#preferencias > summary').click();await expect(menu.getByLabel('Tamanho do texto')).toBeVisible();
+ await menu.getByLabel('Tamanho do texto').selectOption('1.25');
+ await menu.locator('#temas > summary').click();await menu.getByLabel('Modo escuro',{exact:true}).check();
+ await menu.getByRole('button',{name:'Fechar menu',exact:true}).click();
+ await expect(open).toBeFocused();await expect(page.getByLabel('Título da missão',{exact:true})).toHaveValue('Meu rascunho continua aqui');
+ await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+ expect(await page.evaluate(()=>document.body.style.overflow)).not.toBe('hidden');
 });
