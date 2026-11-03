@@ -1715,3 +1715,15 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   .comparison-reader { min-height: min(20rem, 60svh); max-height: 65svh; }
   .comparison-empty { min-height: min(18rem, 55svh); }
 }
+
+/* Respond to available content width, including a zoomed desktop sidebar. */
+.workspace { container-type: inline-size; }
+@container (max-width: 55rem) {
+  .teacher-guide-grid, .two-column, .content-grid, .teacher-overview { grid-template-columns: minmax(0, 1fr); }
+  .teacher-guidance { display: none; }
+}
+@container (max-width: 32rem) {
+  .paper, .teacher-editor-panel, .teacher-student-preview, .teacher-disclosure,
+  .teacher-ai, .editor-step, .preview-editor > .editor-step, .preview-material-item { padding: 12px; }
+  .teacher-support-hub, .profile-grid { grid-template-columns: minmax(0, 1fr); }
+}

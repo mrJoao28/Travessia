@@ -9,6 +9,7 @@ const profiles=[
  {name:'desktop',width:1440,height:900},{name:'full-hd',width:1920,height:1080},
  {name:'wide',width:2560,height:1440},{name:'text-200',width:320,height:700,large:true},
  {name:'dark-phone',width:390,height:844,dark:true},
+ {name:'tablet-text-200',width:1024,height:768,large:true},{name:'laptop-text-200',width:1280,height:800,large:true},
 ];
 async function measure(page:Page){
  await page.evaluate(()=>document.fonts.ready);
