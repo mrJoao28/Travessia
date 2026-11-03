@@ -1,6 +1,8 @@
 import {test,expect,type Page} from '@playwright/test';
 import {writeFile,mkdir} from 'node:fs/promises';
 import {fixture,addPdf} from '../fixtures/individual-materials';
+import {fixture as productFixture} from '../fixtures/product-ui';
+import {setup as profileFixture} from '../fixtures/profile';
 const profiles=[
  {name:'phone-small',width:320,height:568},{name:'phone',width:360,height:800},
  {name:'phone-modern',width:390,height:844},{name:'phone-large',width:430,height:932},
@@ -35,7 +37,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   if(profile.dark)await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
   const result=await measure(page);results.push({name,...result});
   if(profile.large||['phone-modern','tablet','desktop','phone-landscape'].includes(profile.name)){
-   await page.locator('main').scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath(`${name}.png`)});
+   await page.evaluate(()=>window.scrollTo(0,(document.querySelector('main')?.getBoundingClientRect().top??0)+scrollY));await page.screenshot({path:info.outputPath(`${name}.png`)});
   }
   if(!process.env.RESPONSIVE_BASELINE){
    expect.soft(result.rootWidth,`${name}: page horizontal overflow ${JSON.stringify(result.overflow)}`).toBeLessThanOrEqual(profile.width+2);
@@ -61,6 +63,13 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await page.getByRole('button',{name:'Recolher menu',exact:true}).click();await capture('student-menu-collapsed');
   await page.getByRole('button',{name:'Abrir menu',exact:true}).click();
   await page.locator('#preferencias > summary').click();await capture('reading-panel');await page.keyboard.press('Escape');
+  await productFixture(page,'teacher');await page.goto('/professor/missoes/test-mission/editar');
+  await expect(page.getByLabel('Título da missão',{exact:true})).toBeVisible();await capture('real-editor-about');
+  await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();await capture('real-editor-steps');
+  await page.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();await capture('real-editor-supports');
+  await page.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await expect(page.getByRole('heading',{name:'Revisão antes de publicar'})).toBeVisible();await capture('real-editor-review');
+  await productFixture(page,'student');await page.goto('/aluno/missoes/test-mission');await expect(page.getByLabel('Planejamento e atividade',{exact:true})).toBeVisible();await capture('real-student-mission');
+  await profileFixture(page);await page.getByRole('button',{name:'Adicionar disciplina e curso',exact:true}).click();await capture('real-profile-expanded');
   await fixture(page);await addPdf(page);await capture('real-material-options');
   await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();await capture('real-material-review');
  }finally{
