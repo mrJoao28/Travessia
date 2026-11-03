@@ -28,6 +28,7 @@ async function measure(page:Page){
   const overflow=[...document.querySelectorAll('main *,header *,aside *')].filter(e=>visible(e)&&!e.closest('.comparison-reader')&&!e.classList.contains('sr-only')).filter(e=>e.getBoundingClientRect().right>innerWidth+2).slice(0,12).map(e=>({tag:e.tagName,classes:e.className,...rect(e)}));
   return {title:document.querySelector('h1')?.textContent,url:location.pathname,viewport:innerWidth,rootWidth:document.documentElement.scrollWidth,fields,overflow,
    navigation:document.querySelector('.sidebar')?rect(document.querySelector('.sidebar')!):null,
+   accountLinks:[...document.querySelectorAll('.account-panel > a')].filter(visible).map(rect),
    readingPanels:[...document.querySelectorAll('.preferences-panel,.account-panel')].filter(visible).map(rect),
    documentPanels:[...document.querySelectorAll('.comparison-document')].filter(visible).map(rect)};
  });
@@ -53,6 +54,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
     expect.soft(panel.x+panel.width,'Popover must remain inside the right edge').toBeLessThanOrEqual(profile.width+1);
     if(name==='reading-panel'&&profile.width<=430)expect.soft(panel.width,'Popover leaves room for enlarged labels').toBeGreaterThanOrEqual(profile.width-64);
    }
+   if(name==='account-panel')for(const link of result.accountLinks)expect.soft(link.height,'Account links have distinct touch targets').toBeGreaterThanOrEqual(44);
    for(const field of result.fields)expect.soft(field.width,`${name}: writing area ${field.label}`).toBeGreaterThanOrEqual(130);
   }
  }

@@ -1742,3 +1742,8 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
     right: 0; top: calc(100% + 8px);
   }
 }
+
+/* Account destinations remain separate, readable touch targets at every width. */
+.account-panel { display: grid; gap: .5rem; }
+.account-panel > p { margin: 0; }
+.account-panel > a { display: flex; align-items: center; min-height: 44px; }
