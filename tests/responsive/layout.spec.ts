@@ -65,8 +65,8 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await page.locator('#preferencias > summary').click();await capture('reading-panel');await page.keyboard.press('Escape');
   await productFixture(page,'teacher');await page.goto('/professor/missoes/test-mission/editar');
   await expect(page.getByLabel('Título da missão',{exact:true})).toBeVisible();await capture('real-editor-about');
-  await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();await capture('real-editor-steps');
-  await page.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();await capture('real-editor-supports');
+  await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();await expect(page.getByRole('heading',{name:'Como o aluno vai realizar a atividade?',exact:true})).toBeVisible();await capture('real-editor-steps');
+  await page.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();await expect(page.getByRole('heading',{name:'Quer oferecer alguma ajuda?',exact:true})).toBeVisible();await capture('real-editor-supports');
   await page.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await expect(page.getByRole('heading',{name:'Revisão antes de publicar'})).toBeVisible();await capture('real-editor-review');
   await productFixture(page,'student');await page.goto('/aluno/missoes/test-mission');await expect(page.getByRole('textbox',{name:'Planejamento e atividade',exact:true})).toBeVisible();await capture('real-student-mission');
   await profileFixture(page);await page.getByRole('button',{name:'Adicionar disciplina e curso',exact:true}).click();await capture('real-profile-expanded');

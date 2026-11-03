@@ -22,4 +22,3 @@ export async function setup(page: Page, failSave = false) {
   await expect(page.getByLabel('Nome completo', { exact: true })).toHaveValue(profile.name);
   return () => updates;
 }
-
