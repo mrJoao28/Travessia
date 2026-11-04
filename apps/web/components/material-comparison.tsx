@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { ApiResponse, ApiBody } from '../lib/product-client';
-import { materialAssetUrl, PreparedDocument } from './prepared-material';
+import { materialAssetUrl, materialReadingStyle, PreparedDocument } from './prepared-material';
 
 type Source = ApiResponse<'uploadMaterialSource'>;
 type Adaptation = ApiResponse<'prepareMaterial'>;
@@ -25,7 +25,7 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
  const audioUrl=current?.hasAudio?asset(current.id,'audio'):undefined;
  useEffect(()=>{setAudioError(false);},[audioUrl,current?.revision]);
  const settings=current?.settings;
- const textStyle:CSSProperties={fontSize:`${settings?.supports.includes('large-print')?Number(settings.fontSize)*zoom:18*zoom}pt`,lineHeight:settings?.supports.includes('wide-spacing')?1.8:1.5};
+ const textStyle=materialReadingStyle(settings,zoom);
  const colors=settings?.color??'default';
  const narration=settings?.supports.includes('narration');
  const visualDescriptions=settings?.supports.includes('image-description');

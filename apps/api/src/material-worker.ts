@@ -8,7 +8,7 @@ import { chromium } from 'playwright-core';
 import { z } from 'zod';
 import type { Config } from './config.js';
 import { serial } from './database.js';
-import { materialDocument, materialSettings, storedMaterialSettings } from './material-contracts.js';
+import { materialContentLength, materialDocument, materialSettings, storedMaterialSettings } from './material-contracts.js';
 import { checkDiskBudget, materialPath, materialRoot, removeMaterialFiles, visualPage } from './material-files.js';
 import { extractedPages } from './materials.js';
 import { materialProvider, type MaterialProvider } from './material-provider.js';
@@ -35,6 +35,12 @@ export function documentHtml(document: z.infer<typeof materialDocument>, setting
   const sections = document.map(p => `<section>
     <h2>${escapeHtml(p.title)}</h2><p class="source-note">Referência: página ${p.page} do original</p>
     <p>${escapeHtml(p.text)}</p>
+    ${p.steps ? `<h3>Passos da atividade</h3>${p.steps.length
+      ? `<ol>${p.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol>`
+      : '<p>Sem ações identificadas nesta página.</p>'}` : ''}
+    ${p.glossary ? `<h3>Glossário</h3>${p.glossary.length
+      ? `<dl>${p.glossary.map(({ term, definition }) => `<div><dt>${escapeHtml(term)}</dt><dd>${escapeHtml(definition)}</dd></div>`).join('')}</dl>`
+      : '<p>Sem termos selecionados nesta página.</p>'}` : ''}
     ${p.description ? `<h3>Descrição das informações visuais</h3><p>${escapeHtml(p.description)}</p>` : ''}
     ${images[p.page] ? `<figure><img alt="${escapeHtml(p.description || 'Referência visual da página original; confira o texto e as orientações do professor.')}" src="data:image/png;base64,${images[p.page]}"><figcaption>Referência visual da página ${p.page}. Use zoom para ampliar.</figcaption></figure>` : ''}
   </section>`).join('');
@@ -44,6 +50,7 @@ export function documentHtml(document: z.infer<typeof materialDocument>, setting
     section{break-before:page}section:first-of-type{break-before:auto}
     h1{font-size:1.3em;margin:0 0 .6em}h2{font-size:1.15em;margin:1em 0 .5em;break-after:avoid}h3{font-size:1em;break-after:avoid}
     p{white-space:pre-wrap;margin:.65em 0}.document-note,.source-note{font-size:.85em}
+    li,dd{white-space:pre-wrap}li,dl>div{margin-block:.45em}dt{font-weight:bold;break-after:avoid}dd{margin-inline-start:1em}
     figure{break-inside:avoid;margin:1em 0}img{display:block;max-width:100%;max-height:125mm;object-fit:contain;height:auto;width:auto}
     figcaption{font-size:.85em;margin-top:.5em}
     </style></head><body><h1>Material adaptado</h1><p class="document-note">Material preparado a partir das páginas indicadas. Consulte os objetivos e critérios na missão.</p>${sections}</body></html>`;
@@ -60,13 +67,19 @@ export async function renderPdf(path: string, html: string) {
 }
 const instructions: Record<string,string> = {
   'literal-language': 'Usar linguagem literal e direta, explicar expressões figuradas sem perder precisão.',
-  'short-sections': 'Organizar em seções curtas e previsíveis, uma ação por bloco, sem omitir conteúdo.',
-  glossary: 'Explicar termos técnicos no contexto, mantendo o termo original.',
+  'short-sections': 'Preencher steps como lista em ordem, uma ação curta por item. Incluir apenas ações presentes no material, sem inventar tarefas ou respostas. Se a página não tiver ações, retornar steps vazio.',
+  glossary: 'Preencher glossary com pares term e definition para termos técnicos relevantes presentes na página. Manter a grafia do termo e explicar seu sentido no contexto. Se não houver termos a explicar, retornar glossary vazio.',
   'image-description': 'Descrever relações, informações e dados relevantes das imagens recebidas, indicando incerteza.',
 };
 /** The exact ordered script spoken locally; no summarisation or external voice API. */
 export function materialNarration(document: z.infer<typeof materialDocument>) {
-  const text = document.map(p => `Página ${p.page} do original.\n${p.title}\n${p.text}${p.description.trim() ? '\nDescrição das informações visuais.\n'+p.description : ''}\nFim da página ${p.page}.`).join('\n\n');
+  const text = document.map(p => [
+    `Página ${p.page} do original.`, p.title, p.text,
+    ...(p.steps?.length ? ['Passos da atividade.', ...p.steps.map((step, i) => `${i + 1}. ${step}`)] : []),
+    ...(p.glossary?.length ? ['Glossário.', ...p.glossary.map(({ term, definition }) => `${term}: ${definition}`)] : []),
+    ...(p.description.trim() ? ['Descrição das informações visuais.', p.description] : []),
+    `Fim da página ${p.page}.`,
+  ].filter(Boolean).join('\n')).join('\n\n');
   if (!text.trim() || text.length > 22000) throw new Error('Narration budget');
   return text;
 }
@@ -154,7 +167,20 @@ export class MaterialWorker {
       }
       inputTokens = generated.inputTokens; outputTokens = generated.outputTokens;
     }
-    const parsed = materialDocument.parse(document);
+    const withSteps = settings.supports.includes('short-sections');
+    const withGlossary = settings.supports.includes('glossary');
+    const rewrite = settings.supports.includes('literal-language');
+    const describe = settings.supports.includes('image-description');
+    const parsed = materialDocument.parse(document).map(({ page, title, text, description, steps, glossary }) => {
+      if ((withSteps && !steps) || (withGlossary && !glossary)) throw new Error('Missing requested material support');
+      return {
+        page, title: rewrite ? title : `Página ${page}`,
+        text: rewrite ? text : pages.find(sourcePage => sourcePage.page === page)?.text ?? '',
+        description: describe ? description : '',
+        ...(withSteps && steps ? { steps } : {}),
+        ...(withGlossary && glossary ? { glossary } : {}),
+      };
+    });
     if (JSON.stringify(parsed.map(p => p.page)) !== JSON.stringify(selected)) throw new Error('Missing pages');
     const prepared = regeneratePage ? materialDocument.parse(a.document).map(page => {
       if (page.page !== regeneratePage) return page;
@@ -162,7 +188,7 @@ export class MaterialWorker {
       const descriptionsOnly = !settings.supports.some(s => ['literal-language', 'short-sections', 'glossary'].includes(s));
       return descriptionsOnly ? { ...page, description: replacement.description } : replacement;
     }) : parsed;
-    if (prepared.reduce((sum, page) => sum + page.text.length + page.description.length, 0) > 20000) throw new Error('Output budget');
+    if (materialContentLength(prepared) > 20000) throw new Error('Output budget');
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
     await this.db.materialAdaptation.updateMany({ where: { id: a.id, revision: a.revision, status: 'generating', expiresAt: { gt: new Date() } }, data: { document: prepared, settings, status: 'draft', inputTokens, outputTokens } });
   }
@@ -178,7 +204,7 @@ export class MaterialWorker {
     const narration = settings.supports.includes('narration');
     const audio = narration || descriptionAudio;
     if (audio) {
-      const script = narration ? materialNarration(document) : materialNarration(document.map(page=>({ ...page, text: '' })));
+      const script = narration ? materialNarration(document) : materialNarration(document.map(({ page, title, description })=>({ page, title, description, text: '' })));
       await this.local('audio', materialPath(a.id, `audio-${a.revision}.mp3`), script);
     }
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');

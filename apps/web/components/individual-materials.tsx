@@ -7,6 +7,7 @@ import { useTeacherDraftGuard } from "./teacher-steps";
 import { materialAssetUrl, PreparedDocument } from "./prepared-material";
 import { StudentActivitySupport } from "./student-activity-support";
 import { MaterialComparison } from "./material-comparison";
+import { StructuredMaterialFields, invalidStructuredContent } from "./structured-material-fields";
 import { PreparationProgress } from "./preparation-progress";
 import { OperationStatus } from "./operation-status";
 
@@ -38,6 +39,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   useEffect(()=>{ if(!loading && initialFile && receivedFile.current!==initialFile){receivedFile.current=initialFile;void upload(initialFile);} },[initialFile,loading]);
   const key = useRef<string | null>(null), uploadKey = useRef<string | null>(null);
   const current = adaptations.find(a => a.id === selectedId), source = sources.find(s=>s.id===sourceId);
+  const invalidStructure = document.some(invalidStructuredContent);
   const pending = current && ["queued","generating","rendering"].includes(current.status);
   const ai = supports.some(s=>["literal-language","short-sections","glossary"].includes(s)||s==="image-description"&&!manualDescription);
   useTeacherDraftGuard(dirty||activityDirty);
@@ -96,7 +98,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     await operation(async()=>{
       if(!studentId || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha o aluno, o PDF, as páginas e pelo menos um apoio.");
       if(ai&&!approved)throw new Error("Confirme que as páginas selecionadas podem ser enviadas ao Gemini.");
-      const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,studentId,pages:pageNumbers,settings:{supports,fontSize,color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
+      const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,studentId,pages:pageNumbers,settings:{supports,fontSize:supports.includes('large-print')&&fontSize==='18'?'22':fontSize,color:supports.includes('high-contrast')&&color==='default'?'high':color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
       if(!["ready","released"].includes(a.status))autoRender.current=a.id;update(a);setReaderView('prepared');setStep(a.status==="ready"||a.status==="released"?3:2);
     });
   }
@@ -146,7 +148,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     setStep(1);
     setReaderView('original');
     setFontSize('22');
-    setColor('default');
+    setColor(selected.includes('high-contrast')?'high':'default');
     setSelectedId('');
     setDocument([]);
     setEditText(false);
@@ -159,6 +161,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     return <label className="simple-support-option" key={id}>
       <input type="checkbox" checked={supports.includes(id)} onChange={e=>{
         toggle(id,e.target.checked);
+        if(id==='high-contrast')setColor(e.target.checked?'high':'default');
         if(e.target.checked&&['literal-language','short-sections','glossary'].includes(id))setManualDescription(false);
         setDelivery(e.target.checked||supports.some(s=>s!==id&&s!=='narration')?'adapted':'original');
         if(step===3){setSelectedId('');setEditText(false);setStep(1);setSupports(old=>old.filter(s=>s!=='narration'));}
@@ -234,7 +237,8 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           {source?.status==='failed'&&source.warnings.map(w=><p role="alert" key={w}>{w}</p>)}
           {step===1&&student&&source?.status==='ready'&&<section className="paper form-stack">
         {delivery==='adapted'&&<>
-          {(supports.includes('large-print')||supports.includes('high-contrast'))&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="18">Grande · 18 pontos</option><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="default">Escuro sobre claro</option><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
+          {supports.includes('large-print')&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize==='18'?'22':fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select></>}
+          {supports.includes('high-contrast')&&<><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color==='default'?'high':color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
           <details open={source.pageCount>4||!pageNumbers.length?true:undefined}><summary>Páginas da prévia · {pageNumbers.length} de {source.pageCount}</summary><p className="small">Até 4 páginas e 12 mil caracteres por adaptação. As demais páginas não serão incluídas nesta versão; prepare-as separadamente.</p>{source.pages.map(p=><label className="check" key={p.page}><input type="checkbox" checked={pageNumbers.includes(p.page)} disabled={pageNumbers.length>=4&&!pageNumbers.includes(p.page)} onChange={e=>{setPageNumbers(old=>e.target.checked?[...old,p.page].sort((a,b)=>a-b):old.filter(v=>v!==p.page));change();}}/>Página {p.page} · {p.text.length} caracteres{p.ocr?' · texto reconhecido automaticamente':''}</label>)}</details>
           {supports.includes('image-description')&&<label className="check"><input type="checkbox" checked={manualDescription} onChange={e=>{
             setManualDescription(e.target.checked);setApproved(false);
@@ -258,8 +262,13 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <a className="text-link" href={materialAssetUrl(missionId,current.sourceId,`page-${p.page}`)} target="_blank" rel="noopener noreferrer">Conferir página {p.page} do PDF original</a>
           {source?.pages.find(page=>page.page===p.page)?.ocr&&<p className="notice">Texto extraído por OCR. Compare números, fórmulas e tabelas com a página original.</p>}
           {current.settings.useAi&&!released&&!archived&&<button type="button" className="button button-outline" disabled={busy||!!pending||activityDirty} onClick={()=>void regeneratePage(p.page)}>Refazer página {p.page} com Gemini</button>}
-          <label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} value={p.title} maxLength={200} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} value={p.text} maxLength={12000} rows={6} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/></section>)}</details>
-          {(dirty||current.status==='draft')&&<button className="button" type="button" disabled={busy||activityDirty||current.settings.supports.includes('image-description')&&document.some(page=>!page.description.trim())} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
+          <label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} value={p.title} maxLength={200} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} value={p.text} maxLength={12000} rows={6} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/>
+          <StructuredMaterialFields page={p} supports={current.settings.supports} disabled={busy||released||archived} onChange={fields=>{
+            setDocument(old=>old.map((v,n)=>n===i?{...v,...fields}:v));setDirty(true);setReviewed(false);
+          }}/>
+          </section>)}</details>
+          {dirty&&invalidStructure&&<p className="notice">Preencha ou remova os passos e os termos que ficaram em branco antes de atualizar a prévia.</p>}
+          {(dirty||current.status==='draft')&&<button className="button" type="button" disabled={busy||activityDirty||invalidStructure||current.settings.supports.includes('image-description')&&document.some(page=>!page.description.trim())} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
           <details><summary>Leitura em texto e transcrição</summary><PreparedDocument document={current.document} missionId={missionId} adaptationId={current.id}/></details>
         </>}
         {canRelease&&<label className="check"><input type="checkbox" disabled={locked} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>Conferi o material e o destinatário. Posso disponibilizar para {student.name}.</label>}
