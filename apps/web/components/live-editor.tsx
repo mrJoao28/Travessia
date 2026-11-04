@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { MissionSupportsEditor } from "./live-strategies";
+import { SupportGenerator } from "./support-generator";
 import { OperationStatus } from "./operation-status";
 import {
   api,
@@ -81,6 +82,7 @@ export function LiveEditor({
     if (review) document.getElementById("publish-review")?.focus();
   }, [review]);
   const [confirmed, setConfirmed] = useState(false);
+  const [aiStep, setAiStep] = useState("");
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [approved, setApproved] = useState(false);
   const [generation, setGeneration] = useState<ApiResponse<"generate"> | null>(
@@ -100,6 +102,7 @@ export function LiveEditor({
     setDirty(false);
     setReview(null);
     setConfirmed(false);
+    setAiStep("");
     setSelectedMaterials([]);
     setApproved(false);
     generationKey.current = null;
@@ -624,6 +627,31 @@ export function LiveEditor({
         {stage === 2 && <div className="form-stack">
           {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da missão",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
           <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da missão, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
+          {mission && storedVersion && !dirty && storedVersion.materials.length > 0 && (
+            <details className="teacher-ai">
+              <summary>Refazer instruções de uma etapa com Gemini</summary>
+              <label htmlFor="ai-edit-step">Etapa que você quer revisar</label>
+              <select id="ai-edit-step" value={aiStep} disabled={pending || supportsDirty} onChange={event => setAiStep(event.target.value)}>
+                <option value="">Escolha uma etapa</option>
+                {storedVersion.steps.map(step => <option key={step.id} value={step.id}>{step.title}</option>)}
+              </select>
+              {aiStep && !supportsDirty && <SupportGenerator
+                key={`${storedVersion.id}:${aiStep}`}
+                missionId={mission.id}
+                version={storedVersion}
+                stepId={aiStep}
+                selected={[{ id: "written-instructions", title: "Instruções da etapa" }]}
+                instructionsOnly
+                onBusy={setPending}
+                onApply={(_id, instructions) => {
+                  const index = storedVersion.steps.findIndex(step => step.id === aiStep);
+                  if (index < 0) return;
+                  change({ ...input, steps: input.steps.map((step, position) => position === index ? { ...step, instructions } : step) });
+                  setStage(1);
+                }}
+              />}
+            </details>
+          )}
           <details className="teacher-ai"><summary>Pedir ajuda à IA para escrever a missão (opcional)</summary>
         <h2>Assistência Gemini</h2>
         <p>
