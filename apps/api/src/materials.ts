@@ -118,7 +118,7 @@ export class MaterialService {
           if (!['draft', 'ready'].includes(old.status) || !document.some(page => page.page === edit.regeneratePage))
             return fail(409, 'INVALID_REGENERATION', 'Escolha uma página de um rascunho ainda não disponibilizado.');
           if (!this.config.aiEnabled || !settings.useAi || !edit.approvedForProvider)
-            return fail(400, 'AI_REQUIRED', 'Autorize o envio da página original ao Gemini para refazer o trecho.');
+            return fail(400, 'AI_REQUIRED', 'Autorize o envio da página original ao ChatGPT para refazer o trecho.');
           if (!await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: old.studentId, role: 'student', active: true } }))
             return missing();
           if (await tx.materialAdaptation.count({ where: { creatorId: userId, status: { in: ['queued', 'generating'] }, settings: { path: ['useAi'], equals: true } } }))

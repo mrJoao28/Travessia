@@ -47,11 +47,11 @@ export function SupportGenerator({ missionId, version, stepId, selected, onApply
       onBusy(false);
     }
   }
-  return <section className="paper form-stack" aria-label={instructionsOnly ? "Assistência Gemini para instruções da etapa" : "Assistência Gemini para apoios"}>
-    <h3>{instructionsOnly ? "Refazer instruções da etapa" : "Gerar rascunhos com Gemini"}</h3>
-    <p>{instructionsOnly ? "O Gemini prepara uma sugestão de instruções para a etapa escolhida. Confira o texto antes de aplicar." : "Gere checklist, exemplo comentado, glossário, instruções ou roteiro para as estratégias selecionadas. Revise e edite antes de salvar os apoios."}</p>
+  return <section className="paper form-stack" aria-label={instructionsOnly ? "Assistência ChatGPT para instruções da etapa" : "Assistência ChatGPT para apoios"}>
+    <h3>{instructionsOnly ? "Refazer instruções da etapa" : "Gerar rascunhos com ChatGPT"}</h3>
+    <p>{instructionsOnly ? "O ChatGPT prepara uma sugestão de instruções para a etapa escolhida. Confira o texto antes de aplicar." : "Gere checklist, exemplo comentado, glossário, instruções ou roteiro para as estratégias selecionadas. Revise e edite antes de salvar os apoios."}</p>
     <p className="small">Esta assistência prepara somente apoios em texto. Para descrever imagens de um PDF e gerar áudio, use a preparação de material individual acima. Você revisa os resultados antes de liberar.</p>
-    <fieldset disabled={busy || disabled} className="strategy-fields form-stack"><legend>Material didático para enviar ao Gemini (até 3)</legend>
+    <fieldset disabled={busy || disabled} className="strategy-fields form-stack"><legend>Material didático para enviar ao ChatGPT (até 3)</legend>
       {version.materials.map(m => <label className="check" key={m.id}><input type="checkbox" checked={materialIds.includes(m.id)} onChange={e => {
         setApproved(false); setDraft(null); request.current = null;
         setMaterialIds(old => e.target.checked ? [...old, m.id] : old.filter(id => id !== m.id));
@@ -62,9 +62,9 @@ export function SupportGenerator({ missionId, version, stepId, selected, onApply
         {version.materials.filter(m => materialIds.includes(m.id)).map(m => <div key={m.id}><h4>{m.title}</h4><p className="submission-content">{m.text}</p></div>)}
         <p>Também serão enviadas as orientações genéricas das estratégias selecionadas.</p>
       </details>
-      <label className="check"><input type="checkbox" checked={approved} onChange={e => setApproved(e.target.checked)} />Conferi o conteúdo e autorizo seu envio ao Gemini. Ele contém apenas material didático, sem dados pessoais ou confidenciais.</label>
+      <label className="check"><input type="checkbox" checked={approved} onChange={e => setApproved(e.target.checked)} />Conferi o conteúdo e autorizo seu envio ao ChatGPT. Ele contém apenas material didático, sem dados pessoais ou confidenciais.</label>
       <button type="button" className="button button-outline" disabled={!canGenerate} onClick={() => void generate(ids)}>
-        {busy ? "Gerando rascunhos…" : instructionsOnly ? "Gerar instruções da etapa" : "Gerar apoios com Gemini"}
+        {busy ? "Gerando rascunhos…" : instructionsOnly ? "Gerar instruções da etapa" : "Gerar apoios com ChatGPT"}
       </button>
     </fieldset>
     {!busy&&ids.length===0&&<p className="small">Escolha uma estratégia compatível para gerar uma sugestão.</p>}

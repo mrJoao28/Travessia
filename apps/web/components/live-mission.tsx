@@ -297,7 +297,7 @@ export function LiveMission({
                     {classroom.name}. Salve o rascunho para retomar depois. Ele
                     permanece privado para você.
                   </p>
-                  <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao Gemini.</p>
+                  <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao ChatGPT.</p>
                   {formats.includes("audio") && <AudioAttachment label="Áudio da atividade (opcional)" disabled={pending || mediaBusy} id="submission" missionId={id} help="Resposta em áudio de até 30 segundos; arquivo de até 10 MB na seleção. O navegador converte localmente para WAV. Um resumo no editor é opcional." value={audio ? { base64: audio } : null} onBusy={setMediaBusy} onChange={value => { setAudio(value && "base64" in value ? value.base64 : null); setDirty(true); }} />}
                   {submission?.hasAudio && audio === undefined && <><SubmissionMedia id={submission.id} hasAudio /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setAudio(null); setDirty(true); }}>Remover áudio salvo da atividade</button></>}
                   {formats.includes("text_file") && <div className="form-stack"><label htmlFor="submission-file">Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)</label><input id="submission-file" type="file" accept=".txt,text/plain" disabled={pending || mediaBusy} onChange={async e => {

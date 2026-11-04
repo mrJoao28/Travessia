@@ -192,12 +192,12 @@ export function LiveEditor({
         {storedVersion?.source === "demo_fixture" && (
           <p className="notice">
             Rascunho fictício pré-criado para a demonstração, sem geração
-            Gemini.
+            ChatGPT.
           </p>
         )}
         {storedVersion?.source === "gemini" && (
           <p className="notice">
-            Rascunho com assistência Gemini. Revise conteúdo e adequação
+            Rascunho com assistência ChatGPT. Revise conteúdo e adequação
             pedagógica.
           </p>
         )}
@@ -598,7 +598,7 @@ export function LiveEditor({
           <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da missão, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
           {mission && storedVersion && !dirty && storedVersion.materials.length > 0 && (
             <details className="teacher-ai">
-              <summary>Refazer instruções de uma etapa com Gemini</summary>
+              <summary>Refazer instruções de uma etapa com ChatGPT</summary>
               <label htmlFor="ai-edit-step">Etapa que você quer revisar</label>
               <select id="ai-edit-step" value={aiStep} disabled={pending || supportsDirty} onChange={event => setAiStep(event.target.value)}>
                 <option value="">Escolha uma etapa</option>

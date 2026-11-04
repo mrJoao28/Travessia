@@ -46,7 +46,7 @@ export function LearningNeeds({ classrooms }: { classrooms: Classroom[] }) {
         <div className="actions"><button className="button" disabled={busy}>Salvar minhas escolhas</button><button type="button" className="text-button" disabled={busy} onClick={() => { setDirty(true); setNeeds({ ...needs, disabilities: [], supports: [], preferredFormats: [] }); }}>Limpar seleções para salvar</button></div>
       </form>
     </section>
-    <section className="paper form-stack" aria-label="Compartilhamento dos meus apoios"><h2>Compartilhar por turma</h2><p>Somente docentes com vínculo ativo na turma autorizada podem consultar. Outros alunos não recebem suas escolhas. Suas informações pessoais não são enviadas ao Gemini.</p>
+    <section className="paper form-stack" aria-label="Compartilhamento dos meus apoios"><h2>Compartilhar por turma</h2><p>Somente docentes com vínculo ativo na turma autorizada podem consultar. Outros alunos não recebem suas escolhas. Suas informações pessoais não são enviadas ao ChatGPT.</p>
       {dirty && <p className="notice">Salve suas alterações antes de autorizar um novo compartilhamento.</p>}
       {shares.map(share => <Sharing key={`${share.classroomId}:${share.revision}`} share={share} name={rooms.find(c => c.id === share.classroomId)?.name ?? "Turma"} disabled={busy || dirty || needs.revision === 0} revokingDisabled={busy} onSave={async (shared, includeDisabilities) => {
         setBusy(true); setError(""); setMessage("");

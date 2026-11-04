@@ -52,14 +52,8 @@ Gemini usa AI_ENABLED/GEMINI_API_KEY/GEMINI_MODEL e as aprovações já exigidas
 
 Testes HTTP usam autenticação/PG reais e provedores/processadores controlados para verificar permissões A/B, revisão, revogação, idempotência e minimização. O smoke Docker adicional exercita extração, PDF, voz local e persistência reais com Gemini desligado. Testes de interface distinguem respostas controladas de integrações reais. Testar uma chamada Gemini real requer credencial aprovada; testes controlados não comprovam qualidade pedagógica ou a descrição correta de documentos arbitrários. Não há validação com estudantes ou leitor de tela humano nesta implementação.
 
-### Diagnóstico Gemini e revisão por página
+### Revisão por página
 
-Em um checkout com dependências instaladas, carregue a configuração privada e consulte a chave e o modelo:
+Para conectar e testar a IA nesta branch, veja [ChatGPT local](CHATGPT-LOCAL.md).
 
-```sh
-node --env-file=.env.docker --import tsx apps/api/src/gemini-check.ts
-```
-
-Acrescente `--smoke` ao final para chamar os três adaptadores reais com material fictício. Essa opção usa a cota Gemini do projeto. Ela verifica formato da missão, estratégia de apoio e descrição de uma página com imagem, além da preservação do texto original. O comando imprime apenas resultados e categorias de erro. Use as prévias para avaliar manualmente fidelidade, números, clareza e adequação pedagógica.
-
-Em **Ajustar o texto da prévia**, cada página remete à imagem original. Páginas extraídas por OCR pedem conferência de fórmulas, números e tabelas. Para rascunhos preparados com IA, **Refazer página com Gemini** salva o trabalho atual e enfileira somente a página confirmada. As demais páginas são preservadas. Na descrição exclusivamente visual, apenas a descrição muda. Depois, gere novamente a prévia e revise antes de disponibilizar.
+Em **Ajustar o texto da prévia**, cada página remete à imagem original. Páginas extraídas por OCR pedem conferência de fórmulas, números e tabelas. Para rascunhos preparados com IA, **Refazer página com ChatGPT** salva o trabalho atual e enfileira somente a página confirmada. As demais páginas são preservadas. Na descrição exclusivamente visual, apenas a descrição muda. Depois, gere novamente a prévia e revise antes de disponibilizar.

@@ -95,14 +95,14 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   async function prepare() {
     await operation(async()=>{
       if(!studentId || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha o aluno, o PDF, as páginas e pelo menos um apoio.");
-      if(ai&&!approved)throw new Error("Confirme que as páginas selecionadas podem ser enviadas ao Gemini.");
+      if(ai&&!approved)throw new Error("Confirme que as páginas selecionadas podem ser enviadas ao ChatGPT.");
       const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,studentId,pages:pageNumbers,settings:{supports,fontSize,color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
       if(!["ready","released"].includes(a.status))autoRender.current=a.id;update(a);setReaderView('prepared');setStep(a.status==="ready"||a.status==="released"?3:2);
     });
   }
   async function regeneratePage(page: number) {
     if (!current || busy || pending || current.status === "released") return;
-    if (!window.confirm(`Enviar somente a página ${page} do PDF original ao Gemini? Confira se ela pode ser compartilhada. As outras páginas serão preservadas.`)) return;
+    if (!window.confirm(`Enviar somente a página ${page} do PDF original ao ChatGPT? Confira se ela pode ser compartilhada. As outras páginas serão preservadas.`)) return;
     await operation(async () => {
       const queued = await api("editMaterial", {
         params: { id: missionId, adaptationId: current.id },
@@ -241,7 +241,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
             if(e.target.checked)setSupports(old=>old.filter(id=>!['literal-language','short-sections','glossary'].includes(id)));
             change();
           }}/>Escrever a descrição manualmente</label>}
-          {ai&&<label className="check"><input type="checkbox" checked={approved} onChange={e=>setApproved(e.target.checked)}/>Conferi as páginas e os objetivos e autorizo enviar esse conteúdo didático, sem dados pessoais, ao Gemini para preparar o rascunho.</label>}
+          {ai&&<label className="check"><input type="checkbox" checked={approved} onChange={e=>setApproved(e.target.checked)}/>Conferi as páginas e os objetivos e autorizo enviar esse conteúdo didático, sem dados pessoais, ao ChatGPT para preparar o rascunho.</label>}
           <p className="small">Confirme as preferências com o aluno. Você confere a prévia antes de enviar.</p>
         </>}
         <div className="simple-material-actions"><button className="button" type="button" disabled={busy||delivery==='adapted'&&(!supports.length||!pageNumbers.length||ai&&!approved||source.pages.filter(p=>pageNumbers.includes(p.page)).reduce((n,p)=>n+p.text.length,0)>12000)} onClick={()=>{if(delivery==='original'){setSelectedId('');setReaderView('original');setStep(3);}else void prepare();}}>{delivery==='original'?'Usar PDF original':'Gerar prévia'}</button></div>
@@ -257,7 +257,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <details open={editText} onToggle={e=>setEditText(e.currentTarget.open)}><summary>Ajustar o texto da prévia</summary>{editText&&document.map((p,i)=><section className="form-stack" key={p.page}><h4>Página {p.page} do original</h4>
           <a className="text-link" href={materialAssetUrl(missionId,current.sourceId,`page-${p.page}`)} target="_blank" rel="noopener noreferrer">Conferir página {p.page} do PDF original</a>
           {source?.pages.find(page=>page.page===p.page)?.ocr&&<p className="notice">Texto extraído por OCR. Compare números, fórmulas e tabelas com a página original.</p>}
-          {current.settings.useAi&&!released&&!archived&&<button type="button" className="button button-outline" disabled={busy||!!pending||activityDirty} onClick={()=>void regeneratePage(p.page)}>Refazer página {p.page} com Gemini</button>}
+          {current.settings.useAi&&!released&&!archived&&<button type="button" className="button button-outline" disabled={busy||!!pending||activityDirty} onClick={()=>void regeneratePage(p.page)}>Refazer página {p.page} com ChatGPT</button>}
           <label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} value={p.title} maxLength={200} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} value={p.text} maxLength={12000} rows={6} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/></section>)}</details>
           {(dirty||current.status==='draft')&&<button className="button" type="button" disabled={busy||activityDirty||current.settings.supports.includes('image-description')&&document.some(page=>!page.description.trim())} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
           <details><summary>Leitura em texto e transcrição</summary><PreparedDocument document={current.document} missionId={missionId} adaptationId={current.id}/></details>

@@ -83,10 +83,10 @@ export async function api<K extends keyof ApiOperations>(
         ? error.code
         : "REQUEST_FAILED";
     const geminiErrors: Record<string, string> = {
-      AI_CREDENTIALS: "O Gemini recusou as credenciais. Peça ao administrador para conferir a chave e as permissões.",
-      AI_MODEL: "O modelo Gemini está indisponível para este projeto. Peça ao administrador para conferir a configuração.",
-      AI_PROVIDER_QUOTA: "O projeto Gemini atingiu um limite de uso. Aguarde ou peça ao administrador para conferir a cota.",
-      AI_TIMEOUT: "O Gemini demorou demais. Confira o estado do rascunho antes de tentar com menos material.",
+      AI_CREDENTIALS: "Reconecte sua conta ChatGPT e autorize o uso do plano.",
+      AI_MODEL: "O modelo ChatGPT está indisponível para esta conta. Confira CHATGPT_MODEL.",
+      AI_PROVIDER_QUOTA: "O plano ChatGPT atingiu um limite de uso. Confira o consumo na sua conta.",
+      AI_TIMEOUT: "O ChatGPT demorou demais. Confira o estado do rascunho antes de tentar com menos material.",
     };
     const message = Object.hasOwn(geminiErrors, code) ? geminiErrors[code] :
       response.status === 401
@@ -100,7 +100,7 @@ export async function api<K extends keyof ApiOperations>(
               : code === "INPUT_TOO_LARGE"
                 ? "Os materiais selecionados excedem o limite da assistência. Selecione menos conteúdo e tente novamente."
                 : code === "AI_UNAVAILABLE"
-                  ? "A assistência está desativada. Você pode continuar editando manualmente."
+                  ? "A assistência está desligada nesta instância. Inicie a API local com AI_ENABLED=true e confira CHATGPT_MODEL. Você também pode continuar manualmente."
                   : response.status === 404 || response.status === 403
                     ? "Este recurso não está disponível para seu vínculo atual."
                     : "Não foi possível concluir a operação. Confira os campos e tente novamente. Seu texto foi preservado.";

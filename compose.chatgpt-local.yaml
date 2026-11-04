@@ -1,0 +1,31 @@
+# Use somente com a branch local de teste.
+services:
+  db:
+    ports:
+      - "127.0.0.1:${CHATGPT_TEST_DB_PORT:-55433}:5432"
+  material-worker:
+    network_mode: service:db
+    networks: !reset []
+    environment:
+      NODE_ENV: development
+      API_HOST: 127.0.0.1
+      DATABASE_URL: ${CHATGPT_TEST_WORKER_DB_URL:?Use scripts/chatgpt-local.ps1}
+      DIRECT_URL: ${CHATGPT_TEST_WORKER_DB_URL:?Use scripts/chatgpt-local.ps1}
+      BETTER_AUTH_URL: http://127.0.0.1:3000
+      TRUSTED_WEB_ORIGIN: http://127.0.0.1:3000
+      DEMO_MODE: "true"
+      DEMO_ONLY: "true"
+      AI_ENABLED: "true"
+      CHATGPT_MODEL: ${CHATGPT_MODEL:?Use scripts/chatgpt-local.ps1}
+    volumes:
+      - type: bind
+        source: ${CHATGPT_TEST_MATERIAL_DIR:?Use scripts/chatgpt-local.ps1}
+        target: /data/materials
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${CHATGPT_TEST_SESSION_DIR:?Use scripts/chatgpt-local.ps1}
+        target: /home/node/.travessia-chatgpt-test
+        read_only: true
+        bind:
+          create_host_path: false

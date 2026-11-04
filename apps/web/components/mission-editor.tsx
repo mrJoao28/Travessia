@@ -280,7 +280,7 @@ export function MissionEditor() {
       <aside className="paper">
         <h2>Assistência para planejar</h2>
         <p>
-          O Gemini poderá sugerir um rascunho com objetivo e material didático
+          O ChatGPT poderá sugerir um rascunho com objetivo e material didático
           selecionados por você. A revisão docente é necessária antes de
           publicar.
         </p>
@@ -289,7 +289,7 @@ export function MissionEditor() {
           onSubmit={(e) => {
             e.preventDefault();
             setMessage(
-              "A geração não está conectada nesta prévia. Nenhum conteúdo foi enviado ao Gemini. Você pode continuar editando o rascunho manual.",
+              "A geração não está conectada nesta prévia. Nenhum conteúdo foi enviado ao ChatGPT. Você pode continuar editando o rascunho manual.",
             );
           }}
         >
