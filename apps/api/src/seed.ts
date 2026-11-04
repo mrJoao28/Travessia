@@ -50,8 +50,20 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
     for (let i = 0; i < teacherIds.length; i++) await tx.user.upsert({ where: { id: teacherIds[i] }, create: {
       id: teacherIds[i], name: names[i], email: `teacher-${i}@example.invalid`, emailVerified: false }, update: {} });
     const students = Array.from({ length: 8 }, (_, i) => `demo-student-${i + 1}`);
+    const testStudents = [
+      { id: 'demo-student-local-blindness', name: 'Lia (teste) — Cegueira', disabilities: ['blindness'], supports: ['image-description'] },
+      { id: 'demo-student-local-low-vision', name: 'Rafael (teste) — Baixa visão', disabilities: ['low-vision'], supports: [] },
+      { id: 'demo-student-local-adhd', name: 'Bia (teste) — TDAH', disabilities: ['adhd'], supports: ['short-steps'] },
+      { id: 'demo-student-local-no-disclosure', name: 'Caio (teste) — Sem deficiência informada', disabilities: [], supports: [] },
+    ];
     for (const [i, id] of students.entries()) await tx.user.upsert({ where: { id }, create: { id,
       name: `Estudante Fictício ${i + 1}`, email: `student-${i + 1}@example.invalid` }, update: {} });
+    for (const student of testStudents) {
+      await tx.user.upsert({ where: { id: student.id }, create: {
+        id: student.id, name: student.name, email: `${student.id}@example.invalid`,
+      }, update: {} });
+      students.push(student.id);
+    }
     for (const id of students) await tx.studentProfile.upsert({ where: { userId: id }, create: {
       userId: id, course: 'Engenharia da Computação', institution: 'UEA' }, update: {} });
     for (const [index, id] of teacherIds.entries()) await tx.teacherProfile.upsert({ where: { userId: id }, create: {
@@ -97,6 +109,16 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
           content: 'Sua justificativa apresenta um caminho claro. Para melhorar, compare os resultados com um segundo exemplo e explique as diferenças.' }, update: {} });
       }
       if (index === 3) {
+        for (const student of testStudents) {
+          if (!student.disabilities.length) continue;
+          const created = await tx.learningNeeds.createMany({ data: {
+            userId: student.id, disabilities: student.disabilities, supports: student.supports, preferredFormats: [],
+          }, skipDuplicates: true });
+          // Preserve any later changes to the fictitious profile and its sharing choices.
+          if (created.count) await tx.needsSharing.createMany({ data: {
+            userId: student.id, classroomId: c.id, shared: true, includeDisabilities: true,
+          }, skipDuplicates: true });
+        }
         for (const shared of [true, false]) await tx.barrierReport.upsert({ where: { id: `demo-barrier-${shared ? 'shared' : 'private'}` }, create: {
           id: `demo-barrier-${shared ? 'shared' : 'private'}`, stepId: version.steps[1].id, userId: students[0], sharedWithTeacher: shared,
           description: shared ? 'O material está disponível apenas como imagem' : 'Relato fictício privado para teste de isolamento.' }, update: {} });
