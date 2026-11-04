@@ -1,4 +1,5 @@
 "use client";
+import { PDF_MAX_BYTES, PDF_MAX_MB, PDF_MAX_PAGES } from "../lib/material-limits";
 import { useEffect, useRef, useState } from "react";
 import { api, pages, errorMessage, type ApiResponse, type ApiBody } from "../lib/product-client";
 import { materialProfiles, type MaterialSupport } from "../lib/material-profiles";
@@ -30,7 +31,6 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const [supports, setSupports] = useState<MaterialSupport[]>([]);
   const [editText,setEditText]=useState(false);
   const [readerView,setReaderView]=useState<'original'|'prepared'>('original');
-  const autoRender=useRef<string|null>(null);
   const [fontSize, setFontSize] = useState<"18" | "22" | "26">("22"), [color, setColor] = useState<"default" | "high" | "dark">("default");
   const [sourceId, setSourceId] = useState(""), [pageNumbers, setPageNumbers] = useState<number[]>([]), [approved, setApproved] = useState(false);
   const [selectedId, setSelectedId] = useState(""), [document, setDocument] = useState<Document>([]), [dirty, setDirty] = useState(false), [reviewed, setReviewed] = useState(false);
@@ -72,14 +72,16 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     if(step===2&&(current.status === "ready" || current.status === "released")) setStep(3);
   },[current,dirty,step]);
   useEffect(()=>{
-    if(current?.status!=='draft'||autoRender.current!==current.id||dirty)return;
-    autoRender.current=null;
-    if(current.error)return;
-    if(!current.settings.useAi&&current.settings.supports.includes('image-description')){
-      setEditText(true);setStep(3);
-    }else void saveAndRender();
-  },[current,dirty]);
-  useEffect(()=>{if(source?.status==='ready'&&!selectedId){const all=source.pages;setPageNumbers(all.length<=4&&all.reduce((n,p)=>n+p.text.length,0)<=12000?all.map(p=>p.page):[]);}},[source?.id,source?.status,selectedId]);
+    if (step!==2 || current?.status!=='draft' || current.error || dirty) return;
+    if (current.settings.supports.includes('image-description') &&
+      (!current.settings.useAi || current.document.some(page=>!page.description.trim()))) {
+      setEditText(true);
+      setStep(3);
+    }
+  },[current,dirty,step]);
+  useEffect(()=>{
+    if(source?.status==='ready'&&!selectedId)setPageNumbers(source.pages.map(page=>page.page));
+  },[source?.id,source?.status,selectedId]);
   useEffect(()=>{setReviewed(false);},[step,selectedId]);
   async function operation(action:()=>Promise<void>) {setBusy(true);setError("");setMessage("");try{await action();}catch(reason){setError(errorMessage(reason));}finally{setBusy(false);}}
   function update(a:Adaptation) {setAdaptations(old=>[...old.filter(v=>v.id!==a.id),a]);setSelectedId(a.id);setDocument(a.document);setDirty(false);setReviewed(false);}
@@ -87,7 +89,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     if(!file)return;
     uploadKey.current=crypto.randomUUID();
     await operation(async()=>{
-      if(!/\.pdf$/i.test(file.name) || file.size>10*1024*1024 || file.size<8)throw new Error("Escolha um PDF de até 10 MB e 20 páginas, sem senha.");
+      if(!/\.pdf$/i.test(file.name) || file.size>PDF_MAX_BYTES || file.size<8)throw new Error(`Escolha um PDF de até ${PDF_MAX_MB} MB e ${PDF_MAX_PAGES} páginas, sem senha.`);
       const bytes=new Uint8Array(await file.arrayBuffer()); if(new TextDecoder().decode(bytes.slice(0,5))!=="%PDF-")throw new Error("Esse arquivo não é um PDF válido.");
       let binary="";for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
       const result=await api("uploadMaterialSource",{params:{id:missionId},body:{versionId,title:file.name.slice(0,150),base64:btoa(binary),requestKey:uploadKey.current!}});
@@ -98,12 +100,12 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     await operation(async()=>{
       if(!studentId || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha o aluno, o PDF, as páginas e pelo menos um apoio.");
       if(ai&&!approved)throw new Error("Confirme que as páginas selecionadas podem ser enviadas ao Gemini.");
-      const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,studentId,pages:pageNumbers,settings:{supports,fontSize:supports.includes('large-print')&&fontSize==='18'?'22':fontSize,color:supports.includes('high-contrast')&&color==='default'?'high':color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
-      if(!["ready","released"].includes(a.status))autoRender.current=a.id;update(a);setReaderView('prepared');setStep(a.status==="ready"||a.status==="released"?3:2);
+      const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,studentId,pages:pageNumbers,autoRender:true,settings:{supports,fontSize:supports.includes('large-print')&&fontSize==='18'?'22':fontSize,color:supports.includes('high-contrast')&&color==='default'?'high':color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
+      update(a);setReaderView('prepared');setStep(a.status==="ready"||a.status==="released"?3:2);
     });
   }
   async function regeneratePage(page: number) {
-    if (!current || busy || pending || current.status === "released") return;
+    if (!current || busy || pending) return;
     if (!window.confirm(`Enviar somente a página ${page} do PDF original ao Gemini? Confira se ela pode ser compartilhada. As outras páginas serão preservadas.`)) return;
     await operation(async () => {
       const queued = await api("editMaterial", {
@@ -235,11 +237,15 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           {fileRow}
           {!source&&student&&<p className="small">Escolha ou adicione um PDF para gerar a prévia.</p>}
           {source?.status==='failed'&&source.warnings.map(w=><p role="alert" key={w}>{w}</p>)}
+          {source?.status==='ready'&&source.warnings.length>0&&<details>
+            <summary>Pontos para conferir no PDF</summary>
+            <ul>{source.warnings.map(w=><li key={w}>{w}</li>)}</ul>
+          </details>}
           {step===1&&student&&source?.status==='ready'&&<section className="paper form-stack">
         {delivery==='adapted'&&<>
           {supports.includes('large-print')&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize==='18'?'22':fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select></>}
           {supports.includes('high-contrast')&&<><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color==='default'?'high':color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
-          <details open={source.pageCount>4||!pageNumbers.length?true:undefined}><summary>Páginas da prévia · {pageNumbers.length} de {source.pageCount}</summary><p className="small">Até 4 páginas e 12 mil caracteres por adaptação. As demais páginas não serão incluídas nesta versão; prepare-as separadamente.</p>{source.pages.map(p=><label className="check" key={p.page}><input type="checkbox" checked={pageNumbers.includes(p.page)} disabled={pageNumbers.length>=4&&!pageNumbers.includes(p.page)} onChange={e=>{setPageNumbers(old=>e.target.checked?[...old,p.page].sort((a,b)=>a-b):old.filter(v=>v!==p.page));change();}}/>Página {p.page} · {p.text.length} caracteres{p.ocr?' · texto reconhecido automaticamente':''}</label>)}</details>
+          <details open={!pageNumbers.length?true:undefined}><summary>Páginas da prévia · {pageNumbers.length} de {source.pageCount}</summary><p className="small">O arquivo inteiro vem selecionado. A geração processa as páginas em lotes e reúne o resultado em um só material.</p>{source.pages.map(p=><label className="check" key={p.page}><input type="checkbox" checked={pageNumbers.includes(p.page)} onChange={e=>{setPageNumbers(old=>e.target.checked?[...old,p.page].sort((a,b)=>a-b):old.filter(v=>v!==p.page));change();}}/>Página {p.page} · {p.text.length} caracteres{p.ocr?' · texto reconhecido automaticamente':''}</label>)}</details>
           {supports.includes('image-description')&&<label className="check"><input type="checkbox" checked={manualDescription} onChange={e=>{
             setManualDescription(e.target.checked);setApproved(false);
             if(e.target.checked)setSupports(old=>old.filter(id=>!['literal-language','short-sections','glossary'].includes(id)));
@@ -248,10 +254,11 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           {ai&&<label className="check"><input type="checkbox" checked={approved} onChange={e=>setApproved(e.target.checked)}/>Conferi as páginas e os objetivos e autorizo enviar esse conteúdo didático, sem dados pessoais, ao Gemini para preparar o rascunho.</label>}
           <p className="small">Confirme as preferências com o aluno. Você confere a prévia antes de enviar.</p>
         </>}
-        <div className="simple-material-actions"><button className="button" type="button" disabled={busy||delivery==='adapted'&&(!supports.length||!pageNumbers.length||ai&&!approved||source.pages.filter(p=>pageNumbers.includes(p.page)).reduce((n,p)=>n+p.text.length,0)>12000)} onClick={()=>{if(delivery==='original'){setSelectedId('');setReaderView('original');setStep(3);}else void prepare();}}>{delivery==='original'?'Usar PDF original':'Gerar prévia'}</button></div>
+        <div className="simple-material-actions"><button className="button" type="button" disabled={busy||delivery==='adapted'&&(!supports.length||!pageNumbers.length||ai&&!approved)} onClick={()=>{if(delivery==='original'){setSelectedId('');setReaderView('original');setStep(3);}else void prepare();}}>{delivery==='original'?'Usar PDF original':'Gerar prévia'}</button></div>
       </section>}
       {step===2&&<section className="paper form-stack">{pending||busy||!current?<PreparationProgress title={current?labels[current.status]:'Consultando a preparação'} detail={current?.status==='rendering'?'Gerando o PDF e a audiodescrição, quando escolhida.':current?.status==='generating'?'Preparando o conteúdo das páginas escolhidas.':'Aguardando o início do processamento.'}/>:<h3>{labels[current.status]}</h3>}{current?.error&&<p role="alert">{current.error}</p>}{(current?.status==='draft'||(current?.status==='failed'&&document.length>0))&&!pending&&<button type="button" className="button" disabled={busy} onClick={()=>void saveAndRender()}>Preparar prévia deste rascunho</button>}{(current?.status==='failed'||current?.error)&&<button className="button button-outline" onClick={()=>{setSelectedId('');setStep(1);change();}}>Voltar aos apoios</button>}</section>}
       {step===3&&student&&<section className="paper form-stack">
+        {current?.hasReleasedVersion&&(!released||dirty)&&<p className="notice">O aluno continua com a versão já disponibilizada até você liberar esta revisão.</p>}
         <h3>{released?'Material disponibilizado':delivery==='original'?'Confira o PDF original':'Confira a prévia'}</h3><p>Destinatário: <strong>{student.name}</strong>. {delivery==='original'?'O PDF será mantido sem alterações.':'Confira a leitura, as descrições e a pronúncia do áudio, quando houver.'}</p>
         {!dirty&&(delivery==='original'||current?.status==='ready'||released)&&<a className="text-link" href={delivery==='original'?materialAssetUrl(missionId,sourceId,'original'):materialAssetUrl(missionId,current!.id,'pdf')} target="_blank" rel="noopener noreferrer">{delivery==='original'?'Conferir PDF original':'Conferir PDF gerado'}</a>}
 
@@ -261,9 +268,9 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <details open={editText} onToggle={e=>setEditText(e.currentTarget.open)}><summary>Ajustar o texto da prévia</summary>{editText&&document.map((p,i)=><section className="form-stack" key={p.page}><h4>Página {p.page} do original</h4>
           <a className="text-link" href={materialAssetUrl(missionId,current.sourceId,`page-${p.page}`)} target="_blank" rel="noopener noreferrer">Conferir página {p.page} do PDF original</a>
           {source?.pages.find(page=>page.page===p.page)?.ocr&&<p className="notice">Texto extraído por OCR. Compare números, fórmulas e tabelas com a página original.</p>}
-          {current.settings.useAi&&!released&&!archived&&<button type="button" className="button button-outline" disabled={busy||!!pending||activityDirty} onClick={()=>void regeneratePage(p.page)}>Refazer página {p.page} com Gemini</button>}
-          <label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} value={p.title} maxLength={200} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} value={p.text} maxLength={12000} rows={6} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/>
-          <StructuredMaterialFields page={p} supports={current.settings.supports} disabled={busy||released||archived} onChange={fields=>{
+          {current.settings.useAi&&!archived&&<button type="button" className="button button-outline" disabled={busy||!!pending||activityDirty} onClick={()=>void regeneratePage(p.page)}>Refazer página {p.page} com Gemini</button>}
+          <label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} value={p.title} maxLength={200} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} value={p.text} maxLength={40000} rows={6} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/>
+          <StructuredMaterialFields page={p} supports={current.settings.supports} disabled={busy||archived} onChange={fields=>{
             setDocument(old=>old.map((v,n)=>n===i?{...v,...fields}:v));setDirty(true);setReviewed(false);
           }}/>
           </section>)}</details>
