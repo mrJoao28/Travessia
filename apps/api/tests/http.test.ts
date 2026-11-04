@@ -110,7 +110,7 @@ test('health público, sessão inválida, CSRF e cadastro na plataforma', async 
   await request('/v1/classrooms', main, 'POST', { name: 'Teste' }, 403, 'https://attacker.invalid');
   await request('/v1/me/preferences', main, 'PATCH', { role: 'teacher' }, 400);
 });
-test('seed real: três contextos aluno, um docente, biblioteca 2/5, feedback e oito alunos', async () => {
+test('seed real: três contextos aluno, um docente, biblioteca 2/5, feedback e alunos fictícios com perfis variados', async () => {
   const me = (await request('/v1/me', main)).json;
   assert.equal(me.name, 'Joao Felipe'); assert.equal(me.course, 'Engenharia da Computação');
   const classes = (await request('/v1/classrooms', main)).json.items;
@@ -123,7 +123,15 @@ test('seed real: três contextos aluno, um docente, biblioteca 2/5, feedback e o
   const stats = (await request('/v1/missions/demo-class-estatistica-mission/submissions', main)).json.items[0];
   assert.equal(stats.status, 'reviewed'); assert.equal(stats.feedback.length, 1);
   const members = (await request(`/v1/classrooms/${workshop}/members`, main)).json.items;
-  assert.equal(members.filter((m: any) => m.role === 'student').length, 8);
+  assert.equal(members.filter((m: any) => m.role === 'student').length, 12);
+  const shared = (await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items;
+  assert.deepEqual(shared.map(({userId, disabilities, supports}: {userId: string; disabilities: string[]; supports: string[]}) => ({
+    userId, disabilities, supports,
+  })), [
+    { userId: 'demo-student-local-adhd', disabilities: ['adhd'], supports: ['short-steps'] },
+    { userId: 'demo-student-local-blindness', disabilities: ['blindness'], supports: ['image-description'] },
+    { userId: 'demo-student-local-low-vision', disabilities: ['low-vision'], supports: [] },
+  ]);
 });
 test('preferências privadas e autorização de turmas/papéis resolvida no banco', async () => {
   await request('/v1/me/preferences', a, 'PATCH', { fontSize: 'larger', spacing: 'wide' });
@@ -458,32 +466,37 @@ test('Gemini para apoios: envio mínimo, revisão, deduplicação, saída invál
   }
 });
 test('necessidades autodeclaradas são privadas: compartilhamento separado, revogável e restrito à turma', async () => {
+  const sharedByStudent = async () => {
+    const items: { userId: string; disabilities: string[] | null; supports: string[] }[] =
+      (await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items;
+    return items.filter(item => item.userId === 'demo-student-1');
+  };
   await request('/v1/me/learning-needs', '', 'GET', undefined, 401);
   await request('/v1/me/learning-needs', a, 'PATCH', { disabilities: ['visual'], supports: ['image-description'], preferredFormats: ['audio'], expectedRevision: 0, userId: mainId }, 400);
   const saved = (await request('/v1/me/learning-needs', a, 'PATCH', { disabilities: ['visual'], supports: ['image-description', 'short-steps'], preferredFormats: ['audio'], expectedRevision: 0 })).json;
   assert.equal(saved.revision, 1);
   assert.equal((await request('/v1/me/learning-needs', b)).json.disabilities.length, 0);
-  assert.equal((await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items.length, 0);
+  assert.equal((await sharedByStudent()).length, 0);
   await request(`/v1/classrooms/${workshop}/learning-needs`, b, 'GET', undefined, 404);
   await request(`/v1/classrooms/${workshop}/learning-needs`, otherTeacher, 'GET', undefined, 404);
   await request(`/v1/classrooms/demo-class-calculo/needs-sharing`, a, 'PATCH', { shared: true, includeDisabilities: true, expectedRevision: 0 }, 404);
   const shared = (await request(`/v1/classrooms/${workshop}/needs-sharing`, a, 'PATCH', { shared: true, includeDisabilities: false, expectedRevision: 0 })).json;
-  let received = (await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items;
+  let received = await sharedByStudent();
   assert.equal(received[0].disabilities, null); assert.deepEqual(received[0].supports, ['image-description', 'short-steps']);
   await request(`/v1/classrooms/${workshop}/needs-sharing`, a, 'PATCH', { shared: true, includeDisabilities: true, expectedRevision: shared.revision });
-  received = (await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items;
+  received = await sharedByStudent();
   assert.deepEqual(received[0].disabilities, ['visual']);
   await request('/v1/me/learning-needs', a, 'PATCH', { disabilities: ['hearing'], supports: ['transcript'], preferredFormats: ['text'], expectedRevision: 1 });
-  assert.equal((await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items.length, 0);
+  assert.equal((await sharedByStudent()).length, 0);
   const permission = (await request(`/v1/classrooms/${workshop}/needs-sharing`, a)).json;
   assert.equal(permission.shared, false); assert.equal(permission.includeDisabilities, false);
   await request(`/v1/classrooms/${workshop}/needs-sharing`, a, 'PATCH', { shared: true, includeDisabilities: false, expectedRevision: permission.revision });
   await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { active: false } });
-  assert.equal((await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items.length, 0);
+  assert.equal((await sharedByStudent()).length, 0);
   await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { active: true } });
   const permission2 = (await request(`/v1/classrooms/${workshop}/needs-sharing`, a)).json;
   await request(`/v1/classrooms/${workshop}/needs-sharing`, a, 'PATCH', { shared: false, includeDisabilities: false, expectedRevision: permission2.revision });
-  assert.equal((await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items.length, 0);
+  assert.equal((await sharedByStudent()).length, 0);
 });
 test('adaptações e respostas multimodais: autorização por aluno, bytes privados, preservação e revisão', async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;

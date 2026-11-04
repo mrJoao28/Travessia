@@ -51,10 +51,10 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
       id: teacherIds[i], name: names[i], email: `teacher-${i}@example.invalid`, emailVerified: false }, update: {} });
     const students = Array.from({ length: 8 }, (_, i) => `demo-student-${i + 1}`);
     const testStudents = [
-      { id: 'demo-student-local-blindness', name: 'Lia (teste) — Cegueira', disabilities: ['blindness'], supports: ['image-description'] },
-      { id: 'demo-student-local-low-vision', name: 'Rafael (teste) — Baixa visão', disabilities: ['low-vision'], supports: [] },
-      { id: 'demo-student-local-adhd', name: 'Bia (teste) — TDAH', disabilities: ['adhd'], supports: ['short-steps'] },
-      { id: 'demo-student-local-no-disclosure', name: 'Caio (teste) — Sem deficiência informada', disabilities: [], supports: [] },
+      { id: 'demo-student-local-blindness', name: 'Lia (teste)', disabilities: ['blindness'], supports: ['image-description'] },
+      { id: 'demo-student-local-low-vision', name: 'Rafael (teste)', disabilities: ['low-vision'], supports: [] },
+      { id: 'demo-student-local-adhd', name: 'Bia (teste)', disabilities: ['adhd'], supports: ['short-steps'] },
+      { id: 'demo-student-local-no-disclosure', name: 'Caio (teste)', disabilities: [], supports: [] },
     ];
     for (const [i, id] of students.entries()) await tx.user.upsert({ where: { id }, create: { id,
       name: `Estudante Fictício ${i + 1}`, email: `student-${i + 1}@example.invalid` }, update: {} });
