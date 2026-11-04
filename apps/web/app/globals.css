@@ -1905,3 +1905,5 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 @media (prefers-reduced-motion: reduce) {
   .preparation-progress-indicator { animation: none; }
 }
+
+#mission-draft-assistant[hidden] { display: none; }

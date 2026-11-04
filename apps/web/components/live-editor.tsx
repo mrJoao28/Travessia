@@ -4,6 +4,7 @@ import Link from "next/link";
 import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { MissionSupportsEditor } from "./live-strategies";
 import { SupportGenerator } from "./support-generator";
+import { PreparationProgress } from "./preparation-progress";
 import { OperationStatus } from "./operation-status";
 import {
   api,
@@ -76,6 +77,8 @@ export function LiveEditor({
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const [writingWithAi, setWritingWithAi] = useState(false);
+  const [showDraftAssistant, setShowDraftAssistant] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [review, setReview] = useState<string | null>(null);
   useEffect(() => {
@@ -653,7 +656,9 @@ export function LiveEditor({
               />}
             </details>
           )}
-          <details className="teacher-ai"><summary>Pedir ajuda à IA para escrever a missão (opcional)</summary>
+          <section className="teacher-ai form-stack">
+        <button type="button" className="button button-outline" aria-expanded={showDraftAssistant} aria-controls="mission-draft-assistant" onClick={()=>setShowDraftAssistant(value=>!value)}>Pedir ajuda à IA para escrever a missão (opcional)</button>
+        <div id="mission-draft-assistant" className="form-stack" hidden={!showDraftAssistant}>
         <h2>Assistência Gemini</h2>
         <p>
           Selecione até 3 materiais didáticos já salvos. Somente esses textos e
@@ -661,17 +666,17 @@ export function LiveEditor({
         </p>
         {(!storedVersion?.materials.length || dirty) && (
           <p className="notice">
-            Salve o rascunho e seus materiais antes de solicitar a assistência.
-            Você pode continuar manualmente.
+            A assistência de escrita usa materiais textuais salvos. Adicione um texto em Etapas e materiais e salve o rascunho. Para adaptar o PDF, use os cartões de apoio acima.
           </p>
         )}
         <form
           className="form-stack"
           onSubmit={async (e) => {
             e.preventDefault();
-            if (pending || !mission || dirty || !selectedMaterials.length)
+            if (pending || !mission || dirty || !selectedMaterials.length || !approved)
               return;
             setPending(true);
+            setWritingWithAi(true);
             setMessage("");
             generationKey.current ??= crypto.randomUUID();
             try {
@@ -690,6 +695,7 @@ export function LiveEditor({
               setMessage(errorMessage(reason));
             } finally {
               setPending(false);
+              setWritingWithAi(false);
             }
           }}
         >
@@ -761,6 +767,7 @@ export function LiveEditor({
             {pending ? "Aguarde a resposta…" : "Solicitar rascunho"}
           </button>
         </form>
+        {writingWithAi&&<PreparationProgress title="Gerando rascunho da missão" detail="A IA está preparando uma sugestão a partir dos textos selecionados."/>}
         {generation && (
           <button
             className="text-button"
@@ -788,7 +795,8 @@ export function LiveEditor({
           planejamento manual continua disponível. Não há publicação nem nota
           automática.
         </p>
-          </details>
+        </div>
+          </section>
         </div>}
         <OperationStatus message={message} />
         <p className="small">

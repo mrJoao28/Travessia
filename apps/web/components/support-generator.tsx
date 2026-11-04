@@ -1,19 +1,20 @@
 "use client";
 import { useRef, useState } from "react";
 import { api, errorMessage, type ApiBody, type ApiResponse } from "../lib/product-client";
+import { PreparationProgress } from "./preparation-progress";
 import type { MissionEntry } from "./live-workspace";
 
 type Version = NonNullable<MissionEntry["mission"]["publishedVersion"]>;
 const supported = new Set(["step-checklist", "worked-example", "context-glossary", "written-instructions", "planning-outline"]);
 export function SupportGenerator({ missionId, version, stepId, selected, onApply, onBusy, instructionsOnly = false, disabled = false }: { missionId: string; version: Version; stepId: string; selected: { id: string; title: string }[]; onApply: (id: string, content: string) => void; onBusy: (busy: boolean) => void; instructionsOnly?: boolean; disabled?: boolean }) {
   const ids = selected.filter(s => supported.has(s.id)).map(s => s.id) as ApiBody<"generateSupports">["strategyIds"];
-  const [materialIds, setMaterialIds] = useState<string[]>([]);
+  const [materialIds, setMaterialIds] = useState<string[]>(()=>version.materials.length===1?[version.materials[0].id]:[]);
   const [approved, setApproved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState<ApiResponse<"generateSupports">["draft"]>(null);
   const request = useRef<{ fingerprint: string; key: string } | null>(null);
-  const canGenerate = !disabled && approved && ids.length > 0 && materialIds.length > 0 && materialIds.length <= 3;
+  const canGenerate = !busy && !disabled && approved && ids.length > 0 && materialIds.length > 0 && materialIds.length <= 3;
   async function generate(strategyIds: typeof ids, replaceOne = false) {
     if (busy || !canGenerate) return;
     const fingerprint = JSON.stringify({ versionId: version.id, stepId, materialIds, strategyIds });
@@ -66,7 +67,9 @@ export function SupportGenerator({ missionId, version, stepId, selected, onApply
         {busy ? "Gerando rascunhos…" : instructionsOnly ? "Gerar instruções da etapa" : "Gerar apoios com Gemini"}
       </button>
     </fieldset>
-    <p role="status">{message}</p>
+    {!busy&&ids.length===0&&<p className="small">Escolha uma estratégia compatível para gerar uma sugestão.</p>}
+    {!busy&&ids.length>0&&version.materials.length>0&&!materialIds.length&&<p className="small">Selecione pelo menos um texto para continuar.</p>}
+    {busy?<PreparationProgress title="Gerando sugestões de apoio" detail="O resultado ficará nesta tela para você revisar."/>:<p role="status">{message}</p>}
     {draft?.items.map(item => <div className="example" key={item.strategyId}><h4>{selected.find(s => s.id === item.strategyId)?.title}</h4><p className="submission-content">{item.content}</p><button type="button" className="text-button" disabled={busy || disabled} onClick={() => onApply(item.strategyId, item.content)}>{instructionsOnly ? "Usar nas instruções da etapa" : "Usar este rascunho no apoio"}</button>
       {ids.length > 1 && ids.includes(item.strategyId) && <button type="button" className="text-button" disabled={busy || !canGenerate} onClick={() => void generate([item.strategyId], true)}>Refazer somente este apoio</button>}
     </div>)}
