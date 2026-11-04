@@ -6,7 +6,7 @@ import { serial } from './database.js';
 import { fail, missing } from './errors.js';
 import { scopedMission } from './product.service.js';
 import { budget, digest } from './rate-limit.js';
-import { documentPage, materialDocument, storedMaterialSettings } from './material-contracts.js';
+import { documentPage, materialContentLength, materialDocument, storedMaterialSettings } from './material-contracts.js';
 import { checkDiskBudget, materialPath, removeMaterialFiles, storeOriginal } from './material-files.js';
 import type { Config } from './config.js';
 export const extractedPages = z.array(z.strictObject({ page: z.number().int().min(1).max(20), text: z.string().max(40000), hasVisual: z.boolean(), ocr: z.boolean() })).max(20);
@@ -119,7 +119,7 @@ export class MaterialService {
         const edit = input as Body<'editMaterial'>;
         const document = materialDocument.parse(edit.document);
         if (JSON.stringify(document.map(p => p.page).sort((a,b)=>a-b)) !== JSON.stringify(z.array(z.number()).parse(old.pages))) return fail(400, 'INVALID_PAGES', 'Mantenha todas as páginas selecionadas.');
-        if (document.reduce((n,p)=>n+p.text.length+p.description.length,0)>20000) return fail(400, 'INPUT_TOO_LARGE', 'Até 20 mil caracteres por adaptação.');
+        if (materialContentLength(document)>20000) return fail(400, 'INPUT_TOO_LARGE', 'Até 20 mil caracteres por adaptação.');
         if (edit.regeneratePage !== undefined) {
           const settings = storedMaterialSettings.parse(old.settings);
           if (!['draft', 'ready'].includes(old.status) || !document.some(page => page.page === edit.regeneratePage))
