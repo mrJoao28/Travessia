@@ -107,7 +107,19 @@ export class MaterialService {
         if (old) { if (old.requestHash !== requestHash) return fail(409, 'IDEMPOTENCY_CONFLICT', 'Solicitação já utilizada.'); return adaptationPublic(old); }
         if (await tx.materialAdaptation.count({ where: { versionId: input.versionId } }) >= 100) return fail(409, 'MATERIAL_LIMIT', 'Até 100 adaptações por versão.');
         // Reuse only same recipient, source, version and instructions; never broaden release.
-        const cached = await tx.materialAdaptation.findFirst({ where: { versionId: input.versionId, studentId: input.studentId, requestHash, status: { not: 'failed' }, expiresAt: { gt: new Date() } } });
+        const candidates = await tx.materialAdaptation.findMany({
+          where: { versionId: input.versionId, studentId: input.studentId, requestHash, status: { not: 'failed' }, expiresAt: { gt: new Date() } },
+          orderBy: { expiresAt: 'desc' },
+        });
+        const cached = candidates.find(candidate => {
+          const savedSettings = storedMaterialSettings.parse(candidate.settings);
+          if (savedSettings.color !== input.settings.color || savedSettings.fontSize !== input.settings.fontSize) return false;
+          if (!input.settings.supports.some(support => support === 'short-sections' || support === 'glossary')) return true;
+          if (candidate.status === 'queued' || candidate.status === 'generating') return true;
+          return materialDocument.parse(candidate.document).every(page =>
+            (!input.settings.supports.includes('short-sections') || page.steps !== undefined) &&
+            (!input.settings.supports.includes('glossary') || page.glossary !== undefined));
+        });
         if (cached) return adaptationPublic(cached);
         await budget(tx, `material-prepare:${userId}`, input.settings.useAi ? 10 : 30, 86400);
         if (input.settings.useAi && await tx.materialAdaptation.count({ where: { creatorId: userId, status: { in: ['queued', 'generating'] }, settings: { path: ['useAi'], equals: true } } })) return fail(429, 'AI_BUSY', 'Aguarde sua preparação em andamento.');
