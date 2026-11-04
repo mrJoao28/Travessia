@@ -96,7 +96,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     await operation(async()=>{
       if(!studentId || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha o aluno, o PDF, as páginas e pelo menos um apoio.");
       if(ai&&!approved)throw new Error("Confirme que as páginas selecionadas podem ser enviadas ao Gemini.");
-      const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,studentId,pages:pageNumbers,settings:{supports,fontSize,color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
+      const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,studentId,pages:pageNumbers,settings:{supports,fontSize:supports.includes('large-print')&&fontSize==='18'?'22':fontSize,color:supports.includes('high-contrast')&&color==='default'?'high':color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
       if(!["ready","released"].includes(a.status))autoRender.current=a.id;update(a);setReaderView('prepared');setStep(a.status==="ready"||a.status==="released"?3:2);
     });
   }
@@ -146,7 +146,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     setStep(1);
     setReaderView('original');
     setFontSize('22');
-    setColor('default');
+    setColor(selected.includes('high-contrast')?'high':'default');
     setSelectedId('');
     setDocument([]);
     setEditText(false);
@@ -159,6 +159,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     return <label className="simple-support-option" key={id}>
       <input type="checkbox" checked={supports.includes(id)} onChange={e=>{
         toggle(id,e.target.checked);
+        if(id==='high-contrast')setColor(e.target.checked?'high':'default');
         if(e.target.checked&&['literal-language','short-sections','glossary'].includes(id))setManualDescription(false);
         setDelivery(e.target.checked||supports.some(s=>s!==id&&s!=='narration')?'adapted':'original');
         if(step===3){setSelectedId('');setEditText(false);setStep(1);setSupports(old=>old.filter(s=>s!=='narration'));}
@@ -234,7 +235,8 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           {source?.status==='failed'&&source.warnings.map(w=><p role="alert" key={w}>{w}</p>)}
           {step===1&&student&&source?.status==='ready'&&<section className="paper form-stack">
         {delivery==='adapted'&&<>
-          {(supports.includes('large-print')||supports.includes('high-contrast'))&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="18">Grande · 18 pontos</option><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="default">Escuro sobre claro</option><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
+          {supports.includes('large-print')&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select></>}
+          {supports.includes('high-contrast')&&<><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color==='default'?'high':color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
           <details open={source.pageCount>4||!pageNumbers.length?true:undefined}><summary>Páginas da prévia · {pageNumbers.length} de {source.pageCount}</summary><p className="small">Até 4 páginas e 12 mil caracteres por adaptação. As demais páginas não serão incluídas nesta versão; prepare-as separadamente.</p>{source.pages.map(p=><label className="check" key={p.page}><input type="checkbox" checked={pageNumbers.includes(p.page)} disabled={pageNumbers.length>=4&&!pageNumbers.includes(p.page)} onChange={e=>{setPageNumbers(old=>e.target.checked?[...old,p.page].sort((a,b)=>a-b):old.filter(v=>v!==p.page));change();}}/>Página {p.page} · {p.text.length} caracteres{p.ocr?' · texto reconhecido automaticamente':''}</label>)}</details>
           {supports.includes('image-description')&&<label className="check"><input type="checkbox" checked={manualDescription} onChange={e=>{
             setManualDescription(e.target.checked);setApproved(false);
@@ -253,7 +255,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
 
 
         {delivery==='adapted'&&current&&<>
-          <button type="button" className="text-button" disabled={locked} onClick={()=>{setSelectedId('');setSupports(old=>old.filter(s=>s!=='narration'));setStep(1);setApproved(false);change();}}>Ajustar leitura</button>
+          <button type="button" className="text-button" disabled={locked} onClick={()=>{setSelectedId('');setSupports(old=>old.filter(s=>s!=='narration'));if(fontSize==='18')setFontSize('22');setStep(1);setApproved(false);change();}}>Ajustar leitura</button>
           <details open={editText} onToggle={e=>setEditText(e.currentTarget.open)}><summary>Ajustar o texto da prévia</summary>{editText&&document.map((p,i)=><section className="form-stack" key={p.page}><h4>Página {p.page} do original</h4>
           <a className="text-link" href={materialAssetUrl(missionId,current.sourceId,`page-${p.page}`)} target="_blank" rel="noopener noreferrer">Conferir página {p.page} do PDF original</a>
           {source?.pages.find(page=>page.page===p.page)?.ocr&&<p className="notice">Texto extraído por OCR. Compare números, fórmulas e tabelas com a página original.</p>}
@@ -272,6 +274,6 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     </div>
     {canRelease&&<footer className="material-reference-footer"><button className="button" type="button" disabled={!reviewed||locked||showActivity} onClick={releaseMaterial}>Disponibilizar para {student.name} →</button></footer>}
     {busy&&<p role="status">Salvando sua solicitação…</p>}
-    {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.studentId);setSourceId(a.sourceId);setReaderView(a.mode==='original'?'original':'prepared');setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setManualDescription(!a.settings.useAi&&a.settings.supports.includes('image-description'));setFontSize(a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description'));setShowActivity(false);setStep(a.status==='ready'||a.status==='released'||a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description')?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm('Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(1);}});}}>Remover material</button>}</div></article>)}</details>}
+    {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.studentId);setSourceId(a.sourceId);setReaderView(a.mode==='original'?'original':'prepared');setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setManualDescription(!a.settings.useAi&&a.settings.supports.includes('image-description'));setFontSize(a.settings.supports.includes('large-print')&&a.settings.fontSize==='18'&&a.status!=='ready'&&a.status!=='released'?'22':a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description'));setShowActivity(false);setStep(a.status==='ready'||a.status==='released'||a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description')?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm('Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(1);}});}}>Remover material</button>}</div></article>)}</details>}
   </section>;
 }

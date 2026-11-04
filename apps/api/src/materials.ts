@@ -79,7 +79,14 @@ export class MaterialService {
         await tx.auditEvent.create({data:{actorId:userId,action:'material.original-release',resourceId:saved.id}});return adaptationPublic(saved);
       }
       if (op === 'prepareMaterial') {
-        const input = body as Body<'prepareMaterial'>; current(input.versionId);
+        const requested = body as Body<'prepareMaterial'>;
+        const { settings } = requested;
+        const input = { ...requested, settings: {
+          ...settings,
+          color: settings.supports.includes('high-contrast') && settings.color === 'default' ? 'high' as const : settings.color,
+          fontSize: settings.supports.includes('large-print') && settings.fontSize === '18' ? '22' as const : settings.fontSize,
+        } };
+        current(input.versionId);
         const source = await tx.materialSource.findFirst({ where: { id: input.sourceId, versionId: input.versionId, status: 'ready', expiresAt: { gt: new Date() } } }); if (!source) return missing();
         if (!await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: input.studentId, role: 'student', active: true } })) return fail(400, 'INVALID_RECIPIENTS', 'Escolha um aluno ativo desta turma.');
         const selected = extractedPages.parse(source.pages).filter(v => input.pages.includes(v.page));
@@ -88,7 +95,7 @@ export class MaterialService {
         const requiresAi = input.settings.supports.some(s => ['literal-language', 'short-sections', 'glossary'].includes(s));
         if (requiresAi && !input.settings.useAi) return fail(400, 'AI_REQUIRED', 'Esses apoios precisam de rascunho IA. Você pode escolher apenas formatação e áudio locais.');
         if (input.settings.useAi && (!this.config.aiEnabled || !input.settings.approvedForProvider)) return fail(503, 'AI_UNAVAILABLE', 'Ative e autorize a assistência antes de gerar.');
-        const requestHash = digest(JSON.stringify({ ...input, requestKey: undefined, settings: { ...input.settings, supports: [...input.settings.supports].sort() }, pages: [...input.pages].sort((a,b) => a-b) }));
+        const requestHash = digest(JSON.stringify({ ...input, requestKey: undefined, settings: { ...requested.settings, supports: [...input.settings.supports].sort() }, pages: [...input.pages].sort((a,b) => a-b) }));
         const old = await tx.materialAdaptation.findUnique({ where: { versionId_requestKey: { versionId: input.versionId, requestKey: input.requestKey } } });
         if (old) { if (old.requestHash !== requestHash) return fail(409, 'IDEMPOTENCY_CONFLICT', 'Solicitação já utilizada.'); return adaptationPublic(old); }
         if (await tx.materialAdaptation.count({ where: { versionId: input.versionId } }) >= 100) return fail(409, 'MATERIAL_LIMIT', 'Até 100 adaptações por versão.');
