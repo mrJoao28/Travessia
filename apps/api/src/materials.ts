@@ -31,7 +31,14 @@ export class MaterialService {
         const { versionId } = query as { versionId: string };
         if (row.publishedVersionId !== versionId) return missing();
         const rows = await tx.materialAdaptation.findMany({ where: { versionId, studentId: userId, status: 'released', expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
-        return { items: rows.map(a => ({ id: a.id, title: a.source.title, mode: storedMaterialSettings.parse(a.settings).deliveryMode??'adapted', document: storedMaterialSettings.parse(a.settings).deliveryMode==='original' ? [] : materialDocument.parse(a.document), hasAudio: a.hasAudio })) };
+        return { items: rows.map(a => {
+          const { deliveryMode = 'adapted', supports, fontSize, color } = storedMaterialSettings.parse(a.settings);
+          return { id: a.id, title: a.source.title, mode: deliveryMode, hasAudio: a.hasAudio,
+            ...(deliveryMode === 'original'
+              ? { document: [] }
+              : { document: materialDocument.parse(a.document), reading: { supports, fontSize, color } }),
+          };
+        }) };
       }
       if (['materialSources', 'materialAdaptations'].includes(op)) {
         const { versionId } = query as { versionId: string }; current(versionId);

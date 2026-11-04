@@ -1597,6 +1597,13 @@ export interface operations {
                                     definition: string;
                                 }[];
                             }[];
+                            reading?: {
+                                supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
+                                /** @enum {string} */
+                                fontSize: "18" | "22" | "26";
+                                /** @enum {string} */
+                                color: "default" | "high" | "dark";
+                            };
                             hasAudio: boolean;
                         }[];
                     };

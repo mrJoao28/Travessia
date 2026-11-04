@@ -24,6 +24,7 @@ export const sourceView = z.strictObject({ id: key, versionId: key, title: z.str
 export const materialView = z.strictObject({ mode: z.enum(['adapted','original']).optional(), id: key, versionId: key, sourceId: key, studentId: key, status: z.enum(['queued', 'generating', 'draft', 'rendering', 'ready', 'released', 'failed']),
   settings: materialSettings, pages: z.array(z.number().int()), document: z.array(documentPage), revision: z.number().int(), error: z.string().nullable(),
   hasAudio: z.boolean(), inputTokens: z.number().nullable(), outputTokens: z.number().nullable(), expiresAt: z.iso.datetime() });
+const materialReading = materialSettings.pick({ supports: true, fontSize: true, color: true });
 const empty = z.strictObject({});
 const versionQuery = z.strictObject({ versionId: key });
 export const materialRoutes = {
@@ -38,6 +39,6 @@ export const materialRoutes = {
   renderMaterial: { method: 'post', path: '/v1/missions/{id}/material-adaptations/{adaptationId}/render', body: z.strictObject({ expectedRevision: z.number().int().min(1) }), query: empty, response: materialView },
   releaseMaterial: { method: 'post', path: '/v1/missions/{id}/material-adaptations/{adaptationId}/release', body: z.strictObject({ expectedRevision: z.number().int().min(1), reviewed: z.literal(true) }), query: empty, response: materialView },
   removeMaterial: { method: 'delete', path: '/v1/missions/{id}/material-adaptations/{adaptationId}', body: empty, query: empty, response: z.strictObject({ removed: z.literal(true) }) },
-  learnerMaterials: { method: 'get', path: '/v1/missions/{id}/my-materials', body: empty, query: versionQuery, response: z.strictObject({ items: z.array(z.strictObject({ id: key, title: z.string(), mode:z.enum(['adapted','original']).optional(), document: z.array(documentPage).max(4), hasAudio: z.boolean() })) }) },
+  learnerMaterials: { method: 'get', path: '/v1/missions/{id}/my-materials', body: empty, query: versionQuery, response: z.strictObject({ items: z.array(z.strictObject({ id: key, title: z.string(), mode:z.enum(['adapted','original']).optional(), document: z.array(documentPage).max(4), reading: materialReading.optional(), hasAudio: z.boolean() })) }) },
   materialAsset: { method: 'get', path: '/v1/missions/{id}/material-assets/{assetId}/{kind}', body: empty, query: empty, response: z.string(), binary: true },
 } as const;

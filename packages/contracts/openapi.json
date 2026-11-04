@@ -2728,6 +2728,50 @@
                               "additionalProperties": false
                             }
                           },
+                          "reading": {
+                            "type": "object",
+                            "properties": {
+                              "supports": {
+                                "maxItems": 8,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "large-print",
+                                    "wide-spacing",
+                                    "high-contrast",
+                                    "literal-language",
+                                    "short-sections",
+                                    "glossary",
+                                    "image-description",
+                                    "narration"
+                                  ]
+                                }
+                              },
+                              "fontSize": {
+                                "type": "string",
+                                "enum": [
+                                  "18",
+                                  "22",
+                                  "26"
+                                ]
+                              },
+                              "color": {
+                                "type": "string",
+                                "enum": [
+                                  "default",
+                                  "high",
+                                  "dark"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "supports",
+                              "fontSize",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          },
                           "hasAudio": {
                             "type": "boolean"
                           }
