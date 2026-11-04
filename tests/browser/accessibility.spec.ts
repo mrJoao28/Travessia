@@ -7,6 +7,7 @@ test("espaçamento de texto, cores do sistema e movimento reduzido mantêm o con
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/previa/aluno/missoes/biblioteca");
+  await expect(page.getByRole("heading", { name: "Compreender o problema", exact: true })).toBeVisible();
   await expect(page.getByLabel("Planejamento da solução")).toBeVisible();
   await page.addStyleTag({
     content:
@@ -129,7 +130,7 @@ test("prévia preserva atividade e não fabrica salvamento", async ({ page }) =>
   );
   await page.getByRole("button", { name: "Próxima etapa" }).click();
   await expect(
-    page.getByRole("heading", { name: "Desenvolver o protótipo" }),
+    page.getByRole("heading", { name: "Planejar a solução", exact: true }),
   ).toBeFocused();
 });
 test("barreira informa destinatário antes do envio", async ({ page }) => {
