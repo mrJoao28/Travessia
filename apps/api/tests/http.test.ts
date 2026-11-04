@@ -445,13 +445,17 @@ test('Gemini para apoios: envio mínimo, revisão, deduplicação, saída invál
   invalid = true;
   await request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 502);
   invalid = false; held = true;
-  const generating = request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 502);
+  const generating = request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 404);
   while (!releaseSupport) await new Promise(resolve => setTimeout(resolve, 10));
   await request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 429);
   await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: classroom.id } }, data: { active: false } });
-  releaseSupport(); await generating;
-  await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: classroom.id } }, data: { active: true } });
-  config.aiEnabled = false;
+  try {
+    releaseSupport();
+    assert.equal((await generating).json.code, 'NOT_FOUND');
+  } finally {
+    config.aiEnabled = false;
+    await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: classroom.id } }, data: { active: true } });
+  }
 });
 test('necessidades autodeclaradas são privadas: compartilhamento separado, revogável e restrito à turma', async () => {
   await request('/v1/me/learning-needs', '', 'GET', undefined, 401);
