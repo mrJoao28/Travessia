@@ -31,6 +31,7 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
  const visualDescriptions=settings?.supports.includes('image-description');
  const audioLabel=narration?(visualDescriptions?'Ouvir leitura e audiodescrição':'Ouvir leitura em áudio'):'Ouvir audiodescrição';
  const originalReady=source?.status==='ready';
+ const awaitingDescription=current?.status==='draft'&&visualDescriptions&&document.some(p=>!p.description.trim());
  const viewChoice=<div className="comparison-view-choice" role="group" aria-label={singleView?'Versão do documento':'Documento exibido no celular'}>
        <button type="button" aria-pressed={view==='original'} onClick={()=>onViewChange('original')}>Original</button>
        <button type="button" aria-pressed={view==='prepared'} onClick={()=>onViewChange('prepared')}>Preparado</button>
@@ -65,7 +66,7 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
          {originalOnly?<div className="comparison-empty"><span className="pdf-file-badge" aria-hidden="true">PDF</span><h4>O mesmo PDF, sem alterações</h4><p>{illustrative?'Confira o original. Este arquivo é um exemplo público fictício.':'Confira o original. A entrega continua exclusiva do aluno escolhido.'}</p></div>:(ready||dirty)&&prepared?<>
            <article className="comparison-paper" data-color={colors} style={textStyle}><PreparedDocument document={[prepared]}/></article>
            <p className="small comparison-preview-note">Prévia de leitura. Confira também a diagramação no PDF gerado antes de disponibilizar.</p>
-         </>:<div className="comparison-empty"><span aria-hidden="true" className="comparison-preview-icon">Aa</span><h4>{current?'Preparando a leitura':'A versão preparada aparece aqui'}</h4><p>{current?.status==='failed'?'A preparação falhou. Consulte o aviso no painel de revisão.':current?'O resultado aparecerá depois do processamento.':'Escolha os apoios e prepare a prévia para comparar o resultado com o original.'}</p></div>}
+         </>:<div className="comparison-empty"><span aria-hidden="true" className="comparison-preview-icon">Aa</span><h4>{awaitingDescription?'Aguardando descrição visual':current?'Preparando a leitura':'A versão preparada aparece aqui'}</h4><p>{awaitingDescription?'Preencha as descrições e atualize a prévia para ouvir o áudio.':current?.status==='failed'?'A preparação falhou. Consulte o aviso no painel de revisão.':current?'O resultado aparecerá depois do processamento.':'Escolha os apoios e prepare a prévia para comparar o resultado com o original.'}</p></div>}
        </div>
        {ready&&current?.hasAudio&&!dirty&&!illustrative&&<section id="material-audio" className="material-preview-audio" aria-label={audioLabel}>
              <h4>{audioLabel}</h4>

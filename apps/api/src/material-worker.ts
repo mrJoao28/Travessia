@@ -11,6 +11,7 @@ import { serial } from './database.js';
 import { materialContentLength, materialDocument, materialSettings, storedMaterialSettings } from './material-contracts.js';
 import { checkDiskBudget, materialPath, materialRoot, removeMaterialFiles, visualPage } from './material-files.js';
 import { extractedPages } from './materials.js';
+import { materialBatches, PDF_DOCUMENT_CHARACTERS, PDF_MAX_PAGES } from './material-limits.js';
 import { materialProvider, type MaterialProvider } from './material-provider.js';
 
 const tools = fileURLToPath(new URL('../material-tools/process.py', import.meta.url));
@@ -18,12 +19,13 @@ export async function localProcess(mode: 'extract' | 'audio', path: string, inpu
   return new Promise((resolve, reject) => {
     const child = spawn(process.env.MATERIAL_PYTHON ?? 'python3', [tools, mode, path], { stdio: ['pipe', 'pipe', 'pipe'], env: { PATH: process.env.PATH, LANG: 'C.UTF-8', OMP_NUM_THREADS: '1', PIPER_MODEL: process.env.PIPER_MODEL } });
     const chunks: Buffer[] = []; let size = 0; let ended = false;
-    const timer = setTimeout(() => { child.kill('SIGKILL'); }, 240000);
-    child.stdout.on('data', (v: Buffer) => { size += v.length; if (size > 2 * 1024 * 1024) child.kill('SIGKILL'); else chunks.push(v); });
+    const timer = setTimeout(() => { child.kill('SIGKILL'); }, mode === 'audio' ? 900000 : 360000);
+    const maxOutput = 12 * 1024 * 1024;
+    child.stdout.on('data', (v: Buffer) => { size += v.length; if (size > maxOutput) child.kill('SIGKILL'); else chunks.push(v); });
     child.stderr.resume(); // Never log parser errors: they can contain private file content.
     child.on('error', () => { clearTimeout(timer); if (!ended) { ended = true; reject(new Error('Local processor unavailable')); } });
     child.on('close', code => { clearTimeout(timer); if (ended) return; ended = true;
-      if (code !== 0 || size > 2 * 1024 * 1024) return reject(new Error('Local processing failed'));
+      if (code !== 0 || size > maxOutput) return reject(new Error('Local processing failed'));
       try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch { reject(new Error('Invalid processor result')); }
     });
     child.stdin.on('error', () => {}); child.stdin.end(input);
@@ -62,7 +64,7 @@ export async function renderPdf(path: string, html: string) {
     await context.route('**/*', route => route.abort()); // No network/file requests or model-supplied URLs.
     const page = await context.newPage(); await page.setContent(html, { timeout: 15000 });
     let timer: ReturnType<typeof setTimeout> | undefined;
-    try { await Promise.race([page.pdf({ path, format: 'A4', printBackground: true, tagged: true, outline: true }), new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('PDF render timeout')),30000);})]); } finally { if(timer) clearTimeout(timer); }
+    try { await Promise.race([page.pdf({ path, format: 'A4', printBackground: true, tagged: true, outline: true }), new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('PDF render timeout')),90000);})]); } finally { if(timer) clearTimeout(timer); }
   } finally { await browser.close(); }
 }
 const instructions: Record<string,string> = {
@@ -80,7 +82,7 @@ export function materialNarration(document: z.infer<typeof materialDocument>) {
     ...(p.description.trim() ? ['Descrição das informações visuais.', p.description] : []),
     `Fim da página ${p.page}.`,
   ].filter(Boolean).join('\n')).join('\n\n');
-  if (!text.trim() || text.length > 22000) throw new Error('Narration budget');
+  if (!text.trim() || text.length > PDF_DOCUMENT_CHARACTERS + 20000) throw new Error('Narration budget');
   return text;
 }
 class MaterialGeminiError extends Error {}
@@ -94,10 +96,13 @@ export class MaterialWorker {
         ...(studentId ? { AND: [{ memberships: { some: { userId: studentId, role: 'student', active: true } } }] } : {}) } } } });
   }
   async tick() {
-    const stale = new Date(Date.now()- 6*60000);
+    const stale = new Date(Date.now()- 8*60000);
     // An abandoned external call is marked failed, never retried automatically (unknown provider charge).
     await this.db.materialSource.updateMany({ where: { status: 'extracting', startedAt: { lt: stale } }, data: { status: 'failed', warnings: ['Processamento interrompido. Envie novamente após conferir o arquivo.'] } });
-    await this.db.materialAdaptation.updateMany({ where: { status: { in: ['generating','rendering'] }, startedAt: { lt: stale } }, data: { status: 'failed', error: 'Processamento interrompido. Nenhuma nova chamada IA foi realizada.' } });
+    await this.db.materialAdaptation.updateMany({ where: { OR: [
+      { status: 'generating', startedAt: { lt: stale } },
+      { status: 'rendering', startedAt: { lt: new Date(Date.now() - 20 * 60000) } },
+    ] }, data: { status: 'failed', error: 'Processamento interrompido. Nenhuma nova chamada IA foi realizada.' } });
     const job = await serial(this.db, async tx => {
       const source = await tx.materialSource.findFirst({ where: { status: 'queued', expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' } });
       if (source) { const changed = await tx.materialSource.updateMany({ where: { id: source.id, status: 'queued' }, data: { status: 'extracting', startedAt: new Date() } }); return changed.count ? { type: 'source' as const, row: source } : null; }
@@ -111,7 +116,7 @@ export class MaterialWorker {
       await checkDiskBudget();
       if (job.type === 'source') await this.extract(job.row); else if (job.row.status === 'queued') await this.prepare(job.row); else await this.render(job.row);
     } catch (error) {
-      if (job.type === 'source') await this.db.materialSource.updateMany({ where: { id: job.row.id, status: 'extracting' }, data: { status: 'failed', warnings: ['Não foi possível verificar o PDF. Use até 20 páginas, sem senha, formulários, anexos, links ou scripts.'] } });
+      if (job.type === 'source') await this.db.materialSource.updateMany({ where: { id: job.row.id, status: 'extracting' }, data: { status: 'failed', warnings: [`Não foi possível verificar o PDF. Use até ${PDF_MAX_PAGES} páginas, sem senha, formulários, anexos, links ou scripts.`] } });
       else {
         const parsed = storedMaterialSettings.safeParse(job.row.settings);
         const { regeneratePage, ...settings } = parsed.success ? parsed.data : { regeneratePage: undefined };
@@ -130,7 +135,7 @@ export class MaterialWorker {
   }
   async extract(source: MaterialSource) {
     if (!await this.permitted(source.versionId, source.creatorId)) throw new Error('Revoked');
-    const result = z.strictObject({ pages: extractedPages.min(1), warnings: z.array(z.string().max(500)).max(30) }).parse(await this.local('extract', materialPath(source.id, 'original.pdf')));
+    const result = z.strictObject({ pages: extractedPages.min(1), warnings: z.array(z.string().max(500)).max(PDF_MAX_PAGES * 2 + 1) }).parse(await this.local('extract', materialPath(source.id, 'original.pdf')));
     if (!await this.permitted(source.versionId, source.creatorId)) throw new Error('Revoked');
     await this.db.materialSource.updateMany({ where: { id: source.id, status: 'extracting', expiresAt: { gt: new Date() } }, data: { status: 'ready', pages: result.pages, warnings: result.warnings, pageCount: result.pages.length } });
   }
@@ -141,37 +146,48 @@ export class MaterialWorker {
     const originalSelection = z.array(z.number()).parse(a.pages);
     const selected = regeneratePage ? [regeneratePage] : originalSelection;
     const pages = extractedPages.parse(source.pages).filter(p => selected.includes(p.page));
-    if (pages.length !== selected.length || pages.reduce((n,p)=>n+p.text.length,0)>12000) throw new Error('Input budget');
-    let document: unknown = pages.map(p => ({ page: p.page, title: `Página ${p.page}`, text: p.text, description: '' }));
+    if (pages.length !== selected.length) throw new Error('Missing source pages');
+    let document: z.infer<typeof materialDocument> = pages.map(p => ({ page: p.page, title: `Página ${p.page}`, text: p.text, description: '' }));
     let inputTokens: number | undefined, outputTokens: number | undefined;
     if (settings.useAi) {
       if (!this.config.aiEnabled || !settings.approvedForProvider) throw new Error('Disabled');
       const version = await this.db.missionVersion.findUniqueOrThrow({ where: { id: a.versionId }, select: { objectives: true } });
+      const objectives = z.array(z.string()).parse(version.objectives);
+      const supports = settings.supports.filter(s=>instructions[s]).map(s=>instructions[s]);
       const descriptionsOnly = !settings.supports.some(s => ['literal-language','short-sections','glossary'].includes(s));
-      const input = { descriptionsOnly, objectives: z.array(z.string()).parse(version.objectives), supports: settings.supports.filter(s=>instructions[s]).map(s=>instructions[s]),
-        pages: await Promise.all(pages.map(async p => ({ page: p.page, text: p.text, ...(settings.supports.includes('image-description') ? { image: await visualPage(source.id, p.page) } : {}) }))) };
-      if (input.pages.some(p=>p.image && p.image.length>2*1024*1024)) throw new Error('Image budget');
-      const signal = AbortSignal.timeout(45000);
-      let generated: Awaited<ReturnType<MaterialProvider>>;
-      try {
-        generated = await this.provider(input, signal);
-      } catch (error) {
-        throw new MaterialGeminiError(geminiFailure(error, signal.aborted).message);
+      document = [];
+      for (const batch of materialBatches(pages)) {
+        if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
+        // Renew the processing lease before each bounded provider call.
+        const lease = await this.db.materialAdaptation.updateMany({ where: {
+          id: a.id, revision: a.revision, status: 'generating', expiresAt: { gt: new Date() },
+        }, data: { startedAt: new Date() } });
+        if (!lease.count) throw new Error('Expired job');
+        const batchPages = await Promise.all(batch.map(async p => ({
+          page: p.page, text: p.text,
+          ...(settings.supports.includes('image-description') ? { image: await visualPage(source.id, p.page) } : {}),
+        })));
+        if (batchPages.some(p=>p.image && p.image.length>2*1024*1024)) throw new Error('Image budget');
+        const signal = AbortSignal.timeout(45000);
+        let generated: Awaited<ReturnType<MaterialProvider>>;
+        try {
+          generated = await this.provider({ descriptionsOnly, objectives, supports, pages: batchPages }, signal);
+        } catch (error) {
+          throw new MaterialGeminiError(geminiFailure(error, signal.aborted).message);
+        }
+        const parsedBatch = materialDocument.parse(generated.document);
+        if (parsedBatch.length !== batch.length || parsedBatch.some((p, i) => p.page !== batch[i].page))
+          throw new Error('Missing batch pages');
+        document.push(...parsedBatch);
+        if (generated.inputTokens !== undefined) inputTokens = (inputTokens ?? 0) + generated.inputTokens;
+        if (generated.outputTokens !== undefined) outputTokens = (outputTokens ?? 0) + generated.outputTokens;
       }
-      document = generated.document;
-      // Preserve every extracted character when only visual descriptions were requested.
-      if (descriptionsOnly) {
-        const descriptions = materialDocument.parse(document);
-        if (JSON.stringify(descriptions.map(p=>p.page)) !== JSON.stringify(selected)) throw new Error('Missing pages');
-        document = pages.map((p,i) => ({ page: p.page, title: `Página ${p.page}`, text: p.text, description: descriptions[i].description }));
-      }
-      inputTokens = generated.inputTokens; outputTokens = generated.outputTokens;
     }
     const withSteps = settings.supports.includes('short-sections');
     const withGlossary = settings.supports.includes('glossary');
     const rewrite = settings.supports.includes('literal-language');
     const describe = settings.supports.includes('image-description');
-    const parsed = materialDocument.parse(document).map(({ page, title, text, description, steps, glossary }) => {
+    const parsed = document.map(({ page, title, text, description, steps, glossary }) => {
       if ((withSteps && !steps) || (withGlossary && !glossary)) throw new Error('Missing requested material support');
       return {
         page, title: rewrite ? title : `Página ${page}`,
@@ -188,9 +204,13 @@ export class MaterialWorker {
       const descriptionsOnly = !settings.supports.some(s => ['literal-language', 'short-sections', 'glossary'].includes(s));
       return descriptionsOnly ? { ...page, description: replacement.description } : replacement;
     }) : parsed;
-    if (materialContentLength(prepared) > 20000) throw new Error('Output budget');
+    if (materialContentLength(prepared) > PDF_DOCUMENT_CHARACTERS) throw new Error('Output budget');
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
-    await this.db.materialAdaptation.updateMany({ where: { id: a.id, revision: a.revision, status: 'generating', expiresAt: { gt: new Date() } }, data: { document: prepared, settings, status: 'draft', inputTokens, outputTokens } });
+    const needsDescription = describe && prepared.some(page => !page.description.trim());
+    await this.db.materialAdaptation.updateMany({ where: { id: a.id, revision: a.revision, status: 'generating', expiresAt: { gt: new Date() } }, data: {
+      document: prepared, settings, status: settings.autoRender && !needsDescription ? 'rendering' : 'draft', startedAt: null,
+      inputTokens, outputTokens,
+    } });
   }
   async render(a: MaterialAdaptation) {
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');

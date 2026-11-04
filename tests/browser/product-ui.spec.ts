@@ -168,7 +168,12 @@ test('PDF selecionado permanece no campo ao voltar e ao recusar outro arquivo',a
  await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();
  await expect.poll(filename).toBe(pdf.name);
  await field.setInputFiles({name:'arquivo-invalido.txt',mimeType:'text/plain',buffer:Buffer.from('Texto')});
- await expect(page.getByText('Escolha um PDF de até 10 MB.',{exact:true})).toBeVisible();
+ await expect(page.getByText('Escolha um PDF de até 20 MB.',{exact:true})).toBeVisible();
+ await expect.poll(filename).toBe(pdf.name);
+ const oversized = Buffer.alloc(20 * 1024 * 1024 + 1);
+ pdf.buffer.copy(oversized);
+ await field.setInputFiles({name:'acima-do-limite.pdf',mimeType:'application/pdf',buffer:oversized});
+ await expect(page.getByText('Escolha um PDF de até 20 MB.',{exact:true})).toBeVisible();
  await expect.poll(filename).toBe(pdf.name);
  await field.setInputFiles([]);await expect.poll(filename).toBe(pdf.name);
  await field.setInputFiles({...pdf,name:'outro-material.pdf'});
