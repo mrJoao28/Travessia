@@ -192,26 +192,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     .inputValue();
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
-  await page.getByText('Pedir ajuda à IA para escrever a missão (opcional)', { exact: true }).click();
-  await page
-    .getByRole("group", { name: "Materiais que serão enviados" })
-    .getByRole("checkbox")
-    .first()
-    .check();
-  await page
-    .getByLabel(
-      "Revisei os textos selecionados e autorizo seu envio ao provedor.",
-    )
-    .check();
-  await page
-    .getByRole("button", { name: "Solicitar rascunho", exact: true })
-    .click();
-  await expect(
-    page.getByText(
-      "A assistência está desativada. Você pode continuar editando manualmente.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /Pedir ajuda à IA para escrever a missão/ })).toHaveCount(0);
   await expect(
     page.getByLabel("Título da missão", { exact: true }),
   ).toHaveValue(originalTitle);

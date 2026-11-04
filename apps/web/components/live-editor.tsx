@@ -4,7 +4,6 @@ import Link from "next/link";
 import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { MissionSupportsEditor } from "./live-strategies";
 import { SupportGenerator } from "./support-generator";
-import { PreparationProgress } from "./preparation-progress";
 import { OperationStatus } from "./operation-status";
 import {
   api,
@@ -77,8 +76,6 @@ export function LiveEditor({
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
-  const [writingWithAi, setWritingWithAi] = useState(false);
-  const [showDraftAssistant, setShowDraftAssistant] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [review, setReview] = useState<string | null>(null);
   useEffect(() => {
@@ -86,12 +83,6 @@ export function LiveEditor({
   }, [review]);
   const [confirmed, setConfirmed] = useState(false);
   const [aiStep, setAiStep] = useState("");
-  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
-  const [approved, setApproved] = useState(false);
-  const [generation, setGeneration] = useState<ApiResponse<"generate"> | null>(
-    null,
-  );
-  const generationKey = useRef<string | null>(null);
   const form = useRef<HTMLFormElement>(null);
   const [stepKeys, setStepKeys] = useState<number[]>([1]);
   const nextKey = useRef(2);
@@ -106,9 +97,6 @@ export function LiveEditor({
     setReview(null);
     setConfirmed(false);
     setAiStep("");
-    setSelectedMaterials([]);
-    setApproved(false);
-    generationKey.current = null;
   }
   useEffect(() => {
     let active = true;
@@ -189,28 +177,6 @@ export function LiveEditor({
     } finally {
       setPending(false);
     }
-  }
-  async function checkGeneration(g: ApiResponse<"generate">) {
-    if (!mission) return;
-    if (g.status === "succeeded") {
-      const value = await api("mission", { params: { id: mission.id } });
-      if (value.draftVersion?.id !== g.outputVersionId)
-        throw new Error(
-          "O rascunho mudou. Consulte a versão atual antes de substituir o editor.",
-        );
-      adopt(value);
-      setStage(1);
-      setMessage(
-        "Rascunho Gemini carregado do servidor. Revise todo o conteúdo antes de publicar.",
-      );
-    } else if (g.status === "running")
-      setMessage(
-        "A geração ainda está em andamento. Consulte o estado antes de solicitar novamente.",
-      );
-    else
-      setMessage(
-        "A geração não foi concluída. Seu planejamento manual continua disponível.",
-      );
   }
   if (loading) return <p role="status">Abrindo rascunho…</p>;
   if (loadError) return <section className="paper"><h1>Não foi possível abrir esta missão</h1><p role="alert">{loadError}</p><Link className="text-link" href="/professor/missoes">Voltar às minhas missões</Link></section>;
@@ -656,147 +622,6 @@ export function LiveEditor({
               />}
             </details>
           )}
-          <section className="teacher-ai form-stack">
-        <button type="button" className="button button-outline" aria-expanded={showDraftAssistant} aria-controls="mission-draft-assistant" onClick={()=>setShowDraftAssistant(value=>!value)}>Pedir ajuda à IA para escrever a missão (opcional)</button>
-        <div id="mission-draft-assistant" className="form-stack" hidden={!showDraftAssistant}>
-        <h2>Assistência Gemini</h2>
-        <p>
-          Selecione até 3 materiais didáticos já salvos. Somente esses textos e
-          os objetivos salvos serão enviados ao provedor.
-        </p>
-        {(!storedVersion?.materials.length || dirty) && (
-          <p className="notice">
-            A assistência de escrita usa materiais textuais salvos. Adicione um texto em Etapas e materiais e salve o rascunho. Para adaptar o PDF, use os cartões de apoio acima.
-          </p>
-        )}
-        <form
-          className="form-stack"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            if (pending || !mission || dirty || !selectedMaterials.length || !approved)
-              return;
-            setPending(true);
-            setWritingWithAi(true);
-            setMessage("");
-            generationKey.current ??= crypto.randomUUID();
-            try {
-              const result = await api("generate", {
-                params: { id: mission.id },
-                body: {
-                  materialIds: selectedMaterials,
-                  objectives: input.objectives.slice(0, 5),
-                  approvedForProvider: true,
-                  idempotencyKey: generationKey.current,
-                },
-              });
-              setGeneration(result);
-              await checkGeneration(result);
-            } catch (reason) {
-              setMessage(errorMessage(reason));
-            } finally {
-              setPending(false);
-              setWritingWithAi(false);
-            }
-          }}
-        >
-          <fieldset
-            className="editor-fields"
-            disabled={pending || dirty || !mission}
-          >
-            <legend>Materiais que serão enviados</legend>
-            {storedVersion?.materials.map((material) => (
-              <label className="check" key={material.id}>
-                <input
-                  type="checkbox"
-                  checked={selectedMaterials.includes(material.id)}
-                  disabled={
-                    !selectedMaterials.includes(material.id) &&
-                    selectedMaterials.length >= 3
-                  }
-                  onChange={(e) => {
-                    setSelectedMaterials((all) =>
-                      e.target.checked
-                        ? [...all, material.id]
-                        : all.filter((value) => value !== material.id),
-                    );
-                    setApproved(false);
-                    generationKey.current = null;
-                  }}
-                />
-                {material.title}
-              </label>
-            ))}
-          </fieldset>
-          {selectedMaterials.map((materialId) => {
-            const material = storedVersion?.materials.find(
-              (m) => m.id === materialId,
-            );
-            return (
-              material && (
-                <details key={materialId}>
-                  <summary>Revisar: {material.title}</summary>
-                  <p className="submission-content">{material.text}</p>
-                </details>
-              )
-            );
-          })}
-          <p className="small">
-            Não inclua nomes, entregas, conversas, preferências pessoais ou
-            relatos de barreira. Os primeiros 5 objetivos salvos compõem a
-            solicitação.
-          </p>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={approved}
-              onChange={(e) => setApproved(e.target.checked)}
-              required
-            />
-            Revisei os textos selecionados e autorizo seu envio ao provedor.
-          </label>
-          <button
-            className="button button-outline"
-            disabled={
-              pending ||
-              dirty ||
-              !mission ||
-              !selectedMaterials.length ||
-              !approved
-            }
-          >
-            {pending ? "Aguarde a resposta…" : "Solicitar rascunho"}
-          </button>
-        </form>
-        {writingWithAi&&<PreparationProgress title="Gerando rascunho da missão" detail="A IA está preparando uma sugestão a partir dos textos selecionados."/>}
-        {generation && (
-          <button
-            className="text-button"
-            disabled={pending || dirty}
-            onClick={async () => {
-              setPending(true);
-              try {
-                const value = await api("generation", {
-                  params: { id: generation.id },
-                });
-                setGeneration(value);
-                await checkGeneration(value);
-              } catch (reason) {
-                setMessage(errorMessage(reason));
-              } finally {
-                setPending(false);
-              }
-            }}
-          >
-            Consultar estado da geração
-          </button>
-        )}
-        <p className="small">
-          Se o serviço estiver desativado, sem cota ou indisponível, o
-          planejamento manual continua disponível. Não há publicação nem nota
-          automática.
-        </p>
-        </div>
-          </section>
         </div>}
         <OperationStatus message={message} />
         <p className="small">

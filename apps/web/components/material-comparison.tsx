@@ -21,7 +21,7 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
  const prepared=document.find(p=>p.page===shown);
  useEffect(()=>{setPage(1);setZoom(1);setImageFailed(false);},[source?.id,current?.id]);
  useEffect(()=>{setImageFailed(false);},[shown]);
- useEffect(()=>{onViewChange(originalOnly?'original':'prepared');},[originalOnly,onViewChange]);
+ useEffect(()=>{if(!singleView)onViewChange(originalOnly?'original':'prepared');},[singleView,originalOnly,onViewChange]);
  const audioUrl=current?.hasAudio?asset(current.id,'audio'):undefined;
  useEffect(()=>{setAudioError(false);},[audioUrl,current?.revision]);
  const settings=current?.settings;

@@ -1909,8 +1909,6 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   .preparation-progress-indicator { animation: none; }
 }
 
-#mission-draft-assistant[hidden] { display: none; }
-
 /* The teacher works beside one document viewport, even on wide screens. */
 .material-reference-desk {
   display: grid;
@@ -1929,7 +1927,9 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 }
 .material-workspace-settings-content[hidden] { display: none; }
 .material-workspace-settings-content > .paper { margin: 0; padding: 0; background: transparent; border: 0; }
-.material-reference-settings .simple-student-context { padding: .75rem; flex-wrap: wrap; }
+.material-reference-settings .simple-student-context { display: grid; gap: .4rem; padding: .75rem; }
+.material-reference-settings .simple-student-context select { min-width: 0; width: 100%; }
+.material-reference-settings .simple-student-context p { margin: 0; }
 .material-reference-settings .material-support-card-grid { grid-template-columns: minmax(0, 1fr); }
 .material-reference-settings .material-support-card-grid .simple-support-option { background: transparent; padding: .6rem .15rem; border: 0; }
 .material-reference-settings .material-support-card-grid input {
