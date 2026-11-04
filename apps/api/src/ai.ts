@@ -1,3 +1,5 @@
+import { HttpException } from '@nestjs/common';
+import { geminiFailure } from './gemini-errors.js';
 import { GoogleGenAI } from '@google/genai';
 import type { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
@@ -82,8 +84,8 @@ export class AiService {
     });
     if ('existing' in reserved) return asView(reserved.existing!);
     const { generation, providerInput } = reserved;
+    const controller = new AbortController();
     try {
-      const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
       let raw: unknown;
       try { raw = await (this.supportProvider ?? geminiSupportProvider(this.config))(providerInput, controller.signal); }
@@ -98,9 +100,11 @@ export class AiService {
           return fail(409, 'GENERATION_CONFLICT', 'A missão mudou. Nenhum apoio foi publicado.');
         return asView(await tx.aiGeneration.update({ where: { id: generation.id }, data: { status: 'succeeded', supportDraft: draft } }));
       });
-    } catch {
+    } catch (error) {
       await this.db.aiGeneration.updateMany({ where: { id: generation.id, status: 'running' }, data: { status: 'failed' } });
-      return fail(502, 'AI_FAILED', 'Não foi possível gerar os apoios. Seu planejamento foi preservado.');
+      if (error instanceof HttpException) throw error;
+      const failure = geminiFailure(error, controller.signal.aborted);
+      return fail(failure.status, failure.code, failure.message);
     }
   }
 
@@ -144,8 +148,8 @@ export class AiService {
     });
     if ('existing' in reserved) return view(reserved.existing!);
     const { generation, providerInput, expectedDraft } = reserved;
+    const controller = new AbortController();
     try {
-      const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
       let result: Awaited<ReturnType<DraftProvider>>;
       try { result = await (this.provider ?? geminiProvider(this.config))(providerInput, controller.signal); }
@@ -161,9 +165,11 @@ export class AiService {
         return view(await tx.aiGeneration.update({ where: { id: generation.id }, data: { status: 'succeeded', outputVersionId: version.id,
           inputTokens: result.inputTokens, outputTokens: result.outputTokens } }));
       });
-    } catch {
+    } catch (error) {
       await this.db.aiGeneration.updateMany({ where: { id: generation.id, status: 'running' }, data: { status: 'failed' } });
-      return fail(502, 'AI_FAILED', 'Não foi possível gerar o rascunho. Continue editando manualmente.');
+      if (error instanceof HttpException) throw error;
+      const failure = geminiFailure(error, controller.signal.aborted);
+      return fail(failure.status, failure.code, failure.message);
     }
   }
 }
