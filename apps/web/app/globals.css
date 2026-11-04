@@ -1868,3 +1868,5 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 }
 .material-preview-audio h4 { margin: 0 0 .5rem; }
 .material-preview-audio audio { display: block; width: 100%; }
+
+.material-extra-tools [hidden] { display: none; }
