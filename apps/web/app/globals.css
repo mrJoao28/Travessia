@@ -1837,3 +1837,46 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
     .mobile-workspace-brand .brand-lockup > svg { display: none; }
   }
 }
+
+/* Keep support choices visible above the document and give the preview the full width. */
+.material-desk.material-desk-stacked {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: none;
+}
+.material-desk-stacked > :is(.material-files-panel, .material-controls-panel, .material-comparison) {
+  grid-area: auto;
+}
+.material-desk-stacked .material-source-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: .5rem;
+}
+.material-support-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: .75rem;
+  margin-block: .75rem;
+}
+.material-support-card-grid .simple-support-option {
+  height: 100%;
+  padding: .9rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  overflow-wrap: anywhere;
+}
+.material-support-card-grid .simple-support-option:has(input:checked) {
+  background: var(--sage);
+  border-color: var(--primary);
+}
+.material-desk-stacked .simple-material-actions .button { width: auto; }
+
+.material-preview-audio {
+  padding: .75rem;
+  margin-bottom: .75rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+}
+.material-preview-audio h4 { margin: 0 0 .5rem; }
+.material-preview-audio audio { display: block; width: 100%; }
+
+.material-extra-tools [hidden] { display: none; }

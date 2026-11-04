@@ -6,8 +6,8 @@ import { OperationStatus } from "./operation-status";
 type Version = NonNullable<ApiResponse<"mission">["draftVersion"]>;
 type Plan = ApiResponse<"createAdaptation">;
 /** An individual activity adjustment shares the material's student and version. */
-export function StudentActivitySupport({ missionId, version, studentId, studentName, disabled = false, defaultOpen=false, onSaved, onDirty }: {
-  missionId: string; version: Version; studentId: string; studentName: string; disabled?: boolean; defaultOpen?: boolean; onSaved?: () => void; onDirty?: (value:boolean)=>void;
+export function StudentActivitySupport({ missionId, version, studentId, studentName, disabled = false, onSaved, onDirty }: {
+  missionId: string; version: Version; studentId: string; studentName: string; disabled?: boolean; onSaved?: () => void; onDirty?: (value:boolean)=>void;
 }) {
   const [plans,setPlans]=useState<Plan[]>([]),[selected,setSelected]=useState<Plan|null>(null);
   const [stepId,setStepId]=useState(version.steps[0]?.id??""),[instructions,setInstructions]=useState(version.steps[0]?.instructions??version.description);
@@ -19,9 +19,9 @@ export function StudentActivitySupport({ missionId, version, studentId, studentN
   useTeacherDraftGuard(dirty);
   function change(){setError("");setDirty(true);onDirty?.(true);setReviewed(false);requestKey.current=null;setMessage("");}
   if(!studentId)return <p>Escolha o aluno antes de ajustar sua atividade.</p>;
-  return <details open={defaultOpen||undefined} className="paper form-stack activity-with-material" onToggle={e=>{if(!e.currentTarget.open&&dirty){e.currentTarget.open=true;setError("Salve os ajustes ou mantenha esta seção aberta para preservar seu texto.");}}}>
-    <summary>Também ajustar a atividade e as formas de entrega de {studentName}</summary>
-    <p>Este ajuste pertence ao mesmo aluno e à mesma versão do material. O enunciado original, os objetivos e os critérios são preservados.</p>
+  return <section className="paper form-stack activity-with-material" aria-labelledby="material-activity-heading">
+    <h3 id="material-activity-heading">Atividade e entrega de {studentName}</h3>
+    <p>Adapte as instruções ou as formas de entrega, preservando o objetivo e os critérios.</p>
     {!loaded?<p role="status">Consultando ajustes já salvos…</p>:<>
       {error&&<><p role="alert">{error}</p><button type="button" className="text-button" onClick={()=>setRetry(n=>n+1)}>Consultar ajustes novamente</button></>}
       <form className="form-stack" onSubmit={e=>{e.preventDefault();if(!reviewed||busy)return;setBusy(true);setError("");void(async()=>{
@@ -43,5 +43,5 @@ export function StudentActivitySupport({ missionId, version, studentId, studentN
       <OperationStatus message={message}/>
       {!!plans.length&&<section aria-label="Ajustes individuais já salvos"><h4>Ajustes já salvos para {studentName}</h4>{plans.map(p=><article key={p.id}><p>{p.stepId?version.steps.find(s=>s.id===p.stepId)?.title:"Missão inteira"} · {p.allowedFormats.map(f=>({text:"texto",audio:"áudio",text_file:"arquivo de texto"}[f])).join(", ")}</p><button type="button" className="text-button" disabled={busy||disabled} onClick={()=>{if(dirty&&!window.confirm("Descartar os ajustes ainda não salvos?"))return;setSelected(p);setStepId(p.stepId??"");setInstructions(p.instructions);setExample(p.example);setFormats(p.allowedFormats);setDirty(false);onDirty?.(false);setReviewed(false);}}>Revisar este ajuste</button></article>)}</section>}
     </>}
-  </details>;
+  </section>;
 }
