@@ -54,8 +54,9 @@ test('TEA compartilhado: somente sugestões pertinentes, prévia automática e r
 test('contraste tem efeito imediato e os passos e o glossário são editáveis na prévia', async ({ page }) => {
  const captured = await fixture(page, false, ['low-vision'], []);
  await addPdf(page);
- await expect(page.getByLabel('Cores de leitura')).toHaveValue('high');
- await expect(page.getByLabel('Tamanho do texto')).toHaveValue('22');
+ const settings = page.getByRole('complementary', { name: 'Preparação e revisão do material', exact: true });
+ await expect(settings.getByRole('combobox', { name: 'Cores de leitura', exact: true })).toHaveValue('high');
+ await expect(settings.getByRole('combobox', { name: 'Tamanho do texto', exact: true })).toHaveValue('22');
  await page.getByRole('button',{name:'Ver mais apoios de leitura e compreensão'}).click();
  await page.getByRole('checkbox',{name:/Organizar em passos curtos/}).check();
  await page.getByRole('checkbox',{name:/Explicar termos do material/}).check();
