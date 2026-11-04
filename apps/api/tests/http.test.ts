@@ -688,11 +688,12 @@ test('narração integral: quatro páginas preservadas, descrição IA separada 
   await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
   const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Quatro páginas fictícias',base64:Buffer.from('%PDF-1.4\nfixture').toString('base64'),requestKey:randomUUID()})).json;
   const pages=[1,2,3,4].map(page=>({page,text:`Texto integral da página ${page}. Valor: ${page*10} metros. Última frase ${page}.`,hasVisual:true,ocr:false}));
-  let aiCalls=0, audioCalls=0, spoken='';
+  let aiCalls=0, audioCalls=0, spoken='', failRegeneration=false;
   const worker=new MaterialWorker(db,config,async input=>{
     aiCalls++; assert.equal(input.descriptionsOnly,true);
-    assert.deepEqual(input.pages.map(p=>p.text),pages.map(p=>p.text));
-    return {document:input.pages.map(p=>({page:p.page,title:'Título inventado',text:'Resumo que deve ser ignorado.',description:`Descrição visual da página ${p.page}.`}))};
+    assert.deepEqual(input.pages.map(p=>p.text),(aiCalls === 1 ? pages : [pages[1]]).map(p=>p.text));
+    if (failRegeneration) throw Object.assign(new Error('provider payload must stay private'), { status: 429 });
+    return {document:input.pages.map(p=>({page:p.page,title:'Título inventado',text:'Resumo que deve ser ignorado.',description:`Descrição visual da página ${p.page}.${aiCalls > 1 ? " Revisada." : ""}`}))};
   },async(mode,filename,input)=>{
     if(mode==='extract') {for(const p of pages)await writeFile(materialPath(source.id,`page-${p.page}.png`),'visual fixture');return {pages,warnings:[]};}
     audioCalls++; spoken=input??''; await writeFile(filename,'audio fixture');return {};
@@ -701,10 +702,29 @@ test('narração integral: quatro páginas preservadas, descrição IA separada 
   try {
     const plan=(await request(`${path}/material-adaptations`,main,'POST',{versionId,sourceId:source.id,studentId:'demo-student-1',pages:[1,2,3,4],settings:{supports:['image-description','narration'],fontSize:'18',color:'default',useAi:true,approvedForProvider:true},requestKey:randomUUID()})).json;
     await worker.tick(); assert.equal(aiCalls,1);
-    const draft=(await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items.find((p:{id:string})=>p.id===plan.id);
+    const readDraft = async () => (await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items.find((p:{id:string})=>p.id===plan.id);
+    const original = await readDraft();
+    const adaptationPath = `${path}/material-adaptations/${plan.id}`;
+    const edit = { expectedRevision: original.revision, document: original.document, regeneratePage: 2, approvedForProvider: true };
+    await request(adaptationPath, main, 'PATCH', { ...edit, approvedForProvider: undefined }, 400);
+    await request(adaptationPath, main, 'PATCH', edit);
+    await request(adaptationPath, main, 'PATCH', edit, 409);
+    await worker.tick();
+    const regenerated = await readDraft();
+    assert.equal(aiCalls, 2);
+    assert.deepEqual(regenerated.document.filter((p:{page:number})=>p.page!==2), original.document.filter((p:{page:number})=>p.page!==2));
+    assert.equal(regenerated.document[1].description, 'Descrição visual da página 2. Revisada.');
+    failRegeneration = true;
+    await request(adaptationPath, main, 'PATCH', { ...edit, expectedRevision: regenerated.revision, document: regenerated.document });
+    await worker.tick();
+    const draft = await readDraft();
+    assert.equal(draft.status, 'draft');
+    assert.match(draft.error, /limite de uso/);
+    assert.ok(!draft.error.includes('provider payload'));
+    assert.deepEqual(draft.document, regenerated.document);
     assert.deepEqual(draft.document.map((p:{text:string})=>p.text),pages.map(p=>p.text));
     await request(`${path}/material-adaptations/${plan.id}/render`,main,'POST',{expectedRevision:draft.revision});
-    await worker.tick();assert.equal(audioCalls,1);assert.equal(aiCalls,1,'Gerar voz não chama Gemini novamente');
+    await worker.tick();assert.equal(audioCalls,1);assert.equal(aiCalls,3,'Gerar voz não chama Gemini novamente');
     assert.equal(spoken,materialNarration(draft.document));
     for(const p of pages){assert.ok(spoken.includes(p.text));assert.ok(spoken.includes(`Descrição visual da página ${p.page}.`));assert.ok(spoken.includes(`Fim da página ${p.page}.`));}
     assert.ok(spoken.indexOf('Fim da página 1.')<spoken.indexOf('Página 2 do original.'));

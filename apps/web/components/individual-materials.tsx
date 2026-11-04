@@ -90,6 +90,18 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       setActivityOnly(false);if(!["ready","released"].includes(a.status))autoRender.current=a.id;update(a);setStep(a.status==="ready"||a.status==="released"?3:2);
     });
   }
+  async function regeneratePage(page: number) {
+    if (!current || busy || pending || current.status === "released") return;
+    if (!window.confirm(`Enviar somente a página ${page} do PDF original ao Gemini? Confira se ela pode ser compartilhada. As outras páginas serão preservadas.`)) return;
+    await operation(async () => {
+      const queued = await api("editMaterial", {
+        params: { id: missionId, adaptationId: current.id },
+        body: { expectedRevision: current.revision, document, regeneratePage: page, approvedForProvider: true },
+      });
+      update(queued);
+      setStep(2);
+    });
+  }
   async function saveAndRender() {
     if(!current)return;
     await operation(async()=>{
@@ -173,7 +185,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       </section>}
       {step===2&&activityOnly&&version&&student&&<section className="form-stack"><StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} defaultOpen onDirty={activityChanged} onSaved={()=>setActivitySaved(true)}/><button type="button" className="button" disabled={!activitySaved||activityDirty} onClick={()=>setStep(3)}>Concluir ajustes deste aluno →</button></section>}
       {step===3&&activityOnly&&student&&<section className="paper"><h3>Ajustes preparados para {student.name}</h3><p>Os ajustes revisados acompanham a versão publicada da missão.</p><button type="button" className="button button-outline" onClick={()=>{setStep(0);setActivityOnly(false);}}>Preparar outro material</button></section>}
-      {step===2&&!activityOnly&&<section className="paper form-stack"><h3>Preparando a prévia</h3><p role="status">{current?labels[current.status]:'Consultando a preparação…'}. O resultado fica salvo para sua revisão.</p>{current?.error&&<p role="alert">{current.error}</p>}{current?.status==='draft'&&!pending&&<button type="button" className="button" disabled={busy} onClick={()=>void saveAndRender()}>Preparar prévia deste rascunho</button>}{current?.status==='failed'&&<button className="button button-outline" onClick={()=>{setSelectedId('');setStep(1);}}>Voltar aos apoios</button>}</section>}
+      {step===2&&!activityOnly&&<section className="paper form-stack"><h3>Preparando a prévia</h3><p role="status">{current?labels[current.status]:'Consultando a preparação…'}. O resultado fica salvo para sua revisão.</p>{current?.error&&<p role="alert">{current.error}</p>}{(current?.status==='draft'||(current?.status==='failed'&&document.length>0))&&!pending&&<button type="button" className="button" disabled={busy} onClick={()=>void saveAndRender()}>Preparar prévia deste rascunho</button>}{current?.status==='failed'&&<button className="button button-outline" onClick={()=>{setSelectedId('');setStep(1);change();}}>Voltar aos apoios</button>}</section>}
       {step===3&&!activityOnly&&student&&<section className="paper form-stack">
         <h3>{released?'Material disponibilizado':delivery==='original'?'Confira o PDF original':'Confira a prévia'}</h3><p>Destinatário: <strong>{student.name}</strong>. {delivery==='original'?'O PDF será mantido sem alterações.':'Confira a leitura, as descrições e a pronúncia do áudio, quando houver.'}</p>
         {delivery==='adapted'&&current&&<ul className="material-applied-supports" aria-label="Apoios aplicados">{current.settings.supports.map(id=><li key={id}><span aria-hidden="true">✓</span>{supportLabels[id].label}</li>)}</ul>}
@@ -182,7 +194,11 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         {current?.hasAudio&&delivery!=='original'&&!dirty&&<section id="material-audio" className="form-stack"><h4>Ouvir prévia</h4><p className="small">Narração integral das páginas preparadas, incluindo as descrições disponíveis. Confira o texto e a pronúncia antes de liberar.</p><audio controls preload="none" aria-label="Ouvir a prévia do material" src={materialAssetUrl(missionId,current.id,'audio')}/></section>}
         {delivery==='adapted'&&current&&<>
           <button type="button" className="text-button" disabled={locked} onClick={()=>{setSelectedId('');setStep(1);setApproved(false);change();}}>Ajustar leitura</button>
-          <details onToggle={e=>setEditText(e.currentTarget.open)}><summary>Ajustar o texto da prévia</summary>{editText&&document.map((p,i)=><section className="form-stack" key={p.page}><h4>Página {p.page}</h4><label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} value={p.title} maxLength={200} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} value={p.text} maxLength={12000} rows={6} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/></section>)}</details>
+          <details onToggle={e=>setEditText(e.currentTarget.open)}><summary>Ajustar o texto da prévia</summary>{editText&&document.map((p,i)=><section className="form-stack" key={p.page}><h4>Página {p.page} do original</h4>
+          <a className="text-link" href={materialAssetUrl(missionId,current.sourceId,`page-${p.page}`)} target="_blank" rel="noopener noreferrer">Conferir página {p.page} do PDF original</a>
+          {source?.pages.find(page=>page.page===p.page)?.ocr&&<p className="notice">Texto extraído por OCR. Compare números, fórmulas e tabelas com a página original.</p>}
+          {current.settings.useAi&&!released&&!archived&&<button type="button" className="button button-outline" disabled={busy||!!pending||activityDirty} onClick={()=>void regeneratePage(p.page)}>Refazer página {p.page} com Gemini</button>}
+          <label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} value={p.title} maxLength={200} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} value={p.text} maxLength={12000} rows={6} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/></section>)}</details>
           {dirty&&<button className="button" type="button" disabled={busy||activityDirty} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
           <details><summary>Leitura em texto e transcrição</summary><PreparedDocument document={current.document} missionId={missionId} adaptationId={current.id}/></details>
         </>}

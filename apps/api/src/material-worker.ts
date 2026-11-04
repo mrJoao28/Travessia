@@ -1,3 +1,4 @@
+import { geminiFailure } from './gemini-errors.js';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { mkdir, readdir, stat } from 'node:fs/promises';
@@ -7,7 +8,7 @@ import { chromium } from 'playwright-core';
 import { z } from 'zod';
 import type { Config } from './config.js';
 import { serial } from './database.js';
-import { materialDocument, materialSettings } from './material-contracts.js';
+import { materialDocument, materialSettings, storedMaterialSettings } from './material-contracts.js';
 import { checkDiskBudget, materialPath, materialRoot, removeMaterialFiles, visualPage } from './material-files.js';
 import { extractedPages } from './materials.js';
 import { materialProvider, type MaterialProvider } from './material-provider.js';
@@ -69,6 +70,8 @@ export function materialNarration(document: z.infer<typeof materialDocument>) {
   if (!text.trim() || text.length > 22000) throw new Error('Narration budget');
   return text;
 }
+class MaterialGeminiError extends Error {}
+
 export class MaterialWorker {
   constructor(readonly db: PrismaClient, readonly config: Config, readonly provider: MaterialProvider = materialProvider(config),
     readonly local = localProcess, readonly pdf = renderPdf) {}
@@ -94,9 +97,21 @@ export class MaterialWorker {
     try {
       await checkDiskBudget();
       if (job.type === 'source') await this.extract(job.row); else if (job.row.status === 'queued') await this.prepare(job.row); else await this.render(job.row);
-    } catch {
+    } catch (error) {
       if (job.type === 'source') await this.db.materialSource.updateMany({ where: { id: job.row.id, status: 'extracting' }, data: { status: 'failed', warnings: ['Não foi possível verificar o PDF. Use até 20 páginas, sem senha, formulários, anexos, links ou scripts.'] } });
-      else await this.db.materialAdaptation.updateMany({ where: { id: job.row.id, status: { in: ['generating','rendering'] } }, data: { status: job.row.status === 'rendering' ? 'draft' : 'failed', error: 'Não foi possível preparar esta revisão. Confira o conteúdo e a configuração. Nenhum arquivo foi liberado.', hasAudio: false } });
+      else {
+        const parsed = storedMaterialSettings.safeParse(job.row.settings);
+        const { regeneratePage, ...settings } = parsed.success ? parsed.data : { regeneratePage: undefined };
+        await this.db.materialAdaptation.updateMany({
+          where: { id: job.row.id, revision: job.row.revision, status: { in: ['generating', 'rendering'] } },
+          data: {
+            ...(parsed.success ? { settings } : {}),
+            status: job.row.status === 'rendering' || regeneratePage ? 'draft' : 'failed',
+            error: error instanceof MaterialGeminiError ? error.message : 'Não foi possível preparar esta revisão. Confira o conteúdo e a configuração.',
+            hasAudio: false,
+          },
+        });
+      }
     }
     return true;
   }
@@ -109,7 +124,9 @@ export class MaterialWorker {
   async prepare(a: MaterialAdaptation) {
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
     const source = await this.db.materialSource.findFirstOrThrow({ where: { id: a.sourceId, status: 'ready', expiresAt: { gt: new Date() } } });
-    const settings = materialSettings.parse(a.settings), selected = z.array(z.number()).parse(a.pages);
+    const { regeneratePage, ...settings } = storedMaterialSettings.parse(a.settings);
+    const originalSelection = z.array(z.number()).parse(a.pages);
+    const selected = regeneratePage ? [regeneratePage] : originalSelection;
     const pages = extractedPages.parse(source.pages).filter(p => selected.includes(p.page));
     if (pages.length !== selected.length || pages.reduce((n,p)=>n+p.text.length,0)>12000) throw new Error('Input budget');
     let document: unknown = pages.map(p => ({ page: p.page, title: `Página ${p.page}`, text: p.text, description: '' }));
@@ -121,7 +138,14 @@ export class MaterialWorker {
       const input = { descriptionsOnly, objectives: z.array(z.string()).parse(version.objectives), supports: settings.supports.filter(s=>instructions[s]).map(s=>instructions[s]),
         pages: await Promise.all(pages.map(async p => ({ page: p.page, text: p.text, ...(settings.supports.includes('image-description') ? { image: await visualPage(source.id, p.page) } : {}) }))) };
       if (input.pages.some(p=>p.image && p.image.length>2*1024*1024)) throw new Error('Image budget');
-      const generated = await this.provider(input, AbortSignal.timeout(45000)); document = generated.document;
+      const signal = AbortSignal.timeout(45000);
+      let generated: Awaited<ReturnType<MaterialProvider>>;
+      try {
+        generated = await this.provider(input, signal);
+      } catch (error) {
+        throw new MaterialGeminiError(geminiFailure(error, signal.aborted).message);
+      }
+      document = generated.document;
       // Preserve every extracted character when only visual descriptions were requested.
       if (descriptionsOnly) {
         const descriptions = materialDocument.parse(document);
@@ -131,13 +155,20 @@ export class MaterialWorker {
       inputTokens = generated.inputTokens; outputTokens = generated.outputTokens;
     }
     const parsed = materialDocument.parse(document);
-    if (JSON.stringify(parsed.map(p=>p.page))!==JSON.stringify(selected) || parsed.reduce((n,p)=>n+p.text.length+p.description.length,0)>20000) throw new Error('Output budget');
+    if (JSON.stringify(parsed.map(p => p.page)) !== JSON.stringify(selected)) throw new Error('Missing pages');
+    const prepared = regeneratePage ? materialDocument.parse(a.document).map(page => {
+      if (page.page !== regeneratePage) return page;
+      const replacement = parsed[0];
+      const descriptionsOnly = !settings.supports.some(s => ['literal-language', 'short-sections', 'glossary'].includes(s));
+      return descriptionsOnly ? { ...page, description: replacement.description } : replacement;
+    }) : parsed;
+    if (prepared.reduce((sum, page) => sum + page.text.length + page.description.length, 0) > 20000) throw new Error('Output budget');
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
-    await this.db.materialAdaptation.updateMany({ where: { id: a.id, status: 'generating', expiresAt: { gt: new Date() } }, data: { document: parsed, status: 'draft', inputTokens, outputTokens } });
+    await this.db.materialAdaptation.updateMany({ where: { id: a.id, revision: a.revision, status: 'generating', expiresAt: { gt: new Date() } }, data: { document: prepared, settings, status: 'draft', inputTokens, outputTokens } });
   }
   async render(a: MaterialAdaptation) {
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
-    const document = materialDocument.parse(a.document), settings = materialSettings.parse(a.settings);
+    const document = materialDocument.parse(a.document), { regeneratePage: _queuedPage, ...settings } = storedMaterialSettings.parse(a.settings);
     await mkdir(join(materialRoot(), a.id), { recursive: true, mode: 0o700 });
     const source = await this.db.materialSource.findUniqueOrThrow({ where: { id: a.sourceId } });
     const images: Record<number,string> = {};

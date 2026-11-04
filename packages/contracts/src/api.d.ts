@@ -1307,6 +1307,9 @@ export interface operations {
                         text: string;
                         description: string;
                     }[];
+                    regeneratePage?: number;
+                    /** @constant */
+                    approvedForProvider?: true;
                 };
             };
         };
