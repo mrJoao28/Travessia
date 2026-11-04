@@ -1990,3 +1990,7 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   .material-reference-settings .material-support-card-grid input { appearance: auto; }
   .material-reference-settings .material-support-card-grid input::before { display: none; }
 }
+
+.preview-preset { padding: .6rem; border: 1px solid var(--border); border-radius: .5rem; }
+.preview-preset:has(input:checked) { border-color: var(--primary); background: var(--sage); }
+.preview-preset .small { display: block; margin-block-start: .25rem; }

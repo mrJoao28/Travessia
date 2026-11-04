@@ -68,7 +68,7 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
            <p className="small comparison-preview-note">Prévia de leitura. Confira também a diagramação no PDF gerado antes de disponibilizar.</p>
          </>:<div className="comparison-empty"><span aria-hidden="true" className="comparison-preview-icon">Aa</span><h4>{awaitingDescription?'Aguardando descrição visual':current?'Preparando a leitura':'A versão preparada aparece aqui'}</h4><p>{awaitingDescription?'Preencha as descrições e atualize a prévia para ouvir o áudio.':current?.status==='failed'?'A preparação falhou. Consulte o aviso no painel de revisão.':current?'O resultado aparecerá depois do processamento.':'Escolha os apoios e prepare a prévia para comparar o resultado com o original.'}</p></div>}
        </div>
-       {ready&&current?.hasAudio&&!dirty&&!illustrative&&<section id="material-audio" className="material-preview-audio" aria-label={audioLabel}>
+       {ready&&current?.hasAudio&&!dirty&&<section id="material-audio" className="material-preview-audio" aria-label={audioLabel}>
              <h4>{audioLabel}</h4>
              {narration&&<p className="small">Narração integral das páginas preparadas{visualDescriptions?', incluindo as descrições visuais':''}.</p>}
              <audio key={current.revision} controls preload="none" aria-label={audioLabel} src={audioUrl} onError={()=>setAudioError(true)}/>
