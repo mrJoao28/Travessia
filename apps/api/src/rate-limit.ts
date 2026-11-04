@@ -3,7 +3,7 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import { fail } from './errors.js';
 
 export const digest = (value: string) => createHash('sha256').update(value).digest('hex');
-export async function budget(db: Pick<PrismaClient, '$queryRaw'>, key: string, limit: number, seconds: number) {
+export async function budget(db: Pick<PrismaClient, '$queryRaw'>, key: string, limit: number, seconds: number, units = 1) {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + seconds * 1000);
   const hashed = digest(key);
@@ -12,9 +12,9 @@ export async function budget(db: Pick<PrismaClient, '$queryRaw'>, key: string, l
   // Fixed, validated server configuration, never a client-provided SQL identifier.
   const table = Prisma.raw(`"${schema}"."RateBucket"`);
   const rows = await db.$queryRaw<{count: number}[]>`
-    INSERT INTO ${table} AS bucket ("key", "count", "expiresAt") VALUES (${hashed}, 1, ${expiresAt})
+    INSERT INTO ${table} AS bucket ("key", "count", "expiresAt") VALUES (${hashed}, ${units}, ${expiresAt})
     ON CONFLICT ("key") DO UPDATE SET
-      "count" = CASE WHEN bucket."expiresAt" <= ${now} THEN 1 ELSE bucket."count" + 1 END,
+      "count" = CASE WHEN bucket."expiresAt" <= ${now} THEN EXCLUDED."count" ELSE bucket."count" + EXCLUDED."count" END,
       "expiresAt" = CASE WHEN bucket."expiresAt" <= ${now} THEN ${expiresAt} ELSE bucket."expiresAt" END
     RETURNING "count"`;
   if (rows[0].count > limit) fail(429, 'RATE_LIMITED', 'Limite temporário atingido. Tente mais tarde.');

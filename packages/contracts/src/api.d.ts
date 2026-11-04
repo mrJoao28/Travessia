@@ -1032,6 +1032,7 @@ export interface operations {
                             studentId: string;
                             /** @enum {string} */
                             status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                            hasReleasedVersion?: boolean;
                             settings: {
                                 supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                                 /** @enum {string} */
@@ -1108,6 +1109,7 @@ export interface operations {
                         /** @enum {string} */
                         deliveryMode?: "adapted" | "original";
                     };
+                    autoRender?: boolean;
                     /** Format: uuid */
                     requestKey: string;
                 };
@@ -1129,6 +1131,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1215,6 +1218,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1349,6 +1353,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1430,6 +1435,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1513,6 +1519,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */

@@ -217,7 +217,7 @@
                   "base64": {
                     "type": "string",
                     "minLength": 8,
-                    "maxLength": 13981016
+                    "maxLength": 27962028
                   },
                   "requestKey": {
                     "type": "string",
@@ -528,6 +528,9 @@
                               "failed"
                             ]
                           },
+                          "hasReleasedVersion": {
+                            "type": "boolean"
+                          },
                           "settings": {
                             "type": "object",
                             "properties": {
@@ -603,7 +606,7 @@
                                 "page": {
                                   "type": "integer",
                                   "minimum": 1,
-                                  "maximum": 20
+                                  "maximum": 40
                                 },
                                 "title": {
                                   "type": "string",
@@ -612,7 +615,7 @@
                                 },
                                 "text": {
                                   "type": "string",
-                                  "maxLength": 12000
+                                  "maxLength": 40000
                                 },
                                 "description": {
                                   "type": "string",
@@ -796,12 +799,12 @@
                   },
                   "pages": {
                     "minItems": 1,
-                    "maxItems": 4,
+                    "maxItems": 40,
                     "type": "array",
                     "items": {
                       "type": "integer",
                       "minimum": 1,
-                      "maximum": 20
+                      "maximum": 40
                     }
                   },
                   "settings": {
@@ -862,6 +865,9 @@
                       "approvedForProvider"
                     ],
                     "additionalProperties": false
+                  },
+                  "autoRender": {
+                    "type": "boolean"
                   },
                   "requestKey": {
                     "type": "string",
@@ -929,6 +935,9 @@
                         "released",
                         "failed"
                       ]
+                    },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
                     },
                     "settings": {
                       "type": "object",
@@ -1005,7 +1014,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -1014,7 +1023,7 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
@@ -1261,6 +1270,9 @@
                         "failed"
                       ]
                     },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
+                    },
                     "settings": {
                       "type": "object",
                       "properties": {
@@ -1336,7 +1348,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -1345,7 +1357,7 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
@@ -1525,7 +1537,7 @@
                   },
                   "document": {
                     "minItems": 1,
-                    "maxItems": 4,
+                    "maxItems": 40,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -1533,7 +1545,7 @@
                         "page": {
                           "type": "integer",
                           "minimum": 1,
-                          "maximum": 20
+                          "maximum": 40
                         },
                         "title": {
                           "type": "string",
@@ -1542,7 +1554,7 @@
                         },
                         "text": {
                           "type": "string",
-                          "maxLength": 12000
+                          "maxLength": 40000
                         },
                         "description": {
                           "type": "string",
@@ -1594,7 +1606,7 @@
                   "regeneratePage": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 20
+                    "maximum": 40
                   },
                   "approvedForProvider": {
                     "type": "boolean",
@@ -1657,6 +1669,9 @@
                         "released",
                         "failed"
                       ]
+                    },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
                     },
                     "settings": {
                       "type": "object",
@@ -1733,7 +1748,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -1742,7 +1757,7 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
@@ -2060,6 +2075,9 @@
                         "failed"
                       ]
                     },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
+                    },
                     "settings": {
                       "type": "object",
                       "properties": {
@@ -2135,7 +2153,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -2144,7 +2162,7 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
@@ -2384,6 +2402,9 @@
                         "failed"
                       ]
                     },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
+                    },
                     "settings": {
                       "type": "object",
                       "properties": {
@@ -2459,7 +2480,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -2468,7 +2489,7 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
@@ -2662,7 +2683,7 @@
                             ]
                           },
                           "document": {
-                            "maxItems": 4,
+                            "maxItems": 40,
                             "type": "array",
                             "items": {
                               "type": "object",
@@ -2670,7 +2691,7 @@
                                 "page": {
                                   "type": "integer",
                                   "minimum": 1,
-                                  "maximum": 20
+                                  "maximum": 40
                                 },
                                 "title": {
                                   "type": "string",
@@ -2679,7 +2700,7 @@
                                 },
                                 "text": {
                                   "type": "string",
-                                  "maxLength": 12000
+                                  "maxLength": 40000
                                 },
                                 "description": {
                                   "type": "string",

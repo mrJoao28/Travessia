@@ -442,6 +442,7 @@ model MaterialAdaptation {
   settings Json
   pages Json
   document Json @default("[]")
+  releasedSnapshot Json?
   revision Int @default(1)
   error String?
   hasAudio Boolean @default(false)
