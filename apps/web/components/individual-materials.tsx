@@ -39,6 +39,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   useEffect(()=>{ if(!loading && initialFile && receivedFile.current!==initialFile){receivedFile.current=initialFile;void upload(initialFile);} },[initialFile,loading]);
   const key = useRef<string | null>(null), uploadKey = useRef<string | null>(null);
   const current = adaptations.find(a => a.id === selectedId), source = sources.find(s=>s.id===sourceId);
+  const invalidStructure = document.some(invalidStructuredContent);
   const pending = current && ["queued","generating","rendering"].includes(current.status);
   const ai = supports.some(s=>["literal-language","short-sections","glossary"].includes(s)||s==="image-description"&&!manualDescription);
   useTeacherDraftGuard(dirty||activityDirty);
@@ -266,7 +267,8 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
             setDocument(old=>old.map((v,n)=>n===i?{...v,...fields}:v));setDirty(true);setReviewed(false);
           }}/>
           </section>)}</details>
-          {(dirty||current.status==='draft')&&<button className="button" type="button" disabled={busy||activityDirty||document.some(invalidStructuredContent)||current.settings.supports.includes('image-description')&&document.some(page=>!page.description.trim())} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
+          {dirty&&invalidStructure&&<p className="notice">Preencha ou remova os passos e os termos que ficaram em branco antes de atualizar a prévia.</p>}
+          {(dirty||current.status==='draft')&&<button className="button" type="button" disabled={busy||activityDirty||invalidStructure||current.settings.supports.includes('image-description')&&document.some(page=>!page.description.trim())} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
           <details><summary>Leitura em texto e transcrição</summary><PreparedDocument document={current.document} missionId={missionId} adaptationId={current.id}/></details>
         </>}
         {canRelease&&<label className="check"><input type="checkbox" disabled={locked} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>Conferi o material e o destinatário. Posso disponibilizar para {student.name}.</label>}

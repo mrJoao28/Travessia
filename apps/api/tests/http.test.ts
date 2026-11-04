@@ -649,7 +649,6 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:false}});await worker.tick();assert.equal(calls,1);
   assert.equal((await db.materialAdaptation.findUniqueOrThrow({where:{id:next.id}})).status,'failed');
   await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:true}});
-  config.aiEnabled=false;
   const structured = (await request(`${path}/material-adaptations`, main, 'POST', {
     ...input, requestKey: randomUUID(), settings: { supports: ['short-sections', 'glossary', 'high-contrast', 'large-print', 'wide-spacing', 'narration'],
       fontSize: '18', color: 'default', useAi: true, approvedForProvider: true },
@@ -679,6 +678,7 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   assert.deepEqual(delivered.document, edited.document);
   assert.deepEqual(delivered.reading, { supports: structured.settings.supports, fontSize: '22', color: 'high' });
   await request(structuredPath, main, 'DELETE');
+  config.aiEnabled=false;
   await db.materialAdaptation.createMany({data:Array.from({length:41},()=>({versionId,sourceId:source.id,studentId:'demo-student-1',creatorId:mainId,requestKey:randomUUID(),requestHash:randomUUID(),settings,pages:[1],document:malicious,status:'released',expiresAt:new Date(Date.now()+86400000)}))});
   assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,41,'Nenhum material liberado deve sumir além do quadragésimo item');
   await request(`${path}/material-sources/${source.id}`,main,'DELETE');await file('pdf',a,404);await worker.collect();
