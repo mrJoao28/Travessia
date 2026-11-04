@@ -63,6 +63,29 @@ class PdfProcessing(unittest.TestCase):
             self.assertIn('Grandeza | Valor\nMassa | x = 10', text)
             self.assertIn('notação matemática', output['warnings'][0])
 
+    def test_accepts_forty_pages_in_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / 'long.pdf'
+            writer = PdfWriter()
+            font = writer._add_object(DictionaryObject({
+                NameObject('/Type'): NameObject('/Font'),
+                NameObject('/Subtype'): NameObject('/Type1'),
+                NameObject('/BaseFont'): NameObject('/Helvetica'),
+            }))
+            for number in range(1, 41):
+                page = writer.add_blank_page(200, 200)
+                page[NameObject('/Resources')] = DictionaryObject({NameObject('/Font'): DictionaryObject({NameObject('/F1'): font})})
+                stream = DecodedStreamObject()
+                stream.set_data(f'BT /F1 10 Tf 10 150 Td (Material de teste - pagina {number}.) Tj ET'.encode('ascii'))
+                page[NameObject('/Contents')] = writer._add_object(stream)
+            writer.write(path)
+            result = self.run_pdf(path)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            pages = json.loads(result.stdout)['pages']
+            self.assertEqual([page['page'] for page in pages], list(range(1, 41)))
+            self.assertIn('pagina 40', pages[-1]['text'])
+            self.assertTrue(path.with_name('page-40.png').exists())
+
     def test_rejects_script_encryption_and_page_limit(self):
         with tempfile.TemporaryDirectory() as directory:
             for kind in ['script','encrypted','pages']:
