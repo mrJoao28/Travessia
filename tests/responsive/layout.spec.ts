@@ -93,7 +93,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await productFixture(page,'student');await page.goto('/aluno/missoes/test-mission');await expect(page.getByRole('textbox',{name:'Planejamento e atividade',exact:true})).toBeVisible();await capture('real-student-mission');
   await profileFixture(page);await page.getByRole('button',{name:'Adicionar disciplina e curso',exact:true}).click();await capture('real-profile-expanded');
   await fixture(page);await addPdf(page);await capture('real-material-options');
-  await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();await capture('real-material-review');
+  await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();await capture('real-material-review');
  }finally{
   await mkdir(info.outputDir,{recursive:true});await writeFile(info.outputPath('measurements.json'),JSON.stringify({profile,results},null,2));await context.close();
  }
