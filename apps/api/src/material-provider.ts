@@ -5,7 +5,7 @@ import { materialDocument } from './material-contracts.js';
 export type MaterialProviderInput = { descriptionsOnly?: boolean; supports: string[]; objectives: string[]; pages: { page: number; text: string; image?: Buffer }[] };
 export type MaterialProvider = (input: MaterialProviderInput, signal: AbortSignal) => Promise<{ document: unknown; inputTokens?: number; outputTokens?: number }>;
 const descriptions = z.strictObject({ document: z.array(z.strictObject({ page: z.number().int().min(1).max(20), description: z.string().max(4000) })).min(1).max(4) });
-export function materialProvider(config: Config): MaterialProvider {
+export function materialProvider(config: Pick<Config, 'geminiKey' | 'model'>): MaterialProvider {
   return async (input, signal) => {
     const client = new GoogleGenAI({ apiKey: config.geminiKey });
     const parts: Part[] = [{ text: JSON.stringify({ supports: input.supports, objectives: input.objectives, pages: input.pages.map(p => ({ page: p.page, text: p.text })) }) }];

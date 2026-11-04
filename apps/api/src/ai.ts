@@ -14,7 +14,7 @@ import { createVersion, scopedMission } from './product.service.js';
 
 export type DraftProvider = (input: { objectives: string[]; materials: { title: string; text: string }[] }, signal: AbortSignal) => Promise<{ draft: unknown; inputTokens?: number; outputTokens?: number }>;
 
-export function geminiProvider(config: Config): DraftProvider {
+export function geminiProvider(config: Pick<Config, 'geminiKey' | 'model'>): DraftProvider {
   const client = new GoogleGenAI({ apiKey: config.geminiKey, httpOptions: { timeout: 20000 } });
   return async (input, signal) => {
     const response = await client.models.generateContent({ model: config.model, contents: JSON.stringify(input), config: {
@@ -22,7 +22,7 @@ export function geminiProvider(config: Config): DraftProvider {
       responseMimeType: 'application/json', responseJsonSchema: z.toJSONSchema(missionInput), maxOutputTokens: 4000,
       abortSignal: signal, httpOptions: { timeout: 20000, retryOptions: { attempts: 1 } },
     } });
-    if (!response.text || response.text.length > 50000) throw new Error('Invalid output');
+    if (response.candidates?.[0]?.finishReason !== 'STOP' || !response.text || response.text.length > 50000) throw new Error('Invalid output');
     return { draft: JSON.parse(response.text), inputTokens: response.usageMetadata?.promptTokenCount, outputTokens: response.usageMetadata?.candidatesTokenCount };
   };
 }
@@ -31,7 +31,7 @@ const view = (g: {id: string; missionId: string; status: string; outputVersionId
 
 export type SupportProvider = (input: { objectives: string[]; step: { title: string; instructions: string } | null;
   activity?: { instructions: string; criteria: string[] }; supportNeeds?: string[]; materials: { title: string; text: string }[]; strategies: { id: string; title: string; guidance: string }[] }, signal: AbortSignal) => Promise<unknown>;
-export function geminiSupportProvider(config: Config): SupportProvider {
+export function geminiSupportProvider(config: Pick<Config, 'geminiKey' | 'model'>): SupportProvider {
   const client = new GoogleGenAI({ apiKey: config.geminiKey });
   return async (input, signal) => {
     const response = await client.models.generateContent({ model: config.model, contents: JSON.stringify(input), config: {
@@ -39,7 +39,7 @@ export function geminiSupportProvider(config: Config): SupportProvider {
       responseMimeType: 'application/json', responseJsonSchema: z.toJSONSchema(supportDraft), maxOutputTokens: 6000,
       abortSignal: signal, httpOptions: { timeout: 20000, retryOptions: { attempts: 1 } },
     } });
-    if (!response.text || response.text.length > 50000) throw new Error('Invalid support output');
+    if (response.candidates?.[0]?.finishReason !== 'STOP' || !response.text || response.text.length > 50000) throw new Error('Invalid support output');
     return JSON.parse(response.text);
   };
 }
