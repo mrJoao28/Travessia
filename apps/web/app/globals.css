@@ -1880,3 +1880,28 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .material-preview-audio audio { display: block; width: 100%; }
 
 .material-extra-tools [hidden] { display: none; }
+
+.preparation-progress {
+  display: flex;
+  align-items: flex-start;
+  gap: .85rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: var(--sage);
+}
+.preparation-progress p { margin: .25rem 0 0; }
+.preparation-progress-indicator {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  margin-top: .15rem;
+  border: .18rem solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: preparation-spin .85s linear infinite;
+}
+@keyframes preparation-spin { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) {
+  .preparation-progress-indicator { animation: none; }
+}

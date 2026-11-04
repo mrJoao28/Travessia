@@ -85,7 +85,7 @@ export class MaterialService {
         const selected = extractedPages.parse(source.pages).filter(v => input.pages.includes(v.page));
         if (selected.length !== input.pages.length) return fail(400, 'INVALID_PAGES', 'Confira as páginas.');
         if (selected.reduce((n, v) => n + v.text.length, 0) > 12000) return fail(400, 'INPUT_TOO_LARGE', 'Selecione menos páginas (até 12 mil caracteres por adaptação).');
-        const requiresAi = input.settings.supports.some(s => ['literal-language', 'short-sections', 'glossary', 'image-description'].includes(s));
+        const requiresAi = input.settings.supports.some(s => ['literal-language', 'short-sections', 'glossary'].includes(s));
         if (requiresAi && !input.settings.useAi) return fail(400, 'AI_REQUIRED', 'Esses apoios precisam de rascunho IA. Você pode escolher apenas formatação e áudio locais.');
         if (input.settings.useAi && (!this.config.aiEnabled || !input.settings.approvedForProvider)) return fail(503, 'AI_UNAVAILABLE', 'Ative e autorize a assistência antes de gerar.');
         const requestHash = digest(JSON.stringify({ ...input, requestKey: undefined, settings: { ...input.settings, supports: [...input.settings.supports].sort() }, pages: [...input.pages].sort((a,b) => a-b) }));
