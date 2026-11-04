@@ -1859,3 +1859,12 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 }
 .material-support-card-grid .simple-support-option { height: 100%; }
 .material-desk-stacked .simple-material-actions .button { width: auto; }
+
+.material-preview-audio {
+  padding: .75rem;
+  margin-bottom: .75rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+}
+.material-preview-audio h4 { margin: 0 0 .5rem; }
+.material-preview-audio audio { display: block; width: 100%; }

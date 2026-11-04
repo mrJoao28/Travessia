@@ -174,8 +174,13 @@ export class MaterialWorker {
     const images: Record<number,string> = {};
     for (const p of extractedPages.parse(source.pages)) if (p.hasVisual && document.some(d=>d.page===p.page)) images[p.page] = (await visualPage(source.id,p.page,true)).toString('base64');
     await this.pdf(materialPath(a.id, `adapted-${a.revision}.pdf`), documentHtml(document, settings, images));
-    const audio = settings.supports.includes('narration');
-    if (audio) await this.local('audio', materialPath(a.id, `audio-${a.revision}.mp3`), materialNarration(document));
+    const descriptionAudio = settings.supports.includes('image-description') && document.some(page=>page.description.trim());
+    const narration = settings.supports.includes('narration');
+    const audio = narration || descriptionAudio;
+    if (audio) {
+      const script = narration ? materialNarration(document) : materialNarration(document.map(page=>({ ...page, text: '' })));
+      await this.local('audio', materialPath(a.id, `audio-${a.revision}.mp3`), script);
+    }
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
     await this.db.materialAdaptation.updateMany({ where: { id: a.id, status: 'rendering', revision: a.revision, expiresAt: { gt: new Date() } }, data: { status: 'ready', hasAudio: audio } });
   }

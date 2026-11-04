@@ -19,6 +19,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
   const [loading, setLoading] = useState(true), [error, setError] = useState(""), [message, setMessage] = useState("");
   const [retry, setRetry] = useState(0), [busy, setBusy] = useState(false);
+  const [showMoreSupports,setShowMoreSupports]=useState(false);
   const [showActivity,setShowActivity]=useState(false);
   const [activityOnly,setActivityOnly]=useState(false),[activitySaved,setActivitySaved]=useState(false),[activityDirty,setActivityDirty]=useState(false);
   const [step, setStep] = useState(0), [studentId, setStudentId] = useState("");
@@ -113,8 +114,10 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   }
   const student=students.find(s=>s.id===studentId), declared=shared.find(s=>s.userId===studentId);
   const suggestions=materialSuggestions(declared?.disabilities,declared?.supports);
+  const otherSupports = ['wide-spacing','high-contrast','literal-language','short-sections','glossary'] as const;
+  const visibleOtherSupports = otherSupports.filter(id=>showMoreSupports||suggestions.primary.includes(id)||supports.includes(id));
   const supportLabels: Record<MaterialSupport,{label:string;hint:string}> = {
-    'large-print':{label:'Texto ampliado',hint:'Aumentar o tamanho do texto para facilitar a leitura.'},
+    'large-print':{label:'Leitura ampliada (texto ampliado)',hint:'Aumentar o tamanho do texto para facilitar a leitura.'},
     'wide-spacing':{label:'Mais espaço entre linhas',hint:'Dar mais espaço aos parágrafos e à leitura.'},
     'high-contrast':{label:'Contraste de leitura',hint:'Manter boa distinção entre texto e fundo.'},
     'literal-language':{label:'Explicação mais direta',hint:'Usar frases claras e explicar expressões figuradas.'},
@@ -125,7 +128,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   };
   function chooseStudent(id:string){
     const needs=shared.find(s=>s.userId===id), next=materialSuggestions(needs?.disabilities,needs?.supports);
-    setShowActivity(false);setStudentId(id);setSupports(next.selected);setDelivery(next.selected.length?'adapted':'original');setSelectedId('');setDocument([]);setDirty(false);setActivityDirty(false);setActivityOnly(false);setEditText(false);setApproved(false);change();
+    setShowMoreSupports(false);setShowActivity(false);setStudentId(id);setSupports(next.selected);setDelivery(next.selected.length?'adapted':'original');setSelectedId('');setDocument([]);setDirty(false);setActivityDirty(false);setActivityOnly(false);setEditText(false);setApproved(false);change();
   }
   function toggle(id:MaterialSupport,checked:boolean){setSupports(old=>checked?[...new Set([...old,id])]:old.filter(s=>s!==id));setApproved(false);change();}
   function option(id:MaterialSupport){
@@ -183,10 +186,12 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <div className="material-support-card-grid">
             {(['image-description','large-print','narration'] as const).map(option)}
           </div>
-          <details className="simple-more-options" key={studentId} open={suggestions.primary.some(id=>!['image-description','large-print','narration'].includes(id))||undefined}>
-            <summary>Mais apoios de leitura e compreensão</summary>
-            <div className="material-support-card-grid">{(['wide-spacing','high-contrast','literal-language','short-sections','glossary'] as const).sort((a,b)=>Number(suggestions.primary.includes(b))-Number(suggestions.primary.includes(a))).map(option)}</div>
-          </details>
+          <div id="material-other-supports" className={visibleOtherSupports.length?"material-support-card-grid":undefined}>
+            {visibleOtherSupports.map(option)}
+          </div>
+          <button type="button" className="text-button" aria-expanded={showMoreSupports} aria-controls="material-other-supports" onClick={()=>setShowMoreSupports(value=>!value)}>
+            {showMoreSupports?'Mostrar só os apoios relevantes':'Ver mais apoios de leitura e compreensão'}
+          </button>
         </fieldset>
         {delivery==='adapted'&&<>
           {(supports.includes('large-print')||supports.includes('high-contrast'))&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="18">Grande · 18 pontos</option><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="default">Escuro sobre claro</option><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
@@ -204,7 +209,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         {delivery==='adapted'&&current&&<ul className="material-applied-supports" aria-label="Apoios aplicados">{current.settings.supports.map(id=><li key={id}><span aria-hidden="true">✓</span>{supportLabels[id].label}</li>)}</ul>}
         {!dirty&&<a className="text-link" href={delivery==='original'?materialAssetUrl(missionId,sourceId,'original'):materialAssetUrl(missionId,current!.id,'pdf')} target="_blank" rel="noopener noreferrer">{delivery==='original'?'Conferir PDF original':'Conferir PDF gerado'}</a>}
 
-        {current?.hasAudio&&delivery!=='original'&&!dirty&&<section id="material-audio" className="form-stack"><h4>Ouvir prévia</h4><p className="small">Narração integral das páginas preparadas, incluindo as descrições disponíveis. Confira o texto e a pronúncia antes de liberar.</p><audio controls preload="none" aria-label="Ouvir a prévia do material" src={materialAssetUrl(missionId,current.id,'audio')}/></section>}
+
         {delivery==='adapted'&&current&&<>
           <button type="button" className="text-button" disabled={locked} onClick={()=>{setSelectedId('');setStep(1);setApproved(false);change();}}>Ajustar leitura</button>
           <details onToggle={e=>setEditText(e.currentTarget.open)}><summary>Ajustar o texto da prévia</summary>{editText&&document.map((p,i)=><section className="form-stack" key={p.page}><h4>Página {p.page} do original</h4>
@@ -225,6 +230,6 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       {step!==3&&!activityOnly&&comparison}
     </div>
     {busy&&<p role="status">Salvando sua solicitação…</p>}
-    {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.studentId);setSourceId(a.sourceId);setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setFontSize(a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(false);setActivityOnly(false);setStep(a.status==='ready'||a.status==='released'?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm('Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(0);}});}}>Remover material</button>}</div></article>)}</details>}
+    {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.studentId);setSourceId(a.sourceId);setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setFontSize(a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(false);setActivityOnly(false);setShowActivity(false);setStep(a.status==='ready'||a.status==='released'?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm('Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(0);}});}}>Remover material</button>}</div></article>)}</details>}
   </section>;
 }
