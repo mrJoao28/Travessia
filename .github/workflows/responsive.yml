@@ -1,0 +1,42 @@
+name: Responsive workspaces
+on:
+  pull_request:
+    paths: ['apps/web/**', 'tests/responsive/**', 'tests/fixtures/**', 'playwright.responsive.config.ts', '.github/workflows/responsive.yml']
+  workflow_dispatch:
+    inputs:
+      compare_baseline:
+        description: 'Comparar também com o CSS anterior (pode falhar por defeitos antigos)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.compare_baseline && '[{"browser":"chromium","version":"improved"},{"browser":"firefox","version":"improved"},{"browser":"webkit","version":"improved"},{"browser":"chromium","version":"baseline"}]' || '[{"browser":"chromium","version":"improved"},{"browser":"firefox","version":"improved"},{"browser":"webkit","version":"improved"}]') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - if: matrix.version == 'baseline'
+        run: git show 9749473afeb79201fc3eb9580dd90bd8e66d53df:apps/web/app/globals.css > apps/web/app/globals.css
+      - run: npm run build --workspace @travessia/web
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npx playwright test --config=playwright.responsive.config.ts --project=${{ matrix.browser }}
+        env:
+          RESPONSIVE_BASELINE: ${{ matrix.version == 'baseline' && '1' || '' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: responsive-${{ matrix.browser }}-${{ matrix.version }}
+          path: test-results/responsive/
+          retention-days: 7

@@ -82,7 +82,13 @@ export async function api<K extends keyof ApiOperations>(
       typeof error.code === "string"
         ? error.code
         : "REQUEST_FAILED";
-    const message =
+    const geminiErrors: Record<string, string> = {
+      AI_CREDENTIALS: "O Gemini recusou as credenciais. Peça ao administrador para conferir a chave e as permissões.",
+      AI_MODEL: "O modelo Gemini está indisponível para este projeto. Peça ao administrador para conferir a configuração.",
+      AI_PROVIDER_QUOTA: "O projeto Gemini atingiu um limite de uso. Aguarde ou peça ao administrador para conferir a cota.",
+      AI_TIMEOUT: "O Gemini demorou demais. Confira o estado do rascunho antes de tentar com menos material.",
+    };
+    const message = Object.hasOwn(geminiErrors, code) ? geminiErrors[code] :
       response.status === 401
         ? "Sua sessão expirou. Entre novamente para salvar. Seu texto permanece nesta tela."
         : response.status === 409

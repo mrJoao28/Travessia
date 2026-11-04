@@ -1458,6 +1458,15 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "regeneratePage": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  },
+                  "approvedForProvider": {
+                    "type": "boolean",
+                    "const": true
                   }
                 },
                 "required": [

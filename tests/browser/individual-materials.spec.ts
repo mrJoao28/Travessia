@@ -3,57 +3,17 @@ import AxeBuilder from '@axe-core/playwright';
 import type { ApiBody, ApiResponse } from '../../apps/web/lib/api.generated';
 import { materialPdfFixture } from '../../scripts/material-fixture.mjs';
 
-async function fixture(page: Page, failActivity = false, disabilities: string[] = ['low-vision'], requests: string[] = ['short-steps'], backgroundWork=false) {
-  const version = { id:'v-material',missionId:'m-material',title:'Comparar rotas acessíveis',description:'Material fictício.',objectives:['Comparar rotas.'],criteria:['Justificar escolha.'],source:'manual',dueAt:null,createdAt:'2026-11-01T00:00:00.000Z',materials:[],steps:[{id:'s-material',position:1,title:'Comparar',instructions:'Compare duas rotas.',example:'Use distâncias.'}] };
-  const source: ApiResponse<'uploadMaterialSource'> = { id:'source-material',versionId:version.id,title:'rotas.pdf',status:'ready',pageCount:1,pages:[{page:1,text:'Compare duas rotas de 10 metros.',hasVisual:true,ocr:false}],warnings:['Confira a informação visual.'],expiresAt:'2027-01-30T00:00:00.000Z' };
-  let sources: ApiResponse<'materialSources'>['items']=[], plans: ApiResponse<'prepareMaterial'>[]=[];
-  let sent: ApiBody<'prepareMaterial'> | undefined;
-  let activity: ApiBody<'createAdaptation'> | undefined;
-  let original: ApiBody<'releaseOriginalMaterial'> | undefined;
-  await page.route('**/api/v1/**',async route=>{
-    const path=new URL(route.request().url()).pathname.slice('/api/v1'.length), method=route.request().method();
-    const respond=(json:unknown)=>route.fulfill({json});
-    if(path.endsWith('/material-assets/source-material/page-1'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="840"><rect width="600" height="840" fill="white"/><text x="50" y="90" fill="#173651" font-size="28">Compare as rotas</text><text x="50" y="145" font-size="18">Compare duas rotas de 10 metros.</text></svg>'});
-    if(path==='/me')return respond({id:'teacher-material',name:'Professora fictícia',email:'teacher@example.invalid',demo:true,course:null,preferences:{}});
-    if(path==='/classrooms')return respond({items:[{id:'c-material',name:'Turma fictícia',role:'teacher'}],nextCursor:null});
-    if(path==='/classrooms/c-material/missions')return respond({items:[{id:version.missionId,classroomId:'c-material',status:'published',publishedVersion:version,draftVersion:null}],nextCursor:null});
-    if(path.endsWith('/submissions'))return respond({items:[],nextCursor:null});
-    if(path.endsWith('/learning-needs'))return respond({items:[{userId:'student-a',name:'Marina fictícia',supports:requests,preferredFormats:[],disabilities}],nextCursor:null});
-    if(path.endsWith('/strategy-recipients'))return respond({items:[{id:'student-a',name:'Marina fictícia'},{id:'student-b',name:'Aluno B'}],nextCursor:null});
-    if(path.endsWith('/adaptations')) { if(method==='POST'){activity=route.request().postDataJSON();return failActivity?route.fulfill({status:409,json:{code:'REVISION_CONFLICT'}}):respond({...activity,id:'activity-material',revision:1});}return respond({items:[]}); }
-    if(path==='/strategies'||path.endsWith('/strategy-plans'))return respond({items:[]});
-    if(path.endsWith('/material-sources')){if(method==='POST'){const file={...source,id:sources.length?'source-second':source.id,title:route.request().postDataJSON().title};sources=[...sources,file];return respond(file);}return respond({items:backgroundWork?[...sources,{...source,id:'background-source',status:'queued',pageCount:0,pages:[]}]:sources});}
-    if(path.endsWith('/original-materials')){original=route.request().postDataJSON();plans=[{id:'original-material',mode:'original',versionId:version.id,sourceId:source.id,studentId:original!.studentId,settings:{supports:[],fontSize:'18',color:'default',useAi:false,approvedForProvider:false,deliveryMode:'original'},pages:[],document:[],status:'released',revision:1,error:null,hasAudio:false,inputTokens:0,outputTokens:0,expiresAt:source.expiresAt}];return respond(plans[0]);}
-    if(path.endsWith('/material-adaptations')){
-      if(method==='POST'){sent=route.request().postDataJSON();plans=[{id:'adaptation-material',versionId:version.id,sourceId:source.id,studentId:sent!.studentId,settings:sent!.settings,pages:[1],document:[{page:1,title:'Compare as rotas',text:'Compare as rotas de 10 metros.',description:'O diagrama compara duas rotas.'}],status:'draft',revision:1,error:null,hasAudio:false,inputTokens:120,outputTokens:60,expiresAt:source.expiresAt}];return respond(plans[0]);}return respond({items:backgroundWork&&plans[0]?[...plans,{...plans[0],id:'background-material',studentId:'student-b',status:'queued'}]:plans});
-    }
-    if(path.endsWith('/material-adaptations/adaptation-material')&&method==='PATCH'){const body=route.request().postDataJSON();plans[0]={...plans[0],document:body.document,revision:2,status:'draft'};return respond(plans[0]);}
-    if(path.endsWith('/render')){plans[0]={...plans[0],status:'ready',hasAudio:plans[0].settings.supports.includes('narration')};return respond(plans[0]);}
-    if(path.endsWith('/release')){plans[0]={...plans[0],status:'released'};return respond(plans[0]);}
-    return route.fulfill({status:404,json:{}});
-  });
-  await page.goto('/professor/estrategias');
-  await expect(page.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();
-  return Object.assign(()=>sent,{activity:()=>activity,original:()=>original});
-}
+import {fixture,addPdf} from '../fixtures/individual-materials';
 
-async function addPdf(page:Page,student='student-a'){
- await page.getByLabel('Aluno da turma',{exact:true}).selectOption(student);
- await page.getByLabel('Adicionar arquivo PDF',{exact:true}).setInputFiles({name:'rotas.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
- await expect(page.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Continuar →',exact:true}).click();
-}
 test('sem deficiência informada: mantém original por padrão, permite apoio e exige revisão do destinatário',async({page})=>{
  const captured=await fixture(page,false,[],[]);await addPdf(page);
  await expect(page.getByText('Nenhuma deficiência informada',{exact:true})).toBeVisible();
- await expect(page.getByRole('radio',{name:/Manter o PDF original/})).toBeChecked();
- await expect(page.getByRole('checkbox',{name:/Texto ampliado/})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Usar PDF original',exact:true})).toBeVisible();
+ await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
  await page.screenshot({path:'test-results/reference-material-no-disclosure.png',fullPage:true});
- await page.getByRole('radio',{name:/Preparar uma versão com apoio/}).check();
- await expect(page.getByRole('checkbox',{name:/Facilitar a leitura/})).toBeVisible();
- await expect(page.getByRole('checkbox',{name:/Ouvir o material/})).toBeVisible();
- await page.getByRole('radio',{name:/Manter o PDF original/}).check();
- await page.getByRole('button',{name:'Continuar →',exact:true}).click();
+ await expect(page.getByRole('checkbox',{name:/Audiodescrição/})).toBeVisible();
+ await expect(page.getByRole('checkbox',{name:/Leitura em áudio/})).toHaveCount(0);
+ await page.getByRole('button',{name:'Usar PDF original',exact:true}).click();
  const send=page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true});await expect(send).toBeDisabled();
  await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();await send.click();
  await expect(page.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
@@ -63,14 +23,23 @@ test('TEA compartilhado: somente sugestões pertinentes, prévia automática e r
  await page.setViewportSize({width:1920,height:1080});
  const captured=await fixture(page,false,['autism'],[]);await addPdf(page);
  await expect(page.getByRole('checkbox',{name:/Explicação mais direta/})).toBeChecked();
- await expect(page.getByRole('checkbox',{name:/Passos curtos e numerados/})).toBeChecked();
+ await expect(page.getByRole('checkbox',{name:/Organizar em passos curtos/})).toBeChecked();
  await expect(page.getByRole('checkbox',{name:/Explicar termos do material/})).not.toBeChecked();
- await expect(page.getByRole('checkbox',{name:/Texto ampliado/})).toHaveCount(0);
+ await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
  await page.screenshot({path:'test-results/reference-material-tea.png',fullPage:true});
- await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
- await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
+ const viewer = page.getByRole('region', { name: 'Comparação do material', exact: true });
+ const settings = page.getByRole('complementary', { name: 'Preparação e revisão do material' });
+ const settingsBox = await settings.boundingBox(), viewerBox = await viewer.boundingBox();
+ expect(settingsBox!.x + settingsBox!.width).toBeLessThan(viewerBox!.x);
+ const versions = viewer.getByRole('group', { name: 'Versão do documento' });
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeHidden();
+ await versions.getByRole('button', { name: 'Original' }).click();
+ await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toBeHidden();
+ await versions.getByRole('button', { name: 'Preparado' }).click();
  await page.screenshot({path:'test-results/reference-comparison-teacher-desktop.png',fullPage:true});
  expect(captured()?.settings.supports).toEqual(['literal-language','short-sections']);
  expect(JSON.stringify(captured())).not.toMatch(/autism|Marina|low-vision/);
@@ -84,8 +53,8 @@ test('TEA compartilhado: somente sugestões pertinentes, prévia automática e r
 });
 test('baixa visão: leitura em destaque, outros pedidos recolhidos, teclado e reflow',async({page})=>{
  await page.setViewportSize({width:320,height:900});await fixture(page);await addPdf(page);
- const large=page.getByRole('checkbox',{name:/Texto ampliado/});await expect(large).toBeChecked();
- await expect(page.getByRole('checkbox',{name:/Passos curtos e numerados/})).not.toBeVisible();
+ const large=page.getByRole('checkbox',{name:/texto ampliado/i});await expect(large).toBeChecked();
+ await expect(page.getByRole('checkbox',{name:/Organizar em passos curtos/})).toHaveCount(0);
  await expect(page.getByRole('checkbox',{name:/Explicar termos/})).toHaveCount(0);
  await large.focus();await page.keyboard.press('Space');await expect(large).not.toBeChecked();await page.keyboard.press('Space');
  await page.screenshot({path:'test-results/reference-material-mobile.png',fullPage:true});
@@ -95,8 +64,8 @@ test('baixa visão: leitura em destaque, outros pedidos recolhidos, teclado e re
 test('pedido de apoio sem compartilhar diagnóstico também orienta a preparação',async({page})=>{
  await fixture(page,false,[],['short-steps']);await addPdf(page);
  await expect(page.getByText('Nenhuma deficiência informada',{exact:true})).toBeVisible();
- await expect(page.getByRole('checkbox',{name:/Passos curtos e numerados/})).toBeChecked();
- await expect(page.getByRole('checkbox',{name:/Texto ampliado/})).toHaveCount(0);
+ await expect(page.getByRole('checkbox',{name:/Organizar em passos curtos/})).toBeChecked();
+ await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
 });
 test('adaptação sem PDF mantém aluno e versão, salva formatos e exige revisão',async({page})=>{
  const captured=await fixture(page);await page.getByLabel('Aluno da turma',{exact:true}).selectOption('student-a');
@@ -123,7 +92,7 @@ test('falha ao salvar ajuste individual preserva enunciado e permite corrigir',a
 
 test('comparação no celular alterna documentos, mantém leitura ampliável e invalida revisão ao editar',async({page})=>{
  await fixture(page,false,['low-vision'],[]);await addPdf(page);
- await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
  await page.getByText('Ajustar o texto da prévia',{exact:true}).click();
@@ -133,11 +102,11 @@ test('comparação no celular alterna documentos, mantém leitura ampliável e i
  await expect(page.getByRole('link',{name:'Conferir PDF gerado',exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Atualizar prévia →',exact:true}).click();
  await page.setViewportSize({width:320,height:900});
- const toggles=page.getByRole('group',{name:'Documento exibido no celular',exact:true});
+ const toggles=page.getByRole('group',{name:'Versão do documento',exact:true});
  await toggles.getByRole('button',{name:'Original',exact:true}).click();
  await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).not.toBeVisible();
- await page.getByRole('button',{name:'Leitura preparada',exact:true}).click();
+ await toggles.getByRole('button',{name:'Preparado',exact:true}).click();
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Aumentar ampliação da comparação',exact:true}).click();
  await expect(page.getByText('125%',{exact:true})).toBeVisible();
@@ -149,20 +118,20 @@ test('comparação no celular alterna documentos, mantém leitura ampliável e i
 
 test('trocar o arquivo retira a prévia anterior e sua confirmação de revisão',async({page})=>{
  await fixture(page,false,['low-vision'],[]);await addPdf(page);
- await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
  await page.getByLabel('Adicionar arquivo PDF',{exact:true}).setInputFiles({name:'outro-material.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toHaveCount(0);
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toContainText('A versão preparada aparece aqui');
- await expect(page.getByRole('button',{name:/outro-material.pdf/})).toBeVisible();
+ await expect(page.getByRole('combobox',{name:'Arquivo PDF'}).locator('option:checked')).toHaveText('outro-material.pdf');
 });
 
 
 test('consulta de processamento em segundo plano não abandona a escolha do aluno nem a atividade sem PDF',async({page})=>{
  await fixture(page,false,['low-vision'],[],true);await addPdf(page);
- await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+ await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  const isPoll=(r:import('@playwright/test').Response)=>new URL(r.url()).pathname.endsWith('/material-adaptations')&&r.request().method()==='GET';
  const poll=page.waitForResponse(isPoll);
@@ -171,4 +140,57 @@ test('consulta de processamento em segundo plano não abandona a escolha do alun
  const nextPoll=page.waitForResponse(isPoll);
  await page.getByRole('button',{name:'Ajustar atividade sem PDF',exact:true}).click();await nextPoll;
  await expect(page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true})).toBeVisible();
+});
+
+
+test('cegueira: audiodescrição sugerida, sem reorganização automática',async({page})=>{
+ const captured=await fixture(page,false,['blindness'],[]);await addPdf(page);
+ await expect(page.getByRole('checkbox',{name:/Audiodescrição/})).toBeChecked();
+ await expect(page.getByRole('checkbox',{name:/Leitura em áudio/})).toHaveCount(0);
+ await expect(page.getByRole('checkbox',{name:/Organizar em passos curtos/})).toHaveCount(0);
+ await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();
+ await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
+ expect(captured()?.settings.supports).toEqual(['image-description']);
+ await expect(page.locator('#material-audio audio')).toHaveAttribute('src',/material-assets\/adaptation-material\/audio$/);
+ await expect(page.getByRole('heading',{name:'Ouvir audiodescrição'})).toBeVisible();
+ await page.getByText('Leitura em texto e transcrição',{exact:true}).click();
+ await expect(page.getByText('Leitura em texto e transcrição',{exact:true}).locator('..').getByText('O diagrama compara duas rotas.',{exact:true})).toBeVisible();
+ await page.getByText('Ajustar o texto da prévia',{exact:true}).click();
+ await page.getByLabel('Descrição das informações visuais da página 1',{exact:true}).fill('Descrição revisada pelo professor.');
+ await expect(page.locator('#material-audio audio')).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'Atualizar prévia →',exact:true}).click();
+ await expect(page.locator('#material-audio audio')).toBeVisible();
+ await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
+ await page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
+});
+
+test('audiodescrição manual pode ser preparada com a IA desligada', async ({ page }) => {
+ const captured = await fixture(page, false, ['blindness'], []);
+ await addPdf(page);
+ await page.getByRole('checkbox', { name: 'Escrever a descrição manualmente' }).check();
+ await expect(page.getByRole('checkbox', { name: /Conferi as páginas e os objetivos/ })).toHaveCount(0);
+ await page.getByRole('button', { name: 'Gerar prévia', exact: true }).click();
+ await page.getByLabel('Descrição das informações visuais da página 1').fill('O diagrama mostra dois caminhos.');
+ await page.getByRole('button', { name: 'Atualizar prévia →', exact: true }).click();
+ await expect(page.locator('#material-audio audio')).toBeVisible();
+ expect(captured()?.settings.useAi).toBe(false);
+});
+
+test('audiodescrição pode ser escolhida sem perfil e sem narração integral', async ({ page }) => {
+ const captured = await fixture(page, false, [], []);
+ await addPdf(page);
+ const description = page.getByRole('checkbox', { name: /^Audiodescrição/ });
+ await expect(description).toBeVisible();
+ await description.check();
+ await expect(page.getByRole('checkbox', { name: /^Leitura em áudio/ })).toHaveCount(0);
+ await page.getByRole('checkbox', { name: /Conferi as páginas e os objetivos/ }).check();
+ await page.getByRole('button', { name: 'Gerar prévia', exact: true }).click();
+ const audio = page.locator('audio[aria-label="Ouvir audiodescrição"]');
+ await expect(audio).toHaveAttribute('src', /adaptation-material\/audio$/);
+ const reader = page.getByRole('region', { name: 'Leitura do documento preparado' });
+ expect((await reader.boundingBox())!.y + (await reader.boundingBox())!.height).toBeLessThan((await audio.boundingBox())!.y);
+ expect(captured()?.settings.supports).toEqual(['image-description']);
 });

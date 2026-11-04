@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { MissionSupportsEditor } from "./live-strategies";
+import { SupportGenerator } from "./support-generator";
+import { PreparationProgress } from "./preparation-progress";
 import { OperationStatus } from "./operation-status";
 import {
   api,
@@ -75,12 +77,15 @@ export function LiveEditor({
   const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const [writingWithAi, setWritingWithAi] = useState(false);
+  const [showDraftAssistant, setShowDraftAssistant] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [review, setReview] = useState<string | null>(null);
   useEffect(() => {
     if (review) document.getElementById("publish-review")?.focus();
   }, [review]);
   const [confirmed, setConfirmed] = useState(false);
+  const [aiStep, setAiStep] = useState("");
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [approved, setApproved] = useState(false);
   const [generation, setGeneration] = useState<ApiResponse<"generate"> | null>(
@@ -100,6 +105,7 @@ export function LiveEditor({
     setDirty(false);
     setReview(null);
     setConfirmed(false);
+    setAiStep("");
     setSelectedMaterials([]);
     setApproved(false);
     generationKey.current = null;
@@ -624,7 +630,35 @@ export function LiveEditor({
         {stage === 2 && <div className="form-stack">
           {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da missão",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
           <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da missão, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
-          <details className="teacher-ai"><summary>Pedir ajuda à IA para escrever a missão (opcional)</summary>
+          {mission && storedVersion && !dirty && storedVersion.materials.length > 0 && (
+            <details className="teacher-ai">
+              <summary>Refazer instruções de uma etapa com Gemini</summary>
+              <label htmlFor="ai-edit-step">Etapa que você quer revisar</label>
+              <select id="ai-edit-step" value={aiStep} disabled={pending || supportsDirty} onChange={event => setAiStep(event.target.value)}>
+                <option value="">Escolha uma etapa</option>
+                {storedVersion.steps.map(step => <option key={step.id} value={step.id}>{step.title}</option>)}
+              </select>
+              {aiStep && !supportsDirty && <SupportGenerator
+                key={`${storedVersion.id}:${aiStep}`}
+                missionId={mission.id}
+                version={storedVersion}
+                stepId={aiStep}
+                selected={[{ id: "written-instructions", title: "Instruções da etapa" }]}
+                instructionsOnly
+                disabled={pending}
+                onBusy={setPending}
+                onApply={(_id, instructions) => {
+                  const index = storedVersion.steps.findIndex(step => step.id === aiStep);
+                  if (index < 0) return;
+                  change({ ...input, steps: input.steps.map((step, position) => position === index ? { ...step, instructions } : step) });
+                  setStage(1);
+                }}
+              />}
+            </details>
+          )}
+          <section className="teacher-ai form-stack">
+        <button type="button" className="button button-outline" aria-expanded={showDraftAssistant} aria-controls="mission-draft-assistant" onClick={()=>setShowDraftAssistant(value=>!value)}>Pedir ajuda à IA para escrever a missão (opcional)</button>
+        <div id="mission-draft-assistant" className="form-stack" hidden={!showDraftAssistant}>
         <h2>Assistência Gemini</h2>
         <p>
           Selecione até 3 materiais didáticos já salvos. Somente esses textos e
@@ -632,17 +666,17 @@ export function LiveEditor({
         </p>
         {(!storedVersion?.materials.length || dirty) && (
           <p className="notice">
-            Salve o rascunho e seus materiais antes de solicitar a assistência.
-            Você pode continuar manualmente.
+            A assistência de escrita usa materiais textuais salvos. Adicione um texto em Etapas e materiais e salve o rascunho. Para adaptar o PDF, use os cartões de apoio acima.
           </p>
         )}
         <form
           className="form-stack"
           onSubmit={async (e) => {
             e.preventDefault();
-            if (pending || !mission || dirty || !selectedMaterials.length)
+            if (pending || !mission || dirty || !selectedMaterials.length || !approved)
               return;
             setPending(true);
+            setWritingWithAi(true);
             setMessage("");
             generationKey.current ??= crypto.randomUUID();
             try {
@@ -661,6 +695,7 @@ export function LiveEditor({
               setMessage(errorMessage(reason));
             } finally {
               setPending(false);
+              setWritingWithAi(false);
             }
           }}
         >
@@ -732,6 +767,7 @@ export function LiveEditor({
             {pending ? "Aguarde a resposta…" : "Solicitar rascunho"}
           </button>
         </form>
+        {writingWithAi&&<PreparationProgress title="Gerando rascunho da missão" detail="A IA está preparando uma sugestão a partir dos textos selecionados."/>}
         {generation && (
           <button
             className="text-button"
@@ -759,7 +795,8 @@ export function LiveEditor({
           planejamento manual continua disponível. Não há publicação nem nota
           automática.
         </p>
-          </details>
+        </div>
+          </section>
         </div>}
         <OperationStatus message={message} />
         <p className="small">

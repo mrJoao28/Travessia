@@ -1,3 +1,5 @@
+import { HttpException } from '@nestjs/common';
+import { geminiFailure } from './gemini-errors.js';
 import { GoogleGenAI } from '@google/genai';
 import type { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
@@ -12,7 +14,7 @@ import { createVersion, scopedMission } from './product.service.js';
 
 export type DraftProvider = (input: { objectives: string[]; materials: { title: string; text: string }[] }, signal: AbortSignal) => Promise<{ draft: unknown; inputTokens?: number; outputTokens?: number }>;
 
-export function geminiProvider(config: Config): DraftProvider {
+export function geminiProvider(config: Pick<Config, 'geminiKey' | 'model'>): DraftProvider {
   const client = new GoogleGenAI({ apiKey: config.geminiKey, httpOptions: { timeout: 20000 } });
   return async (input, signal) => {
     const response = await client.models.generateContent({ model: config.model, contents: JSON.stringify(input), config: {
@@ -20,7 +22,7 @@ export function geminiProvider(config: Config): DraftProvider {
       responseMimeType: 'application/json', responseJsonSchema: z.toJSONSchema(missionInput), maxOutputTokens: 4000,
       abortSignal: signal, httpOptions: { timeout: 20000, retryOptions: { attempts: 1 } },
     } });
-    if (!response.text || response.text.length > 50000) throw new Error('Invalid output');
+    if (response.candidates?.[0]?.finishReason !== 'STOP' || !response.text || response.text.length > 50000) throw new Error('Invalid output');
     return { draft: JSON.parse(response.text), inputTokens: response.usageMetadata?.promptTokenCount, outputTokens: response.usageMetadata?.candidatesTokenCount };
   };
 }
@@ -29,7 +31,7 @@ const view = (g: {id: string; missionId: string; status: string; outputVersionId
 
 export type SupportProvider = (input: { objectives: string[]; step: { title: string; instructions: string } | null;
   activity?: { instructions: string; criteria: string[] }; supportNeeds?: string[]; materials: { title: string; text: string }[]; strategies: { id: string; title: string; guidance: string }[] }, signal: AbortSignal) => Promise<unknown>;
-export function geminiSupportProvider(config: Config): SupportProvider {
+export function geminiSupportProvider(config: Pick<Config, 'geminiKey' | 'model'>): SupportProvider {
   const client = new GoogleGenAI({ apiKey: config.geminiKey });
   return async (input, signal) => {
     const response = await client.models.generateContent({ model: config.model, contents: JSON.stringify(input), config: {
@@ -37,7 +39,7 @@ export function geminiSupportProvider(config: Config): SupportProvider {
       responseMimeType: 'application/json', responseJsonSchema: z.toJSONSchema(supportDraft), maxOutputTokens: 6000,
       abortSignal: signal, httpOptions: { timeout: 20000, retryOptions: { attempts: 1 } },
     } });
-    if (!response.text || response.text.length > 50000) throw new Error('Invalid support output');
+    if (response.candidates?.[0]?.finishReason !== 'STOP' || !response.text || response.text.length > 50000) throw new Error('Invalid support output');
     return JSON.parse(response.text);
   };
 }
@@ -82,8 +84,8 @@ export class AiService {
     });
     if ('existing' in reserved) return asView(reserved.existing!);
     const { generation, providerInput } = reserved;
+    const controller = new AbortController();
     try {
-      const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
       let raw: unknown;
       try { raw = await (this.supportProvider ?? geminiSupportProvider(this.config))(providerInput, controller.signal); }
@@ -98,9 +100,11 @@ export class AiService {
           return fail(409, 'GENERATION_CONFLICT', 'A missão mudou. Nenhum apoio foi publicado.');
         return asView(await tx.aiGeneration.update({ where: { id: generation.id }, data: { status: 'succeeded', supportDraft: draft } }));
       });
-    } catch {
+    } catch (error) {
       await this.db.aiGeneration.updateMany({ where: { id: generation.id, status: 'running' }, data: { status: 'failed' } });
-      return fail(502, 'AI_FAILED', 'Não foi possível gerar os apoios. Seu planejamento foi preservado.');
+      if (error instanceof HttpException) throw error;
+      const failure = geminiFailure(error, controller.signal.aborted);
+      return fail(failure.status, failure.code, failure.message);
     }
   }
 
@@ -144,8 +148,8 @@ export class AiService {
     });
     if ('existing' in reserved) return view(reserved.existing!);
     const { generation, providerInput, expectedDraft } = reserved;
+    const controller = new AbortController();
     try {
-      const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
       let result: Awaited<ReturnType<DraftProvider>>;
       try { result = await (this.provider ?? geminiProvider(this.config))(providerInput, controller.signal); }
@@ -161,9 +165,11 @@ export class AiService {
         return view(await tx.aiGeneration.update({ where: { id: generation.id }, data: { status: 'succeeded', outputVersionId: version.id,
           inputTokens: result.inputTokens, outputTokens: result.outputTokens } }));
       });
-    } catch {
+    } catch (error) {
       await this.db.aiGeneration.updateMany({ where: { id: generation.id, status: 'running' }, data: { status: 'failed' } });
-      return fail(502, 'AI_FAILED', 'Não foi possível gerar o rascunho. Continue editando manualmente.');
+      if (error instanceof HttpException) throw error;
+      const failure = geminiFailure(error, controller.signal.aborted);
+      return fail(failure.status, failure.code, failure.message);
     }
   }
 }

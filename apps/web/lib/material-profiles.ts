@@ -11,7 +11,7 @@ export const materialSupports = [
 ] as const;
 export type MaterialSupport = typeof materialSupports[number]['id'];
 export const materialProfiles: { id: string; label: string; supports: MaterialSupport[]; note: string }[] = [
-  { id: 'blindness', label: 'Cegueira', supports: ['image-description', 'narration', 'short-sections'], note: 'Oferecer HTML com títulos e ordem de leitura, além do PDF e áudio. Conferir descrições com o aluno.' },
+  { id: 'blindness', label: 'Cegueira', supports: ['image-description', 'narration'], note: 'Oferecer HTML com títulos e ordem de leitura, além do PDF e áudio. Conferir descrições com o aluno.' },
   { id: 'low-vision', label: 'Baixa visão', supports: ['large-print', 'wide-spacing', 'high-contrast'], note: 'Tamanho, cores e espaçamento dependem da preferência individual; confirme com o aluno.' },
   { id: 'color-vision', label: 'Percepção de cores / daltonismo', supports: ['high-contrast', 'image-description'], note: 'Descrever relações de gráficos sem depender somente das cores.' },
   { id: 'deafness', label: 'Surdez', supports: ['short-sections', 'glossary'], note: 'Manter toda a informação em texto. Português escrito e áudio não substituem Libras.' },

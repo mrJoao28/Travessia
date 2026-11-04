@@ -45,15 +45,19 @@ function StrategyMission({ entry, initialVersionId, unsaved, onUnsavedChange }: 
 }
 
 export function MissionSupportsEditor({ entry, version, initialFile, onFileReceived, onUnsavedChange }: { entry: MissionEntry; version: NonNullable<MissionEntry["mission"]["draftVersion"]>; initialFile?: File | null; onFileReceived?: () => void; onUnsavedChange?:(value:boolean)=>void }) {
- const [showStrategies,setShowStrategies]=useState(false),[showCollective,setShowCollective]=useState(false);
+ const [showTools,setShowTools]=useState(false),[showStrategies,setShowStrategies]=useState(false),[showCollective,setShowCollective]=useState(false);
+ const [openedStrategies,setOpenedStrategies]=useState(false),[openedCollective,setOpenedCollective]=useState(false);
  return <div className="mission-support-editor">
     <IndividualMaterials key={`materials-${version.id}`} missionId={entry.mission.id} versionId={version.id} classroomId={entry.classroom.id} archived={entry.mission.status === "archived"} version={version} initialFile={initialFile} onFileReceived={onFileReceived} onUnsavedChange={onUnsavedChange} />
-    <details className="paper material-extra-tools"><summary>Outros apoios da missão</summary><div className="form-stack">
-    <details className="paper legacy-strategies" onToggle={e=>{if(e.currentTarget.open)setShowStrategies(true);}}><summary>Outros apoios: checklists, exemplos e orientações para a turma</summary>
-    {showStrategies&&<StrategyForm key={version.id} entry={entry} version={version} />}
-    </details>
-    <details className="paper legacy-strategies" onToggle={e=>{if(e.currentTarget.open)setShowCollective(true);}}><summary>Ajustar instruções ou entregas para a turma inteira</summary><p>Para ajustes individuais, use o aluno escolhido na preparação do material acima.</p>{showCollective&&<LiveAdaptations entries={[entry]} initialMissionId={entry.mission.id} initialVersionId={version.id}/>}</details>
-    </div></details>
+    <section className="paper material-extra-tools form-stack" aria-label="Orientações e apoios da turma">
+      <button type="button" className="button button-outline" aria-expanded={showTools} aria-controls="mission-support-tools" onClick={()=>setShowTools(value=>!value)}>Outros apoios da missão</button>
+      <div id="mission-support-tools" className="form-stack" hidden={!showTools}>
+        <button type="button" className="text-button" aria-expanded={showStrategies} aria-controls="mission-strategy-form" onClick={()=>{setOpenedStrategies(true);setShowStrategies(value=>!value);}}>Outros apoios: checklists, exemplos e orientações para a turma</button>
+        <div id="mission-strategy-form" hidden={!showStrategies}>{openedStrategies&&<StrategyForm key={version.id} entry={entry} version={version} />}</div>
+        <button type="button" className="text-button" aria-expanded={showCollective} aria-controls="mission-collective-form" onClick={()=>{setOpenedCollective(true);setShowCollective(value=>!value);}}>Ajustar instruções ou entregas para a turma inteira</button>
+        <div id="mission-collective-form" hidden={!showCollective}>{openedCollective&&<><p>Para ajustes individuais, use o aluno escolhido na preparação do material acima.</p><LiveAdaptations entries={[entry]} initialMissionId={entry.mission.id} initialVersionId={version.id}/></>}</div>
+      </div>
+    </section>
   </div>;
 }
 

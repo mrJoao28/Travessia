@@ -16,12 +16,13 @@ export async function materialSmoke(request, check, verifyPersistence) {
     studentCookie=signup.response.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');check(studentCookie,'Cadastro de teste não iniciou sessão.');
     const studentId=signup.json.user.id;
     await request('/api/v1/invitations/accept',{method:'POST',body:{token:invitation.token},sessionCookie:studentCookie});
-    const source=(await request(`${base}/material-sources`,{method:'POST',body:{versionId,title:'PDF Docker',base64:materialPdfFixture().toString('base64'),requestKey:crypto.randomUUID()}})).json;
+    const source=(await request(`${base}/material-sources`,{method:'POST',body:{versionId,title:'PDF Docker',base64:materialPdfFixture(false,4).toString('base64'),requestKey:crypto.randomUUID()}})).json;
     await waitFor(async()=> (await request(`${base}/material-sources?versionId=${versionId}`)).json.items.find(s=>s.id===source.id),s=>s.status==='ready');
-    adaptation=(await request(`${base}/material-adaptations`,{method:'POST',body:{versionId,sourceId:source.id,studentId,pages:[1],settings:{supports:['large-print','narration'],fontSize:'22',color:'high',useAi:false,approvedForProvider:false},requestKey:crypto.randomUUID()}})).json;
+    adaptation=(await request(`${base}/material-adaptations`,{method:'POST',body:{versionId,sourceId:source.id,studentId,pages:[1,2,3,4],settings:{supports:['large-print','narration'],fontSize:'22',color:'high',useAi:false,approvedForProvider:false},requestKey:crypto.randomUUID()}})).json;
     adaptation=await waitFor(async()=> (await list()).find(a=>a.id===adaptation.id),a=>a.status==='draft');
-    check(adaptation.document[0].text.includes('10 meters'),'Extração real perdeu o conteúdo.');
-    adaptation=(await request(`${base}/material-adaptations/${adaptation.id}`,{method:'PATCH',body:{expectedRevision:adaptation.revision,document:[{...adaptation.document[0],title:'Material Docker persistente',description:'Um retângulo representa a comparação de rotas.'}]}})).json;
+    check(adaptation.document.length===4&&adaptation.document.every(p=>p.text.includes('10 meters')),'Extração real perdeu páginas ou conteúdo.');
+    check(adaptation.document[3].text.includes('End of page 4.'),'Fim da quarta página ausente.');
+    adaptation=(await request(`${base}/material-adaptations/${adaptation.id}`,{method:'PATCH',body:{expectedRevision:adaptation.revision,document:adaptation.document.map((p,i)=>({...p,title:i===0?'Material Docker persistente':`Página ${p.page}`,description:'Um retângulo representa a comparação de rotas.'}))}})).json;
     await request(`${base}/material-adaptations/${adaptation.id}/render`,{method:'POST',body:{expectedRevision:adaptation.revision}});
     adaptation=await waitFor(async()=> (await list()).find(a=>a.id===adaptation.id),a=>a.status==='ready');
     adaptation=(await request(`${base}/material-adaptations/${adaptation.id}/release`,{method:'POST',body:{expectedRevision:adaptation.revision,reviewed:true}})).json;
