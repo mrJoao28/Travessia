@@ -50,7 +50,6 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   let mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());const versionId=mission.draftVersion.id;
   await teacher.getByLabel('Aluno da turma',{exact:true}).selectOption(studentId);
   await expect(teacher.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible({timeout:90000});
-  await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
   await expect(teacher.getByRole('checkbox',{name:/texto ampliado/i})).toBeChecked();
   await expect(teacher.getByRole('checkbox',{name:/Organizar em passos curtos/})).toHaveCount(0);
   await teacher.getByRole('checkbox',{name:/^Audiodescrição/}).check();
@@ -79,7 +78,6 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
   await teacher.getByRole('button',{name:'Preparar outro material',exact:true}).click();
   await teacher.getByLabel('Aluno da turma',{exact:true}).selectOption(otherId);
-  await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
   await expect(teacher.getByText('Nenhuma deficiência informada',{exact:true})).toBeVisible();
   await expect(teacher.getByRole('button',{name:'Usar PDF original',exact:true})).toBeVisible();
   await teacher.screenshot({path:'test-results/reference-coherent-no-disclosure.png',fullPage:true});

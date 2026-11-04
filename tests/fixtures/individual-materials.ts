@@ -40,5 +40,4 @@ export async function addPdf(page:Page,student='student-a'){
  await page.getByLabel('Aluno da turma',{exact:true}).selectOption(student);
  await page.getByLabel('Adicionar arquivo PDF',{exact:true}).setInputFiles({name:'rotas.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
  await expect(page.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Continuar →',exact:true}).click();
 }
