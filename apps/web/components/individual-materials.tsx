@@ -159,24 +159,37 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo adicionado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'}`:labels[source.status]}</p></div></div>:null;
   if(loading)return <p role="status">Carregando alunos e materiais…</p>;
   const released=!!current&&current.status==='released'&&current.studentId===studentId;
-  const comparison=<MaterialComparison missionId={missionId} source={source} adaptation={current} studentName={student?.name} originalOnly={delivery==='original'} document={document} dirty={dirty} view={readerView} onViewChange={setReaderView}/>;
+  const fileControl=<div className="workspace-file-control">
+    <span className="pdf-file-badge" aria-hidden="true">PDF</span>
+    {sources.length>0&&<select aria-label="Arquivo PDF" value={sourceId} disabled={locked} onChange={e=>chooseSource(e.target.value)}>
+      <option value="" disabled>Escolher arquivo</option>
+      {sources.map(file=><option key={file.id} value={file.id}>{file.title}</option>)}
+    </select>}
+    {!archived&&<div className="material-upload-control"><label htmlFor="material-upload">Adicionar arquivo PDF</label><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
+  </div>;
+  const comparison=<MaterialComparison missionId={missionId} source={source} adaptation={current} studentName={student?.name} originalOnly={delivery==='original'} document={document} dirty={dirty} view={readerView} onViewChange={setReaderView} singleView fileControl={fileControl}/>;
+  const canRelease=!archived&&step===3&&!activityOnly&&!released&&!!student&&(delivery==='original'||current?.status==='ready');
+  function releaseMaterial(){
+    if(!canRelease||!reviewed||locked)return;
+    if(delivery==='original'){void sendOriginal();return;}
+    void operation(async()=>{
+      update(await api('releaseMaterial',{params:{id:missionId,adaptationId:current!.id},body:{expectedRevision:current!.revision,reviewed:true}}));
+      setMessage(`Material disponibilizado para ${student!.name}. No rascunho, ficará disponível após publicar esta versão.`);
+    });
+  }
   return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material individual">
-    <header><h2 ref={heading} tabIndex={-1}>{student?(step===3?`Conferir material de ${student.name}`:`Prepare o material para ${student.name}`):'Preparar material para um aluno'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o aluno.'):'Selecione o arquivo e prepare uma versão para o aluno, sem sair desta tela.'}</p></header>
+    <header><h2 ref={heading} tabIndex={-1}>{student?`Apoios para ${student.name}`:'Preparar material para um aluno'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o aluno.'):'Selecione o arquivo e prepare uma versão para o aluno, sem sair desta tela.'}</p></header>
     {(error||message)&&<OperationStatus message={error||message} error={!!error}/>}
     {error&&<button className="text-button" type="button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo</button>}
-    {step>0&&student&&<div className="simple-student-context"><div><strong>{student.name}</strong><p className="small">{declared?.disabilities?.length?declared.disabilities.map(d=>materialProfiles.find(p=>p.id===d)?.label??({visual:'Visual (sem detalhar)',hearing:'Auditiva (sem detalhar)',other:'Outra deficiência',multiple:'Múltipla'} as Record<string,string>)[d]??d).join(' · ')+' · informação compartilhada pelo aluno':'Nenhuma deficiência informada'}</p></div><button type="button" className="text-button" disabled={busy||!!pending} onClick={()=>{if((dirty||activityDirty)&&!window.confirm('Descartar as alterações ainda não salvas?'))return;setDirty(false);setActivityDirty(false);setStep(0);}}>Alterar aluno</button></div>}
-    <div className="material-desk material-desk-stacked">
-      <aside className="material-files-panel paper form-stack" aria-label="Arquivos da missão">
-        <h3>Arquivos</h3>
-        {!archived&&<div className="material-upload-control"><label htmlFor="material-upload">Adicionar arquivo PDF</label><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
-        <p className="small">PDF de até 10 MB e 20 páginas.</p>
-        {sources.length?<><ul className="material-source-list">{sources.map(s=><li key={s.id}><button type="button" className="material-source-button" aria-pressed={s.id===sourceId} disabled={locked} onClick={()=>chooseSource(s.id)}><span className="pdf-file-badge" aria-hidden="true">PDF</span><span><strong>{s.title}</strong><span className="small">{labels[s.status]}</span></span></button></li>)}</ul></>:<p className="small">Adicione o material que deseja preparar.</p>}
-        {current&&<nav className="material-file-outputs" aria-label="Versões do arquivo"><button type="button" className="text-button" onClick={()=>setReaderView('original')}>PDF original</button>{delivery!=='original'&&<button type="button" className="text-button" onClick={()=>setReaderView('prepared')}>Leitura preparada</button>}{current.hasAudio&&!dirty&&<a href="#material-audio" onClick={()=>setReaderView('prepared')}>Áudio do material</a>}</nav>}
-        <p className="small">Os arquivos são privados. O aluno recebe apenas a versão que você disponibilizar.</p>
-      </aside>
-
-      {step===3&&!activityOnly&&comparison}
-      <aside className="material-controls-panel" aria-label="Preparação e revisão do material">
+    <div className="material-reference-desk">
+      <aside className="material-controls-panel material-reference-settings" aria-label="Preparação e revisão do material">
+    {step>0&&student&&<div className="simple-student-context"><div><strong>{student.name}</strong><p className="small">{declared?.disabilities?.length?declared.disabilities.map(d=>materialProfiles.find(p=>p.id===d)?.label??({visual:'Visual (sem detalhar)',hearing:'Auditiva (sem detalhar)',other:'Outra deficiência',multiple:'Múltipla'} as Record<string,string>)[d]??d).join(' · ')+' · informação compartilhada pelo aluno':'Nenhuma deficiência informada'}</p></div><button type="button" className="text-button" disabled={busy||!!pending} onClick={()=>{if((dirty||activityDirty)&&!window.confirm('Descartar as alterações ainda não salvas?'))return;setDirty(false);setActivityDirty(false);setShowActivity(false);setStep(0);}}>Alterar aluno</button></div>}
+        {student&&step>0&&!activityOnly&&!archived&&version&&<div className="material-workspace-switch" role="group" aria-label="Tipo de apoio">
+          <button type="button" aria-pressed={!showActivity} disabled={activityDirty} onClick={()=>setShowActivity(false)}>Material</button>
+          <button type="button" aria-pressed={showActivity} disabled={busy||!!pending} onClick={()=>setShowActivity(true)}>Atividade e entrega</button>
+        </div>}
+        {showActivity&&version&&student&&step>0&&!activityOnly&&<StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} disabled={busy||!!pending} onDirty={activityChanged}/>}
+        <div className="material-workspace-settings-content" hidden={showActivity&&step>0&&!activityOnly}>
     {archived?<p className="notice">Missão arquivada. Consulte os materiais salvos abaixo.</p>:<>
       {step===0&&<section className="paper form-stack">
         <label htmlFor="material-student">Aluno da turma</label><select id="material-student" value={studentId} disabled={busy} onChange={e=>chooseStudent(e.target.value)}><option value="">Escolha um aluno</option>{students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
@@ -235,15 +248,15 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           {(dirty||current.status==='draft')&&<button className="button" type="button" disabled={busy||activityDirty||current.settings.supports.includes('image-description')&&document.some(page=>!page.description.trim())} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
           <details><summary>Leitura em texto e transcrição</summary><PreparedDocument document={current.document} missionId={missionId} adaptationId={current.id}/></details>
         </>}
-        {version&&<><button type="button" className="text-button" aria-expanded={showActivity} aria-controls="material-activity-panel" disabled={busy||!!pending||activityDirty} onClick={()=>setShowActivity(value=>!value)}>Ajustar atividade e entrega</button>
-          <div id="material-activity-panel" hidden={!showActivity}>{showActivity&&<StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} disabled={busy||!!pending} onDirty={activityChanged}/>}</div></>}
-        {!released&&(delivery==='original'||current?.status==='ready')&&<><label className="check"><input type="checkbox" disabled={dirty||activityDirty||busy||!!pending} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>Conferi o material e o destinatário. Posso disponibilizar para {student.name}.</label><button className="button" type="button" disabled={!reviewed||dirty||activityDirty||busy||!!pending} onClick={()=>delivery==='original'?void sendOriginal():void operation(async()=>{update(await api('releaseMaterial',{params:{id:missionId,adaptationId:current!.id},body:{expectedRevision:current!.revision,reviewed:true}}));setMessage(`Material disponibilizado para ${student.name}. No rascunho, ficará disponível após publicar esta versão.`);})}>Disponibilizar para {student.name} →</button></>}
-        <button className="text-button" type="button" disabled={dirty||activityDirty||busy} onClick={()=>{setStep(0);setSelectedId('');setEditText(false);}}>Preparar outro material</button>
+        {canRelease&&<label className="check"><input type="checkbox" disabled={locked} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>Conferi o material e o destinatário. Posso disponibilizar para {student.name}.</label>}
+        <button className="text-button" type="button" disabled={dirty||activityDirty||busy} onClick={()=>{setStep(0);setShowActivity(false);setSelectedId('');setEditText(false);}}>Preparar outro material</button>
       </section>}
     </>}
+        </div>
       </aside>
-      {step!==3&&!activityOnly&&comparison}
+      {comparison}
     </div>
+    {canRelease&&<footer className="material-reference-footer"><button className="button" type="button" disabled={!reviewed||locked||showActivity} onClick={releaseMaterial}>Disponibilizar para {student.name} →</button></footer>}
     {busy&&<p role="status">Salvando sua solicitação…</p>}
     {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.studentId);setSourceId(a.sourceId);setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setManualDescription(!a.settings.useAi&&a.settings.supports.includes('image-description'));setFontSize(a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description'));setActivityOnly(false);setShowActivity(false);setStep(a.status==='ready'||a.status==='released'||a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description')?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm('Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(0);}});}}>Remover material</button>}</div></article>)}</details>}
   </section>;
