@@ -6,15 +6,18 @@ import { serial } from './database.js';
 import { fail, missing } from './errors.js';
 import { scopedMission } from './product.service.js';
 import { budget, digest } from './rate-limit.js';
-import { documentPage, materialDocument, materialSettings } from './material-contracts.js';
+import { documentPage, materialDocument, storedMaterialSettings } from './material-contracts.js';
 import { checkDiskBudget, materialPath, removeMaterialFiles, storeOriginal } from './material-files.js';
 import type { Config } from './config.js';
 export const extractedPages = z.array(z.strictObject({ page: z.number().int().min(1).max(20), text: z.string().max(40000), hasVisual: z.boolean(), ocr: z.boolean() })).max(20);
 export const sourcePublic = (s: MaterialSource) => ({ id: s.id, versionId: s.versionId, title: s.title, status: s.status, pageCount: s.pageCount,
   pages: s.status === 'ready' ? extractedPages.parse(s.pages) : [], warnings: z.array(z.string()).parse(s.warnings), expiresAt: s.expiresAt });
-export const adaptationPublic = (s: MaterialAdaptation) => ({ mode: materialSettings.parse(s.settings).deliveryMode??'adapted', id: s.id, versionId: s.versionId, sourceId: s.sourceId, studentId: s.studentId,
-  status: s.status, settings: materialSettings.parse(s.settings), pages: z.array(z.number()).parse(s.pages), document: z.array(documentPage).parse(s.document), revision: s.revision,
-  error: s.error, hasAudio: s.hasAudio, inputTokens: s.inputTokens, outputTokens: s.outputTokens, expiresAt: s.expiresAt });
+export const adaptationPublic = (s: MaterialAdaptation) => {
+  const { regeneratePage: _queuedPage, ...settings } = storedMaterialSettings.parse(s.settings);
+  return { mode: settings.deliveryMode??'adapted', id: s.id, versionId: s.versionId, sourceId: s.sourceId, studentId: s.studentId,
+  status: s.status, settings, pages: z.array(z.number()).parse(s.pages), document: z.array(documentPage).parse(s.document), revision: s.revision,
+  error: s.error, hasAudio: s.hasAudio, inputTokens: s.inputTokens, outputTokens: s.outputTokens, expiresAt: s.expiresAt };
+};
 export class MaterialService {
   constructor(readonly db: PrismaClient, readonly config: Config) {}
   async execute(op: Operation, userId: string, p: Record<string, string>, body: unknown, query: unknown): Promise<unknown> {
@@ -28,7 +31,7 @@ export class MaterialService {
         const { versionId } = query as { versionId: string };
         if (row.publishedVersionId !== versionId) return missing();
         const rows = await tx.materialAdaptation.findMany({ where: { versionId, studentId: userId, status: 'released', expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
-        return { items: rows.map(a => ({ id: a.id, title: a.source.title, mode: materialSettings.parse(a.settings).deliveryMode??'adapted', document: materialSettings.parse(a.settings).deliveryMode==='original' ? [] : materialDocument.parse(a.document), hasAudio: a.hasAudio })) };
+        return { items: rows.map(a => ({ id: a.id, title: a.source.title, mode: storedMaterialSettings.parse(a.settings).deliveryMode??'adapted', document: storedMaterialSettings.parse(a.settings).deliveryMode==='original' ? [] : materialDocument.parse(a.document), hasAudio: a.hasAudio })) };
       }
       if (['materialSources', 'materialAdaptations'].includes(op)) {
         const { versionId } = query as { versionId: string }; current(versionId);
@@ -82,7 +85,7 @@ export class MaterialService {
         const selected = extractedPages.parse(source.pages).filter(v => input.pages.includes(v.page));
         if (selected.length !== input.pages.length) return fail(400, 'INVALID_PAGES', 'Confira as páginas.');
         if (selected.reduce((n, v) => n + v.text.length, 0) > 12000) return fail(400, 'INPUT_TOO_LARGE', 'Selecione menos páginas (até 12 mil caracteres por adaptação).');
-        const requiresAi = input.settings.supports.some(s => ['literal-language', 'short-sections', 'glossary', 'image-description'].includes(s));
+        const requiresAi = input.settings.supports.some(s => ['literal-language', 'short-sections', 'glossary'].includes(s));
         if (requiresAi && !input.settings.useAi) return fail(400, 'AI_REQUIRED', 'Esses apoios precisam de rascunho IA. Você pode escolher apenas formatação e áudio locais.');
         if (input.settings.useAi && (!this.config.aiEnabled || !input.settings.approvedForProvider)) return fail(503, 'AI_UNAVAILABLE', 'Ative e autorize a assistência antes de gerar.');
         const requestHash = digest(JSON.stringify({ ...input, requestKey: undefined, settings: { ...input.settings, supports: [...input.settings.supports].sort() }, pages: [...input.pages].sort((a,b) => a-b) }));
@@ -102,18 +105,35 @@ export class MaterialService {
       const old = await tx.materialAdaptation.findFirst({ where: { id: p.adaptationId, version: { missionId: row.id }, expiresAt: { gt: new Date() } } }); if (!old) return missing(); current(old.versionId);
       if (['queued', 'generating', 'rendering'].includes(old.status)) return fail(409, 'MATERIAL_BUSY', 'Aguarde o processamento.');
       if (op === 'removeMaterial') { await tx.materialAdaptation.update({ where: { id: old.id }, data: { expiresAt: new Date(0), status: 'draft' } }); return { removed: true }; }
-      if(materialSettings.parse(old.settings).deliveryMode==='original')return fail(409,'ORIGINAL_UNCHANGED','O original permanece inalterado. Prepare outra versão para adaptar.');
+      if(storedMaterialSettings.parse(old.settings).deliveryMode==='original')return fail(409,'ORIGINAL_UNCHANGED','O original permanece inalterado. Prepare outra versão para adaptar.');
       const input = body as Body<'editMaterial'> | Body<'releaseMaterial'>;
       if (old.revision !== input.expectedRevision) return fail(409, 'REVISION_CONFLICT', 'A revisão mudou. Reabra a adaptação.');
       if (op === 'editMaterial') {
-        const document = materialDocument.parse((input as Body<'editMaterial'>).document);
+        const edit = input as Body<'editMaterial'>;
+        const document = materialDocument.parse(edit.document);
         if (JSON.stringify(document.map(p => p.page).sort((a,b)=>a-b)) !== JSON.stringify(z.array(z.number()).parse(old.pages))) return fail(400, 'INVALID_PAGES', 'Mantenha todas as páginas selecionadas.');
         if (document.reduce((n,p)=>n+p.text.length+p.description.length,0)>20000) return fail(400, 'INPUT_TOO_LARGE', 'Até 20 mil caracteres por adaptação.');
-        return adaptationPublic(await tx.materialAdaptation.update({ where: { id: old.id }, data: { document, status: 'draft', revision: { increment: 1 }, hasAudio: false, error: null } }));
+        if (edit.regeneratePage !== undefined) {
+          const settings = storedMaterialSettings.parse(old.settings);
+          if (!['draft', 'ready'].includes(old.status) || !document.some(page => page.page === edit.regeneratePage))
+            return fail(409, 'INVALID_REGENERATION', 'Escolha uma página de um rascunho ainda não disponibilizado.');
+          if (!this.config.aiEnabled || !settings.useAi || !edit.approvedForProvider)
+            return fail(400, 'AI_REQUIRED', 'Autorize o envio da página original ao Gemini para refazer o trecho.');
+          if (!await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: old.studentId, role: 'student', active: true } }))
+            return missing();
+          if (await tx.materialAdaptation.count({ where: { creatorId: userId, status: { in: ['queued', 'generating'] }, settings: { path: ['useAi'], equals: true } } }))
+            return fail(429, 'AI_BUSY', 'Aguarde sua preparação em andamento.');
+          await budget(tx, `material-prepare:${userId}`, 10, 86400);
+          return adaptationPublic(await tx.materialAdaptation.update({ where: { id: old.id }, data: {
+            document, settings: { ...settings, regeneratePage: edit.regeneratePage, approvedForProvider: true },
+            creatorId: userId, status: 'queued', startedAt: null, revision: { increment: 1 }, hasAudio: false, error: null,
+          } }));
+        }
+        return adaptationPublic(await tx.materialAdaptation.update({ where: { id: old.id }, data: { document, settings: { ...storedMaterialSettings.parse(old.settings), regeneratePage: undefined }, status: 'draft', revision: { increment: 1 }, hasAudio: false, error: null } }));
       }
       if (op === 'renderMaterial') {
         materialDocument.parse(old.document);
-        if (materialSettings.parse(old.settings).supports.includes('image-description') && materialDocument.parse(old.document).some(v => !v.description.trim())) return fail(400, 'DESCRIPTION_REQUIRED', 'Descreva a informação visual, ou indique que a página não tem imagens relevantes.');
+        if (storedMaterialSettings.parse(old.settings).supports.includes('image-description') && materialDocument.parse(old.document).some(v => !v.description.trim())) return fail(400, 'DESCRIPTION_REQUIRED', 'Descreva a informação visual, ou indique que a página não tem imagens relevantes.');
         return adaptationPublic(await tx.materialAdaptation.update({ where: { id: old.id }, data: { status: 'rendering', startedAt: null, error: null } }));
       }
       if (op === 'releaseMaterial') {
@@ -148,7 +168,7 @@ export class MaterialService {
       const a = await tx.materialAdaptation.findFirst({ where: { id: p.assetId, version: { missionId: row.id }, status: { in: ['ready', 'released'] }, expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } } });
       if (!a || ![row.draftVersionId, row.publishedVersionId].includes(a.versionId)) return missing();
       if (member.role === 'student' && (a.studentId !== userId || a.status !== 'released' || a.versionId !== row.publishedVersionId)) return missing();
-      if(materialSettings.parse(a.settings).deliveryMode==='original'){if(p.kind!=='pdf')return missing();return {path:materialPath(a.sourceId,'original.pdf'),mime:'application/pdf',name:'material-original.pdf'};}
+      if(storedMaterialSettings.parse(a.settings).deliveryMode==='original'){if(p.kind!=='pdf')return missing();return {path:materialPath(a.sourceId,'original.pdf'),mime:'application/pdf',name:'material-original.pdf'};}
       if (p.kind.startsWith('page-')) {
         const page = Number(p.kind.slice(5)); if (!z.array(z.number()).parse(a.pages).includes(page)) return missing();
         return { path: materialPath(a.sourceId, `page-${page}.png`), mime: 'image/png', name: 'pagina-original.png' };

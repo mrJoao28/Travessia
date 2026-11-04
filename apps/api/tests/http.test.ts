@@ -445,13 +445,17 @@ test('Gemini para apoios: envio mínimo, revisão, deduplicação, saída invál
   invalid = true;
   await request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 502);
   invalid = false; held = true;
-  const generating = request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 502);
+  const generating = request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 404);
   while (!releaseSupport) await new Promise(resolve => setTimeout(resolve, 10));
   await request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 429);
   await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: classroom.id } }, data: { active: false } });
-  releaseSupport(); await generating;
-  await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: classroom.id } }, data: { active: true } });
-  config.aiEnabled = false;
+  try {
+    releaseSupport();
+    assert.equal((await generating).json.code, 'NOT_FOUND');
+  } finally {
+    config.aiEnabled = false;
+    await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: classroom.id } }, data: { active: true } });
+  }
 });
 test('necessidades autodeclaradas são privadas: compartilhamento separado, revogável e restrito à turma', async () => {
   await request('/v1/me/learning-needs', '', 'GET', undefined, 401);
@@ -587,8 +591,10 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   assert.equal((await request(`${path}/material-sources`, main, 'POST', upload)).json.id, source.id);
   await request(`${path}/material-assets/${source.id}/original`, main, 'GET', undefined, 404);
   await request(`${path}/material-assets/${source.id}/page-1`, main, 'GET', undefined, 404);
-  const local = async (mode: 'extract' | 'audio', filename: string) => {
+  let audioScript = '';
+  const local = async (mode: 'extract' | 'audio', filename: string, script?: string) => {
     if (mode === 'extract') { await writeFile(materialPath(source.id, 'page-1.png'), 'visual fixture'); return { pages: [{ page: 1, text: 'Dados: 10 metros. Compare alternativas.', hasVisual: true, ocr: false }], warnings: ['Conferir tabela.'] }; }
+    audioScript = script ?? '';
     await writeFile(filename, 'audio fixture'); return {};
   };
   const pdf = async (filename: string, html: string) => { assert.ok(html.includes('lang="pt-BR"')); assert.ok(!html.includes('<script>')); await writeFile(filename, '%PDF-render fixture'); };
@@ -632,6 +638,12 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   const aiPlan=(await request(`${path}/material-adaptations`,main,'POST',aiInput)).json;
   await worker.tick();assert.equal(calls,1);assert.ok(sent.includes('image'));assert.ok(!sent.includes('demo-student-1')&&!sent.includes('example.invalid')&&!sent.includes('blindness'));
   const cached=(await request(`${path}/material-adaptations`,main,'POST',{...aiInput,requestKey:randomUUID()})).json;assert.equal(cached.id,aiPlan.id);assert.equal(calls,1);
+  await request(`${path}/material-adaptations/${aiPlan.id}/render`, main, 'POST', { expectedRevision: cached.revision });
+  await worker.tick();
+  assert.equal((await db.materialAdaptation.findUniqueOrThrow({ where: { id: aiPlan.id } })).hasAudio, true);
+  assert.match(audioScript, /Diagrama compara duas alternativas/);
+  assert.doesNotMatch(audioScript, /Dados: 10 metros/);
+  assert.equal(calls, 1, 'A voz local não gera outra chamada de IA');
   const next=(await request(`${path}/material-adaptations`,main,'POST',{...aiInput,studentId:'demo-student-2',requestKey:randomUUID()})).json;
   await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:false}});await worker.tick();assert.equal(calls,1);
   assert.equal((await db.materialAdaptation.findUniqueOrThrow({where:{id:next.id}})).status,'failed');
@@ -688,11 +700,12 @@ test('narração integral: quatro páginas preservadas, descrição IA separada 
   await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
   const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Quatro páginas fictícias',base64:Buffer.from('%PDF-1.4\nfixture').toString('base64'),requestKey:randomUUID()})).json;
   const pages=[1,2,3,4].map(page=>({page,text:`Texto integral da página ${page}. Valor: ${page*10} metros. Última frase ${page}.`,hasVisual:true,ocr:false}));
-  let aiCalls=0, audioCalls=0, spoken='';
+  let aiCalls=0, audioCalls=0, spoken='', failRegeneration=false;
   const worker=new MaterialWorker(db,config,async input=>{
     aiCalls++; assert.equal(input.descriptionsOnly,true);
-    assert.deepEqual(input.pages.map(p=>p.text),pages.map(p=>p.text));
-    return {document:input.pages.map(p=>({page:p.page,title:'Título inventado',text:'Resumo que deve ser ignorado.',description:`Descrição visual da página ${p.page}.`}))};
+    assert.deepEqual(input.pages.map(p=>p.text),(aiCalls === 1 ? pages : [pages[1]]).map(p=>p.text));
+    if (failRegeneration) throw Object.assign(new Error('provider payload must stay private'), { status: 429 });
+    return {document:input.pages.map(p=>({page:p.page,title:'Título inventado',text:'Resumo que deve ser ignorado.',description:`Descrição visual da página ${p.page}.${aiCalls > 1 ? " Revisada." : ""}`}))};
   },async(mode,filename,input)=>{
     if(mode==='extract') {for(const p of pages)await writeFile(materialPath(source.id,`page-${p.page}.png`),'visual fixture');return {pages,warnings:[]};}
     audioCalls++; spoken=input??''; await writeFile(filename,'audio fixture');return {};
@@ -701,10 +714,29 @@ test('narração integral: quatro páginas preservadas, descrição IA separada 
   try {
     const plan=(await request(`${path}/material-adaptations`,main,'POST',{versionId,sourceId:source.id,studentId:'demo-student-1',pages:[1,2,3,4],settings:{supports:['image-description','narration'],fontSize:'18',color:'default',useAi:true,approvedForProvider:true},requestKey:randomUUID()})).json;
     await worker.tick(); assert.equal(aiCalls,1);
-    const draft=(await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items.find((p:{id:string})=>p.id===plan.id);
+    const readDraft = async () => (await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items.find((p:{id:string})=>p.id===plan.id);
+    const original = await readDraft();
+    const adaptationPath = `${path}/material-adaptations/${plan.id}`;
+    const edit = { expectedRevision: original.revision, document: original.document, regeneratePage: 2, approvedForProvider: true };
+    await request(adaptationPath, main, 'PATCH', { ...edit, approvedForProvider: undefined }, 400);
+    await request(adaptationPath, main, 'PATCH', edit);
+    await request(adaptationPath, main, 'PATCH', edit, 409);
+    await worker.tick();
+    const regenerated = await readDraft();
+    assert.equal(aiCalls, 2);
+    assert.deepEqual(regenerated.document.filter((p:{page:number})=>p.page!==2), original.document.filter((p:{page:number})=>p.page!==2));
+    assert.equal(regenerated.document[1].description, 'Descrição visual da página 2. Revisada.');
+    failRegeneration = true;
+    await request(adaptationPath, main, 'PATCH', { ...edit, expectedRevision: regenerated.revision, document: regenerated.document });
+    await worker.tick();
+    const draft = await readDraft();
+    assert.equal(draft.status, 'draft');
+    assert.match(draft.error, /limite de uso/);
+    assert.ok(!draft.error.includes('provider payload'));
+    assert.deepEqual(draft.document, regenerated.document);
     assert.deepEqual(draft.document.map((p:{text:string})=>p.text),pages.map(p=>p.text));
     await request(`${path}/material-adaptations/${plan.id}/render`,main,'POST',{expectedRevision:draft.revision});
-    await worker.tick();assert.equal(audioCalls,1);assert.equal(aiCalls,1,'Gerar voz não chama Gemini novamente');
+    await worker.tick();assert.equal(audioCalls,1);assert.equal(aiCalls,3,'Gerar voz não chama Gemini novamente');
     assert.equal(spoken,materialNarration(draft.document));
     for(const p of pages){assert.ok(spoken.includes(p.text));assert.ok(spoken.includes(`Descrição visual da página ${p.page}.`));assert.ok(spoken.includes(`Fim da página ${p.page}.`));}
     assert.ok(spoken.indexOf('Fim da página 1.')<spoken.indexOf('Página 2 do original.'));

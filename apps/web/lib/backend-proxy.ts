@@ -124,6 +124,10 @@ export async function proxyBackend(
     const value = request.headers.get(key);
     if (value) headers.set(key, value);
   }
+  const media = group === "v1" && request.method === "GET" &&
+    path.length === 5 && path[0] === "missions" && path[2] === "material-assets";
+  const range = request.headers.get("range");
+  if (media && range && /^bytes=\d*-\d*$/.test(range)) headers.set("range", range);
   // The API must explicitly trust the public frontend origin, never the internal hostname.
   headers.set("x-forwarded-host", new URL(publicOrigin).host);
   headers.set("x-forwarded-proto", new URL(publicOrigin).protocol.slice(0, -1));
@@ -177,6 +181,10 @@ export async function proxyBackend(
       );
     const responseHeaders = new Headers({ "Cache-Control": "no-store" });
     for (const key of ["content-type", "retry-after", "etag", "content-disposition", "x-content-type-options"]) {
+      const value = upstream.headers.get(key);
+      if (value) responseHeaders.set(key, value);
+    }
+    if (media) for (const key of ["accept-ranges", "content-range"]) {
       const value = upstream.headers.get(key);
       if (value) responseHeaders.set(key, value);
     }

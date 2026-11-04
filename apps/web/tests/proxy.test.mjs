@@ -220,3 +220,22 @@ test("áudio usa orçamento ampliado somente em escritas de aplicações, manten
   assert.equal((await proxyBackend(request("/api/v1/missions/m/strategy-plans", { audio: "a".repeat(2 * 1024 * 1024) }), "v1", ["missions", "m", "strategy-plans"], settings)).status, 413);
   assert.equal(calls, 1);
 });
+
+test("proxy forwards playback ranges and partial-content headers for private material audio", async (t) => {
+  t.mock.method(globalThis, "fetch", async (_destination, options) => {
+    assert.equal(options.headers.get("range"), "bytes=0-1");
+    return new Response(Uint8Array.of(73, 68), {
+      status: 206,
+      headers: { "Content-Type": "audio/mpeg", "Content-Range": "bytes 0-1/20", "Accept-Ranges": "bytes" },
+    });
+  });
+  const path = ["missions", "mission", "material-assets", "adaptation", "audio"];
+  const response = await proxyBackend(request("/api/v1/" + path.join("/"), undefined, {
+    headers: { range: "bytes=0-1" },
+  }), "v1", path, settings);
+  assert.equal(response.status, 206);
+  assert.equal(response.headers.get("content-range"), "bytes 0-1/20");
+  assert.equal(response.headers.get("accept-ranges"), "bytes");
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(new Uint8Array(await response.arrayBuffer()), Uint8Array.of(73, 68));
+});

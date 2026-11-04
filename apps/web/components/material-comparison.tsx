@@ -10,6 +10,7 @@ type Document = ApiBody<'editMaterial'>['document'];
 /** Private source images and semantic reading preview; the exported PDF remains available for review. */
 export function MaterialComparison({missionId,source,adaptation,studentName,originalOnly,document,dirty,view,onViewChange,assetUrl,illustrative=false}:{illustrative?:boolean;assetUrl?:(id:string,kind:Parameters<typeof materialAssetUrl>[2])=>string;view:'original'|'prepared';onViewChange:(view:'original'|'prepared')=>void;missionId:string;source?:Source;adaptation?:Adaptation;studentName?:string;originalOnly:boolean;document:Document;dirty:boolean}) {
  const asset=(id:string,kind:Parameters<typeof materialAssetUrl>[2])=>assetUrl?assetUrl(id,kind):materialAssetUrl(missionId,id,kind);
+ const [audioError,setAudioError]=useState(false);
  const [page,setPage]=useState(1);
  const [zoom,setZoom]=useState(1),[imageFailed,setImageFailed]=useState(false);
  const current=adaptation?.sourceId===source?.id?adaptation:undefined;
@@ -21,9 +22,14 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
  useEffect(()=>{setPage(1);setZoom(1);setImageFailed(false);},[source?.id,current?.id]);
  useEffect(()=>{setImageFailed(false);},[shown]);
  useEffect(()=>{onViewChange(originalOnly?'original':'prepared');},[originalOnly,onViewChange]);
+ const audioUrl=current?.hasAudio?asset(current.id,'audio'):undefined;
+ useEffect(()=>{setAudioError(false);},[audioUrl,current?.revision]);
  const settings=current?.settings;
  const textStyle:CSSProperties={fontSize:`${settings?.supports.includes('large-print')?Number(settings.fontSize)*zoom:18*zoom}pt`,lineHeight:settings?.supports.includes('wide-spacing')?1.8:1.5};
  const colors=settings?.color??'default';
+ const narration=settings?.supports.includes('narration');
+ const visualDescriptions=settings?.supports.includes('image-description');
+ const audioLabel=narration?(visualDescriptions?'Ouvir leitura e audiodescrição':'Ouvir leitura em áudio'):'Ouvir audiodescrição';
  const originalReady=source?.status==='ready';
  return <section className="material-comparison" aria-label="Comparação do material">
    <div className="comparison-toolbar">
@@ -46,9 +52,16 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
        <header><h3>{studentName?`Preparado para ${studentName}`:'Preparado para o aluno'}</h3>{dirty&&<span className="small">Alterações ainda não salvas</span>}</header>
        <div className="comparison-reader" role="region" aria-label="Leitura do documento preparado" tabIndex={0}>
          {originalOnly?<div className="comparison-empty"><span className="pdf-file-badge" aria-hidden="true">PDF</span><h4>O mesmo PDF, sem alterações</h4><p>{illustrative?'Confira o original ao lado. Este arquivo é um exemplo público fictício.':'Confira o original ao lado. A entrega continua exclusiva do aluno escolhido.'}</p></div>:(ready||dirty)&&prepared?<>
+           {ready&&current?.hasAudio&&!dirty&&!illustrative&&<section id="material-audio" className="material-preview-audio" aria-label={audioLabel}>
+             <h4>{audioLabel}</h4>
+             {narration&&<p className="small">Narração integral das páginas preparadas{visualDescriptions?', incluindo as descrições visuais':''}.</p>}
+             <audio key={current.revision} controls preload="none" aria-label={audioLabel} src={audioUrl} onError={()=>setAudioError(true)}/>
+             {audioError&&<p role="alert">Não foi possível reproduzir o áudio aqui. Abra o arquivo diretamente para conferir.</p>}
+             <a className="text-link" href={audioUrl} download>Baixar áudio da prévia</a>
+           </section>}
            <article className="comparison-paper" data-color={colors} style={textStyle}><PreparedDocument document={[prepared]}/></article>
            <p className="small comparison-preview-note">Prévia de leitura. Confira também a diagramação no PDF gerado antes de disponibilizar.</p>
-         </>:<div className="comparison-empty"><span aria-hidden="true" className="comparison-preview-icon">Aa</span><h4>{current?'Preparando a leitura':'A versão preparada aparece aqui'}</h4><p>{current?.status==='failed'?'A preparação falhou. Consulte o aviso no painel de revisão.':current?'O resultado aparecerá depois do processamento.':'Escolha o aluno e os apoios no painel ao lado. Depois, prepare a prévia.'}</p></div>}
+         </>:<div className="comparison-empty"><span aria-hidden="true" className="comparison-preview-icon">Aa</span><h4>{current?'Preparando a leitura':'A versão preparada aparece aqui'}</h4><p>{current?.status==='failed'?'A preparação falhou. Consulte o aviso no painel de revisão.':current?'O resultado aparecerá depois do processamento.':'Escolha os apoios e prepare a prévia para comparar o resultado com o original.'}</p></div>}
        </div>
      </section>
    </div>
