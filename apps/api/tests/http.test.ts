@@ -591,8 +591,10 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   assert.equal((await request(`${path}/material-sources`, main, 'POST', upload)).json.id, source.id);
   await request(`${path}/material-assets/${source.id}/original`, main, 'GET', undefined, 404);
   await request(`${path}/material-assets/${source.id}/page-1`, main, 'GET', undefined, 404);
-  const local = async (mode: 'extract' | 'audio', filename: string) => {
+  let audioScript = '';
+  const local = async (mode: 'extract' | 'audio', filename: string, script?: string) => {
     if (mode === 'extract') { await writeFile(materialPath(source.id, 'page-1.png'), 'visual fixture'); return { pages: [{ page: 1, text: 'Dados: 10 metros. Compare alternativas.', hasVisual: true, ocr: false }], warnings: ['Conferir tabela.'] }; }
+    audioScript = script ?? '';
     await writeFile(filename, 'audio fixture'); return {};
   };
   const pdf = async (filename: string, html: string) => { assert.ok(html.includes('lang="pt-BR"')); assert.ok(!html.includes('<script>')); await writeFile(filename, '%PDF-render fixture'); };
@@ -636,6 +638,12 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   const aiPlan=(await request(`${path}/material-adaptations`,main,'POST',aiInput)).json;
   await worker.tick();assert.equal(calls,1);assert.ok(sent.includes('image'));assert.ok(!sent.includes('demo-student-1')&&!sent.includes('example.invalid')&&!sent.includes('blindness'));
   const cached=(await request(`${path}/material-adaptations`,main,'POST',{...aiInput,requestKey:randomUUID()})).json;assert.equal(cached.id,aiPlan.id);assert.equal(calls,1);
+  await request(`${path}/material-adaptations/${aiPlan.id}/render`, main, 'POST', { expectedRevision: cached.revision });
+  await worker.tick();
+  assert.equal((await db.materialAdaptation.findUniqueOrThrow({ where: { id: aiPlan.id } })).hasAudio, true);
+  assert.match(audioScript, /Diagrama compara duas alternativas/);
+  assert.doesNotMatch(audioScript, /Dados: 10 metros/);
+  assert.equal(calls, 1, 'A voz local não gera outra chamada de IA');
   const next=(await request(`${path}/material-adaptations`,main,'POST',{...aiInput,studentId:'demo-student-2',requestKey:randomUUID()})).json;
   await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:false}});await worker.tick();assert.equal(calls,1);
   assert.equal((await db.materialAdaptation.findUniqueOrThrow({where:{id:next.id}})).status,'failed');

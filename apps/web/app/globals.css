@@ -1857,7 +1857,17 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   gap: .75rem;
   margin-block: .75rem;
 }
-.material-support-card-grid .simple-support-option { height: 100%; }
+.material-support-card-grid .simple-support-option {
+  height: 100%;
+  padding: .9rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  overflow-wrap: anywhere;
+}
+.material-support-card-grid .simple-support-option:has(input:checked) {
+  background: var(--sage);
+  border-color: var(--primary);
+}
 .material-desk-stacked .simple-material-actions .button { width: auto; }
 
 .material-preview-audio {
