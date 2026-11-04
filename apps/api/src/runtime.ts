@@ -83,7 +83,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
       const query = match.route.query.parse(req.query);
       if (match.name === 'materialAsset') {
         const asset = await new MaterialService(db, config).asset(userId, params);
-        res.type(asset.mime); res.setHeader('Content-Disposition', `${asset.mime === 'image/png' ? 'inline' : 'attachment'}; filename="${asset.name}"`);
+        res.type(asset.mime); res.setHeader('Content-Disposition', `${(asset.mime === 'image/png' || asset.mime === 'audio/mpeg') ? 'inline' : 'attachment'}; filename="${asset.name}"`);
         await new Promise<void>((resolve, reject) => res.sendFile(asset.path, error => error ? reject(new HttpException({ code: 'ASSET_UNAVAILABLE', message: 'Arquivo indisponível.' }, 404)) : resolve())); return;
       }
       const result = await service.execute(match.name, userId, params, body, query);

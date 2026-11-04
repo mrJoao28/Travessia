@@ -10,6 +10,7 @@ type Document = ApiBody<'editMaterial'>['document'];
 /** Private source images and semantic reading preview; the exported PDF remains available for review. */
 export function MaterialComparison({missionId,source,adaptation,studentName,originalOnly,document,dirty,view,onViewChange,assetUrl,illustrative=false}:{illustrative?:boolean;assetUrl?:(id:string,kind:Parameters<typeof materialAssetUrl>[2])=>string;view:'original'|'prepared';onViewChange:(view:'original'|'prepared')=>void;missionId:string;source?:Source;adaptation?:Adaptation;studentName?:string;originalOnly:boolean;document:Document;dirty:boolean}) {
  const asset=(id:string,kind:Parameters<typeof materialAssetUrl>[2])=>assetUrl?assetUrl(id,kind):materialAssetUrl(missionId,id,kind);
+ const [audioError,setAudioError]=useState(false);
  const [page,setPage]=useState(1);
  const [zoom,setZoom]=useState(1),[imageFailed,setImageFailed]=useState(false);
  const current=adaptation?.sourceId===source?.id?adaptation:undefined;
@@ -21,6 +22,8 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
  useEffect(()=>{setPage(1);setZoom(1);setImageFailed(false);},[source?.id,current?.id]);
  useEffect(()=>{setImageFailed(false);},[shown]);
  useEffect(()=>{onViewChange(originalOnly?'original':'prepared');},[originalOnly,onViewChange]);
+ const audioUrl=current?.hasAudio?asset(current.id,'audio'):undefined;
+ useEffect(()=>{setAudioError(false);},[audioUrl,current?.revision]);
  const settings=current?.settings;
  const textStyle:CSSProperties={fontSize:`${settings?.supports.includes('large-print')?Number(settings.fontSize)*zoom:18*zoom}pt`,lineHeight:settings?.supports.includes('wide-spacing')?1.8:1.5};
  const colors=settings?.color??'default';
@@ -52,7 +55,9 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
            {ready&&current?.hasAudio&&!dirty&&!illustrative&&<section id="material-audio" className="material-preview-audio" aria-label={audioLabel}>
              <h4>{audioLabel}</h4>
              {narration&&<p className="small">Narração integral das páginas preparadas{visualDescriptions?', incluindo as descrições visuais':''}.</p>}
-             <audio controls preload="none" aria-label={audioLabel} src={asset(current.id,'audio')}/>
+             <audio key={current.revision} controls preload="none" aria-label={audioLabel} src={audioUrl} onError={()=>setAudioError(true)}/>
+             {audioError&&<p role="alert">Não foi possível reproduzir o áudio aqui. Abra o arquivo diretamente para conferir.</p>}
+             <a className="text-link" href={audioUrl} download>Baixar áudio da prévia</a>
            </section>}
            <article className="comparison-paper" data-color={colors} style={textStyle}><PreparedDocument document={[prepared]}/></article>
            <p className="small comparison-preview-note">Prévia de leitura. Confira também a diagramação no PDF gerado antes de disponibilizar.</p>

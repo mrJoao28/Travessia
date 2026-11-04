@@ -7,6 +7,7 @@ import { useTeacherDraftGuard } from "./teacher-steps";
 import { materialAssetUrl, PreparedDocument } from "./prepared-material";
 import { StudentActivitySupport } from "./student-activity-support";
 import { MaterialComparison } from "./material-comparison";
+import { PreparationProgress } from "./preparation-progress";
 import { OperationStatus } from "./operation-status";
 
 type Source = ApiResponse<"uploadMaterialSource">;
@@ -19,6 +20,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
   const [loading, setLoading] = useState(true), [error, setError] = useState(""), [message, setMessage] = useState("");
   const [retry, setRetry] = useState(0), [busy, setBusy] = useState(false);
+  const [manualDescription,setManualDescription]=useState(false);
   const [showMoreSupports,setShowMoreSupports]=useState(false);
   const [showActivity,setShowActivity]=useState(false);
   const [activityOnly,setActivityOnly]=useState(false),[activitySaved,setActivitySaved]=useState(false),[activityDirty,setActivityDirty]=useState(false);
@@ -37,7 +39,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const key = useRef<string | null>(null), uploadKey = useRef<string | null>(null), heading = useRef<HTMLHeadingElement>(null);
   const current = adaptations.find(a => a.id === selectedId), source = sources.find(s=>s.id===sourceId);
   const pending = current && ["queued","generating","rendering"].includes(current.status);
-  const ai = supports.some(s=>["literal-language","short-sections","glossary","image-description"].includes(s));
+  const ai = supports.some(s=>["literal-language","short-sections","glossary"].includes(s)||s==="image-description"&&!manualDescription);
   useTeacherDraftGuard(dirty||activityDirty);
   useEffect(()=>{onUnsavedChange?.(dirty||activityDirty);},[dirty,activityDirty,onUnsavedChange]);
   function change() { key.current = null; setReviewed(false); setError(""); setMessage(""); }
@@ -68,7 +70,14 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     setDocument(current.document);
     if(step===2&&!activityOnly&&(current.status === "ready" || current.status === "released")) setStep(3);
   },[current,dirty,step,activityOnly]);
-  useEffect(()=>{if(current?.status==='draft'&&autoRender.current===current.id&&!dirty){autoRender.current=null;void saveAndRender();}},[current,dirty]);
+  useEffect(()=>{
+    if(current?.status!=='draft'||autoRender.current!==current.id||dirty)return;
+    autoRender.current=null;
+    if(current.error)return;
+    if(!current.settings.useAi&&current.settings.supports.includes('image-description')){
+      setEditText(true);setStep(3);
+    }else void saveAndRender();
+  },[current,dirty]);
   useEffect(()=>{if(source?.status==='ready'&&!selectedId){const all=source.pages;setPageNumbers(all.length<=4&&all.reduce((n,p)=>n+p.text.length,0)<=12000?all.map(p=>p.page):[]);}},[source?.id,source?.status]);
   useEffect(()=>{setReviewed(false);},[step,selectedId]);
   async function operation(action:()=>Promise<void>) {setBusy(true);setError("");setMessage("");try{await action();}catch(reason){setError(errorMessage(reason));}finally{setBusy(false);}}
@@ -114,21 +123,21 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   }
   const student=students.find(s=>s.id===studentId), declared=shared.find(s=>s.userId===studentId);
   const suggestions=materialSuggestions(declared?.disabilities,declared?.supports);
-  const otherSupports = ['wide-spacing','high-contrast','literal-language','short-sections','glossary'] as const;
+  const otherSupports = ['wide-spacing','high-contrast','literal-language','glossary'] as const;
   const visibleOtherSupports = otherSupports.filter(id=>showMoreSupports||suggestions.primary.includes(id)||supports.includes(id));
   const supportLabels: Record<MaterialSupport,{label:string;hint:string}> = {
     'large-print':{label:'Leitura ampliada (texto ampliado)',hint:'Aumentar o tamanho do texto para facilitar a leitura.'},
     'wide-spacing':{label:'Mais espaço entre linhas',hint:'Dar mais espaço aos parágrafos e à leitura.'},
     'high-contrast':{label:'Contraste de leitura',hint:'Manter boa distinção entre texto e fundo.'},
     'literal-language':{label:'Explicação mais direta',hint:'Usar frases claras e explicar expressões figuradas.'},
-    'short-sections':{label:'Passos curtos e numerados',hint:'Apresentar uma ação por vez, em uma sequência clara.'},
+    'short-sections':{label:'Organizar em passos curtos',hint:'Apresentar uma ação por vez, em uma sequência clara.'},
     glossary:{label:'Explicar termos do material',hint:'Acrescentar explicações junto aos termos importantes.'},
     'image-description':{label:'Audiodescrição',hint:'Descreve imagens, gráficos e tabelas em texto e áudio.'},
     narration:{label:'Leitura em áudio',hint:'Narra o texto escrito das páginas selecionadas.'},
   };
   function chooseStudent(id:string){
     const needs=shared.find(s=>s.userId===id), next=materialSuggestions(needs?.disabilities,needs?.supports);
-    setShowMoreSupports(false);setShowActivity(false);setStudentId(id);setSupports(next.selected);setDelivery(next.selected.length?'adapted':'original');setSelectedId('');setDocument([]);setDirty(false);setActivityDirty(false);setActivityOnly(false);setEditText(false);setApproved(false);change();
+    setManualDescription(false);setShowMoreSupports(false);setShowActivity(false);setStudentId(id);setSupports(next.selected.filter(s=>s!=='narration'));setDelivery(next.selected.some(s=>s!=='narration')?'adapted':'original');setSelectedId('');setDocument([]);setDirty(false);setActivityDirty(false);setActivityOnly(false);setEditText(false);setApproved(false);change();
   }
   function toggle(id:MaterialSupport,checked:boolean){setSupports(old=>checked?[...new Set([...old,id])]:old.filter(s=>s!==id));setApproved(false);change();}
   function option(id:MaterialSupport){
@@ -136,6 +145,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     return <label className="simple-support-option" key={id}>
       <input type="checkbox" checked={supports.includes(id)} onChange={e=>{
         toggle(id,e.target.checked);
+        if(e.target.checked&&['literal-language','short-sections','glossary'].includes(id))setManualDescription(false);
         if(e.target.checked)setDelivery('adapted');
       }}/>
       <span><strong>{supportLabels[id].label}</strong><span className="small">{supportLabels[id].hint}</span>{suggested&&<span className="small">Sugerido para este aluno</span>}</span>
@@ -151,7 +161,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const released=!!current&&current.status==='released'&&current.studentId===studentId;
   const comparison=<MaterialComparison missionId={missionId} source={source} adaptation={current} studentName={student?.name} originalOnly={delivery==='original'} document={document} dirty={dirty} view={readerView} onViewChange={setReaderView}/>;
   return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material individual">
-    <header><h2 ref={heading} tabIndex={-1}>{student?(step===3?`Conferir material de ${student.name}`:`Prepare o material para ${student.name}`):'Preparar material para um aluno'}</h2><p>{step===3?'Compare o original, confira a leitura preparada e disponibilize para o aluno.':'Selecione o arquivo e prepare uma versão para o aluno, sem sair desta tela.'}</p></header>
+    <header><h2 ref={heading} tabIndex={-1}>{student?(step===3?`Conferir material de ${student.name}`:`Prepare o material para ${student.name}`):'Preparar material para um aluno'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o aluno.'):'Selecione o arquivo e prepare uma versão para o aluno, sem sair desta tela.'}</p></header>
     {(error||message)&&<OperationStatus message={error||message} error={!!error}/>}
     {error&&<button className="text-button" type="button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo</button>}
     {step>0&&student&&<div className="simple-student-context"><div><strong>{student.name}</strong><p className="small">{declared?.disabilities?.length?declared.disabilities.map(d=>materialProfiles.find(p=>p.id===d)?.label??({visual:'Visual (sem detalhar)',hearing:'Auditiva (sem detalhar)',other:'Outra deficiência',multiple:'Múltipla'} as Record<string,string>)[d]??d).join(' · ')+' · informação compartilhada pelo aluno':'Nenhuma deficiência informada'}</p></div><button type="button" className="text-button" disabled={busy||!!pending} onClick={()=>{if((dirty||activityDirty)&&!window.confirm('Descartar as alterações ainda não salvas?'))return;setDirty(false);setActivityDirty(false);setStep(0);}}>Alterar aluno</button></div>}
@@ -184,7 +194,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <legend>Apoios para o material</legend>
           <p className="small">{suggestions.primary.length?'Confira as sugestões e ajuste conforme a preferência do aluno.':'Escolha os apoios que deseja oferecer. Eles estão disponíveis para qualquer aluno.'}</p>
           <div className="material-support-card-grid">
-            {(['image-description','large-print','narration'] as const).map(option)}
+            {(['image-description','large-print','short-sections'] as const).map(option)}
           </div>
           <div id="material-other-supports" className={visibleOtherSupports.length?"material-support-card-grid":undefined}>
             {visibleOtherSupports.map(option)}
@@ -196,6 +206,11 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         {delivery==='adapted'&&<>
           {(supports.includes('large-print')||supports.includes('high-contrast'))&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="18">Grande · 18 pontos</option><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="default">Escuro sobre claro</option><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
           <details open={source.pageCount>4||!pageNumbers.length?true:undefined}><summary>Páginas da prévia · {pageNumbers.length} de {source.pageCount}</summary><p className="small">Até 4 páginas e 12 mil caracteres por adaptação. As demais páginas não serão incluídas nesta versão; prepare-as separadamente.</p>{source.pages.map(p=><label className="check" key={p.page}><input type="checkbox" checked={pageNumbers.includes(p.page)} disabled={pageNumbers.length>=4&&!pageNumbers.includes(p.page)} onChange={e=>{setPageNumbers(old=>e.target.checked?[...old,p.page].sort((a,b)=>a-b):old.filter(v=>v!==p.page));change();}}/>Página {p.page} · {p.text.length} caracteres{p.ocr?' · texto reconhecido automaticamente':''}</label>)}</details>
+          {supports.includes('image-description')&&<label className="check"><input type="checkbox" checked={manualDescription} onChange={e=>{
+            setManualDescription(e.target.checked);setApproved(false);
+            if(e.target.checked)setSupports(old=>old.filter(id=>!['literal-language','short-sections','glossary'].includes(id)));
+            change();
+          }}/>Escrever a descrição manualmente</label>}
           {ai&&<label className="check"><input type="checkbox" checked={approved} onChange={e=>setApproved(e.target.checked)}/>Conferi as páginas e os objetivos e autorizo enviar esse conteúdo didático, sem dados pessoais, ao Gemini para preparar o rascunho.</label>}
           <p className="small">Confirme as preferências com o aluno. Você confere a prévia antes de enviar.</p>
         </>}
@@ -203,26 +218,26 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       </section>}
       {step===2&&activityOnly&&version&&student&&<section className="form-stack"><StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} onDirty={activityChanged} onSaved={()=>setActivitySaved(true)}/><button type="button" className="button" disabled={!activitySaved||activityDirty} onClick={()=>setStep(3)}>Concluir ajustes deste aluno →</button></section>}
       {step===3&&activityOnly&&student&&<section className="paper"><h3>Ajustes preparados para {student.name}</h3><p>Os ajustes revisados acompanham a versão publicada da missão.</p><button type="button" className="button button-outline" onClick={()=>{setStep(0);setActivityOnly(false);}}>Preparar outro material</button></section>}
-      {step===2&&!activityOnly&&<section className="paper form-stack"><h3>Preparando a prévia</h3><p role="status">{current?labels[current.status]:'Consultando a preparação…'}. O resultado fica salvo para sua revisão.</p>{current?.error&&<p role="alert">{current.error}</p>}{(current?.status==='draft'||(current?.status==='failed'&&document.length>0))&&!pending&&<button type="button" className="button" disabled={busy} onClick={()=>void saveAndRender()}>Preparar prévia deste rascunho</button>}{current?.status==='failed'&&<button className="button button-outline" onClick={()=>{setSelectedId('');setStep(1);change();}}>Voltar aos apoios</button>}</section>}
+      {step===2&&!activityOnly&&<section className="paper form-stack">{pending||busy||!current?<PreparationProgress title={current?labels[current.status]:'Consultando a preparação'} detail={current?.status==='rendering'?'Gerando o PDF e a audiodescrição, quando escolhida.':current?.status==='generating'?'Preparando o conteúdo das páginas escolhidas.':'Aguardando o início do processamento.'}/>:<h3>{labels[current.status]}</h3>}{current?.error&&<p role="alert">{current.error}</p>}{(current?.status==='draft'||(current?.status==='failed'&&document.length>0))&&!pending&&<button type="button" className="button" disabled={busy} onClick={()=>void saveAndRender()}>Preparar prévia deste rascunho</button>}{(current?.status==='failed'||current?.error)&&<button className="button button-outline" onClick={()=>{setSelectedId('');setStep(1);change();}}>Voltar aos apoios</button>}</section>}
       {step===3&&!activityOnly&&student&&<section className="paper form-stack">
         <h3>{released?'Material disponibilizado':delivery==='original'?'Confira o PDF original':'Confira a prévia'}</h3><p>Destinatário: <strong>{student.name}</strong>. {delivery==='original'?'O PDF será mantido sem alterações.':'Confira a leitura, as descrições e a pronúncia do áudio, quando houver.'}</p>
         {delivery==='adapted'&&current&&<ul className="material-applied-supports" aria-label="Apoios aplicados">{current.settings.supports.map(id=><li key={id}><span aria-hidden="true">✓</span>{supportLabels[id].label}</li>)}</ul>}
-        {!dirty&&<a className="text-link" href={delivery==='original'?materialAssetUrl(missionId,sourceId,'original'):materialAssetUrl(missionId,current!.id,'pdf')} target="_blank" rel="noopener noreferrer">{delivery==='original'?'Conferir PDF original':'Conferir PDF gerado'}</a>}
+        {!dirty&&(delivery==='original'||current?.status==='ready'||released)&&<a className="text-link" href={delivery==='original'?materialAssetUrl(missionId,sourceId,'original'):materialAssetUrl(missionId,current!.id,'pdf')} target="_blank" rel="noopener noreferrer">{delivery==='original'?'Conferir PDF original':'Conferir PDF gerado'}</a>}
 
 
         {delivery==='adapted'&&current&&<>
-          <button type="button" className="text-button" disabled={locked} onClick={()=>{setSelectedId('');setStep(1);setApproved(false);change();}}>Ajustar leitura</button>
-          <details onToggle={e=>setEditText(e.currentTarget.open)}><summary>Ajustar o texto da prévia</summary>{editText&&document.map((p,i)=><section className="form-stack" key={p.page}><h4>Página {p.page} do original</h4>
+          <button type="button" className="text-button" disabled={locked} onClick={()=>{setSelectedId('');setSupports(old=>old.filter(s=>s!=='narration'));setStep(1);setApproved(false);change();}}>Ajustar leitura</button>
+          <details open={editText} onToggle={e=>setEditText(e.currentTarget.open)}><summary>Ajustar o texto da prévia</summary>{editText&&document.map((p,i)=><section className="form-stack" key={p.page}><h4>Página {p.page} do original</h4>
           <a className="text-link" href={materialAssetUrl(missionId,current.sourceId,`page-${p.page}`)} target="_blank" rel="noopener noreferrer">Conferir página {p.page} do PDF original</a>
           {source?.pages.find(page=>page.page===p.page)?.ocr&&<p className="notice">Texto extraído por OCR. Compare números, fórmulas e tabelas com a página original.</p>}
           {current.settings.useAi&&!released&&!archived&&<button type="button" className="button button-outline" disabled={busy||!!pending||activityDirty} onClick={()=>void regeneratePage(p.page)}>Refazer página {p.page} com Gemini</button>}
           <label htmlFor={`material-title-${p.page}`}>Título da página {p.page}</label><input id={`material-title-${p.page}`} value={p.title} maxLength={200} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,title:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-text-${p.page}`}>Texto da página {p.page}</label><textarea id={`material-text-${p.page}`} value={p.text} maxLength={12000} rows={6} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,text:e.target.value}:v));setDirty(true);setReviewed(false);}}/><label htmlFor={`material-description-${p.page}`}>Descrição das informações visuais da página {p.page}</label><textarea id={`material-description-${p.page}`} maxLength={4000} value={p.description} onChange={e=>{setDocument(old=>old.map((v,n)=>n===i?{...v,description:e.target.value}:v));setDirty(true);setReviewed(false);}}/></section>)}</details>
-          {dirty&&<button className="button" type="button" disabled={busy||activityDirty} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
+          {(dirty||current.status==='draft')&&<button className="button" type="button" disabled={busy||activityDirty||current.settings.supports.includes('image-description')&&document.some(page=>!page.description.trim())} onClick={()=>void saveAndRender()}>Atualizar prévia →</button>}
           <details><summary>Leitura em texto e transcrição</summary><PreparedDocument document={current.document} missionId={missionId} adaptationId={current.id}/></details>
         </>}
         {version&&<><button type="button" className="text-button" aria-expanded={showActivity} aria-controls="material-activity-panel" disabled={busy||!!pending||activityDirty} onClick={()=>setShowActivity(value=>!value)}>Ajustar atividade e entrega</button>
           <div id="material-activity-panel" hidden={!showActivity}>{showActivity&&<StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} disabled={busy||!!pending} onDirty={activityChanged}/>}</div></>}
-        {!released&&<><label className="check"><input type="checkbox" disabled={dirty||activityDirty||busy||!!pending} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>Conferi o material e o destinatário. Posso disponibilizar para {student.name}.</label><button className="button" type="button" disabled={!reviewed||dirty||activityDirty||busy||!!pending} onClick={()=>delivery==='original'?void sendOriginal():void operation(async()=>{update(await api('releaseMaterial',{params:{id:missionId,adaptationId:current!.id},body:{expectedRevision:current!.revision,reviewed:true}}));setMessage(`Material disponibilizado para ${student.name}. No rascunho, ficará disponível após publicar esta versão.`);})}>Disponibilizar para {student.name} →</button></>}
+        {!released&&(delivery==='original'||current?.status==='ready')&&<><label className="check"><input type="checkbox" disabled={dirty||activityDirty||busy||!!pending} checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>Conferi o material e o destinatário. Posso disponibilizar para {student.name}.</label><button className="button" type="button" disabled={!reviewed||dirty||activityDirty||busy||!!pending} onClick={()=>delivery==='original'?void sendOriginal():void operation(async()=>{update(await api('releaseMaterial',{params:{id:missionId,adaptationId:current!.id},body:{expectedRevision:current!.revision,reviewed:true}}));setMessage(`Material disponibilizado para ${student.name}. No rascunho, ficará disponível após publicar esta versão.`);})}>Disponibilizar para {student.name} →</button></>}
         <button className="text-button" type="button" disabled={dirty||activityDirty||busy} onClick={()=>{setStep(0);setSelectedId('');setEditText(false);}}>Preparar outro material</button>
       </section>}
     </>}
@@ -230,6 +245,6 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       {step!==3&&!activityOnly&&comparison}
     </div>
     {busy&&<p role="status">Salvando sua solicitação…</p>}
-    {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.studentId);setSourceId(a.sourceId);setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setFontSize(a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(false);setActivityOnly(false);setShowActivity(false);setStep(a.status==='ready'||a.status==='released'?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm('Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(0);}});}}>Remover material</button>}</div></article>)}</details>}
+    {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.studentId);setSourceId(a.sourceId);setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setManualDescription(!a.settings.useAi&&a.settings.supports.includes('image-description'));setFontSize(a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description'));setActivityOnly(false);setShowActivity(false);setStep(a.status==='ready'||a.status==='released'||a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description')?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm('Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(0);}});}}>Remover material</button>}</div></article>)}</details>}
   </section>;
 }
