@@ -47,6 +47,7 @@ $env:API_HOST = '127.0.0.1'
 $env:PORT = '3001'
 $env:MATERIAL_STORAGE_DIR = $env:CHATGPT_TEST_MATERIAL_DIR
 Remove-Item Env:SUPABASE_URL, Env:SUPABASE_STORAGE_SECRET -ErrorAction SilentlyContinue
+Invoke-Checked { npx --no-install prisma generate --schema apps/api/prisma/schema.prisma }
 Invoke-Checked { npm run db:migrate }
 Invoke-Checked { npm run db:seed:demo }
 Invoke-Checked { docker compose --env-file .env.docker -f compose.yaml -f compose.chatgpt-local.yaml up -d --wait --build material-worker }
