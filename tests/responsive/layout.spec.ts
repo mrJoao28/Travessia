@@ -24,7 +24,7 @@ async function measure(page:Page){
    return true;
   };
   const rect=(e:Element)=>{const r=e.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height)};};
-  const fields=[...document.querySelectorAll('main textarea,main input:not([type=checkbox]):not([type=radio]):not([type=hidden])')].filter(visible).map(e=>({label:e.getAttribute('aria-label')||e.id,...rect(e)}));
+  const fields=[...document.querySelectorAll('main textarea,main input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file])')].filter(visible).map(e=>({label:e.getAttribute('aria-label')||e.id,...rect(e)}));
   const overflow=[...document.querySelectorAll('main *,header *,aside *')].filter(e=>visible(e)&&!e.closest('.comparison-reader')&&!e.classList.contains('sr-only')).filter(e=>e.getBoundingClientRect().right>innerWidth+2).slice(0,12).map(e=>({tag:e.tagName,classes:e.className,...rect(e)}));
   return {title:document.querySelector('h1')?.textContent,url:location.pathname,viewport:innerWidth,rootWidth:document.documentElement.scrollWidth,fields,overflow,
    navigation:document.querySelector('.sidebar')?rect(document.querySelector('.sidebar')!):null,
