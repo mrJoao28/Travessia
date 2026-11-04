@@ -81,6 +81,7 @@ test('primeiros passos levam a exemplos do professor e do aluno e a revisão pre
  await page.getByRole('link',{name:'Experimentar os apoios'}).click();
  await page.getByRole('radio',{name:/Passos e termos explicados/}).check();
  await page.getByRole('button',{name:'Gerar prévia de exemplo'}).click();
+ await expect(page.getByRole('status').filter({hasText:'2 lote(s) simulado(s)'})).toBeVisible();
  await page.reload();
  await page.getByRole('button',{name:'Preparado',exact:true}).click();
  const comparison=page.getByRole('region',{name:'Comparação do material'});

@@ -78,7 +78,8 @@ export function PreviewMaterials({missionId='campus',embedded=false}:{missionId?
   if(!student||archived||pending||(!draft&&state.materials.length>=60))return;
   const requestedAt=Date.now();
   const value:Material={id:previewId(),missionId:mission!.id,revision:mission!.revision,studentId,
-   source,preset,audio:preset==='description',released:false,instructions:'',formats:['text'],
+   source,preset,audio:preset==='description',released:false,
+   instructions:released?.instructions??'',formats:released?.formats??['text'],
    readyAt:requestedAt+(preset==='original'?0:1100)};
   update(s=>({...s,materials:[...s.materials.filter(m=>m.id!==draft?.id),value]}));
   setNow(requestedAt);setReviewed(false);setView(preset==='original'?'original':'prepared');setMessage('');
