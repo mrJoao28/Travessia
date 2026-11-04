@@ -11,7 +11,7 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
  const row=state.missions.find(m=>m.id===missionId),mission=row?publishedMission(row):null;
  const accessible=mission&&state.classrooms.find(c=>c.id===mission.classroomId)?.students.includes(student.id);
  const saved=state.submissions.find(s=>s.missionId===missionId&&s.revision===mission?.revision&&s.studentId===student.id);
- const [index,setIndex]=useState(saved?.step??(missionId==='biblioteca'?1:0)),[content,setContent]=useState(saved?.content??''),[completed,setCompleted]=useState<number[]>(saved?.completed??[]),[audio,setAudio]=useState(saved?.audio??false),[textFile,setTextFile]=useState(saved?.textFile??false),[message,setMessage]=useState(''),[dirty,setDirty]=useState(false);
+ const [index,setIndex]=useState(saved?.step??0),[content,setContent]=useState(saved?.content??''),[completed,setCompleted]=useState<number[]>(saved?.completed??[]),[audio,setAudio]=useState(saved?.audio??false),[textFile,setTextFile]=useState(saved?.textFile??false),[message,setMessage]=useState(''),[dirty,setDirty]=useState(false);
  const heading=useRef<HTMLHeadingElement>(null);useTeacherDraftGuard(dirty);
  if(!mission||!accessible)return <><PreviewHeading title="Esta missão ainda não está disponível" description="Rascunhos, versões não publicadas e turmas sem vínculo não aparecem para o aluno neste cenário."/><Link className="button" href="/previa/aluno">Voltar ao meu percurso</Link></>;
  const materials=state.materials.filter(m=>m.missionId===mission.id&&m.revision===mission.revision&&m.studentId===student.id&&m.released);

@@ -70,7 +70,7 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
        </div>
        {ready&&current?.hasAudio&&!dirty&&<section id="material-audio" className="material-preview-audio" aria-label={audioLabel}>
              <h4>{audioLabel}</h4>
-             {narration&&<p className="small">Narração integral das páginas preparadas{visualDescriptions?', incluindo as descrições visuais':''}.</p>}
+             {narration&&<p className="small">{illustrative?'Trecho narrado de exemplo':'Narração integral das páginas preparadas'}{visualDescriptions?', incluindo as descrições visuais':''}.</p>}
              <audio key={current.revision} controls preload="none" aria-label={audioLabel} src={audioUrl} onError={()=>setAudioError(true)}/>
              {audioError&&<p role="alert">Não foi possível reproduzir o áudio aqui. Abra o arquivo diretamente para conferir.</p>}
              <a className="text-link" href={audioUrl} download>Baixar áudio da prévia</a>

@@ -2,33 +2,35 @@ import {test,expect} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 const key='travessia:interactive-preview:v1';
 
-test('prévia conecta criação, IA simulada, PDF, áudio, aluno e feedback sem API',async({page})=>{
+test('prévia conecta criação, apoios simulados, PDF, áudio, aluno e feedback sem API',async({page})=>{
  test.setTimeout(120000);
  const apiRequests:string[]=[];
  page.on('request',request=>{if(new URL(request.url()).pathname.startsWith('/api/'))apiRequests.push(request.url());});
  await page.goto('/previa/professor/missoes/editor');
- await page.getByText('Pedir um rascunho à IA · simulado',{exact:true}).click();
- await page.getByRole('button',{name:'Gerar rascunho de exemplo'}).click();
- await expect(page.getByLabel('Título da missão')).toHaveValue('Decidir uma rota com base em evidências');
  await page.getByLabel('Título da missão').fill('Uma rota melhor para nossa biblioteca');
  await page.getByRole('button',{name:'Continuar para as etapas →'}).click();
  await page.getByRole('button',{name:'Adicionar PDF de exemplo'}).click();
  await expect(page.getByText('PDF adicionado:',{exact:false})).toContainText('rotas-do-campus.pdf');
  await page.getByRole('button',{name:'Salvar e continuar →'}).click();
- await page.getByLabel('Aluno destinatário').selectOption('preview-student-1');
- await expect(page.getByLabel('Como preparar o material')).toHaveValue('expanded');
- await page.getByLabel('Incluir áudio e transcrição').check();
- await page.getByRole('button',{name:'Preparar prévia de exemplo'}).click();
- await page.getByText('Também ajustar a atividade',{exact:true}).click();
+ await page.getByLabel('Aluno da turma').selectOption('preview-student-1');
+ await expect(page.getByRole('radio',{name:/Texto ampliado e espaçado/})).toBeChecked();
+ await page.getByRole('radio',{name:/Descrição das informações visuais/}).check();
+ await page.getByRole('button',{name:'Gerar prévia de exemplo'}).click();
+ await expect(page.getByRole('status').filter({hasText:'2 lote(s) simulado(s)'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Confira a prévia'})).toBeVisible();
+ await page.getByRole('button',{name:'Atividade e entrega',exact:true}).click();
  await page.getByRole('button',{name:'Gerar orientação · IA simulada'}).click();
  await page.getByLabel('Áudio de exemplo',{exact:true}).check();
  await page.getByLabel('Arquivo de texto (.txt)').check();
+ await page.getByLabel('Conferi as instruções e as formas de entrega.').check();
+ await page.getByRole('button',{name:'Salvar ajustes da atividade'}).click();
+ await page.getByRole('button',{name:'Material',exact:true}).click();
  const release=page.getByRole('button',{name:'Disponibilizar para Marina Costa'});
  await expect(release).toBeDisabled();
- const pdf=await page.request.get('/preview/campus-ampliado.pdf');
+ const pdf=await page.request.get('/preview/campus-descricao.pdf');
  expect(pdf.status()).toBe(200);expect((await pdf.body()).subarray(0,5).toString()).toBe('%PDF-');
- const mp3=await page.request.get('/preview/campus-narracao.mp3');expect(mp3.status()).toBe(200);expect((await mp3.body()).length).toBeGreaterThan(10000);
- await page.getByLabel('Conferi o material, o destinatário e os ajustes.').check();await release.click();
+ const mp3=await page.request.get('/preview/campus-audiodescricao.mp3');expect(mp3.status()).toBe(200);expect((await mp3.body()).length).toBeGreaterThan(10000);
+ await page.getByLabel('Conferi o material e o destinatário.').check();await release.click();
  await page.getByRole('button',{name:'Revisar missão',exact:true}).click();
  await expect(page.getByRole('button',{name:'Publicar missão',exact:true})).toBeDisabled();
  await page.getByLabel('Revisei o conteúdo, os critérios e os materiais.').check();
@@ -36,10 +38,10 @@ test('prévia conecta criação, IA simulada, PDF, áudio, aluno e feedback sem 
  await page.getByRole('link',{name:'Ver no espaço do aluno'}).click();
  await expect(page.getByRole('heading',{level:1})).toHaveText('Uma rota melhor para nossa biblioteca');
  const url=page.url();
- await page.getByRole('region',{name:'Materiais preparados para você'}).getByText('rotas-do-campus.pdf · Texto ampliado e espaçado',{exact:true}).click();
- await expect(page.getByRole('link',{name:'Baixar PDF preparado'})).toHaveAttribute('href','/preview/campus-ampliado.pdf');
+ await page.getByRole('region',{name:'Materiais preparados para você'}).getByText('rotas-do-campus.pdf · Descrição das informações visuais',{exact:true}).click();
+ await expect(page.getByRole('link',{name:'Baixar PDF preparado'})).toHaveAttribute('href','/preview/campus-descricao.pdf');
  await page.getByText('Transcrição do áudio',{exact:true}).click();
- await expect(page.getByRole('link',{name:'Baixar transcrição'})).toHaveAttribute('href','/preview/campus-narracao.txt');
+ await expect(page.getByRole('link',{name:'Baixar transcrição'})).toHaveAttribute('href','/preview/campus-audiodescricao.txt');
  await page.getByLabel('Planejamento e atividade').fill('Comparei 180 m e dois degraus na rota A com 310 m na rota C. Proponho melhorar as placas e conferir a leitura com usuários.');
  await page.getByLabel('Concluí esta etapa').check();
  await page.getByLabel('Anexar resposta fictícia em áudio').check();
@@ -72,6 +74,25 @@ test('publicação conserva a versão anterior enquanto o professor prepara um r
  await expect(page.getByRole('heading',{level:1})).toHaveText('Esta missão ainda não está disponível');
 });
 
+test('primeiros passos levam a exemplos do professor e do aluno e a revisão preserva a entrega anterior', async ({page})=>{
+ await page.goto('/previa/professor');
+ await page.getByRole('link',{name:'Primeiros passos',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Primeiros passos do professor'})).toBeVisible();
+ await page.getByRole('link',{name:'Experimentar os apoios'}).click();
+ await page.getByRole('radio',{name:/Passos e termos explicados/}).check();
+ await page.getByRole('button',{name:'Gerar prévia de exemplo'}).click();
+ await page.reload();
+ await page.getByRole('button',{name:'Preparado',exact:true}).click();
+ const comparison=page.getByRole('region',{name:'Comparação do material'});
+ await expect(page.getByRole('heading',{name:'Confira a prévia'})).toBeVisible();
+ await comparison.getByLabel('Página',{exact:true}).selectOption('2');
+ await expect(comparison.getByRole('heading',{name:'Glossário'})).toBeVisible();
+ await page.goto('/previa/aluno/primeiros-passos');
+ await expect(page.getByRole('heading',{name:'Primeiros passos do aluno'})).toBeVisible();
+ await page.getByRole('link',{name:'Abrir missão',exact:true}).click();
+ await expect(page.getByText('rotas-do-campus.pdf · Texto ampliado e espaçado',{exact:true})).toBeVisible();
+});
+
 test('pedidos são opcionais, perfil não compartilhado não gera recomendações por diagnóstico e relatos respeitam a escolha',async({page})=>{
  await page.goto('/previa/aluno');
  await page.getByRole('link',{name:'Meus apoios',exact:true}).click();
@@ -79,11 +100,11 @@ test('pedidos são opcionais, perfil não compartilhado não gera recomendaçõe
  await page.getByLabel('Compartilhar meus pedidos de apoio com a professora').uncheck();
  await page.getByRole('button',{name:'Salvar no cenário'}).click();
  await page.goto('/previa/professor/missoes/campus/adaptacoes');
- await expect(page.getByText('Nenhuma deficiência compartilhada neste cenário',{exact:true})).toBeVisible();
- await page.getByLabel('Aluno destinatário').selectOption('preview-student-3');
- await expect(page.getByLabel('Como preparar o material')).toHaveValue('original');
- await page.getByLabel('Aluno destinatário').selectOption('preview-student-2');
- await expect(page.getByLabel('Como preparar o material')).toHaveValue('clear');
+ await expect(page.getByText(/Nenhum pedido compartilhado neste cenário/)).toBeVisible();
+ await page.getByLabel('Aluno da turma').selectOption('preview-student-3');
+ await expect(page.getByRole('radio',{name:/PDF original/})).toBeChecked();
+ await page.getByLabel('Aluno da turma').selectOption('preview-student-2');
+ await expect(page.getByRole('radio',{name:/Explicação direta, em passos/})).toBeChecked();
  await page.goto('/previa/aluno/barreiras');
  await page.getByLabel('O que dificultou esta atividade?').fill('RELATO PRIVADO DE TESTE');
  await page.getByRole('button',{name:'Enviar relato',exact:true}).click();

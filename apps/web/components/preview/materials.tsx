@@ -41,7 +41,8 @@ export function PreviewMaterials({missionId='campus',embedded=false}:{missionId?
  const suggestion:Preset=shared.includes('large-print')?'expanded':shared.includes('short-steps')?'clear':shared.includes('image-description')?'description':'original';
  const matches=(m:Material)=>m.missionId===mission?.id&&m.revision===mission?.revision&&m.studentId===studentId&&m.source===source;
  const released=state.materials.findLast(m=>matches(m)&&m.released);
- const draft=state.materials.findLast(m=>matches(m)&&!m.released);
+ const latest=state.materials.findLast(matches);
+ const draft=latest&&!latest.released?latest:undefined;
  const preset=selectedPreset??draft?.preset??released?.preset??suggestion;
  const current=draft?.preset===preset?draft:released?.preset===preset?released:undefined;
  const pending=!!current?.readyAt&&current.readyAt>now;
