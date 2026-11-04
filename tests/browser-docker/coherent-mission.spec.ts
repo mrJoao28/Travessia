@@ -52,10 +52,10 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await expect(teacher.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible({timeout:90000});
   await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
   await expect(teacher.getByRole('checkbox',{name:/texto ampliado/i})).toBeChecked();
-  await expect(teacher.getByRole('checkbox',{name:/Organizar em passos curtos/})).not.toBeChecked();
+  await expect(teacher.getByRole('checkbox',{name:/Organizar em passos curtos/})).toHaveCount(0);
   await teacher.getByRole('checkbox',{name:/^Audiodescrição/}).check();
   await teacher.getByRole('checkbox',{name:'Escrever a descrição manualmente'}).check();
-  await teacher.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
+  await teacher.getByRole('button',{name:'Gerar prévia',exact:true}).click();
   await expect(teacher.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible({timeout:90000});
   await teacher.getByLabel('Texto da página 1',{exact:true}).fill('Compare duas rotas de 10 metros. Identifique os obstáculos e justifique uma escolha acessível.');
   await teacher.getByLabel('Descrição das informações visuais da página 1',{exact:true}).fill('Um retângulo representa a área usada na comparação das rotas.');
@@ -81,9 +81,9 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await teacher.getByLabel('Aluno da turma',{exact:true}).selectOption(otherId);
   await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
   await expect(teacher.getByText('Nenhuma deficiência informada',{exact:true})).toBeVisible();
-  await expect(teacher.getByRole('radio',{name:/Manter o PDF original/})).toBeChecked();
+  await expect(teacher.getByRole('button',{name:'Usar PDF original',exact:true})).toBeVisible();
   await teacher.screenshot({path:'test-results/reference-coherent-no-disclosure.png',fullPage:true});
-  await teacher.getByRole('button',{name:'Continuar →',exact:true}).click();
+  await teacher.getByRole('button',{name:'Usar PDF original',exact:true}).click();
   await teacher.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
   await teacher.getByRole('button',{name:'Disponibilizar para Aluno B do fluxo →',exact:true}).click();
   await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();

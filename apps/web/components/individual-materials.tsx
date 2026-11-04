@@ -123,7 +123,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   }
   const student=students.find(s=>s.id===studentId), declared=shared.find(s=>s.userId===studentId);
   const suggestions=materialSuggestions(declared?.disabilities,declared?.supports);
-  const otherSupports = ['wide-spacing','high-contrast','literal-language','glossary'] as const;
+  const otherSupports = ['wide-spacing','high-contrast','literal-language','short-sections','glossary'] as const;
   const visibleOtherSupports = otherSupports.filter(id=>showMoreSupports||suggestions.primary.includes(id)||supports.includes(id));
   const supportLabels: Record<MaterialSupport,{label:string;hint:string}> = {
     'large-print':{label:'Leitura ampliada (texto ampliado)',hint:'Aumentar o tamanho do texto para facilitar a leitura.'},
@@ -146,7 +146,8 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       <input type="checkbox" checked={supports.includes(id)} onChange={e=>{
         toggle(id,e.target.checked);
         if(e.target.checked&&['literal-language','short-sections','glossary'].includes(id))setManualDescription(false);
-        if(e.target.checked)setDelivery('adapted');
+        setDelivery(e.target.checked||supports.some(s=>s!==id&&s!=='narration')?'adapted':'original');
+        if(step===3){setSelectedId('');setEditText(false);setStep(1);setSupports(old=>old.filter(s=>s!=='narration'));}
       }}/>
       <span><strong>{supportLabels[id].label}</strong><span className="small">{supportLabels[id].hint}</span>{suggested&&<span className="small">Sugerido para este aluno</span>}</span>
     </label>;
@@ -169,6 +170,19 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   </div>;
   const comparison=<MaterialComparison missionId={missionId} source={source} adaptation={current} studentName={student?.name} originalOnly={delivery==='original'} document={document} dirty={dirty} view={readerView} onViewChange={setReaderView} singleView fileControl={fileControl}/>;
   const canRelease=!archived&&step===3&&!activityOnly&&!released&&!!student&&(delivery==='original'||current?.status==='ready');
+  const supportOptions=<fieldset className="strategy-fields material-support-cards" disabled={locked||released}>
+          <legend>Apoios para o material</legend>
+          <p className="small">{suggestions.primary.length?'Confira as sugestões e ajuste conforme a preferência do aluno.':'Escolha os apoios que deseja oferecer. Eles estão disponíveis para qualquer aluno.'}</p>
+          <div className="material-support-card-grid">
+            {(['image-description','large-print'] as const).map(option)}
+          </div>
+          <div id="material-other-supports" className={visibleOtherSupports.length?"material-support-card-grid":undefined}>
+            {visibleOtherSupports.map(option)}
+          </div>
+          <button type="button" className="text-button" aria-expanded={showMoreSupports} aria-controls="material-other-supports" onClick={()=>setShowMoreSupports(value=>!value)}>
+            {showMoreSupports?'Mostrar só os apoios relevantes':'Ver mais apoios de leitura e compreensão'}
+          </button>
+        </fieldset>;
   function releaseMaterial(){
     if(!canRelease||!reviewed||locked)return;
     if(delivery==='original'){void sendOriginal();return;}
@@ -189,7 +203,8 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <button type="button" aria-pressed={showActivity} disabled={busy||!!pending} onClick={()=>setShowActivity(true)}>Atividade e entrega</button>
         </div>}
         {showActivity&&version&&student&&step>0&&!activityOnly&&<StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} disabled={busy||!!pending} onDirty={activityChanged}/>}
-        <div className="material-workspace-settings-content" hidden={showActivity&&step>0&&!activityOnly}>
+        <div className="material-workspace-settings-content form-stack" hidden={showActivity&&step>0&&!activityOnly}>
+          {!archived&&!activityOnly&&source&&(step===1||step===3)&&supportOptions}
     {archived?<p className="notice">Missão arquivada. Consulte os materiais salvos abaixo.</p>:<>
       {step===0&&<section className="paper form-stack">
         <label htmlFor="material-student">Aluno da turma</label><select id="material-student" value={studentId} disabled={busy} onChange={e=>chooseStudent(e.target.value)}><option value="">Escolha um aluno</option>{students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>
@@ -198,24 +213,6 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         <div className="simple-material-actions"><button className="button" type="button" disabled={!student||source?.status!=='ready'||busy} onClick={()=>{setActivityOnly(false);setStep(1);change();}}>Continuar →</button></div>
       </section>}
       {step===1&&source&&<section className="paper form-stack">
-        <h3>Como deseja disponibilizar?</h3>
-        <fieldset className="strategy-fields simple-delivery-choice" disabled={busy}><legend className="sr-only">Versão do material</legend>
-          <label className={`simple-choice${delivery==='original'?' selected':''}`}><input type="radio" name="material-delivery" checked={delivery==='original'} onChange={()=>{setDelivery('original');setSupports([]);setApproved(false);change();}}/><span><strong>Manter o PDF original</strong><span className="small">Disponibilizar o arquivo sem alterações.</span></span></label>
-          <label className={`simple-choice${delivery==='adapted'?' selected':''}`}><input type="radio" name="material-delivery" checked={delivery==='adapted'} onChange={()=>{setDelivery('adapted');change();}}/><span><strong>Preparar uma versão com apoio</strong><span className="small">Facilitar a leitura, oferecer áudio ou organizar a explicação.</span></span></label>
-        </fieldset>
-        <fieldset className="strategy-fields material-support-cards" disabled={busy}>
-          <legend>Apoios para o material</legend>
-          <p className="small">{suggestions.primary.length?'Confira as sugestões e ajuste conforme a preferência do aluno.':'Escolha os apoios que deseja oferecer. Eles estão disponíveis para qualquer aluno.'}</p>
-          <div className="material-support-card-grid">
-            {(['image-description','large-print','short-sections'] as const).map(option)}
-          </div>
-          <div id="material-other-supports" className={visibleOtherSupports.length?"material-support-card-grid":undefined}>
-            {visibleOtherSupports.map(option)}
-          </div>
-          <button type="button" className="text-button" aria-expanded={showMoreSupports} aria-controls="material-other-supports" onClick={()=>setShowMoreSupports(value=>!value)}>
-            {showMoreSupports?'Mostrar só os apoios relevantes':'Ver mais apoios de leitura e compreensão'}
-          </button>
-        </fieldset>
         {delivery==='adapted'&&<>
           {(supports.includes('large-print')||supports.includes('high-contrast'))&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="18">Grande · 18 pontos</option><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="default">Escuro sobre claro</option><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
           <details open={source.pageCount>4||!pageNumbers.length?true:undefined}><summary>Páginas da prévia · {pageNumbers.length} de {source.pageCount}</summary><p className="small">Até 4 páginas e 12 mil caracteres por adaptação. As demais páginas não serão incluídas nesta versão; prepare-as separadamente.</p>{source.pages.map(p=><label className="check" key={p.page}><input type="checkbox" checked={pageNumbers.includes(p.page)} disabled={pageNumbers.length>=4&&!pageNumbers.includes(p.page)} onChange={e=>{setPageNumbers(old=>e.target.checked?[...old,p.page].sort((a,b)=>a-b):old.filter(v=>v!==p.page));change();}}/>Página {p.page} · {p.text.length} caracteres{p.ocr?' · texto reconhecido automaticamente':''}</label>)}</details>
@@ -227,14 +224,13 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           {ai&&<label className="check"><input type="checkbox" checked={approved} onChange={e=>setApproved(e.target.checked)}/>Conferi as páginas e os objetivos e autorizo enviar esse conteúdo didático, sem dados pessoais, ao Gemini para preparar o rascunho.</label>}
           <p className="small">Confirme as preferências com o aluno. Você confere a prévia antes de enviar.</p>
         </>}
-        <div className="simple-material-actions"><button className="text-button" type="button" disabled={busy} onClick={()=>setStep(0)}>← Voltar</button><button className="button" type="button" disabled={busy||delivery==='adapted'&&(!supports.length||!pageNumbers.length||ai&&!approved||source.pages.filter(p=>pageNumbers.includes(p.page)).reduce((n,p)=>n+p.text.length,0)>12000)} onClick={()=>{if(delivery==='original'){setSelectedId('');setStep(3);}else void prepare();}}>{delivery==='original'?'Continuar →':'Preparar prévia →'}</button></div>
+        <div className="simple-material-actions"><button className="text-button" type="button" disabled={busy} onClick={()=>setStep(0)}>← Voltar</button><button className="button" type="button" disabled={busy||delivery==='adapted'&&(!supports.length||!pageNumbers.length||ai&&!approved||source.pages.filter(p=>pageNumbers.includes(p.page)).reduce((n,p)=>n+p.text.length,0)>12000)} onClick={()=>{if(delivery==='original'){setSelectedId('');setStep(3);}else void prepare();}}>{delivery==='original'?'Usar PDF original':'Gerar prévia'}</button></div>
       </section>}
       {step===2&&activityOnly&&version&&student&&<section className="form-stack"><StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} onDirty={activityChanged} onSaved={()=>setActivitySaved(true)}/><button type="button" className="button" disabled={!activitySaved||activityDirty} onClick={()=>setStep(3)}>Concluir ajustes deste aluno →</button></section>}
       {step===3&&activityOnly&&student&&<section className="paper"><h3>Ajustes preparados para {student.name}</h3><p>Os ajustes revisados acompanham a versão publicada da missão.</p><button type="button" className="button button-outline" onClick={()=>{setStep(0);setActivityOnly(false);}}>Preparar outro material</button></section>}
       {step===2&&!activityOnly&&<section className="paper form-stack">{pending||busy||!current?<PreparationProgress title={current?labels[current.status]:'Consultando a preparação'} detail={current?.status==='rendering'?'Gerando o PDF e a audiodescrição, quando escolhida.':current?.status==='generating'?'Preparando o conteúdo das páginas escolhidas.':'Aguardando o início do processamento.'}/>:<h3>{labels[current.status]}</h3>}{current?.error&&<p role="alert">{current.error}</p>}{(current?.status==='draft'||(current?.status==='failed'&&document.length>0))&&!pending&&<button type="button" className="button" disabled={busy} onClick={()=>void saveAndRender()}>Preparar prévia deste rascunho</button>}{(current?.status==='failed'||current?.error)&&<button className="button button-outline" onClick={()=>{setSelectedId('');setStep(1);change();}}>Voltar aos apoios</button>}</section>}
       {step===3&&!activityOnly&&student&&<section className="paper form-stack">
         <h3>{released?'Material disponibilizado':delivery==='original'?'Confira o PDF original':'Confira a prévia'}</h3><p>Destinatário: <strong>{student.name}</strong>. {delivery==='original'?'O PDF será mantido sem alterações.':'Confira a leitura, as descrições e a pronúncia do áudio, quando houver.'}</p>
-        {delivery==='adapted'&&current&&<ul className="material-applied-supports" aria-label="Apoios aplicados">{current.settings.supports.map(id=><li key={id}><span aria-hidden="true">✓</span>{supportLabels[id].label}</li>)}</ul>}
         {!dirty&&(delivery==='original'||current?.status==='ready'||released)&&<a className="text-link" href={delivery==='original'?materialAssetUrl(missionId,sourceId,'original'):materialAssetUrl(missionId,current!.id,'pdf')} target="_blank" rel="noopener noreferrer">{delivery==='original'?'Conferir PDF original':'Conferir PDF gerado'}</a>}
 
 
