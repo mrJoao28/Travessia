@@ -1909,8 +1909,6 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   .preparation-progress-indicator { animation: none; }
 }
 
-#mission-draft-assistant[hidden] { display: none; }
-
 /* The teacher works beside one document viewport, even on wide screens. */
 .material-reference-desk {
   display: grid;
