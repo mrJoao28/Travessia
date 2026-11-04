@@ -32,7 +32,7 @@ async function main() {
     if (!process.argv.includes('--smoke')) return;
 
     const objectives = ['Comparar duas rotas fictícias usando distâncias e justificar uma escolha.'];
-    const materials = [{ title: 'Rotas fictícias', text: 'Rota A: 180 m e dois degraus. Rota B: 310 m sem degraus.' }];
+    const materials = [{ title: 'Rotas fictícias', text: 'Rota A: 180 m e dois degraus. Rota B: 240 m e caixas em parte da passagem. Rota C: 310 m, sem degraus observados e com placas pequenas.' }];
     stage = 'missão';
     const mission = await geminiProvider(config)({ objectives, materials }, AbortSignal.timeout(20000));
     missionInput.parse(mission.draft);

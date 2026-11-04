@@ -642,6 +642,7 @@ export function LiveEditor({
                 stepId={aiStep}
                 selected={[{ id: "written-instructions", title: "Instruções da etapa" }]}
                 instructionsOnly
+                disabled={pending}
                 onBusy={setPending}
                 onApply={(_id, instructions) => {
                   const index = storedVersion.steps.findIndex(step => step.id === aiStep);

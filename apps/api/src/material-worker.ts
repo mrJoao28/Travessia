@@ -103,7 +103,7 @@ export class MaterialWorker {
         const parsed = storedMaterialSettings.safeParse(job.row.settings);
         const { regeneratePage, ...settings } = parsed.success ? parsed.data : { regeneratePage: undefined };
         await this.db.materialAdaptation.updateMany({
-          where: { id: job.row.id, revision: job.row.revision, status: { in: ['generating', 'rendering'] } },
+          where: { id: job.row.id, revision: job.row.revision, status: job.row.status === 'rendering' ? 'rendering' : 'generating' },
           data: {
             ...(parsed.success ? { settings } : {}),
             status: job.row.status === 'rendering' || regeneratePage ? 'draft' : 'failed',

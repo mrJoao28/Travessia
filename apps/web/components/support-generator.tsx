@@ -5,7 +5,7 @@ import type { MissionEntry } from "./live-workspace";
 
 type Version = NonNullable<MissionEntry["mission"]["publishedVersion"]>;
 const supported = new Set(["step-checklist", "worked-example", "context-glossary", "written-instructions", "planning-outline"]);
-export function SupportGenerator({ missionId, version, stepId, selected, onApply, onBusy, instructionsOnly = false }: { missionId: string; version: Version; stepId: string; selected: { id: string; title: string }[]; onApply: (id: string, content: string) => void; onBusy: (busy: boolean) => void; instructionsOnly?: boolean }) {
+export function SupportGenerator({ missionId, version, stepId, selected, onApply, onBusy, instructionsOnly = false, disabled = false }: { missionId: string; version: Version; stepId: string; selected: { id: string; title: string }[]; onApply: (id: string, content: string) => void; onBusy: (busy: boolean) => void; instructionsOnly?: boolean; disabled?: boolean }) {
   const ids = selected.filter(s => supported.has(s.id)).map(s => s.id) as ApiBody<"generateSupports">["strategyIds"];
   const [materialIds, setMaterialIds] = useState<string[]>([]);
   const [approved, setApproved] = useState(false);
@@ -13,7 +13,7 @@ export function SupportGenerator({ missionId, version, stepId, selected, onApply
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState<ApiResponse<"generateSupports">["draft"]>(null);
   const request = useRef<{ fingerprint: string; key: string } | null>(null);
-  const canGenerate = approved && ids.length > 0 && materialIds.length > 0 && materialIds.length <= 3;
+  const canGenerate = !disabled && approved && ids.length > 0 && materialIds.length > 0 && materialIds.length <= 3;
   async function generate(strategyIds: typeof ids, replaceOne = false) {
     if (busy || !canGenerate) return;
     const fingerprint = JSON.stringify({ versionId: version.id, stepId, materialIds, strategyIds });
@@ -46,11 +46,11 @@ export function SupportGenerator({ missionId, version, stepId, selected, onApply
       onBusy(false);
     }
   }
-  return <section className="paper form-stack" aria-label="Assistência Gemini para apoios">
+  return <section className="paper form-stack" aria-label={instructionsOnly ? "Assistência Gemini para instruções da etapa" : "Assistência Gemini para apoios"}>
     <h3>{instructionsOnly ? "Refazer instruções da etapa" : "Gerar rascunhos com Gemini"}</h3>
     <p>{instructionsOnly ? "O Gemini prepara uma sugestão de instruções para a etapa escolhida. Confira o texto antes de aplicar." : "Gere checklist, exemplo comentado, glossário, instruções ou roteiro para as estratégias selecionadas. Revise e edite antes de salvar os apoios."}</p>
     <p className="small">Esta assistência prepara somente apoios em texto. Para descrever imagens de um PDF e gerar áudio, use a preparação de material individual acima. Você revisa os resultados antes de liberar.</p>
-    <fieldset disabled={busy} className="strategy-fields form-stack"><legend>Material didático para enviar ao Gemini (até 3)</legend>
+    <fieldset disabled={busy || disabled} className="strategy-fields form-stack"><legend>Material didático para enviar ao Gemini (até 3)</legend>
       {version.materials.map(m => <label className="check" key={m.id}><input type="checkbox" checked={materialIds.includes(m.id)} onChange={e => {
         setApproved(false); setDraft(null); request.current = null;
         setMaterialIds(old => e.target.checked ? [...old, m.id] : old.filter(id => id !== m.id));
@@ -67,7 +67,7 @@ export function SupportGenerator({ missionId, version, stepId, selected, onApply
       </button>
     </fieldset>
     <p role="status">{message}</p>
-    {draft?.items.map(item => <div className="example" key={item.strategyId}><h4>{selected.find(s => s.id === item.strategyId)?.title}</h4><p className="submission-content">{item.content}</p><button type="button" className="text-button" disabled={busy} onClick={() => onApply(item.strategyId, item.content)}>{instructionsOnly ? "Usar nas instruções da etapa" : "Usar este rascunho no apoio"}</button>
+    {draft?.items.map(item => <div className="example" key={item.strategyId}><h4>{selected.find(s => s.id === item.strategyId)?.title}</h4><p className="submission-content">{item.content}</p><button type="button" className="text-button" disabled={busy || disabled} onClick={() => onApply(item.strategyId, item.content)}>{instructionsOnly ? "Usar nas instruções da etapa" : "Usar este rascunho no apoio"}</button>
       {ids.length > 1 && ids.includes(item.strategyId) && <button type="button" className="text-button" disabled={busy || !canGenerate} onClick={() => void generate([item.strategyId], true)}>Refazer somente este apoio</button>}
     </div>)}
   </section>;
