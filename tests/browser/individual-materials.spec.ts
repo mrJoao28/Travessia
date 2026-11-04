@@ -31,8 +31,17 @@ test('TEA compartilhado: somente sugestões pertinentes, prévia automática e r
  await page.screenshot({path:'test-results/reference-material-tea.png',fullPage:true});
  await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
- await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
+ const viewer = page.getByRole('region', { name: 'Comparação do material', exact: true });
+ const settings = page.getByRole('complementary', { name: 'Preparação e revisão do material' });
+ const settingsBox = await settings.boundingBox(), viewerBox = await viewer.boundingBox();
+ expect(settingsBox!.x + settingsBox!.width).toBeLessThan(viewerBox!.x);
+ const versions = viewer.getByRole('group', { name: 'Versão do documento' });
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeHidden();
+ await versions.getByRole('button', { name: 'Original' }).click();
+ await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toBeHidden();
+ await versions.getByRole('button', { name: 'Preparado' }).click();
  await page.screenshot({path:'test-results/reference-comparison-teacher-desktop.png',fullPage:true});
  expect(captured()?.settings.supports).toEqual(['literal-language','short-sections']);
  expect(JSON.stringify(captured())).not.toMatch(/autism|Marina|low-vision/);
@@ -95,11 +104,11 @@ test('comparação no celular alterna documentos, mantém leitura ampliável e i
  await expect(page.getByRole('link',{name:'Conferir PDF gerado',exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Atualizar prévia →',exact:true}).click();
  await page.setViewportSize({width:320,height:900});
- const toggles=page.getByRole('group',{name:'Documento exibido no celular',exact:true});
+ const toggles=page.getByRole('group',{name:'Versão do documento',exact:true});
  await toggles.getByRole('button',{name:'Original',exact:true}).click();
  await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).not.toBeVisible();
- await page.getByRole('button',{name:'Leitura preparada',exact:true}).click();
+ await toggles.getByRole('button',{name:'Preparado',exact:true}).click();
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'Aumentar ampliação da comparação',exact:true}).click();
  await expect(page.getByText('125%',{exact:true})).toBeVisible();
@@ -118,7 +127,7 @@ test('trocar o arquivo retira a prévia anterior e sua confirmação de revisão
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toHaveCount(0);
  await expect(page.getByRole('region',{name:'Documento preparado',exact:true})).toContainText('A versão preparada aparece aqui');
- await expect(page.getByRole('button',{name:/outro-material.pdf/})).toBeVisible();
+ await expect(page.getByRole('combobox',{name:'Arquivo PDF'}).locator('option:checked')).toHaveText('outro-material.pdf');
 });
 
 
@@ -181,6 +190,9 @@ test('audiodescrição pode ser escolhida sem perfil e sem narração integral',
  await expect(page.getByRole('checkbox', { name: /^Leitura em áudio/ })).toHaveCount(0);
  await page.getByRole('checkbox', { name: /Conferi as páginas e os objetivos/ }).check();
  await page.getByRole('button', { name: 'Preparar prévia →', exact: true }).click();
- await expect(page.locator('audio[aria-label="Ouvir audiodescrição"]')).toHaveAttribute('src', /adaptation-material\/audio$/);
+ const audio = page.locator('audio[aria-label="Ouvir audiodescrição"]');
+ await expect(audio).toHaveAttribute('src', /adaptation-material\/audio$/);
+ const reader = page.getByRole('region', { name: 'Leitura do documento preparado' });
+ expect((await reader.boundingBox())!.y + (await reader.boundingBox())!.height).toBeLessThan((await audio.boundingBox())!.y);
  expect(captured()?.settings.supports).toEqual(['image-description']);
 });
