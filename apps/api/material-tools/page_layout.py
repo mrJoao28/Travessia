@@ -1,5 +1,6 @@
 """Conservative reading order for ruled tables and clear two-column pages."""
 from bisect import bisect_left
+from collections import Counter
 import re
 
 _MATH = re.compile(r"[∑∫√∞≤≥±≈∂∇⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉]|\w\s*[=≠]\s*\w")
@@ -11,26 +12,39 @@ def _text_regions(page, words):
         return "", False
     left_edge, _, right_edge, _ = page.bbox
     width = right_edge - left_edge
-    center = left_edge + width / 2
     gap = width * .012
-    left = [w for w in words if w["x1"] <= center - gap]
-    right = [w for w in words if w["x0"] >= center + gap]
-    right_tops = sorted(w["top"] for w in right)
-    paired = [w for w in left
-              if bisect_left(right_tops, w["top"] - 6) < bisect_left(right_tops, w["top"] + 6)]
-    levels = sorted({round(w["top"] / 8) for w in paired})
-    if len(levels) >= 5:
+    # Sample several plausible gutters, including asymmetric layouts.
+    candidates = [left_edge + width * fraction / 100 for fraction in range(32, 69, 3)]
+    best = None
+    for center in candidates:
+        left = [w for w in words if w["x1"] <= center - gap]
+        right = [w for w in words if w["x0"] >= center + gap]
+        right_tops = sorted(w["top"] for w in right)
+        paired = [w for w in left
+                  if bisect_left(right_tops, w["top"] - 6) < bisect_left(right_tops, w["top"] + 6)]
+        levels = {round(w["top"] / 8) for w in paired}
+        if len(levels) < 5:
+            continue
         top = min(w["top"] for w in paired) - 6
         bottom = max(w["bottom"] for w in paired) + 6
         body = [w for w in words if top <= w["top"] < bottom]
-        if all(w["x1"] <= center - gap or w["x0"] >= center + gap for w in body):
-            pieces = [
-                [w for w in words if w["top"] < top],
-                [w for w in body if w["x1"] <= center - gap],
-                [w for w in body if w["x0"] >= center + gap],
+        body_left = [w for w in left if top <= w["top"] < bottom]
+        body_right = [w for w in right if top <= w["top"] < bottom]
+        if len(body) != len(body_left) + len(body_right):
+            continue
+        # A repeated numeric margin can be a table or line numbering, not prose.
+        if any(sum(n >= 2 for n in Counter(round(w["top"] / 8) for w in side).values()) < 3
+               for side in (body_left, body_right)):
+            continue
+        clearance = min(w["x0"] for w in body_right) - max(w["x1"] for w in body_left)
+        score = (len(levels), clearance, -abs(center - (left_edge + width / 2)))
+        if best is None or score > best[0]:
+            best = (score, [
+                [w for w in words if w["top"] < top], body_left, body_right,
                 [w for w in words if w["top"] >= bottom],
-            ]
-            return "\n\n".join(_lines(piece) for piece in pieces if piece), True
+            ])
+    if best:
+        return "\n\n".join(_lines(piece) for piece in best[1] if piece), True
     return _lines(words), False
 
 
@@ -81,6 +95,6 @@ def extract_page(page):
         flags.append("tabela extraída por linhas e células")
     if columns:
         flags.append("colunas organizadas em ordem de leitura")
-    if _MATH.search(original):
-        flags.append("possível notação matemática")
+    if _MATH.search(original) or re.search(r"\(cid:\d+\)|�", original):
+        flags.append("possível notação matemática ou caracteres não reconhecidos")
     return text, flags
