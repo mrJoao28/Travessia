@@ -38,6 +38,12 @@ try:
                 if page.width > 2000 or page.height > 2000: raise ValueError('Page too large')
                 text, layout_flags = extract_page(page)
                 ocr = len(text.strip()) < 20
+                mixed_scan = not ocr and any(
+                    (img['x1'] - img['x0']) * (img['bottom'] - img['top']) >= page.width * page.height * .45
+                    for img in page.images
+                )
+                if mixed_scan:
+                    layout_flags.append('imagem extensa com texto digital; o texto extraído pode não incluir o conteúdo da imagem')
                 image = path.parent / f'page-{i}.png'
                 subprocess.run(['pdftoppm', '-f', str(i), '-l', str(i), '-singlefile', '-scale-to', '1400', '-png', str(path), str(image.with_suffix(''))], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
                 # Remove only uniform outer margins for PDF reference images; keep full page for Gemini/OCR.
