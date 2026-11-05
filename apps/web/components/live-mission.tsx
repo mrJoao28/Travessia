@@ -376,6 +376,8 @@ export function LiveMission({
                     {classroom.name}. O texto e o progresso são salvos automaticamente. O rascunho
                     permanece privado para você.
                   </p>
+                  {formats === null && <p role="status">Os formatos adicionais aparecem quando a consulta de adaptações da missão for concluída.</p>}
+                  {formats?.length === 1 && <p className="small">Formato disponível nesta missão: texto no editor.</p>}
                   <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao Gemini.</p>
                   {formats?.includes("audio") && <AudioAttachment label="Áudio da atividade (opcional)" disabled={pending || mediaBusy} id="submission" missionId={id} help="Resposta em áudio de até 30 segundos; arquivo de até 10 MB na seleção. O navegador converte localmente para WAV. Um resumo no editor é opcional." value={audio ? { base64: audio } : null} onBusy={setMediaBusy} onChange={value => { setAudio(value && "base64" in value ? value.base64 : null); setDirty(true); }} />}
                   {submission?.hasAudio && !submission.revisionRequested && audio === undefined && <><SubmissionMedia id={submission.id} hasAudio /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setAudio(null); setDirty(true); }}>Remover áudio salvo da atividade</button></>}
