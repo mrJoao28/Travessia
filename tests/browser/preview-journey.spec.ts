@@ -176,3 +176,22 @@ test('convites, entrada na turma e estratégias individuais/da turma completam o
  await page.getByLabel('Aluno fictício').selectOption('preview-student-2');
  await expect(page.getByText('Roteiro de planejamento',{exact:true})).toHaveCount(0);
 });
+
+test('prévia do aluno oferece um acesso por missão e prioriza a etapa atual', async ({ page }) => {
+ await page.setViewportSize({ width: 1920, height: 1080 });
+ await page.goto('/previa/aluno');
+ const main = page.getByRole('main');
+ await expect(main.locator('a[href="/previa/aluno/missoes/campus"]')).toHaveCount(1);
+ await expect(main.locator('.path-art')).toHaveCount(0);
+ await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: 'Feedback', exact: true })).toHaveCount(0);
+ await main.locator('a[href="/previa/aluno/missoes/campus"]').click();
+ await expect(main.locator('.preview-student-mission > :first-child')).toHaveAttribute('aria-labelledby', 'preview-stage-heading');
+ await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeHidden();
+ await main.getByText('Objetivos e critérios da missão', { exact: true }).click();
+ await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeVisible();
+ await main.getByRole('button', { name: 'Próxima etapa' }).click();
+ await expect(main.locator('#preview-stage-heading')).toBeFocused();
+ await page.setViewportSize({ width: 320, height: 800 });
+ await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+ expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
+});
