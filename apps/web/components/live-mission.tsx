@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api, pages, errorMessage } from "../lib/product-client";
 import type { Classroom, Mission, Submission } from "./live-workspace";
 import { OperationStatus } from "./operation-status";
@@ -45,6 +45,12 @@ export function LiveMission({
   const [previousLocal, setPreviousLocal] = useState<ReturnType<typeof readStudentDraft>>(null);
   const [recovered, setRecovered] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
+  const stepNavigation = useRef(false);
+  useLayoutEffect(() => {
+    if (!stepNavigation.current) return;
+    stepNavigation.current = false;
+    title.current?.focus({ preventScroll: true });
+  }, [index]);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -185,9 +191,10 @@ export function LiveMission({
     setMessage("Texto copiado. Confira as instruções e marque as etapas que concluiu nesta versão.");
   }
   function navigate(next: number) {
+    if (next === index) return;
+    stepNavigation.current = true;
     setIndex(next);
     if (!locked && role === "aluno") setDirty(true);
-    requestAnimationFrame(() => title.current?.focus());
   }
   return (
     <>
@@ -195,90 +202,45 @@ export function LiveMission({
         <p className="eyebrow accent">{classroom.name}</p>
         <h2>{version.title}</h2>
         <p>{version.description}</p>
-        <h3>Objetivos de aprendizagem</h3>
-        <ul>
-          {version.objectives.map((objective, i) => (
-            <li key={i}>{objective}</li>
-          ))}
-        </ul>
-        <h3>Critérios de avaliação</h3>
-        <ul>
-          {version.criteria.map((criterion, i) => (
-            <li key={i}>{criterion}</li>
-          ))}
-        </ul>
         {version.dueAt && (
           <p>
             Entrega prevista:{" "}
             {new Date(version.dueAt).toLocaleDateString("pt-BR")}
           </p>
         )}
-        <h3>Materiais</h3>
-        {!version.materials.length && (
-          <p className="small">Os PDFs e áudios liberados para você aparecem neste espaço.</p>
-        )}
-        {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
-        {version.materials.map((material) => (
-          <details className="example" key={material.id}>
-            <summary>{material.title}</summary>
-            <p className="submission-content">{material.text}</p>
-            {material.hasFile && (
-              <button
-                className="text-button"
-                onClick={async () => {
-                  try {
-                    const download = await api("download", {
-                      params: { id: material.id },
-                    });
-                    const url = new URL(download.url);
-                    if (url.protocol !== "https:")
-                      throw new Error(
-                        "O arquivo não está disponível por uma conexão segura.",
-                      );
-                    window.open(url.href, "_blank", "noopener,noreferrer");
-                  } catch (reason) {
-                    setMessage(errorMessage(reason));
-                  }
-                }}
-              >
-                Abrir arquivo autorizado
-              </button>
-            )}
-          </details>
-        ))}
       </section>
-      <div className="two-column" style={{ marginTop: "1rem" }}>
-        <div>
-          <section className="paper">
-            <p className="eyebrow">
-              Etapa {index + 1} de {version.steps.length}
-            </p>
+      <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
+        <div className="form-stack">
+          <section className="paper preview-student-stage form-stack" id="etapas">
+            <nav className="student-step-pagination" aria-label="Paginação das etapas">
+              <button
+                className="button button-outline"
+                disabled={pending || index === 0}
+                aria-label="Etapa anterior"
+                onClick={() => navigate(index - 1)}
+              >
+                Anterior
+              </button>
+              <span className="eyebrow">Etapa {index + 1} de {version.steps.length}</span>
+              <button
+                className="button button-outline"
+                disabled={pending || index === version.steps.length - 1}
+                aria-label="Próxima etapa"
+                onClick={() => navigate(index + 1)}
+              >
+                Próxima
+              </button>
+            </nav>
             <h2 ref={title} tabIndex={-1}>
               {step.title}
             </h2>
             <p className="submission-content">{step.instructions}</p>
-            <details className="example">
+            {step.example && <details className="example" key={step.id}>
               <summary>Ver um exemplo</summary>
               <p className="submission-content">{step.example}</p>
-            </details>
-            <div className="actions">
-              <button
-                className="button button-outline"
-                disabled={pending || index === 0}
-                onClick={() => navigate(index - 1)}
-              >
-                Etapa anterior
-              </button>
-              <button
-                className="button button-outline"
-                disabled={pending || index === version.steps.length - 1}
-                onClick={() => navigate(index + 1)}
-              >
-                Próxima etapa
-              </button>
-            </div>
+            </details>}
             {role === "aluno" && <a className="text-link" href="#learner-materials-title"
-              onClick={() => document.getElementById("learner-materials-title")?.focus()}>Abrir materiais preparados</a>}
+              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais preparados</a>}
             {role === "aluno" && <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
             {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
@@ -301,8 +263,56 @@ export function LiveMission({
               </label>
             )}
           </section>
+          <details className="paper preview-student-context">
+            <summary>Objetivos e critérios da missão</summary>
+            <h3>Objetivos de aprendizagem</h3>
+            <ul>
+              {version.objectives.map((objective, i) => (
+                <li key={i}>{objective}</li>
+              ))}
+            </ul>
+            <h3>Critérios de avaliação</h3>
+            <ul>
+              {version.criteria.map((criterion, i) => (
+                <li key={i}>{criterion}</li>
+              ))}
+            </ul>
+          </details>
+          <section className="paper" aria-label="Materiais da missão">
+            <h3>Materiais</h3>
+            {role === "professor" && !version.materials.length && <p className="small">Nenhum material na missão.</p>}
+            {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
+            {version.materials.map((material) => (
+              <details className="example" key={material.id}>
+                <summary>{material.title}</summary>
+                <p className="submission-content">{material.text}</p>
+                {material.hasFile && (
+                  <button
+                    className="text-button"
+                    onClick={async () => {
+                      try {
+                        const download = await api("download", {
+                          params: { id: material.id },
+                        });
+                        const url = new URL(download.url);
+                        if (url.protocol !== "https:")
+                          throw new Error(
+                            "O arquivo não está disponível por uma conexão segura.",
+                          );
+                        window.open(url.href, "_blank", "noopener,noreferrer");
+                      } catch (reason) {
+                        setMessage(errorMessage(reason));
+                      }
+                    }}
+                  >
+                    Abrir arquivo autorizado
+                  </button>
+                )}
+              </details>
+            ))}
+          </section>
           {role === "aluno" && (
-            <section className="paper" style={{ marginTop: "1rem" }}>
+            <section className="paper">
               <h2>Sua atividade</h2>
               {submission?.revisionRequested && <p role="status">O professor solicitou ajustes. Leia o feedback e prepare uma nova tentativa.</p>}
               {[...(submission?.revisionRequested ? [submission] : []), ...attemptHistory].map(attempt => <details key={attempt.id}>
@@ -416,7 +426,7 @@ export function LiveMission({
           <section
             id="barreira"
             className="paper"
-            style={{ marginTop: "1rem" }}
+           
           >
             <BarrierComposer
               stepId={step.id}
@@ -433,7 +443,7 @@ export function LiveMission({
             )}
           </section>
         </div>
-        <aside className="paper" id="etapas">
+        {role === "professor" && <aside className="paper">
           <h2>Todas as etapas</h2>
           <ol>
             {version.steps.map((item, i) => (
@@ -456,7 +466,7 @@ export function LiveMission({
             Consultar uma etapa não marca sua conclusão. Escolha os apoios sem
             alterar os objetivos avaliados.
           </p>
-        </aside>
+        </aside>}
       </div>
     </>
   );

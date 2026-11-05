@@ -90,7 +90,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());expect(mission.publishedVersion.id).toBe(versionId);
   for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/missoes/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();}
   // A receives the reviewed PDF/voice and activity. B receives only the unchanged original PDF.
-  await student.goto(`/aluno/missoes/${missionId}`);await student.getByRole('button',{name:'Comparar rotas',exact:true}).click();
+  await student.goto(`/aluno/missoes/${missionId}`);await expect(student.locator('#etapas h2')).toHaveText('Comparar rotas');
   const prepared=student.getByRole('region',{name:'Materiais preparados para você',exact:true});await prepared.getByText('rotas-campus.pdf',{exact:true}).click();
   await expect(prepared.getByText('Compare duas rotas de 10 metros. Identifique os obstáculos e justifique uma escolha acessível.',{exact:true})).toBeVisible();
   const download=student.waitForEvent('download');await prepared.getByRole('link',{name:'Baixar PDF adaptado',exact:true}).click();expect((await download).suggestedFilename()).toBe('material-adaptado.pdf');
@@ -99,7 +99,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   expect(playback.headers()['content-range']).toMatch(/^bytes 0-31\//);
   await student.getByText('Consultar enunciado adaptado',{exact:true}).click();await expect(student.getByText('Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.',{exact:true})).toBeVisible();
   const privateMaterials=(await student.request.get(`/api/v1/missions/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items;
-  await other.goto(`/aluno/missoes/${missionId}`);await other.getByRole('button',{name:'Comparar rotas',exact:true}).click();
+  await other.goto(`/aluno/missoes/${missionId}`);await expect(other.locator('#etapas h2')).toHaveText('Comparar rotas');
   const originalRegion=other.getByRole('region',{name:'Materiais preparados para você',exact:true});
   await originalRegion.getByText('rotas-campus.pdf',{exact:true}).click();
   const originalLink=originalRegion.getByRole('link',{name:'Baixar PDF original',exact:true});await expect(originalLink).toBeVisible();
@@ -129,5 +129,5 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await student.setViewportSize({width:320,height:850});expect(await student.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect((await new AxeBuilder({page:student}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
   await student.screenshot({path:'test-results/reference-coherent-student-feedback.png',fullPage:true});
- }finally{await Promise.all(contexts.map(c=>c.close()));}
+ }finally{await Promise.allSettled(contexts.map(c=>c.close()));}
 });

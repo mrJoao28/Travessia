@@ -64,7 +64,6 @@ export function Workspace({
         [`${base}/aluno`, "Meu percurso", "book"],
         [`${base}/aluno/turmas`, "Minhas turmas", "users"],
         [`${base}/aluno/entregas`, "Entregas", "document"],
-        [`${base}/aluno/feedback`, "Feedback", "message"],
         [`${base}/aluno/apoios`, "Meus apoios", "message"],
       ]
     : [
@@ -97,12 +96,12 @@ export function Workspace({
             </ul>
           </nav>
           <div className="sidebar-tools">
-            <NavigationHint label="Preferências de leitura" enabled={collapsed&&!mobile}><a href="#preferencias" aria-label="Preferências de leitura">
+            {!student && <><NavigationHint label="Preferências de leitura" enabled={collapsed&&!mobile}><a href="#preferencias" aria-label="Preferências de leitura">
               <Icon name="settings" /><span className="sidebar-label">Preferências de leitura</span>
             </a></NavigationHint>
             <NavigationHint label="Tema e contraste" enabled={collapsed}><a href="#temas" aria-label="Tema e contraste">
               <Icon name={theme === "dark" ? "moon" : "sun"} /><span className="sidebar-label">Tema e contraste</span>
-            </a></NavigationHint>
+            </a></NavigationHint></>}
             <NavigationHint label="Ajuda" enabled={collapsed}><Link href={`${base}/${role}/ajuda`} aria-label="Ajuda">
               <Icon name="help" /><span className="sidebar-label">Ajuda</span>
             </Link></NavigationHint>
@@ -119,7 +118,7 @@ export function Workspace({
             <p>Conectando pessoas e possibilidades de aprender.</p>
           </div>
         </aside>
-        <div className="workspace">
+        <div className={`workspace${student ? " student-workspace" : ""}`}>
           <header className="topbar">
             <Link className="brand mobile-workspace-brand" href={`${base}/${role}`} aria-label="Travessia, início"><Brand/></Link>
             <div className="workspace-topbar-start"><NavigationHint label={toggleLabel} below enabled={!mobile}>
@@ -154,8 +153,10 @@ export function Workspace({
 /** Decorative artwork; learning information stays in semantic HTML. */
 export function PathIllustration({
   variant = "student",
+  sizes = "(max-width: 1100px) 1px, 38vw",
 }: {
   variant?: "student" | "teacher";
+  sizes?: string;
 }) {
   return (
     <figure className="path-art decorative" aria-hidden="true">
@@ -172,7 +173,7 @@ export function PathIllustration({
         }
         width={1536}
         height={1024}
-        sizes="(max-width: 1100px) 1px, 38vw"
+        sizes={sizes}
         alt=""
       />
     </figure>
