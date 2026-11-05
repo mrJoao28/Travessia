@@ -9,16 +9,19 @@ import { LearnerAdaptations } from "./learner-adaptations";
 import { AudioAttachment } from "./support-audio";
 import { SubmissionMedia } from "./submission-media";
 import { LearnerMaterials } from "./learner-materials";
+import { readStudentDraft, storeStudentDraft } from "../lib/student-draft";
 import { MissionSupports } from "./mission-supports";
 
 export function LiveMission({
   id,
   role,
   classrooms,
+  viewerId,
 }: {
   id: string;
   role: "aluno" | "professor";
   classrooms: Classroom[];
+  viewerId: string;
 }) {
   const [mission, setMission] = useState<Mission | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
@@ -34,6 +37,10 @@ export function LiveMission({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
+  const recoveryKey = `travessia:student-draft:${viewerId}:${id}`;
+  const [saveError, setSaveError] = useState(false);
+  const [localSaved, setLocalSaved] = useState(false);
+  const [recovered, setRecovered] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     let active = true;
@@ -44,15 +51,21 @@ export function LiveMission({
         const current = deliveries.find(
           (s) => s.versionId === value.publishedVersion?.id,
         );
+        const version = value.publishedVersion;
+        const local = role === "aluno" ? readStudentDraft(recoveryKey) : null;
+        const recover = local && version?.id === local.versionId
+          && local.revision === (current?.revision ?? 0) && (!current || current.status === "draft");
+        setRecovered(!!recover);
+        setDirty(!!recover);
         setMission(value);
         setSubmission(current ?? null);
-        setContent(current?.content ?? "");
-        setCompleted(current?.completedStepIds ?? []);
+        setContent(recover ? local.content : current?.content ?? "");
+        setCompleted(recover ? local.completed.filter(id => version.steps.some(step => step.id === id)) : current?.completedStepIds ?? []);
         setIndex(
           Math.max(
             0,
             value.publishedVersion?.steps.findIndex(
-              (s) => s.id === current?.currentStepId,
+              (s) => s.id === (recover ? local.stepId : current?.currentStepId),
             ) ?? 0,
           ),
         );
@@ -66,7 +79,7 @@ export function LiveMission({
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, recoveryKey, role]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (dirty) event.preventDefault();
@@ -74,6 +87,25 @@ export function LiveMission({
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+  useEffect(() => {
+    const version = mission?.publishedVersion;
+    const step = version?.steps[index];
+    if (role !== "aluno" || !dirty || !version || !step) return;
+    setLocalSaved(storeStudentDraft(recoveryKey, {
+      versionId: version.id, revision: submission?.revision ?? 0,
+      content, completed, stepId: step.id,
+    }));
+  }, [role, dirty, mission, index, recoveryKey, submission, content, completed]);
+  useEffect(() => {
+    if (!dirty || pending || mediaBusy || saveError || role !== "aluno" || audio !== undefined || textFile !== undefined) return;
+    const timer = window.setTimeout(() => void save("draft", true), 900);
+    return () => window.clearTimeout(timer);
+  });
+  useEffect(() => {
+    const retry = () => setSaveError(false);
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+  }, []);
   if (loading) return <p role="status">Consultando missão e atividade…</p>;
   if (error)
     return (
@@ -98,10 +130,10 @@ export function LiveMission({
   if (!classroom || !step)
     return <p className="paper">Este contexto não está disponível.</p>;
   const locked = !!submission && submission.status !== "draft";
-  async function save(status: "draft" | "submitted") {
+  async function save(status: "draft" | "submitted", automatic = false) {
     if (pending || mediaBusy || !mission?.publishedVersion || !step) return;
     setPending(true);
-    setMessage("");
+    if (!automatic) setMessage("");
     try {
       const saved = await api("saveSubmission", {
         params: { id },
@@ -120,12 +152,16 @@ export function LiveMission({
       setContent(saved.content);
       setCompleted(saved.completedStepIds);
       setDirty(false);
-      setMessage(
+      setSaveError(false);
+      setRecovered(false);
+      if (readStudentDraft(recoveryKey)?.versionId === mission.publishedVersion.id) storeStudentDraft(recoveryKey, null);
+      if (!automatic) setMessage(
         saved.status === "draft"
           ? "Rascunho e etapa atual salvos no servidor."
           : "Atividade enviada. Aguarde o feedback do professor.",
       );
     } catch (reason) {
+      setSaveError(true);
       setMessage(errorMessage(reason));
     } finally {
       setPending(false);
@@ -277,6 +313,7 @@ export function LiveMission({
                     void save("submitted");
                   }}
                 >
+                  {recovered && <p role="status">Texto e progresso recuperados deste navegador.</p>}
                   <label htmlFor="submission-content">
                     Planejamento e atividade
                     <textarea
@@ -294,7 +331,7 @@ export function LiveMission({
                   </label>
                   <p id="submission-help" className="small">
                     O envio torna esta entrega disponível aos docentes de{" "}
-                    {classroom.name}. Salve o rascunho para retomar depois. Ele
+                    {classroom.name}. O texto e o progresso são salvos automaticamente. O rascunho
                     permanece privado para você.
                   </p>
                   <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao Gemini.</p>
@@ -320,7 +357,9 @@ export function LiveMission({
                   </div>
                   <p className="small">
                     {dirty
-                      ? "Alterações ainda não salvas no servidor."
+                      ? pending ? "Salvando…" : localSaved
+                        ? "Texto e progresso guardados neste navegador. Anexos precisam ser salvos manualmente."
+                        : "Alterações ainda não salvas no servidor."
                       : submission
                         ? "Conteúdo carregado do servidor."
                         : "Escreva e salve para iniciar seu rascunho."}
