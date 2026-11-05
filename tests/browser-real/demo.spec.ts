@@ -113,6 +113,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
         .analyze()
     ).violations,
   ).toEqual([]);
+  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
   await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
   await page.getByLabel('O que dificultou esta etapa?').fill('Exemplo de relato privado criado no teste integrado.');
@@ -388,7 +389,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await expect(page.getByText('Rascunho e etapa atual salvos no servidor.', { exact: true })).toBeVisible();
       await page.reload();
       await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
+      page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
       await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
     } else {
       await expect(page.getByText('Consultar enunciado adaptado', { exact: true })).toHaveCount(0);

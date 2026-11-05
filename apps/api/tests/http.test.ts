@@ -214,6 +214,24 @@ test('entregas: autoria, isolamento A/B, draft privado e controle de concorrênc
   const reviewed = (await request(`/v1/submissions/${sent.id}/feedback`, main, 'POST', { content: 'Compare também uma segunda alternativa.' })).json;
   assert.equal(reviewed.status, 'reviewed'); assert.equal(reviewed.feedback.length, 1);
 });
+test('feedback com ajustes abre nova tentativa e preserva a entrega revisada', async () => {
+  const mission = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const versionId = mission.draftVersion.id;
+  const path = `/v1/missions/${mission.id}/submissions`;
+  await request(`/v1/missions/${mission.id}/publish`, main, 'POST', { versionId, reviewed: true });
+  const input = { versionId, currentStepId: mission.draftVersion.steps[0].id, completedStepIds: [], content: 'Primeira tentativa', status: 'submitted', expectedRevision: 0 };
+  const first = (await request(path, a, 'POST', input)).json;
+  await request(path, a, 'POST', { ...input, expectedRevision: first.revision }, 409);
+  const reviewed = (await request(`/v1/submissions/${first.id}/feedback`, main, 'POST', { content: 'Compare mais uma hipótese.', requestRevision: true })).json;
+  assert.equal(reviewed.revisionRequested, true);
+  const next = (await request(path, a, 'POST', { ...input, content: 'Segunda tentativa', status: 'draft', expectedRevision: reviewed.revision })).json;
+  assert.equal(next.attempt, 2);
+  assert.notEqual(next.id, first.id);
+  await request(`/v1/submissions/${next.id}`, main, 'GET', undefined, 404);
+  const prior = (await request(`/v1/submissions/${first.id}`, a)).json;
+  assert.equal(prior.content, input.content);
+  assert.equal(prior.feedback[0].content, 'Compare mais uma hipótese.');
+});
 test('convite opaco: papel fixo, consumo atômico, expiração e revogação', async () => {
   const outsider1 = await provision('new-student-1'); const outsider2 = await provision('new-student-2');
   const invite = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', {})).json;
