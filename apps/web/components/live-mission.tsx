@@ -40,6 +40,7 @@ export function LiveMission({
   const recoveryKey = `travessia:student-draft:${viewerId}:${id}`;
   const [saveError, setSaveError] = useState(false);
   const [localSaved, setLocalSaved] = useState(false);
+  const [attemptHistory, setAttemptHistory] = useState<Submission[]>([]);
   const [previousDrafts, setPreviousDrafts] = useState<Submission[]>([]);
   const [previousLocal, setPreviousLocal] = useState<ReturnType<typeof readStudentDraft>>(null);
   const [recovered, setRecovered] = useState(false);
@@ -50,16 +51,17 @@ export function LiveMission({
     Promise.all([api("mission", { params: { id } }), pages("submissions", id)])
       .then(([value, deliveries]) => {
         if (!active) return;
-        const current = deliveries.find(
-          (s) => s.versionId === value.publishedVersion?.id,
-        );
+        const attempts = deliveries.filter(s => s.versionId === value.publishedVersion?.id)
+          .sort((a, b) => (b.attempt ?? 1) - (a.attempt ?? 1));
+        const [current, ...history] = attempts;
+        setAttemptHistory(history);
         const version = value.publishedVersion;
         const local = role === "aluno" ? readStudentDraft(recoveryKey) : null;
         const recover = local && version?.id === local.versionId
-          && local.revision === (current?.revision ?? 0) && (!current || current.status === "draft");
+          && local.revision === (current?.revision ?? 0) && (!current || current.status === "draft" || current.revisionRequested);
         setPreviousDrafts(deliveries.filter(s => s.versionId !== version?.id && s.status === "draft")
           .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
-        const unmatched = local && !recover && (!current || current.status === "draft") ? local : null;
+        const unmatched = local && !recover && (!current || current.status === "draft" || current.revisionRequested) ? local : null;
         if (unmatched) storeStudentDraft(recoveryKey + ":previous", unmatched);
         setPreviousLocal(unmatched ?? readStudentDraft(recoveryKey + ":previous"));
         setRecovered(!!recover);
@@ -136,7 +138,7 @@ export function LiveMission({
   const step = version.steps[index];
   if (!classroom || !step)
     return <p className="paper">Este contexto não está disponível.</p>;
-  const locked = !!submission && submission.status !== "draft";
+  const locked = !!submission && submission.status !== "draft" && !submission.revisionRequested;
   async function save(status: "draft" | "submitted", automatic = false) {
     if (pending || mediaBusy || !mission?.publishedVersion || !step) return;
     setPending(true);
@@ -155,6 +157,7 @@ export function LiveMission({
           expectedRevision: submission?.revision ?? 0,
         },
       });
+      if (submission && submission.id !== saved.id) setAttemptHistory(history => [submission, ...history]);
       setSubmission(saved); setAudio(undefined); setTextFile(undefined);
       setContent(saved.content);
       setCompleted(saved.completedStepIds);
@@ -299,6 +302,13 @@ export function LiveMission({
           {role === "aluno" && (
             <section className="paper" style={{ marginTop: "1rem" }}>
               <h2>Sua atividade</h2>
+              {submission?.revisionRequested && <p role="status">O professor solicitou ajustes. Leia o feedback e prepare uma nova tentativa.</p>}
+              {[...(submission?.revisionRequested ? [submission] : []), ...attemptHistory].map(attempt => <details key={attempt.id}>
+                <summary>Tentativa {attempt.attempt ?? 1} · entrega e feedback</summary>
+                <p className="submission-content">{attempt.content}</p>
+                <SubmissionMedia id={attempt.id} hasAudio={attempt.hasAudio} hasTextFile={attempt.hasTextFile} />
+                {attempt.feedback.map(feedback => <blockquote key={feedback.id}><p>{feedback.content}</p></blockquote>)}
+              </details>)}
               {(previousLocal || previousDrafts.length > 0) && <section className="notice">
                 <h3>Rascunhos para recuperar</h3>
                 {previousDrafts.length > 0 && <p>Há rascunhos de versões anteriores. Confira os objetivos, critérios e etapas da versão atual antes de reaproveitar o texto. O progresso anterior fica no rascunho original.</p>}
@@ -339,7 +349,8 @@ export function LiveMission({
                   aria-busy={pending}
                   onSubmit={(e) => {
                     e.preventDefault();
-                    void save("submitted");
+                    if (window.confirm("Enviar esta tentativa para revisão? Confira o texto e os anexos selecionados antes de confirmar."))
+                      void save("submitted");
                   }}
                 >
                   {recovered && <p role="status">Texto e progresso recuperados deste navegador.</p>}
@@ -365,12 +376,12 @@ export function LiveMission({
                   </p>
                   <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao Gemini.</p>
                   {formats.includes("audio") && <AudioAttachment label="Áudio da atividade (opcional)" disabled={pending || mediaBusy} id="submission" missionId={id} help="Resposta em áudio de até 30 segundos; arquivo de até 10 MB na seleção. O navegador converte localmente para WAV. Um resumo no editor é opcional." value={audio ? { base64: audio } : null} onBusy={setMediaBusy} onChange={value => { setAudio(value && "base64" in value ? value.base64 : null); setDirty(true); }} />}
-                  {submission?.hasAudio && audio === undefined && <><SubmissionMedia id={submission.id} hasAudio /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setAudio(null); setDirty(true); }}>Remover áudio salvo da atividade</button></>}
+                  {submission?.hasAudio && !submission.revisionRequested && audio === undefined && <><SubmissionMedia id={submission.id} hasAudio /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setAudio(null); setDirty(true); }}>Remover áudio salvo da atividade</button></>}
                   {formats.includes("text_file") && <div className="form-stack"><label htmlFor="submission-file">Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)</label><input id="submission-file" type="file" accept=".txt,text/plain" disabled={pending || mediaBusy} onChange={async e => {
                     const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; setMediaBusy(true); setMessage("");
                     try { if (!/\.txt$/i.test(file.name) || file.size > 32768) throw new Error("Selecione um arquivo .txt de até 32 KiB."); const text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer()); if (text.length > 20000 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(text)) throw new Error("O arquivo precisa conter somente texto UTF-8, até 20 mil caracteres."); setTextFile({ text }); setDirty(true); } catch (reason) { setMessage(errorMessage(reason)); } finally { setMediaBusy(false); }
                   }} />{textFile && <><p>Arquivo de texto preparado para salvar.</p><details><summary>Conferir texto do arquivo</summary><p className="submission-content">{textFile.text}</p></details><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo selecionado</button></>}</div>}
-                  {submission?.hasTextFile && textFile === undefined && <><SubmissionMedia id={submission.id} hasTextFile /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo salvo da atividade</button></>}
+                  {submission?.hasTextFile && !submission.revisionRequested && textFile === undefined && <><SubmissionMedia id={submission.id} hasTextFile /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo salvo da atividade</button></>}
                   <div className="actions">
                     <button
                       className="button button-outline"
