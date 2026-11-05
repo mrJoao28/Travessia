@@ -277,6 +277,8 @@ export function LiveMission({
                 Próxima etapa
               </button>
             </div>
+            {role === "aluno" && <a className="text-link" href="#learner-materials-title"
+              onClick={() => document.getElementById("learner-materials-title")?.focus()}>Abrir materiais preparados</a>}
             {role === "aluno" && <LearnerAdaptations missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
             {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
