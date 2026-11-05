@@ -2021,7 +2021,6 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .preview-student-other .card-list > li { padding: .75rem 1rem; flex-wrap: wrap; }
 .preview-student-mission.form-stack { gap: .75rem; }
 .preview-student-mission > .paper { padding: clamp(.85rem, 2cqi, 1.4rem); }
-.preview-student-stage { scroll-margin-block-start: 1rem; }
 .preview-student-stage h2, .preview-student-stage p { margin: 0; }
 .preview-student-stage-actions {
   display: flex;
@@ -2042,3 +2041,14 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .student-first-mission-help .onboarding-guide { border: 0; padding-inline: 0; margin-bottom: 0; }
 .student-live-mission { margin-top: 1rem; }
 .student-workspace .student-live-mission { max-width: 72rem; }
+
+.student-step-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem .6rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid var(--border);
+}
+.student-step-pagination .button { padding: .35rem .65rem; min-height: 44px; }
+.student-step-pagination .eyebrow { color: var(--muted); }

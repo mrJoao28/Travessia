@@ -45,13 +45,11 @@ export function LiveMission({
   const [previousLocal, setPreviousLocal] = useState<ReturnType<typeof readStudentDraft>>(null);
   const [recovered, setRecovered] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
-  const stage = useRef<HTMLElement>(null);
   const stepNavigation = useRef(false);
   useLayoutEffect(() => {
     if (!stepNavigation.current) return;
     stepNavigation.current = false;
     title.current?.focus({ preventScroll: true });
-    stage.current?.scrollIntoView({ block: "start", inline: "nearest", behavior: "instant" });
   }, [index]);
   useEffect(() => {
     let active = true;
@@ -213,10 +211,26 @@ export function LiveMission({
       </section>
       <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
         <div className="form-stack">
-          <section className="paper preview-student-stage form-stack" ref={stage} id="etapas">
-            <p className="eyebrow">
-              Etapa {index + 1} de {version.steps.length}
-            </p>
+          <section className="paper preview-student-stage form-stack" id="etapas">
+            <nav className="student-step-pagination" aria-label="Paginação das etapas">
+              <button
+                className="button button-outline"
+                disabled={pending || index === 0}
+                aria-label="Etapa anterior"
+                onClick={() => navigate(index - 1)}
+              >
+                Anterior
+              </button>
+              <span className="eyebrow">Etapa {index + 1} de {version.steps.length}</span>
+              <button
+                className="button button-outline"
+                disabled={pending || index === version.steps.length - 1}
+                aria-label="Próxima etapa"
+                onClick={() => navigate(index + 1)}
+              >
+                Próxima
+              </button>
+            </nav>
             <h2 ref={title} tabIndex={-1}>
               {step.title}
             </h2>
@@ -225,22 +239,6 @@ export function LiveMission({
               <summary>Ver um exemplo</summary>
               <p className="submission-content">{step.example}</p>
             </details>}
-            <div className="actions">
-              <button
-                className="button button-outline"
-                disabled={pending || index === 0}
-                onClick={() => navigate(index - 1)}
-              >
-                Etapa anterior
-              </button>
-              <button
-                className="button button-outline"
-                disabled={pending || index === version.steps.length - 1}
-                onClick={() => navigate(index + 1)}
-              >
-                Próxima etapa
-              </button>
-            </div>
             {role === "aluno" && <a className="text-link" href="#learner-materials-title"
               onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais preparados</a>}
             {role === "aluno" && <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}

@@ -13,14 +13,12 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
  const saved=state.submissions.find(s=>s.missionId===missionId&&s.revision===mission?.revision&&s.studentId===student.id);
  const [index,setIndex]=useState(saved?.step??0),[content,setContent]=useState(saved?.content??''),[completed,setCompleted]=useState<number[]>(saved?.completed??[]),[audio,setAudio]=useState(saved?.audio??false),[textFile,setTextFile]=useState(saved?.textFile??false),[message,setMessage]=useState(''),[dirty,setDirty]=useState(false);
  const heading=useRef<HTMLHeadingElement>(null);
- const stage=useRef<HTMLElement>(null);
  const stepNavigation=useRef(false);
  useTeacherDraftGuard(dirty);
  useLayoutEffect(()=>{
   if(!stepNavigation.current)return;
   stepNavigation.current=false;
   heading.current?.focus({preventScroll:true});
-  stage.current?.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
  },[index]);
  if(!mission||!accessible)return <><PreviewHeading title="Esta missão ainda não está disponível" description="Rascunhos, versões não publicadas e turmas sem vínculo não aparecem para o aluno neste cenário."/><Link className="button" href="/previa/aluno">Voltar ao meu percurso</Link></>;
  const materials=state.materials.filter(m=>m.missionId===mission.id&&m.revision===mission.revision&&m.studentId===student.id&&m.released);
@@ -38,8 +36,12 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
  }
  return <><Link className="text-link" href="/previa/aluno">← Voltar ao meu percurso</Link><PreviewHeading title={mission.title} description={`${student.name} · ${state.classrooms.find(c=>c.id===mission.classroomId)?.name}`}/>
  <div className="preview-student-mission form-stack">
- <section className="paper form-stack preview-student-stage" ref={stage} aria-labelledby="preview-stage-heading">
-  <p className="eyebrow">Etapa {index+1} de {mission.steps.length} · {completed.length} concluída(s)</p>
+ <section className="paper form-stack preview-student-stage" aria-labelledby="preview-stage-heading">
+  <nav className="student-step-pagination" aria-label="Paginação das etapas">
+   <button type="button" className="button button-outline" aria-label="Etapa anterior" disabled={index===0} onClick={()=>go(index-1)}>Anterior</button>
+   <span className="eyebrow">Etapa {index+1} de {mission.steps.length}</span>
+   <button type="button" className="button button-outline" aria-label="Próxima etapa" disabled={index===mission.steps.length-1} onClick={()=>go(index+1)}>Próxima</button>
+  </nav>
   <h2 id="preview-stage-heading" ref={heading} tabIndex={-1}>{step.title}</h2>
   <p>{adapted || step.instructions}</p>
   {(adapted || step.example || strategies.length>0)&&<details className="example" key={index}>
@@ -50,10 +52,6 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
   </details>}
   <div className="preview-student-stage-actions">
    <label className="check"><input type="checkbox" checked={completed.includes(index)} onChange={e=>{setCompleted(v=>e.target.checked?[...v,index]:v.filter(i=>i!==index));setDirty(true);}}/>Concluí esta etapa</label>
-   <div className="actions">
-    {index>0&&<button className="text-button" onClick={()=>go(index-1)}>Etapa anterior</button>}
-    {index<mission.steps.length-1&&<button className="button button-outline" onClick={()=>go(index+1)}>Próxima etapa</button>}
-   </div>
   </div>
  </section>
  <details className="paper preview-student-context">
