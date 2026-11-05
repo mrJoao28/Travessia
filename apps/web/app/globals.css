@@ -1996,9 +1996,9 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .preview-preset .small { display: block; margin-block-start: .25rem; }
 
 /* Keep the student's preview focused and aligned with the workspace edge. */
-.student-preview-workspace { margin-inline: 0; }
-.student-preview-workspace .interactive-preview { max-width: 72rem; }
-.student-preview-workspace .preview-scenario-toolbar {
+.student-workspace { margin-inline: 0; }
+.student-workspace .interactive-preview { max-width: 72rem; }
+.student-workspace .preview-scenario-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2006,12 +2006,12 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   padding: .7rem 1rem;
   margin-bottom: 1.25rem;
 }
-.student-preview-workspace .preview-scenario-toolbar > div:first-child { flex: 1 1 16rem; }
-.student-preview-workspace .preview-scenario-toolbar > div:first-child p { margin: .2rem 0 0; font-size: .875rem; }
-.student-preview-workspace .preview-persona { margin: 0; flex: 1 1 16rem; }
+.student-workspace .preview-scenario-toolbar > div:first-child { flex: 1 1 16rem; }
+.student-workspace .preview-scenario-toolbar > div:first-child p { margin: .2rem 0 0; font-size: .875rem; }
+.student-workspace .preview-persona { margin: 0; flex: 1 1 16rem; }
 .preview-student-scenario-options { flex: 0 1 auto; }
 .preview-student-scenario-options .actions { gap: .4rem 1rem; margin-top: .5rem; }
-.student-preview-workspace .page-heading { margin-bottom: 1rem; }
+.student-workspace .page-heading { margin-bottom: 1rem; }
 .preview-student-continue { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem 1.5rem; }
 .preview-student-continue-copy { display: grid; justify-items: start; gap: .55rem; flex: 1 1 22rem; min-width: 0; }
 .preview-student-continue-copy > *, .preview-student-other .card-list p { margin: 0; }
@@ -2033,7 +2033,10 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .preview-student-context > summary { font-weight: 600; }
 .preview-student-context[open] > summary { margin-bottom: .75rem; }
 @media (max-width: 600px) {
-  .student-preview-workspace .preview-scenario-toolbar { align-items: flex-start; }
-  .student-preview-workspace .preview-persona select { max-width: none; }
+  .student-workspace .preview-scenario-toolbar { align-items: flex-start; }
+  .student-workspace .preview-persona select { max-width: none; }
   .preview-student-continue > .path-art { flex-basis: 13rem; }
 }
+
+.student-first-mission-help { margin-top: 1rem; }
+.student-first-mission-help .onboarding-guide { border: 0; padding-inline: 0; margin-bottom: 0; }

@@ -59,13 +59,11 @@ export function Workspace({
   const toggleLabel=mobile?'Abrir menu':collapsed?'Abrir menu':'Recolher menu';
   const base = preview ? "/previa" : "";
   const student = role === "aluno";
-  const studentPreview = preview && student;
   const links: [string, string, IconName][] = student
     ? [
         [`${base}/aluno`, "Meu percurso", "book"],
         [`${base}/aluno/turmas`, "Minhas turmas", "users"],
         [`${base}/aluno/entregas`, "Entregas", "document"],
-        ...(!studentPreview ? [[`${base}/aluno/feedback`, "Feedback", "message"] as [string, string, IconName]] : []),
         [`${base}/aluno/apoios`, "Meus apoios", "message"],
       ]
     : [
@@ -98,7 +96,7 @@ export function Workspace({
             </ul>
           </nav>
           <div className="sidebar-tools">
-            {!studentPreview && <><NavigationHint label="Preferências de leitura" enabled={collapsed&&!mobile}><a href="#preferencias" aria-label="Preferências de leitura">
+            {!student && <><NavigationHint label="Preferências de leitura" enabled={collapsed&&!mobile}><a href="#preferencias" aria-label="Preferências de leitura">
               <Icon name="settings" /><span className="sidebar-label">Preferências de leitura</span>
             </a></NavigationHint>
             <NavigationHint label="Tema e contraste" enabled={collapsed}><a href="#temas" aria-label="Tema e contraste">
@@ -120,7 +118,7 @@ export function Workspace({
             <p>Conectando pessoas e possibilidades de aprender.</p>
           </div>
         </aside>
-        <div className={`workspace${studentPreview ? " student-preview-workspace" : ""}`}>
+        <div className={`workspace${student ? " student-workspace" : ""}`}>
           <header className="topbar">
             <Link className="brand mobile-workspace-brand" href={`${base}/${role}`} aria-label="Travessia, início"><Brand/></Link>
             <div className="workspace-topbar-start"><NavigationHint label={toggleLabel} below enabled={!mobile}>
