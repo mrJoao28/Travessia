@@ -192,8 +192,16 @@ test('prévia do aluno oferece um acesso por missão e prioriza a etapa atual', 
  await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeHidden();
  await main.getByText('Objetivos e critérios da missão', { exact: true }).click();
  await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeVisible();
+ const stage = main.locator('.preview-student-stage');
+ const guidance = stage.getByText('Exemplo e orientações da etapa', { exact: true });
+ await guidance.click();
+ await expect(stage.locator('details')).toHaveAttribute('open', '');
  await main.getByRole('button', { name: 'Próxima etapa' }).click();
  await expect(main.locator('#preview-stage-heading')).toBeFocused();
+ await expect(stage.locator('details[open]')).toHaveCount(0);
+ const bounds = (await stage.boundingBox())!;
+ expect(bounds.y).toBeGreaterThanOrEqual(0);
+ expect(bounds.y).toBeLessThan(200);
  await page.setViewportSize({ width: 320, height: 800 });
  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);

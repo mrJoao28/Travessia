@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { useRef,useState } from 'react';
+import { useLayoutEffect,useRef,useState } from 'react';
 import { usePreview } from './provider';
 import { PreviewHeading,simulatedSave } from './chrome';
 import { audioTranscript,audioUrl,pdfUrl,previewFiles,presetLabels,previewId,previewDocument,presetSupports,publishedMission } from '../../lib/preview/data';
@@ -12,7 +12,16 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
  const accessible=mission&&state.classrooms.find(c=>c.id===mission.classroomId)?.students.includes(student.id);
  const saved=state.submissions.find(s=>s.missionId===missionId&&s.revision===mission?.revision&&s.studentId===student.id);
  const [index,setIndex]=useState(saved?.step??0),[content,setContent]=useState(saved?.content??''),[completed,setCompleted]=useState<number[]>(saved?.completed??[]),[audio,setAudio]=useState(saved?.audio??false),[textFile,setTextFile]=useState(saved?.textFile??false),[message,setMessage]=useState(''),[dirty,setDirty]=useState(false);
- const heading=useRef<HTMLHeadingElement>(null);useTeacherDraftGuard(dirty);
+ const heading=useRef<HTMLHeadingElement>(null);
+ const stage=useRef<HTMLElement>(null);
+ const stepNavigation=useRef(false);
+ useTeacherDraftGuard(dirty);
+ useLayoutEffect(()=>{
+  if(!stepNavigation.current)return;
+  stepNavigation.current=false;
+  heading.current?.focus({preventScroll:true});
+  stage.current?.scrollIntoView({block:'start',inline:'nearest',behavior:'instant'});
+ },[index]);
  if(!mission||!accessible)return <><PreviewHeading title="Esta missão ainda não está disponível" description="Rascunhos, versões não publicadas e turmas sem vínculo não aparecem para o aluno neste cenário."/><Link className="button" href="/previa/aluno">Voltar ao meu percurso</Link></>;
  const materials=state.materials.filter(m=>m.missionId===mission.id&&m.revision===mission.revision&&m.studentId===student.id&&m.released);
  const strategies=state.strategies.filter(s=>s.missionId===mission.id&&s.revision===mission.revision&&(!s.studentId||s.studentId===student.id)&&(s.step===null||s.step===index));
@@ -20,7 +29,7 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
  const formats=activity?.formats??[...new Set(['text',...materials.flatMap(m=>m.formats)])];
  const adapted=activity?.instructions??materials.find(m=>m.instructions)?.instructions;
  const step=mission.steps[Math.min(index,mission.steps.length-1)];
- function go(next:number){setIndex(next);setDirty(true);requestAnimationFrame(()=>heading.current?.focus());}
+ function go(next:number){stepNavigation.current=true;setIndex(next);setDirty(true);}
  function save(status:'draft'|'submitted'){
   if(!saved&&state.submissions.length>=100){setMessage('Limite de respostas fictícias atingido. Reinicie o cenário.');return;}
   if(status==='submitted'&&!content.trim()&&!audio&&!textFile){setMessage('Escreva sua resposta ou escolha um anexo fictício autorizado.');return;}
@@ -29,11 +38,11 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
  }
  return <><Link className="text-link" href="/previa/aluno">← Voltar ao meu percurso</Link><PreviewHeading title={mission.title} description={`${student.name} · ${state.classrooms.find(c=>c.id===mission.classroomId)?.name}`}/>
  <div className="preview-student-mission form-stack">
- <section className="paper form-stack preview-student-stage" aria-labelledby="preview-stage-heading">
+ <section className="paper form-stack preview-student-stage" ref={stage} aria-labelledby="preview-stage-heading">
   <p className="eyebrow">Etapa {index+1} de {mission.steps.length} · {completed.length} concluída(s)</p>
   <h2 id="preview-stage-heading" ref={heading} tabIndex={-1}>{step.title}</h2>
   <p>{adapted || step.instructions}</p>
-  {(adapted || step.example || strategies.length>0)&&<details className="example">
+  {(adapted || step.example || strategies.length>0)&&<details className="example" key={index}>
    <summary>Exemplo e orientações da etapa</summary>
    {adapted&&<><h3>Enunciado original</h3><p>{step.instructions}</p></>}
    {step.example&&<><h3>Exemplo</h3><p>{step.example}</p></>}

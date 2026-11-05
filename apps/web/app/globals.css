@@ -2021,6 +2021,7 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .preview-student-other .card-list > li { padding: .75rem 1rem; flex-wrap: wrap; }
 .preview-student-mission.form-stack { gap: .75rem; }
 .preview-student-mission > .paper { padding: clamp(.85rem, 2cqi, 1.4rem); }
+.preview-student-stage { scroll-margin-block-start: 1rem; }
 .preview-student-stage h2, .preview-student-stage p { margin: 0; }
 .preview-student-stage-actions {
   display: flex;
