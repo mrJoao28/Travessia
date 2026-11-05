@@ -11152,6 +11152,14 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "attempt": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "revisionRequested": {
+                      "type": "boolean"
+                    },
                     "status": {
                       "type": "string",
                       "enum": [
@@ -11353,6 +11361,14 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "attempt": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "revisionRequested": {
+                            "type": "boolean"
+                          },
                           "status": {
                             "type": "string",
                             "enum": [
@@ -11544,6 +11560,14 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "attempt": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "revisionRequested": {
+                      "type": "boolean"
+                    },
                     "status": {
                       "type": "string",
                       "enum": [
@@ -11709,6 +11733,9 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 6000
+                  },
+                  "requestRevision": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -11742,6 +11769,14 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 100
+                    },
+                    "attempt": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "revisionRequested": {
+                      "type": "boolean"
                     },
                     "status": {
                       "type": "string",

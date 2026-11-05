@@ -4041,6 +4041,8 @@ export interface operations {
                             id: string;
                             versionId: string;
                             userId: string;
+                            attempt?: number;
+                            revisionRequested?: boolean;
                             /** @enum {string} */
                             status: "draft" | "submitted" | "reviewed";
                             content: string;
@@ -4115,6 +4117,8 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        attempt?: number;
+                        revisionRequested?: boolean;
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
@@ -4171,6 +4175,8 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        attempt?: number;
+                        revisionRequested?: boolean;
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
@@ -4219,6 +4225,7 @@ export interface operations {
             content: {
                 "application/json": {
                     content: string;
+                    requestRevision?: boolean;
                 };
             };
         };
@@ -4233,6 +4240,8 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        attempt?: number;
+                        revisionRequested?: boolean;
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
