@@ -351,7 +351,14 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
     await page.goto('/aluno/missoes/demo-class-oficina-mission');
-    await page.getByRole('button', { name: /^Conhecer o desafio(?: · concluída e salva)?$/ }).click({ timeout: 15_000 });
+    const pagination = page.getByRole('navigation', { name: 'Paginação das etapas' });
+    const previous = pagination.getByRole('button', { name: 'Etapa anterior', exact: true });
+    await expect(previous).toBeVisible();
+    const stage = page.locator('#etapas h2');
+    for (let remaining = 9; remaining > 0 && (await stage.textContent())?.trim() !== 'Conhecer o desafio'; remaining--) {
+      await previous.click();
+    }
+    await expect(stage).toHaveText('Conhecer o desafio');
     const supports = page.getByRole('region', { name: 'Apoios desta etapa', exact: true });
     await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toBeVisible();
     if (suffix === 'A') {
@@ -383,6 +390,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.screenshot({ path: 'test-results/reference-learning-needs.png', fullPage: true });
     }
     await page.goto(`/aluno/missoes/${inclusiveMission.id}`);
+    await page.getByText('Objetivos e critérios da missão', { exact: true }).click();
     await expect(page.getByText('Justificar uma escolha.', { exact: true })).toBeVisible();
     await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
     if (suffix === 'A') {
