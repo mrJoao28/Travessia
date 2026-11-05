@@ -44,7 +44,7 @@ class PdfProcessing(unittest.TestCase):
             page[NameObject('/Resources')] = DictionaryObject({NameObject('/Font'):DictionaryObject({NameObject('/F1'):font})})
             commands = []
             for i in range(6):
-                for x, column in [(50, 'Esquerda'), (340, 'Direita')]:
+                for x, column in [(50, 'Esquerda'), (235, 'Direita')]:
                     commands.append(f'BT /F1 13 Tf {x} {750-i*20} Td ({column} {i+1}) Tj ET')
             for x in (50, 250, 500):
                 commands.append(f'{x} 500 m {x} 560 l S')
@@ -62,6 +62,29 @@ class PdfProcessing(unittest.TestCase):
             self.assertLess(text.index('Esquerda 6'), text.index('Direita 1'))
             self.assertIn('Grandeza | Valor\nMassa | x = 10', text)
             self.assertIn('notação matemática', output['warnings'][0])
+
+    def test_mixed_scan_warns_about_text_inside_images(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / 'mixed.pdf'
+            image = Image.new('RGB', (600, 600), 'white')
+            ImageDraw.Draw(image).rectangle((30, 30, 500, 500), outline='black')
+            image.save(path, 'PDF', resolution=72)
+            writer = PdfWriter(clone_from=path)
+            page = writer.pages[0]
+            font = DictionaryObject({NameObject('/Type'): NameObject('/Font'),
+                                     NameObject('/Subtype'): NameObject('/Type1'),
+                                     NameObject('/BaseFont'): NameObject('/Helvetica')})
+            page['/Resources'][NameObject('/Font')] = DictionaryObject({NameObject('/F1'): font})
+            stream = DecodedStreamObject()
+            stream.set_data(b'BT /F1 12 Tf 20 575 Td (Legenda digital com mais de vinte caracteres) Tj ET')
+            stream.set_data(page.get_contents().get_data() + b"\n" + stream.get_data())
+            page.replace_contents(stream)
+            writer.write(path)
+            result = self.run_pdf(path)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            output = json.loads(result.stdout)
+            self.assertIn('Legenda digital', output['pages'][0]['text'])
+            self.assertIn('imagem extensa com texto digital', output['warnings'][0])
 
     def test_accepts_forty_pages_in_order(self):
         with tempfile.TemporaryDirectory() as directory:
