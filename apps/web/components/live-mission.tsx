@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { api, pages, errorMessage } from "../lib/product-client";
 import type { Classroom, Mission, Submission } from "./live-workspace";
 import { OperationStatus } from "./operation-status";
@@ -45,6 +45,14 @@ export function LiveMission({
   const [previousLocal, setPreviousLocal] = useState<ReturnType<typeof readStudentDraft>>(null);
   const [recovered, setRecovered] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
+  const stage = useRef<HTMLElement>(null);
+  const stepNavigation = useRef(false);
+  useLayoutEffect(() => {
+    if (!stepNavigation.current) return;
+    stepNavigation.current = false;
+    title.current?.focus({ preventScroll: true });
+    stage.current?.scrollIntoView({ block: "start", inline: "nearest", behavior: "instant" });
+  }, [index]);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -185,9 +193,10 @@ export function LiveMission({
     setMessage("Texto copiado. Confira as instruções e marque as etapas que concluiu nesta versão.");
   }
   function navigate(next: number) {
+    if (next === index) return;
+    stepNavigation.current = true;
     setIndex(next);
     if (!locked && role === "aluno") setDirty(true);
-    requestAnimationFrame(() => title.current?.focus());
   }
   return (
     <>
@@ -195,6 +204,69 @@ export function LiveMission({
         <p className="eyebrow accent">{classroom.name}</p>
         <h2>{version.title}</h2>
         <p>{version.description}</p>
+        {version.dueAt && (
+          <p>
+            Entrega prevista:{" "}
+            {new Date(version.dueAt).toLocaleDateString("pt-BR")}
+          </p>
+        )}
+      </section>
+      <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
+        <div className="form-stack">
+          <section className="paper preview-student-stage form-stack" ref={stage} id="etapas">
+            <p className="eyebrow">
+              Etapa {index + 1} de {version.steps.length}
+            </p>
+            <h2 ref={title} tabIndex={-1}>
+              {step.title}
+            </h2>
+            <p className="submission-content">{step.instructions}</p>
+            <details className="example" key={step.id}>
+              <summary>Ver um exemplo</summary>
+              <p className="submission-content">{step.example}</p>
+            </details>
+            <div className="actions">
+              <button
+                className="button button-outline"
+                disabled={pending || index === 0}
+                onClick={() => navigate(index - 1)}
+              >
+                Etapa anterior
+              </button>
+              <button
+                className="button button-outline"
+                disabled={pending || index === version.steps.length - 1}
+                onClick={() => navigate(index + 1)}
+              >
+                Próxima etapa
+              </button>
+            </div>
+            {role === "aluno" && <a className="text-link" href="#learner-materials-title"
+              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais preparados</a>}
+            {role === "aluno" && <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
+            {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
+            {role === "aluno" && !locked && (
+              <label className="check">
+                <input
+                  type="checkbox"
+                  disabled={pending || mediaBusy}
+                  checked={completed.includes(step.id)}
+                  onChange={(e) => {
+                    setCompleted((all) =>
+                      e.target.checked
+                        ? [...all, step.id]
+                        : all.filter((value) => value !== step.id),
+                    );
+                    setDirty(true);
+                    setMessage("");
+                  }}
+                />
+                Concluí esta etapa. Salvará com o rascunho ou envio.
+              </label>
+            )}
+          </section>
+          <details className="paper preview-student-context">
+            <summary>Objetivos e critérios da missão</summary>
         <h3>Objetivos de aprendizagem</h3>
         <ul>
           {version.objectives.map((objective, i) => (
@@ -207,12 +279,8 @@ export function LiveMission({
             <li key={i}>{criterion}</li>
           ))}
         </ul>
-        {version.dueAt && (
-          <p>
-            Entrega prevista:{" "}
-            {new Date(version.dueAt).toLocaleDateString("pt-BR")}
-          </p>
-        )}
+          </details>
+      <section className="paper" aria-label="Materiais da missão">
         <h3>Materiais</h3>
         {!version.materials.length && (
           <p className="small">Os PDFs e áudios liberados para você aparecem neste espaço.</p>
@@ -247,62 +315,8 @@ export function LiveMission({
           </details>
         ))}
       </section>
-      <div className="two-column" style={{ marginTop: "1rem" }}>
-        <div>
-          <section className="paper">
-            <p className="eyebrow">
-              Etapa {index + 1} de {version.steps.length}
-            </p>
-            <h2 ref={title} tabIndex={-1}>
-              {step.title}
-            </h2>
-            <p className="submission-content">{step.instructions}</p>
-            <details className="example">
-              <summary>Ver um exemplo</summary>
-              <p className="submission-content">{step.example}</p>
-            </details>
-            <div className="actions">
-              <button
-                className="button button-outline"
-                disabled={pending || index === 0}
-                onClick={() => navigate(index - 1)}
-              >
-                Etapa anterior
-              </button>
-              <button
-                className="button button-outline"
-                disabled={pending || index === version.steps.length - 1}
-                onClick={() => navigate(index + 1)}
-              >
-                Próxima etapa
-              </button>
-            </div>
-            {role === "aluno" && <a className="text-link" href="#learner-materials-title"
-              onClick={() => document.getElementById("learner-materials-title")?.focus()}>Abrir materiais preparados</a>}
-            {role === "aluno" && <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
-            {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
-            {role === "aluno" && !locked && (
-              <label className="check">
-                <input
-                  type="checkbox"
-                  disabled={pending || mediaBusy}
-                  checked={completed.includes(step.id)}
-                  onChange={(e) => {
-                    setCompleted((all) =>
-                      e.target.checked
-                        ? [...all, step.id]
-                        : all.filter((value) => value !== step.id),
-                    );
-                    setDirty(true);
-                    setMessage("");
-                  }}
-                />
-                Concluí esta etapa. Salvará com o rascunho ou envio.
-              </label>
-            )}
-          </section>
           {role === "aluno" && (
-            <section className="paper" style={{ marginTop: "1rem" }}>
+            <section className="paper">
               <h2>Sua atividade</h2>
               {submission?.revisionRequested && <p role="status">O professor solicitou ajustes. Leia o feedback e prepare uma nova tentativa.</p>}
               {[...(submission?.revisionRequested ? [submission] : []), ...attemptHistory].map(attempt => <details key={attempt.id}>
@@ -416,7 +430,7 @@ export function LiveMission({
           <section
             id="barreira"
             className="paper"
-            style={{ marginTop: "1rem" }}
+           
           >
             <BarrierComposer
               stepId={step.id}
@@ -433,7 +447,7 @@ export function LiveMission({
             )}
           </section>
         </div>
-        <aside className="paper" id="etapas">
+        {role === "professor" && <aside className="paper">
           <h2>Todas as etapas</h2>
           <ol>
             {version.steps.map((item, i) => (
@@ -456,7 +470,7 @@ export function LiveMission({
             Consultar uma etapa não marca sua conclusão. Escolha os apoios sem
             alterar os objetivos avaliados.
           </p>
-        </aside>
+        </aside>}
       </div>
     </>
   );

@@ -2040,3 +2040,5 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 
 .student-first-mission-help { margin-top: 1rem; }
 .student-first-mission-help .onboarding-guide { border: 0; padding-inline: 0; margin-bottom: 0; }
+.student-live-mission { margin-top: 1rem; }
+.student-workspace .student-live-mission { max-width: 72rem; }
