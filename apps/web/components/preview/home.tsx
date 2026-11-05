@@ -26,11 +26,14 @@ export function PreviewHome({role,route}:{role:'aluno'|'professor';route:string}
  return <div className="preview-student-home">
   <PreviewHeading title="Um passo de cada vez." description={`Olá, ${student.name.split(' ')[0]}.`}/>
   {active ? <section className="paper preview-student-continue" aria-labelledby="preview-current-mission">
+   <div className="preview-student-continue-copy">
    <p className="eyebrow">{state.classrooms.find(c=>c.id===active.classroomId)?.name}</p>
    <h2 id="preview-current-mission">{active.title}</h2>
    <p>{active.description}</p>
    <p className="small">{submission?.feedback?'Feedback disponível':submission?.status==='submitted'?'Atividade enviada · aguardando feedback':`Etapa ${(submission?.step??0)+1} de ${active.steps.length} · ${active.steps[submission?.step??0]?.title}`}</p>
    <Link className="button" href={`/previa/aluno/missoes/${active.id}`}>{submission?.status==='submitted'?'Consultar atividade':submission?'Continuar minha missão':'Abrir missão'}</Link>
+   </div>
+   <PathIllustration sizes="(max-width: 600px) 208px, 320px"/>
   </section> : <p className="paper">Entre em uma turma fictícia para consultar as missões.</p>}
   {otherMissions.length>0&&<section className="preview-student-other" aria-labelledby="preview-other-missions">
    <h2 id="preview-other-missions">Outras missões</h2>

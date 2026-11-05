@@ -155,8 +155,10 @@ export function Workspace({
 /** Decorative artwork; learning information stays in semantic HTML. */
 export function PathIllustration({
   variant = "student",
+  sizes = "(max-width: 1100px) 1px, 38vw",
 }: {
   variant?: "student" | "teacher";
+  sizes?: string;
 }) {
   return (
     <figure className="path-art decorative" aria-hidden="true">
@@ -173,7 +175,7 @@ export function PathIllustration({
         }
         width={1536}
         height={1024}
-        sizes="(max-width: 1100px) 1px, 38vw"
+        sizes={sizes}
         alt=""
       />
     </figure>

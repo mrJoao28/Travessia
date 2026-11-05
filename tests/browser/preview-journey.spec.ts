@@ -183,7 +183,9 @@ test('prévia do aluno oferece um acesso por missão e prioriza a etapa atual', 
  await page.goto('/previa/aluno');
  const main = page.getByRole('main');
  await expect(main.locator('a[href="/previa/aluno/missoes/campus"]')).toHaveCount(1);
- await expect(main.locator('.path-art')).toHaveCount(0);
+ const illustration = main.locator('.preview-student-continue .path-art img');
+ await expect(illustration).toBeVisible();
+ expect((await illustration.boundingBox())!.width).toBeLessThanOrEqual(320);
  await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: 'Feedback', exact: true })).toHaveCount(0);
  await main.locator('a[href="/previa/aluno/missoes/campus"]').click();
  await expect(main.locator('.preview-student-mission > :first-child')).toHaveAttribute('aria-labelledby', 'preview-stage-heading');

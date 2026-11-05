@@ -845,7 +845,7 @@ nav a:hover,
     grid-template-columns: minmax(0, 1fr);
     padding: 1.5rem;
   }
-  .path-art {
+  .path-art:not(.preview-student-continue > .path-art) {
     display: none;
   }
   .content-grid,
@@ -2012,8 +2012,10 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .preview-student-scenario-options { flex: 0 1 auto; }
 .preview-student-scenario-options .actions { gap: .4rem 1rem; margin-top: .5rem; }
 .student-preview-workspace .page-heading { margin-bottom: 1rem; }
-.preview-student-continue { display: grid; justify-items: start; gap: .55rem; }
-.preview-student-continue > *, .preview-student-other .card-list p { margin: 0; }
+.preview-student-continue { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem 1.5rem; }
+.preview-student-continue-copy { display: grid; justify-items: start; gap: .55rem; flex: 1 1 22rem; min-width: 0; }
+.preview-student-continue-copy > *, .preview-student-other .card-list p { margin: 0; }
+.preview-student-continue > .path-art { flex: 0 1 20rem; max-width: 100%; align-self: center; }
 .preview-student-other { margin-top: 1.25rem; }
 .preview-student-other .card-list { margin: .6rem 0 0; gap: .5rem; }
 .preview-student-other .card-list > li { padding: .75rem 1rem; flex-wrap: wrap; }
@@ -2032,4 +2034,5 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 @media (max-width: 600px) {
   .student-preview-workspace .preview-scenario-toolbar { align-items: flex-start; }
   .student-preview-workspace .preview-persona select { max-width: none; }
+  .preview-student-continue > .path-art { flex-basis: 13rem; }
 }
