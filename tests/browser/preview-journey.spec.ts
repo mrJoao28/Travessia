@@ -171,7 +171,8 @@ test('convites, entrada na turma e estratégias individuais/da turma completam o
  await page.getByLabel('Texto do apoio',{exact:true}).fill('ORIENTAÇÃO EXCLUSIVA DO CENÁRIO DE MARINA');
  await page.getByRole('button',{name:'Salvar orientação de exemplo'}).click();
  await page.goto('/previa/aluno/missoes/campus');
- await page.getByText('Roteiro de planejamento',{exact:true}).click();
+ await page.getByText('Exemplo e orientações da etapa',{exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Roteiro de planejamento',exact:true})).toBeVisible();
  await expect(page.getByText('ORIENTAÇÃO EXCLUSIVA DO CENÁRIO DE MARINA',{exact:true})).toBeVisible();
  await page.getByLabel('Aluno fictício').selectOption('preview-student-2');
  await expect(page.getByText('Roteiro de planejamento',{exact:true})).toHaveCount(0);
