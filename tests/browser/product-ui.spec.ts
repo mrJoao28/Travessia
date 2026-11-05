@@ -87,29 +87,14 @@ test("editor salva versão, exige revisão e publica somente a versão confirmad
     ),
   ).toBeVisible();
 });
-test("Gemini indisponível preserva planejamento e permite continuar manualmente", async ({
+test("planejamento manual mantém o título e dispensa o painel de escrita com IA", async ({
   page,
 }) => {
   await fixture(page, "teacher");
   await page.goto("/professor/missoes/test-mission/editar");
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
-  await page.getByText('Pedir ajuda à IA para escrever a missão (opcional)', { exact: true }).click();
-  await page.getByLabel("Exemplo fictício", { exact: true }).check();
-  await page
-    .getByLabel(
-      "Revisei os textos selecionados e autorizo seu envio ao provedor.",
-    )
-    .check();
-  await page
-    .getByRole("button", { name: "Solicitar rascunho", exact: true })
-    .click();
-  await expect(
-    page.getByText(
-      "A assistência está desativada. Você pode continuar editando manualmente.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  await expect(page.getByRole('button', { name: /Pedir ajuda à IA para escrever a missão/ })).toHaveCount(0);
   await expect(
     page.getByLabel("Título da missão", { exact: true }),
   ).toHaveValue(version.title);
@@ -183,7 +168,12 @@ test('PDF selecionado permanece no campo ao voltar e ao recusar outro arquivo',a
  await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();
  await expect.poll(filename).toBe(pdf.name);
  await field.setInputFiles({name:'arquivo-invalido.txt',mimeType:'text/plain',buffer:Buffer.from('Texto')});
- await expect(page.getByText('Escolha um PDF de até 10 MB.',{exact:true})).toBeVisible();
+ await expect(page.getByText('Escolha um PDF de até 20 MB.',{exact:true})).toBeVisible();
+ await expect.poll(filename).toBe(pdf.name);
+ const oversized = Buffer.alloc(20 * 1024 * 1024 + 1);
+ pdf.buffer.copy(oversized);
+ await field.setInputFiles({name:'acima-do-limite.pdf',mimeType:'application/pdf',buffer:oversized});
+ await expect(page.getByText('Escolha um PDF de até 20 MB.',{exact:true})).toBeVisible();
  await expect.poll(filename).toBe(pdf.name);
  await field.setInputFiles([]);await expect.poll(filename).toBe(pdf.name);
  await field.setInputFiles({...pdf,name:'outro-material.pdf'});

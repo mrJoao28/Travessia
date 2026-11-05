@@ -1,14 +1,14 @@
 "use client";
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { ApiResponse, ApiBody } from '../lib/product-client';
-import { materialAssetUrl, PreparedDocument } from './prepared-material';
+import { materialAssetUrl, materialReadingStyle, PreparedDocument } from './prepared-material';
 
 type Source = ApiResponse<'uploadMaterialSource'>;
 type Adaptation = ApiResponse<'prepareMaterial'>;
 type Document = ApiBody<'editMaterial'>['document'];
 
 /** Private source images and semantic reading preview; the exported PDF remains available for review. */
-export function MaterialComparison({missionId,source,adaptation,studentName,originalOnly,document,dirty,view,onViewChange,assetUrl,illustrative=false}:{illustrative?:boolean;assetUrl?:(id:string,kind:Parameters<typeof materialAssetUrl>[2])=>string;view:'original'|'prepared';onViewChange:(view:'original'|'prepared')=>void;missionId:string;source?:Source;adaptation?:Adaptation;studentName?:string;originalOnly:boolean;document:Document;dirty:boolean}) {
+export function MaterialComparison({missionId,source,adaptation,studentName,originalOnly,document,dirty,view,onViewChange,assetUrl,illustrative=false,singleView=false,fileControl}:{singleView?:boolean;fileControl?:ReactNode;illustrative?:boolean;assetUrl?:(id:string,kind:Parameters<typeof materialAssetUrl>[2])=>string;view:'original'|'prepared';onViewChange:(view:'original'|'prepared')=>void;missionId:string;source?:Source;adaptation?:Adaptation;studentName?:string;originalOnly:boolean;document:Document;dirty:boolean}) {
  const asset=(id:string,kind:Parameters<typeof materialAssetUrl>[2])=>assetUrl?assetUrl(id,kind):materialAssetUrl(missionId,id,kind);
  const [audioError,setAudioError]=useState(false);
  const [page,setPage]=useState(1);
@@ -21,20 +21,32 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
  const prepared=document.find(p=>p.page===shown);
  useEffect(()=>{setPage(1);setZoom(1);setImageFailed(false);},[source?.id,current?.id]);
  useEffect(()=>{setImageFailed(false);},[shown]);
- useEffect(()=>{onViewChange(originalOnly?'original':'prepared');},[originalOnly,onViewChange]);
+ useEffect(()=>{if(!singleView)onViewChange(originalOnly?'original':'prepared');},[singleView,originalOnly,onViewChange]);
  const audioUrl=current?.hasAudio?asset(current.id,'audio'):undefined;
  useEffect(()=>{setAudioError(false);},[audioUrl,current?.revision]);
  const settings=current?.settings;
- const textStyle:CSSProperties={fontSize:`${settings?.supports.includes('large-print')?Number(settings.fontSize)*zoom:18*zoom}pt`,lineHeight:settings?.supports.includes('wide-spacing')?1.8:1.5};
+ const textStyle=materialReadingStyle(settings,zoom);
  const colors=settings?.color??'default';
  const narration=settings?.supports.includes('narration');
  const visualDescriptions=settings?.supports.includes('image-description');
  const audioLabel=narration?(visualDescriptions?'Ouvir leitura e audiodescrição':'Ouvir leitura em áudio'):'Ouvir audiodescrição';
  const originalReady=source?.status==='ready';
- return <section className="material-comparison" aria-label="Comparação do material">
+ const awaitingDescription=current?.status==='draft'&&visualDescriptions&&document.some(p=>!p.description.trim());
+ const viewChoice=<div className="comparison-view-choice" role="group" aria-label={singleView?'Versão do documento':'Documento exibido no celular'}>
+       <button type="button" aria-pressed={view==='original'} onClick={()=>onViewChange('original')}>Original</button>
+       <button type="button" aria-pressed={view==='prepared'} onClick={()=>onViewChange('prepared')}>Preparado</button>
+     </div>;
+ return <section className={singleView?"material-comparison material-single-view":"material-comparison"} aria-label="Comparação do material">
+   {singleView&&<div className="comparison-workspace-tabs">{viewChoice}</div>}
    <div className="comparison-toolbar">
-     <div className="comparison-view-choice" role="group" aria-label="Documento exibido no celular"><button type="button" aria-pressed={view==='original'} onClick={()=>onViewChange('original')}>Original</button><button type="button" aria-pressed={view==='prepared'} onClick={()=>onViewChange('prepared')}>Preparado</button></div>
-     {!!available.length&&<div className="comparison-page-control"><label htmlFor="comparison-page">Página do original</label><select id="comparison-page" value={shown} onChange={e=>setPage(Number(e.target.value))}>{available.map(p=><option key={p} value={p}>{p}</option>)}</select></div>}
+     {!singleView&&viewChoice}
+     {fileControl}
+     {!!available.length&&<div className="comparison-page-control">
+       {singleView&&<button type="button" aria-label="Página anterior" disabled={shown===available[0]} onClick={()=>setPage(available[available.indexOf(shown)-1])}>‹</button>}
+       <label htmlFor="comparison-page">{singleView?'Página':'Página do original'}</label>
+       <select id="comparison-page" value={shown} onChange={e=>setPage(Number(e.target.value))}>{available.map(p=><option key={p} value={p}>{p}</option>)}</select>
+       {singleView&&<><span className="small">de {available.length}</span><button type="button" aria-label="Próxima página" disabled={shown===available.at(-1)} onClick={()=>setPage(available[available.indexOf(shown)+1])}>›</button></>}
+     </div>}
      <div className="comparison-zoom" aria-label="Ampliar comparação"><button type="button" aria-label="Diminuir ampliação da comparação" disabled={zoom<=1} onClick={()=>setZoom(z=>Math.max(1,z-.25))}>−</button><span>{Math.round(zoom*100)}%</span><button type="button" aria-label="Aumentar ampliação da comparação" disabled={zoom>=2} onClick={()=>setZoom(z=>Math.min(2,z+.25))}>+</button></div>
    </div>
    <div className="comparison-documents" data-view={view}>
@@ -51,18 +63,18 @@ export function MaterialComparison({missionId,source,adaptation,studentName,orig
      <section id="material-prepared-view" className="comparison-document comparison-prepared" aria-label="Documento preparado">
        <header><h3>{studentName?`Preparado para ${studentName}`:'Preparado para o aluno'}</h3>{dirty&&<span className="small">Alterações ainda não salvas</span>}</header>
        <div className="comparison-reader" role="region" aria-label="Leitura do documento preparado" tabIndex={0}>
-         {originalOnly?<div className="comparison-empty"><span className="pdf-file-badge" aria-hidden="true">PDF</span><h4>O mesmo PDF, sem alterações</h4><p>{illustrative?'Confira o original ao lado. Este arquivo é um exemplo público fictício.':'Confira o original ao lado. A entrega continua exclusiva do aluno escolhido.'}</p></div>:(ready||dirty)&&prepared?<>
-           {ready&&current?.hasAudio&&!dirty&&!illustrative&&<section id="material-audio" className="material-preview-audio" aria-label={audioLabel}>
+         {originalOnly?<div className="comparison-empty"><span className="pdf-file-badge" aria-hidden="true">PDF</span><h4>O mesmo PDF, sem alterações</h4><p>{illustrative?'Confira o original. Este arquivo é um exemplo público fictício.':'Confira o original. A entrega continua exclusiva do aluno escolhido.'}</p></div>:(ready||dirty)&&prepared?<>
+           <article className="comparison-paper" data-color={colors} style={textStyle}><PreparedDocument document={[prepared]}/></article>
+           <p className="small comparison-preview-note">Prévia de leitura. Confira também a diagramação no PDF gerado antes de disponibilizar.</p>
+         </>:<div className="comparison-empty"><span aria-hidden="true" className="comparison-preview-icon">Aa</span><h4>{awaitingDescription?'Aguardando descrição visual':current?'Preparando a leitura':'A versão preparada aparece aqui'}</h4><p>{awaitingDescription?'Preencha as descrições e atualize a prévia para ouvir o áudio.':current?.status==='failed'?'A preparação falhou. Consulte o aviso no painel de revisão.':current?'O resultado aparecerá depois do processamento.':'Escolha os apoios e prepare a prévia para comparar o resultado com o original.'}</p></div>}
+       </div>
+       {ready&&current?.hasAudio&&!dirty&&<section id="material-audio" className="material-preview-audio" aria-label={audioLabel}>
              <h4>{audioLabel}</h4>
-             {narration&&<p className="small">Narração integral das páginas preparadas{visualDescriptions?', incluindo as descrições visuais':''}.</p>}
+             {narration&&<p className="small">{illustrative?'Trecho narrado de exemplo':'Narração integral das páginas preparadas'}{visualDescriptions?', incluindo as descrições visuais':''}.</p>}
              <audio key={current.revision} controls preload="none" aria-label={audioLabel} src={audioUrl} onError={()=>setAudioError(true)}/>
              {audioError&&<p role="alert">Não foi possível reproduzir o áudio aqui. Abra o arquivo diretamente para conferir.</p>}
              <a className="text-link" href={audioUrl} download>Baixar áudio da prévia</a>
            </section>}
-           <article className="comparison-paper" data-color={colors} style={textStyle}><PreparedDocument document={[prepared]}/></article>
-           <p className="small comparison-preview-note">Prévia de leitura. Confira também a diagramação no PDF gerado antes de disponibilizar.</p>
-         </>:<div className="comparison-empty"><span aria-hidden="true" className="comparison-preview-icon">Aa</span><h4>{current?'Preparando a leitura':'A versão preparada aparece aqui'}</h4><p>{current?.status==='failed'?'A preparação falhou. Consulte o aviso no painel de revisão.':current?'O resultado aparecerá depois do processamento.':'Escolha os apoios e prepare a prévia para comparar o resultado com o original.'}</p></div>}
-       </div>
      </section>
    </div>
  </section>;

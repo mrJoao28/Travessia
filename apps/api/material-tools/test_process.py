@@ -35,6 +35,57 @@ class PdfProcessing(unittest.TestCase):
             output=json.loads(result.stdout); self.assertTrue(output['pages'][0]['ocr'])
             self.assertIn('10',output['pages'][0]['text']); self.assertTrue(output['warnings'])
 
+    def test_preserves_columns_and_table_cells(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / 'technical.pdf'
+            writer = PdfWriter()
+            page = writer.add_blank_page(595, 842)
+            font = DictionaryObject({NameObject('/Type'):NameObject('/Font'),NameObject('/Subtype'):NameObject('/Type1'),NameObject('/BaseFont'):NameObject('/Helvetica')})
+            page[NameObject('/Resources')] = DictionaryObject({NameObject('/Font'):DictionaryObject({NameObject('/F1'):font})})
+            commands = []
+            for i in range(6):
+                for x, column in [(50, 'Esquerda'), (340, 'Direita')]:
+                    commands.append(f'BT /F1 13 Tf {x} {750-i*20} Td ({column} {i+1}) Tj ET')
+            for x in (50, 250, 500):
+                commands.append(f'{x} 500 m {x} 560 l S')
+            for y in (500, 530, 560):
+                commands.append(f'50 {y} m 500 {y} l S')
+            for x, y, value in [(60, 540, 'Grandeza'), (260, 540, 'Valor'), (60, 510, 'Massa'), (260, 510, 'x = 10')]:
+                commands.append(f'BT /F1 13 Tf {x} {y} Td ({value}) Tj ET')
+            stream = DecodedStreamObject(); stream.set_data('\n'.join(commands).encode('ascii'))
+            page[NameObject('/Contents')] = writer._add_object(stream)
+            writer.write(path)
+            result = self.run_pdf(path)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            output = json.loads(result.stdout)
+            text = output['pages'][0]['text']
+            self.assertLess(text.index('Esquerda 6'), text.index('Direita 1'))
+            self.assertIn('Grandeza | Valor\nMassa | x = 10', text)
+            self.assertIn('notação matemática', output['warnings'][0])
+
+    def test_accepts_forty_pages_in_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / 'long.pdf'
+            writer = PdfWriter()
+            font = writer._add_object(DictionaryObject({
+                NameObject('/Type'): NameObject('/Font'),
+                NameObject('/Subtype'): NameObject('/Type1'),
+                NameObject('/BaseFont'): NameObject('/Helvetica'),
+            }))
+            for number in range(1, 41):
+                page = writer.add_blank_page(200, 200)
+                page[NameObject('/Resources')] = DictionaryObject({NameObject('/Font'): DictionaryObject({NameObject('/F1'): font})})
+                stream = DecodedStreamObject()
+                stream.set_data(f'BT /F1 10 Tf 10 150 Td (Material de teste - pagina {number}.) Tj ET'.encode('ascii'))
+                page[NameObject('/Contents')] = writer._add_object(stream)
+            writer.write(path)
+            result = self.run_pdf(path)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            pages = json.loads(result.stdout)['pages']
+            self.assertEqual([page['page'] for page in pages], list(range(1, 41)))
+            self.assertIn('pagina 40', pages[-1]['text'])
+            self.assertTrue(path.with_name('page-40.png').exists())
+
     def test_rejects_script_encryption_and_page_limit(self):
         with tempfile.TemporaryDirectory() as directory:
             for kind in ['script','encrypted','pages']:
@@ -42,7 +93,7 @@ class PdfProcessing(unittest.TestCase):
                 if kind=='script':writer.add_js('app.alert(1)')
                 if kind=='encrypted':writer.encrypt('test-password')
                 if kind=='pages':
-                    for _ in range(20):writer.add_blank_page(595,842)
+                    for _ in range(40):writer.add_blank_page(595,842)
                 writer.write(path)
                 self.assertNotEqual(self.run_pdf(path).returncode,0)
 

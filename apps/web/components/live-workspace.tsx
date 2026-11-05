@@ -1,5 +1,6 @@
 "use client";
 
+import { StudentFirstSteps } from "./first-steps-guide";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -299,7 +300,7 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
     return (
       <section className="paper">
         <h2>{classrooms.length===1?`Você entrou na turma ${classrooms[0].name}.`:"Você já está nas suas turmas."}</h2>
-        <p>A primeira missão ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Enquanto isso, use Ajustar leitura, no início da página, se quiser mudar o tamanho do texto.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
+        <p>A primeira missão ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Enquanto isso, ajuste a leitura no início da página ou consulte Meus apoios para registrar o que ajuda você a aprender.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
       </section>
     );
   const version = entry.mission.publishedVersion;
@@ -312,7 +313,7 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
   const firstMission=entries.every(e=>e.submissions.length===0);
   return (
     <>
-      {firstMission&&<section className="paper onboarding-student" aria-label="Como realizar sua primeira missão"><h2>Sua primeira missão está pronta</h2><p>Leia o desafio, faça uma etapa por vez e envie sua atividade quando estiver pronta. Seus materiais e apoios ficam dentro da missão.</p></section>}
+      {firstMission&&<StudentFirstSteps missionHref={`/aluno/missoes/${entry.mission.id}`}/>}
       <section className="mission-hero" aria-labelledby="mission-title">
         <div className="hero-copy">
           <p className="eyebrow accent">{entry.classroom.name}</p>

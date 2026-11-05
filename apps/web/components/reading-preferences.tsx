@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
+import { Icon } from "./icons";
 
 type Preferences = {
   scale: string;
@@ -205,7 +206,10 @@ export function ReadingPreferences({
           }
         }}
       >
-        <summary>Tema e contraste</summary>
+        <summary>
+          <Icon name={preferences.theme === "dark" ? "moon" : "sun"} />
+          Tema e contraste
+        </summary>
         <div className="preferences-panel">
           <h2>Aparência do site</h2>
           <label className="check">

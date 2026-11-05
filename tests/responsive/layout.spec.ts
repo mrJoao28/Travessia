@@ -24,7 +24,7 @@ async function measure(page:Page){
    return true;
   };
   const rect=(e:Element)=>{const r=e.getBoundingClientRect();return {x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height)};};
-  const fields=[...document.querySelectorAll('main textarea,main input:not([type=checkbox]):not([type=radio]):not([type=hidden])')].filter(visible).map(e=>({label:e.getAttribute('aria-label')||e.id,...rect(e)}));
+  const fields=[...document.querySelectorAll('main textarea,main input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file])')].filter(visible).map(e=>({label:e.getAttribute('aria-label')||e.id,...rect(e)}));
   const overflow=[...document.querySelectorAll('main *,header *,aside *')].filter(e=>visible(e)&&!e.closest('.comparison-reader')&&!e.classList.contains('sr-only')).filter(e=>e.getBoundingClientRect().right>innerWidth+2).slice(0,12).map(e=>({tag:e.tagName,classes:e.className,...rect(e)}));
   return {title:document.querySelector('h1')?.textContent,url:location.pathname,viewport:innerWidth,rootWidth:document.documentElement.scrollWidth,fields,overflow,
    navigation:document.querySelector('.sidebar')?rect(document.querySelector('.sidebar')!):null,
@@ -59,7 +59,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   }
  }
  try{
-  for(const route of ['/','/login','/cadastro','/previa/professor','/previa/professor/missoes','/previa/professor/entregas','/previa/professor/barreiras','/previa/professor/perfil','/previa/aluno','/previa/aluno/turmas','/previa/aluno/entregas','/previa/aluno/feedback','/previa/aluno/apoios','/previa/aluno/barreiras','/previa/aluno/ajuda']){
+  for(const route of ['/','/login','/cadastro','/previa/professor','/previa/professor/missoes','/previa/professor/entregas','/previa/professor/barreiras','/previa/professor/perfil','/previa/aluno','/previa/aluno/turmas','/previa/aluno/entregas','/previa/aluno/feedback','/previa/aluno/apoios','/previa/aluno/barreiras','/previa/aluno/ajuda','/previa/aluno/primeiros-passos','/previa/professor/primeiros-passos']){
    await page.goto(route);await expect(page.locator('h1').first()).toBeVisible();
    if(route.startsWith('/previa'))await expect(page.getByText('Preparando cenário fictício…',{exact:true})).toHaveCount(0);
    await capture(route.replaceAll('/','-')||'landing');
@@ -67,10 +67,10 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await page.goto('/previa/professor/missoes/editor');await expect(page.getByLabel('Título da missão')).toBeVisible();
   await capture('editor-about');await page.getByRole('button',{name:'Continuar para as etapas →'}).click();await capture('editor-steps');
   await page.getByRole('button',{name:'Adicionar PDF de exemplo'}).click();
-  await page.getByRole('button',{name:'Salvar e continuar →'}).click();await expect(page.getByLabel('Aluno destinatário')).toBeVisible();await capture('editor-materials');
+  await page.getByRole('button',{name:'Salvar e continuar →'}).click();await expect(page.getByLabel('Aluno da turma')).toBeVisible();await capture('editor-materials');
   await page.getByRole('button',{name:'Revisar missão',exact:true}).click();await capture('editor-review');
-  await page.goto('/previa/professor/missoes/campus/adaptacoes');await expect(page.getByLabel('Aluno destinatário')).toBeVisible();
-  await page.getByText('Também ajustar a atividade',{exact:true}).click();await capture('materials-expanded');
+  await page.goto('/previa/professor/missoes/campus/adaptacoes');await expect(page.getByLabel('Aluno da turma')).toBeVisible();
+  await page.getByRole('button',{name:'Atividade e entrega',exact:true}).click();await capture('materials-expanded');
   await page.goto('/previa/aluno/missoes/campus');await expect(page.getByLabel('Planejamento e atividade')).toBeVisible();
   await page.getByRole('region',{name:'Materiais preparados para você'}).getByText('rotas-do-campus.pdf · Texto ampliado e espaçado',{exact:true}).click();
   await page.getByText('Transcrição do áudio',{exact:true}).click();await capture('student-material-audio');
@@ -93,7 +93,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await productFixture(page,'student');await page.goto('/aluno/missoes/test-mission');await expect(page.getByRole('textbox',{name:'Planejamento e atividade',exact:true})).toBeVisible();await capture('real-student-mission');
   await profileFixture(page);await page.getByRole('button',{name:'Adicionar disciplina e curso',exact:true}).click();await capture('real-profile-expanded');
   await fixture(page);await addPdf(page);await capture('real-material-options');
-  await page.getByRole('button',{name:'Preparar prévia →',exact:true}).click();await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();await capture('real-material-review');
+  await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();await capture('real-material-review');
  }finally{
   await mkdir(info.outputDir,{recursive:true});await writeFile(info.outputPath('measurements.json'),JSON.stringify({profile,results},null,2));await context.close();
  }

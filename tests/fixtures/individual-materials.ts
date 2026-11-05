@@ -24,7 +24,11 @@ export async function fixture(page: Page, failActivity = false, disabilities: st
     if(path.endsWith('/material-sources')){if(method==='POST'){const file={...source,id:sources.length?'source-second':source.id,title:route.request().postDataJSON().title};sources=[...sources,file];return respond(file);}return respond({items:backgroundWork?[...sources,{...source,id:'background-source',status:'queued',pageCount:0,pages:[]}]:sources});}
     if(path.endsWith('/original-materials')){original=route.request().postDataJSON();plans=[{id:'original-material',mode:'original',versionId:version.id,sourceId:source.id,studentId:original!.studentId,settings:{supports:[],fontSize:'18',color:'default',useAi:false,approvedForProvider:false,deliveryMode:'original'},pages:[],document:[],status:'released',revision:1,error:null,hasAudio:false,inputTokens:0,outputTokens:0,expiresAt:source.expiresAt}];return respond(plans[0]);}
     if(path.endsWith('/material-adaptations')){
-      if(method==='POST'){sent=route.request().postDataJSON();plans=[{id:'adaptation-material',versionId:version.id,sourceId:source.id,studentId:sent!.studentId,settings:sent!.settings,pages:[1],document:[{page:1,title:'Compare as rotas',text:'Compare as rotas de 10 metros.',description:'O diagrama compara duas rotas.'}],status:'draft',revision:1,error:null,hasAudio:false,inputTokens:120,outputTokens:60,expiresAt:source.expiresAt}];return respond(plans[0]);}return respond({items:backgroundWork&&plans[0]?[...plans,{...plans[0],id:'background-material',studentId:'student-b',status:'queued'}]:plans});
+      if(method==='POST'){sent=route.request().postDataJSON();plans=[{id:'adaptation-material',versionId:version.id,sourceId:source.id,studentId:sent!.studentId,settings:sent!.settings,pages:[1],document:[{page:1,title:'Compare as rotas',text:'Compare as rotas de 10 metros.',description:'O diagrama compara duas rotas.',
+        ...(sent!.settings.supports.includes('short-sections')?{steps:['Compare duas rotas.']}:{}),
+        ...(sent!.settings.supports.includes('glossary')?{glossary:[{term:'Rota',definition:'Caminho entre dois pontos.'}]}:{}),
+      }],status:sent!.settings.supports.includes('image-description')&&!sent!.settings.useAi?'draft':'ready',revision:1,error:null,
+        hasAudio:sent!.settings.useAi&&sent!.settings.supports.includes('image-description'),inputTokens:120,outputTokens:60,expiresAt:source.expiresAt}];return respond(plans[0]);}return respond({items:backgroundWork&&plans[0]?[...plans,{...plans[0],id:'background-material',studentId:'student-b',status:'queued'}]:plans});
     }
     if(path.endsWith('/material-adaptations/adaptation-material')&&method==='PATCH'){const body=route.request().postDataJSON();plans[0]={...plans[0],document:body.document,revision:2,status:'draft'};return respond(plans[0]);}
     if(path.endsWith('/render')){plans[0]={...plans[0],status:'ready',hasAudio:plans[0].settings.supports.some(s=>s==='narration'||s==='image-description')};return respond(plans[0]);}
@@ -40,5 +44,4 @@ export async function addPdf(page:Page,student='student-a'){
  await page.getByLabel('Aluno da turma',{exact:true}).selectOption(student);
  await page.getByLabel('Adicionar arquivo PDF',{exact:true}).setInputFiles({name:'rotas.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
  await expect(page.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Continuar →',exact:true}).click();
 }

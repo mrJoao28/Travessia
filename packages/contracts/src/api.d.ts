@@ -1032,6 +1032,7 @@ export interface operations {
                             studentId: string;
                             /** @enum {string} */
                             status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                            hasReleasedVersion?: boolean;
                             settings: {
                                 supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                                 /** @enum {string} */
@@ -1049,6 +1050,11 @@ export interface operations {
                                 title: string;
                                 text: string;
                                 description: string;
+                                steps?: string[];
+                                glossary?: {
+                                    term: string;
+                                    definition: string;
+                                }[];
                             }[];
                             revision: number;
                             error: string | null;
@@ -1103,6 +1109,7 @@ export interface operations {
                         /** @enum {string} */
                         deliveryMode?: "adapted" | "original";
                     };
+                    autoRender?: boolean;
                     /** Format: uuid */
                     requestKey: string;
                 };
@@ -1124,6 +1131,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1141,6 +1149,11 @@ export interface operations {
                             title: string;
                             text: string;
                             description: string;
+                            steps?: string[];
+                            glossary?: {
+                                term: string;
+                                definition: string;
+                            }[];
                         }[];
                         revision: number;
                         error: string | null;
@@ -1205,6 +1218,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1222,6 +1236,11 @@ export interface operations {
                             title: string;
                             text: string;
                             description: string;
+                            steps?: string[];
+                            glossary?: {
+                                term: string;
+                                definition: string;
+                            }[];
                         }[];
                         revision: number;
                         error: string | null;
@@ -1306,6 +1325,11 @@ export interface operations {
                         title: string;
                         text: string;
                         description: string;
+                        steps?: string[];
+                        glossary?: {
+                            term: string;
+                            definition: string;
+                        }[];
                     }[];
                     regeneratePage?: number;
                     /** @constant */
@@ -1329,6 +1353,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1346,6 +1371,11 @@ export interface operations {
                             title: string;
                             text: string;
                             description: string;
+                            steps?: string[];
+                            glossary?: {
+                                term: string;
+                                definition: string;
+                            }[];
                         }[];
                         revision: number;
                         error: string | null;
@@ -1405,6 +1435,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1422,6 +1453,11 @@ export interface operations {
                             title: string;
                             text: string;
                             description: string;
+                            steps?: string[];
+                            glossary?: {
+                                term: string;
+                                definition: string;
+                            }[];
                         }[];
                         revision: number;
                         error: string | null;
@@ -1483,6 +1519,7 @@ export interface operations {
                         studentId: string;
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
+                        hasReleasedVersion?: boolean;
                         settings: {
                             supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
                             /** @enum {string} */
@@ -1500,6 +1537,11 @@ export interface operations {
                             title: string;
                             text: string;
                             description: string;
+                            steps?: string[];
+                            glossary?: {
+                                term: string;
+                                definition: string;
+                            }[];
                         }[];
                         revision: number;
                         error: string | null;
@@ -1556,7 +1598,19 @@ export interface operations {
                                 title: string;
                                 text: string;
                                 description: string;
+                                steps?: string[];
+                                glossary?: {
+                                    term: string;
+                                    definition: string;
+                                }[];
                             }[];
+                            reading?: {
+                                supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
+                                /** @enum {string} */
+                                fontSize: "18" | "22" | "26";
+                                /** @enum {string} */
+                                color: "default" | "high" | "dark";
+                            };
                             hasAudio: boolean;
                         }[];
                     };

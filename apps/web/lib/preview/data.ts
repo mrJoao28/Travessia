@@ -3,12 +3,13 @@ export type Step={title:string;instructions:string;example:string};
 export type Mission={id:string;classroomId:string;title:string;description:string;objectives:string;criteria:string;steps:Step[];status:'draft'|'published'|'archived';revision:number;source:'campus'|'biblioteca'|'energia';publishedVersion?:Omit<Mission,'publishedVersion'|'status'>};
 export type Student={id:string;name:string;course:string;period:string;disabilities:string[];supports:string[];shareNeeds:boolean;shareDisability:boolean};
 export type Preset='original'|'expanded'|'clear'|'glossary'|'description';
-export type Material={id:string;missionId:string;revision:number;studentId:string;source:Mission['source'];preset:Preset;audio:boolean;released:boolean;instructions:string;formats:('text'|'audio'|'text_file')[]};
+export type Material={id:string;missionId:string;revision:number;studentId:string;source:Mission['source'];preset:Preset;audio:boolean;released:boolean;instructions:string;formats:('text'|'audio'|'text_file')[];readyAt?:number};
+export type ActivitySupport=Pick<Material,'missionId'|'revision'|'studentId'|'instructions'|'formats'>;
 export type Submission={id:string;missionId:string;revision:number;studentId:string;content:string;completed:number[];step:number;status:'draft'|'submitted';audio:boolean;textFile:boolean;feedback:string};
 export type Report={id:string;missionId:string;studentId:string;content:string;shared:boolean;reply:string};
 export type Classroom={id:string;name:string;subject:string;students:string[];invitation:string|null};
 export type Strategy={id:string;missionId:string;revision:number;studentId:string|null;step:number|null;title:string;content:string};
-export type PreviewState={version:1;studentId:string;teacher:{name:string;subject:string;course:string};students:Student[];classrooms:Classroom[];missions:Mission[];materials:Material[];submissions:Submission[];reports:Report[];strategies:Strategy[]};
+export type PreviewState={version:1;studentId:string;teacher:{name:string;subject:string;course:string};students:Student[];classrooms:Classroom[];missions:Mission[];materials:Material[];submissions:Submission[];reports:Report[];strategies:Strategy[];activitySupports?:ActivitySupport[]};
 export const previewFiles={
  campus:{title:'Rotas entre as salas e a biblioteca',filename:'rotas-do-campus.pdf',base:'campus',text:'A turma vai comparar três caminhos entre as salas e a biblioteca. Rota A: 180 metros e dois degraus. Rota B: 240 metros e caixas ocupando parte da passagem. Rota C: 310 metros, sem degraus observados e com placas pequenas. Os dados são fictícios. A distância não é o único critério. Considere as condições observadas e confirme as preferências de quem usa o caminho.',description:'O esquema liga o bloco de salas à biblioteca por três caminhos. A: 180 m; B: 240 m; C: 310 m. As observações estão escritas junto a cada rota; nenhuma informação depende apenas de cor.'},
  biblioteca:{title:'Empréstimos de uma biblioteca universitária',filename:'requisitos-biblioteca.pdf',base:'biblioteca',text:'Uma biblioteca de exemplo precisa cadastrar leitores, consultar livros e registrar empréstimos. Cada livro tem código, título e disponibilidade. Um empréstimo registra leitor, livro e data prevista de devolução. Verifique se o livro existe e está disponível. Teste código inexistente, empréstimo permitido e tentativa de emprestar um livro indisponível.',description:'O fluxo tem três blocos: consultar o livro, conferir disponibilidade e registrar o empréstimo. Quando não há disponibilidade, explicar o motivo sem registrar a operação.'},
@@ -16,7 +17,7 @@ export const previewFiles={
 };
 export const presetLabels:Record<Preset,string>={original:'PDF original',expanded:'Texto ampliado e espaçado',clear:'Explicação direta, em passos',glossary:'Passos e termos explicados',description:'Descrição das informações visuais'};
 export function pdfUrl(source:Mission['source'],preset:Preset='original'){
- const variant=({original:'original',expanded:'ampliado',clear:'passos',glossary:'glossario',description:'passos'}[preset]);
+ const variant=({original:'original',expanded:'ampliado',clear:'passos',glossary:'glossario',description:'descricao'}[preset]);
  return `/preview/${source}-${variant}.pdf`;
 }
 export function audioUrl(preset:Preset='original',source:Mission['source']='campus'){return `/preview/${source}-${preset==='description'?'audiodescricao':preset==='clear'||preset==='glossary'?'passos':'narracao'}.mp3`;}
@@ -25,6 +26,67 @@ export function readingText(source:Mission['source'],preset:Preset){
  if(source==='biblioteca')return '1. Consulte o livro pelo código.\n2. Confira se existe e está disponível.\n3. Se estiver disponível, registre leitor, livro e data de devolução.\n4. Caso contrário, explique o motivo sem registrar o empréstimo.\n5. Teste o código B01 disponível, B02 indisponível e um código inexistente.'+(preset==='glossary'?'\n\nDisponibilidade indica se um livro pode ser emprestado. Validação significa conferir uma entrada antes de usá-la.':'');
  if(source==='energia')return '1. Converta a potência: 120 W = 0,12 kW; 12 W = 0,012 kW.\n2. Multiplique a potência pelo tempo. Computador: 0,12 × 4 × 20 = 9,6 kWh. Luminária: 0,012 × 5 × 20 = 1,2 kWh.\n3. Some: 9,6 + 1,2 = 10,8 kWh.\n4. Explique o cálculo e confira as unidades.'+(preset==='glossary'?'\n\nPotência é a taxa de uso de energia; kWh é uma unidade de energia, não de potência.':'');
  return '1. Leia os dados das três rotas.\nRota A: 180 metros e dois degraus. Rota B: 240 metros e caixas em parte da passagem. Rota C: 310 metros, sem degraus observados e com placas pequenas.\n\n2. Compare distância e condições do caminho. A rota mais curta pode não ser a melhor para todas as pessoas.\n\n3. Escolha uma rota e justifique com dois dados do material. Proponha uma melhoria concreta e diga como conferir o resultado.'+(preset==='glossary'?'\n\nTermos do material: percurso é o caminho entre dois lugares; barreira é algo que dificulta o uso do caminho; justificar é explicar a decisão usando dados.':'');
+}
+export const previewPresets: Preset[] = ['original','expanded','clear','glossary','description'];
+
+export const presetSupports = {
+ original: [], expanded: ['large-print','wide-spacing','high-contrast'],
+ clear: ['literal-language','short-sections'], glossary: ['short-sections','glossary'],
+ description: ['image-description'],
+} as const;
+
+type PreviewPage = {
+ page: number; title: string; text: string; description: string;
+ steps?: string[]; glossary?: { term: string; definition: string }[];
+};
+
+const worksheets = {
+ campus: [
+  {title:'Ficha de campo · observações', text:`O levantamento fictício ocorreu em um dia seco, entre 9h e 10h. A distância foi medida entre as mesmas entradas. Os degraus da rota A ficam perto do bloco de salas. Na rota B, caixas ocupam parte da circulação perto da biblioteca. Na rota C, as placas pequenas ficam nas duas bifurcações.
+
+Não foram medidos largura, inclinação ou condições em dia de chuva.`},
+  {title:'Comparação e proposta', text:`Preencha uma linha por rota: distância, condição observada, informação que ainda falta e possível melhoria. Depois escolha qual rota investigar primeiro e use dois dados para justificar sua decisão.
+
+Exemplo de verificação: antes e depois de alterar uma placa, registre se a indicação pode ser localizada a partir da bifurcação.`},
+  {title:'Entrega · nota técnica', text:`Entregue uma nota curta com sua escolha, dois dados do levantamento e uma proposta de melhoria. Identifique pelo menos uma limitação dos dados e diga como verificar se sua proposta ajudou.
+
+A avaliação considera o uso dos dados, a relação entre barreira e proposta e a clareza da verificação.`},
+ ],
+ biblioteca: [],
+ energia: [],
+};
+
+const practice: Record<Mission['source'], string> = {
+ campus:'Registre a distância e uma condição de cada rota. Depois, consulte as fichas de observação e prepare sua nota técnica.',
+ biblioteca:'Use leitor L01 e os livros B01 e B02. B01 está disponível e B02 já está emprestado. Registre entrada, decisão e saída para cada teste. Inclua um código inexistente e explique como o programa evita registrar a operação incorreta.',
+ energia:'Use kWh para energia e kW para potência. Confira o total de 10,8 kWh em 20 dias e estime o novo consumo se o computador for usado três horas por dia, mantendo os demais dados. Mostre as unidades em cada cálculo.',
+};
+const actions: Record<Mission['source'], string[]> = {
+ campus:['Anote a distância e a condição de circulação de cada rota.','Escolha qual rota investigar primeiro e justifique com dois dados.','Proponha uma melhoria e diga como verificar o resultado.'],
+ biblioteca:['Consulte o livro pelo código.','Verifique se ele existe e está disponível antes de registrar o empréstimo.','Teste um livro disponível, um indisponível e um código inexistente.'],
+ energia:['Converta a potência de W para kW.','Multiplique a potência pelo uso diário e pelo número de dias.','Some os consumos e indique a unidade do resultado.'],
+};
+const clearText: Record<Mission['source'], string> = {
+ campus:'Compare três rotas até a biblioteca. A rota A tem 180 m e dois degraus. A rota B tem 240 m e caixas em parte da passagem. A rota C tem 310 m, sem degraus observados, mas as placas são pequenas. Compare a distância com as condições de circulação. Os dados são fictícios. Confira as preferências das pessoas que usam o caminho.',
+ biblioteca:'O programa deve cadastrar leitores, consultar livros e registrar empréstimos. Guarde código, título e disponibilidade de cada livro. Para registrar um empréstimo, anote leitor, livro e data prevista de devolução. Antes, confira se o livro existe e pode ser emprestado.',
+ energia:'Compare o consumo em 20 dias. O computador usa 120 W por 4 horas ao dia. A luminária usa 12 W por 5 horas ao dia. Divida a potência em W por 1.000 para obter kW. Multiplique por horas de uso e dias. Os consumos de exemplo são 9,6 kWh e 1,2 kWh. Somados, dão 10,8 kWh.',
+};
+const definitions: Record<Mission['source'], NonNullable<PreviewPage['glossary']>> = {
+ campus:[{term:'Percurso',definition:'Caminho entre dois lugares.'},{term:'Barreira',definition:'Condição que dificulta o uso do caminho.'}],
+ biblioteca:[{term:'Disponibilidade',definition:'Indica se um exemplar pode ser emprestado.'},{term:'Validação',definition:'Conferência de uma entrada antes de registrar a operação.'}],
+ energia:[{term:'Potência',definition:'Taxa de uso de energia de um equipamento.'},{term:'kWh',definition:'Unidade de energia que combina potência em kW com tempo em horas.'}],
+};
+
+export function previewDocument(source: Mission['source'], preset: Preset): PreviewPage[] {
+ const file = previewFiles[source];
+ const pages: PreviewPage[] = [
+  { page: 1, title: file.title, text: preset==='clear' ? clearText[source] : file.text, description: '' },
+  { page: 2, title: source==='campus'?'Esquema de rotas':source==='energia'?'Tabela de consumo':'Casos de teste', text: practice[source], description: preset==='description'?file.description:'' },
+  ...worksheets[source].map((page,i)=>({...page,page:i+3,description:''})),
+ ];
+ if (preset==='clear'||preset==='glossary') pages[1].steps=actions[source];
+ if (preset==='glossary') pages[1].glossary=definitions[source];
+ return pages;
 }
 const campusSteps:Step[]=[
  {title:'Conhecer o desafio',instructions:'Leia o material e identifique os três caminhos e as observações registradas. Não faça observações em um campus real: use os dados fictícios fornecidos.',example:'Na rota A há 180 metros de trajeto e dois degraus.'},
@@ -37,7 +99,13 @@ export function initialPreview():PreviewState{
  const campus:Mission={id:'campus',classroomId:'preview-projects',title:'Rotas acessíveis no campus',description:'Compare três percursos fictícios até a biblioteca e proponha uma melhoria verificável.',objectives:'Comparar dados de distância e condições de circulação.\nJustificar uma decisão com evidências do material.',criteria:'Usar dois dados do material.\nRelacionar a proposta à barreira observada.\nExplicar como conferir a melhoria.',steps:campusSteps,status:'published',revision:1,source:'campus'};
  return {version:1,studentId:students[0].id,teacher:{name:'Ana Paula Ribeiro',subject:'Projetos inclusivos e Física aplicada',course:'Engenharia de Computação'},students,
  classrooms:[{id:'preview-projects',name:'Oficina de Projetos Inclusivos',subject:'Projeto integrador',students:students.map(s=>s.id),invitation:'TRAV2345'},{id:'preview-programming',name:'Programação I',subject:'Algoritmos',students:students.map(s=>s.id),invitation:null},{id:'preview-energy',name:'Física aplicada',subject:'Energia e potência',students:students.map(s=>s.id),invitation:null}],
- missions:[campus,{id:'biblioteca',classroomId:'preview-programming',title:'Uma biblioteca para todos',description:'Planeje e teste um programa de empréstimos de livros.',objectives:'Organizar dados e implementar operações com validação de entrada.',criteria:'Definir dados.\nVerificar disponibilidade.\nDemonstrar três testes.',steps:['Compreender o problema','Planejar a solução','Desenvolver o protótipo','Testar e ajustar','Apresentar o resultado'].map(title=>({title,instructions:previewFiles.biblioteca.text,example:'Livro B01 disponível; leitor L01; registrar a devolução prevista.'})),status:'published',revision:1,source:'biblioteca'},
+ missions:[campus,{id:'biblioteca',classroomId:'preview-programming',title:'Uma biblioteca para todos',description:'Planeje e teste um programa de empréstimos de livros.',objectives:'Organizar dados e implementar operações com validação de entrada.',criteria:'Definir dados.\nVerificar disponibilidade.\nDemonstrar três testes.',steps:[
+  {title:'Compreender o problema',instructions:'Leia o PDF e liste os dados que a biblioteca precisa para consultar um livro e registrar um empréstimo.',example:'Para identificar um livro, use um código como B01 e associe título e disponibilidade.'},
+  {title:'Planejar a solução',instructions:'Esboce as estruturas de leitor, livro e empréstimo. Indique os dados obrigatórios em cada uma.',example:'O empréstimo pode guardar o código do leitor, o código do livro e a data prevista de devolução.'},
+  {title:'Desenvolver o protótipo',instructions:'Implemente a consulta e a verificação de disponibilidade antes de registrar o empréstimo.',example:'Se B02 já estiver emprestado, exiba o motivo e mantenha os registros anteriores.'},
+  {title:'Testar e ajustar',instructions:'Execute os três casos de teste da tabela. Registre o que aconteceu e compare com a saída esperada.',example:'B99 deve retornar código não encontrado e o programa deve permitir nova consulta.'},
+  {title:'Apresentar o resultado',instructions:'Descreva seu modelo de dados, mostre o resultado dos testes e explique uma melhoria possível.',example:'Informe como validou a disponibilidade e como mostraria a data prevista para o leitor.'},
+ ],status:'published',revision:1,source:'biblioteca'},
  {id:'energia',classroomId:'preview-energy',title:'Energia no laboratório',description:'Calcule e interprete o consumo de dois equipamentos de exemplo.',objectives:'Relacionar potência, tempo de uso e energia.',criteria:'Converter W para kW.\nExplicar o cálculo.\nConferir unidades e total.',steps:[{title:'Ler a tabela',instructions:previewFiles.energia.text,example:'120 W correspondem a 0,12 kW.'},{title:'Calcular o consumo',instructions:'Calcule a energia de cada equipamento e some os resultados.',example:'0,12 × 4 × 20 = 9,6 kWh.'},{title:'Interpretar o resultado',instructions:'Compare os consumos e explique como potência e tempo influenciam o total.',example:'No cenário proposto, o computador responde por 9,6 dos 10,8 kWh.'}],status:'published',revision:1,source:'energia'},
  {...campus,id:'informacao',title:'Informações que incluem',description:'Prepare uma orientação clara para chegar à biblioteca.',status:'draft',revision:1}],
  materials:[{id:'preview-material-marina',missionId:'campus',revision:1,studentId:students[0].id,source:'campus',preset:'expanded',audio:true,released:true,instructions:'Compare uma rota por vez. Registre a distância e uma condição observada. Depois justifique sua decisão.',formats:['text','audio','text_file']},{id:'preview-material-ana',missionId:'campus',revision:1,studentId:students[1].id,source:'campus',preset:'clear',audio:true,released:true,instructions:'Primeiro leia os dados. Depois compare duas condições. Por último, escreva sua decisão e diga como verificar a melhoria.',formats:['text','audio']},{id:'preview-material-lucas',missionId:'campus',revision:1,studentId:students[2].id,source:'campus',preset:'original',audio:false,released:true,instructions:'',formats:['text']},{id:'preview-material-gabriel',missionId:'campus',revision:1,studentId:students[3].id,source:'campus',preset:'description',audio:true,released:true,instructions:'Consulte a descrição das rotas e use dois dados para justificar sua decisão.',formats:['text','audio']},...(['biblioteca','energia'] as const).flatMap(source=>students.map(student=>({id:`preview-${source}-${student.id}`,missionId:source,revision:1,studentId:student.id,source,preset:'original' as const,audio:false,released:true,instructions:'',formats:['text' as const]})))],
