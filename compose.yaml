@@ -108,7 +108,7 @@ services:
     cpus: 1.0
     pids_limit: 256
     healthcheck:
-      test: [CMD, node, -e, 'const fs=require("fs");try{process.exit(Date.now()-Number(fs.readFileSync("/tmp/travessia-worker-heartbeat","utf8"))<30000?0:1)}catch{process.exit(1)}']
+      test: [CMD, node, -e, 'const fs=require("fs");try{process.exit(Date.now()<Number(fs.readFileSync("/tmp/travessia-worker-heartbeat","utf8"))?0:1)}catch{process.exit(1)}']
       interval: 10s
       timeout: 5s
       retries: 12

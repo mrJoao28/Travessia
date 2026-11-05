@@ -95,7 +95,7 @@ export class MaterialWorker {
       OR: [{ draftVersionId: versionId }, { publishedVersionId: versionId }], classroom: { memberships: { some: { userId: creatorId, role: 'teacher', active: true } },
         ...(studentId ? { AND: [{ memberships: { some: { userId: studentId, role: 'student', active: true } } }] } : {}) } } } });
   }
-  async tick() {
+  async tick(progress: (budgetMs?: number) => Promise<void> = async () => {}) {
     const stale = new Date(Date.now()- 8*60000);
     // An abandoned external call is marked failed, never retried automatically (unknown provider charge).
     await this.db.materialSource.updateMany({ where: { status: 'extracting', startedAt: { lt: stale } }, data: { status: 'failed', warnings: ['Processamento interrompido. Envie novamente após conferir o arquivo.'] } });
@@ -114,7 +114,15 @@ export class MaterialWorker {
     if (!job) return false;
     try {
       await checkDiskBudget();
-      if (job.type === 'source') await this.extract(job.row); else if (job.row.status === 'queued') await this.prepare(job.row); else await this.render(job.row);
+      if (job.type === 'source') {
+        await progress(8 * 60_000);
+        await this.extract(job.row);
+      } else if (job.row.status === 'queued') {
+        await this.prepare(job.row, progress);
+      } else {
+        await progress(20 * 60_000);
+        await this.render(job.row);
+      }
     } catch (error) {
       if (job.type === 'source') await this.db.materialSource.updateMany({ where: { id: job.row.id, status: 'extracting' }, data: { status: 'failed', warnings: [`Não foi possível verificar o PDF. Use até ${PDF_MAX_PAGES} páginas, sem senha, formulários, anexos, links ou scripts.`] } });
       else {
@@ -139,7 +147,7 @@ export class MaterialWorker {
     if (!await this.permitted(source.versionId, source.creatorId)) throw new Error('Revoked');
     await this.db.materialSource.updateMany({ where: { id: source.id, status: 'extracting', expiresAt: { gt: new Date() } }, data: { status: 'ready', pages: result.pages, warnings: result.warnings, pageCount: result.pages.length } });
   }
-  async prepare(a: MaterialAdaptation) {
+  async prepare(a: MaterialAdaptation, progress: (budgetMs?: number) => Promise<void>) {
     if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
     const source = await this.db.materialSource.findFirstOrThrow({ where: { id: a.sourceId, status: 'ready', expiresAt: { gt: new Date() } } });
     const { regeneratePage, ...settings } = storedMaterialSettings.parse(a.settings);
@@ -157,6 +165,7 @@ export class MaterialWorker {
       const descriptionsOnly = !settings.supports.some(s => ['literal-language','short-sections','glossary'].includes(s));
       document = [];
       for (const batch of materialBatches(pages)) {
+        await progress(120_000);
         if (!await this.permitted(a.versionId, a.creatorId, a.studentId)) throw new Error('Revoked');
         // Renew the processing lease before each bounded provider call.
         const lease = await this.db.materialAdaptation.updateMany({ where: {
