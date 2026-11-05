@@ -221,10 +221,10 @@ export function LiveMission({
               {step.title}
             </h2>
             <p className="submission-content">{step.instructions}</p>
-            <details className="example" key={step.id}>
+            {step.example && <details className="example" key={step.id}>
               <summary>Ver um exemplo</summary>
               <p className="submission-content">{step.example}</p>
-            </details>
+            </details>}
             <div className="actions">
               <button
                 className="button button-outline"
@@ -267,54 +267,52 @@ export function LiveMission({
           </section>
           <details className="paper preview-student-context">
             <summary>Objetivos e critérios da missão</summary>
-        <h3>Objetivos de aprendizagem</h3>
-        <ul>
-          {version.objectives.map((objective, i) => (
-            <li key={i}>{objective}</li>
-          ))}
-        </ul>
-        <h3>Critérios de avaliação</h3>
-        <ul>
-          {version.criteria.map((criterion, i) => (
-            <li key={i}>{criterion}</li>
-          ))}
-        </ul>
+            <h3>Objetivos de aprendizagem</h3>
+            <ul>
+              {version.objectives.map((objective, i) => (
+                <li key={i}>{objective}</li>
+              ))}
+            </ul>
+            <h3>Critérios de avaliação</h3>
+            <ul>
+              {version.criteria.map((criterion, i) => (
+                <li key={i}>{criterion}</li>
+              ))}
+            </ul>
           </details>
-      <section className="paper" aria-label="Materiais da missão">
-        <h3>Materiais</h3>
-        {!version.materials.length && (
-          <p className="small">Os PDFs e áudios liberados para você aparecem neste espaço.</p>
-        )}
-        {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
-        {version.materials.map((material) => (
-          <details className="example" key={material.id}>
-            <summary>{material.title}</summary>
-            <p className="submission-content">{material.text}</p>
-            {material.hasFile && (
-              <button
-                className="text-button"
-                onClick={async () => {
-                  try {
-                    const download = await api("download", {
-                      params: { id: material.id },
-                    });
-                    const url = new URL(download.url);
-                    if (url.protocol !== "https:")
-                      throw new Error(
-                        "O arquivo não está disponível por uma conexão segura.",
-                      );
-                    window.open(url.href, "_blank", "noopener,noreferrer");
-                  } catch (reason) {
-                    setMessage(errorMessage(reason));
-                  }
-                }}
-              >
-                Abrir arquivo autorizado
-              </button>
-            )}
-          </details>
-        ))}
-      </section>
+          <section className="paper" aria-label="Materiais da missão">
+            <h3>Materiais</h3>
+            {role === "professor" && !version.materials.length && <p className="small">Nenhum material na missão.</p>}
+            {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
+            {version.materials.map((material) => (
+              <details className="example" key={material.id}>
+                <summary>{material.title}</summary>
+                <p className="submission-content">{material.text}</p>
+                {material.hasFile && (
+                  <button
+                    className="text-button"
+                    onClick={async () => {
+                      try {
+                        const download = await api("download", {
+                          params: { id: material.id },
+                        });
+                        const url = new URL(download.url);
+                        if (url.protocol !== "https:")
+                          throw new Error(
+                            "O arquivo não está disponível por uma conexão segura.",
+                          );
+                        window.open(url.href, "_blank", "noopener,noreferrer");
+                      } catch (reason) {
+                        setMessage(errorMessage(reason));
+                      }
+                    }}
+                  >
+                    Abrir arquivo autorizado
+                  </button>
+                )}
+              </details>
+            ))}
+          </section>
           {role === "aluno" && (
             <section className="paper">
               <h2>Sua atividade</h2>

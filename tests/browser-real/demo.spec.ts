@@ -70,7 +70,12 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByText('Perfil de professor salvo.', { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole('link', { name: 'Voltar ao meu espaço', exact: true }).click();
-  await page.getByRole("link", { name: "Continuar missão" }).click();
+  const resume = page.getByRole("link", { name: "Continuar missão" });
+  const missionHref = await resume.getAttribute("href");
+  await expect(page.getByRole("main").locator(`a[href="${missionHref}"]`)).toHaveCount(1);
+  await expect(page.locator(".preview-student-continue .path-art img")).toBeVisible();
+  await resume.click();
+  await expect(page.locator(".student-live-mission .form-stack > :first-child").first()).toHaveAttribute("id", "etapas");
   await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
   await page.getByText("Aa · Ajustar leitura", { exact: true }).click();
   await page.getByLabel("Tamanho do texto").selectOption("1.125");
@@ -361,6 +366,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       expect(await response.text()).not.toContain('Apoio individual de A');
     }
     await page.getByRole('button', { name: 'Próxima etapa', exact: true }).click();
+    await expect(page.locator('#etapas h2')).toBeFocused();
     await expect(supports.getByRole('status')).toHaveCount(0);
     await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toHaveCount(0);
     if (suffix === 'A') {
