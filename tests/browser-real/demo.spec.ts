@@ -126,7 +126,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByText('Relato privado salvo. Somente você pode consultá-lo.', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Consultar meus relatos e respostas' }).click();
   await expect(page.getByText('Exemplo de relato privado criado no teste integrado.', { exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "Feedback", exact: true }).click();
+  await page.getByRole("link", { name: "Entregas", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Entregas e feedback" })).toBeVisible();
   await expect(page.locator("blockquote").first()).toBeVisible();
   await expect(page.getByText("Revisada", { exact: true })).toBeVisible();
   await page.locator('summary[aria-label="Menu da conta"]').click();
