@@ -126,6 +126,7 @@ test('cenário suporta estado inválido, reinício isolado e armazenamento indis
  await page.goto('/previa/aluno');
  await page.evaluate(k=>{localStorage.setItem(k,'{"version":1,"missions":null}');localStorage.setItem('unrelated-test','keep');},key);
  await page.reload();await expect(page.getByRole('heading',{name:'Um passo de cada vez.'})).toBeVisible();
+ await page.getByText('Opções da prévia',{exact:true}).click();
  page.once('dialog',dialog=>dialog.accept());await page.getByRole('button',{name:'Reiniciar cenário'}).click();
  expect(await page.evaluate(()=>localStorage.getItem('unrelated-test'))).toBe('keep');
  await page.addInitScript(()=>{Storage.prototype.setItem=()=>{throw new Error('blocked');};Storage.prototype.getItem=()=>{throw new Error('blocked');};});
