@@ -13,13 +13,20 @@ const server = createServer(async (request, response) => {
   const url = new URL(request.url ?? '/', origin);
   try {
     if (request.method === 'GET' && url.pathname === '/') {
+      // A same-origin form POST must keep its Origin header for the check below.
+      response.setHeader('Referrer-Policy', 'same-origin');
       return response.end('<html lang="pt-BR"><title>Travessia Local</title><h1>Travessia Local</h1><form method="post" action="/connect"><button>Continue with ChatGPT</button></form></html>');
     }
     if (request.method === 'GET' && url.pathname === '/models') {
       response.setHeader('Content-Type', 'text/plain; charset=utf-8');
       return response.end((await listChatGPTModels()).join('\n'));
     }
-    if (request.method === 'POST' && url.pathname === '/connect' && request.headers.origin === origin) {
+    if (url.pathname === '/connect') {
+      if (request.method === 'GET') return response.writeHead(303, { Location: '/' }).end();
+      if (request.method !== 'POST') return response.writeHead(405, { Allow: 'GET, POST' }).end();
+      if (request.headers.origin !== origin) {
+        return response.writeHead(403).end('<h1>Origem da conexão inválida</h1><p><a href="/">Volte ao início</a> e clique novamente em Continue with ChatGPT.</p>');
+      }
       pending = await startAuthorization(callback);
       return response.writeHead(303, { Location: pending.url.href }).end();
     }
