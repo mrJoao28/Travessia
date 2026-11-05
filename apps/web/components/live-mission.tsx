@@ -40,6 +40,8 @@ export function LiveMission({
   const recoveryKey = `travessia:student-draft:${viewerId}:${id}`;
   const [saveError, setSaveError] = useState(false);
   const [localSaved, setLocalSaved] = useState(false);
+  const [previousDrafts, setPreviousDrafts] = useState<Submission[]>([]);
+  const [previousLocal, setPreviousLocal] = useState<ReturnType<typeof readStudentDraft>>(null);
   const [recovered, setRecovered] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -55,6 +57,11 @@ export function LiveMission({
         const local = role === "aluno" ? readStudentDraft(recoveryKey) : null;
         const recover = local && version?.id === local.versionId
           && local.revision === (current?.revision ?? 0) && (!current || current.status === "draft");
+        setPreviousDrafts(deliveries.filter(s => s.versionId !== version?.id && s.status === "draft")
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        const unmatched = local && !recover && (!current || current.status === "draft") ? local : null;
+        if (unmatched) storeStudentDraft(recoveryKey + ":previous", unmatched);
+        setPreviousLocal(unmatched ?? readStudentDraft(recoveryKey + ":previous"));
         setRecovered(!!recover);
         setDirty(!!recover);
         setMission(value);
@@ -166,6 +173,13 @@ export function LiveMission({
     } finally {
       setPending(false);
     }
+  }
+  function reuseDraft(text: string) {
+    if (pending || locked || (content && !window.confirm("Substituir o texto da atividade atual pelo rascunho escolhido?"))) return;
+    setContent(text);
+    setDirty(true);
+    setSaveError(false);
+    setMessage("Texto copiado. Confira as instruções e marque as etapas que concluiu nesta versão.");
   }
   function navigate(next: number) {
     setIndex(next);
