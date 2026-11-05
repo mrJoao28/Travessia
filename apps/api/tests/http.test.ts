@@ -610,9 +610,10 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
     audioScript = script ?? '';
     await writeFile(filename, 'audio fixture'); return {};
   };
-  const pdf = async (filename: string, html: string) => { assert.ok(html.includes('lang="pt-BR"')); assert.ok(!html.includes('<script>')); await writeFile(filename, '%PDF-render fixture'); };
+  let renderedHtml = '';
+  const pdf = async (filename: string, html: string) => { renderedHtml = html; assert.ok(html.includes('lang="pt-BR"')); assert.ok(!html.includes('<script>')); await writeFile(filename, '%PDF-render fixture'); };
   let calls = 0, sent = '';
-  const worker = new MaterialWorker(db, config, async input => { calls++; sent=JSON.stringify(input); return { document: input.pages.map(p=>({ page:p.page,title:'Comparar dados',text:'Dados: 10 metros. Compare alternativas.',description:'Diagrama compara duas alternativas.' })), inputTokens: 123, outputTokens: 45 }; }, local, pdf);
+  const worker = new MaterialWorker(db, config, async input => { calls++; sent=JSON.stringify(input); return { document: input.pages.map(p=>({ page:p.page,title:'Comparar dados',text:'Dados: 10 metros. Compare alternativas.',description:'Diagrama compara duas alternativas.', steps:['Compare as alternativas.'], glossary:[{term:'Alternativa',definition:'Uma opção entre as disponíveis.'}] })), inputTokens: 123, outputTokens: 45 }; }, local, pdf);
   await worker.tick();
   const ready = (await request(`${path}/material-sources?versionId=${versionId}`, main)).json.items[0]; assert.equal(ready.status, 'ready');
   const sourceImage=await fetch(`${base}${path}/material-assets/${source.id}/page-1`,{headers:{cookie:main}});assert.equal(sourceImage.status,200);assert.equal(sourceImage.headers.get('content-type'),'image/png');
@@ -645,7 +646,20 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   await request(`${path}/material-assets/${source.id}/original`,a,'GET',undefined,404);
   await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:false}});await file('pdf',a,404);
   await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:true}});
-  await request(`${path}/material-adaptations/${plan.id}`,main,'PATCH',{expectedRevision:rendered.revision,document:malicious});await file('pdf',a,404);
+  const replacement = [{ ...malicious[0], text: 'Versão nova para revisar.' }];
+  const pendingRevision = (await request(`${path}/material-adaptations/${plan.id}`,main,'PATCH',{
+    expectedRevision:rendered.revision,document:replacement,
+  })).json;
+  assert.equal(pendingRevision.hasReleasedVersion, true);
+  await file('pdf',a); await file('audio',a); await file('pdf',b,404);
+  const deliveredText = async () => (await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items[0].document[0].text;
+  assert.equal(await deliveredText(), malicious[0].text);
+  await request(`${path}/material-adaptations/${plan.id}/render`,main,'POST',{expectedRevision:pendingRevision.revision});
+  await worker.tick();
+  assert.equal(await deliveredText(), malicious[0].text);
+  await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:pendingRevision.revision,reviewed:true});
+  assert.equal(await deliveredText(), replacement[0].text);
+  await file('pdf',a);
   config.aiEnabled=true;
   const aiInput={...input,settings:{...settings,supports:['image-description'],useAi:true,approvedForProvider:true},requestKey:randomUUID()};
   const aiPlan=(await request(`${path}/material-adaptations`,main,'POST',aiInput)).json;
@@ -661,9 +675,48 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:false}});await worker.tick();assert.equal(calls,1);
   assert.equal((await db.materialAdaptation.findUniqueOrThrow({where:{id:next.id}})).status,'failed');
   await db.membership.update({where:{userId_classroomId:{userId:mainId,classroomId:workshop}},data:{active:true}});
+  const longPages = Array.from({ length: 9 }, (_, index) => ({
+    page: index + 1, text: 'Dados: 10 metros. Compare alternativas.', hasVisual: false, ocr: false,
+  }));
+  await db.materialSource.update({ where: { id: source.id }, data: { pages: longPages, pageCount: longPages.length } });
+  const callsBeforeBatches = calls;
+  const structured = (await request(`${path}/material-adaptations`, main, 'POST', {
+    ...input, pages: longPages.map(p => p.page), autoRender: true, requestKey: randomUUID(),
+    settings: { supports: ['short-sections', 'glossary', 'high-contrast', 'large-print', 'wide-spacing', 'narration'],
+      fontSize: '18', color: 'default', useAi: true, approvedForProvider: true },
+  })).json;
+  assert.equal(structured.settings.color, 'high');
+  assert.equal(structured.settings.fontSize, '22');
+  await worker.tick();
+  assert.equal(calls - callsBeforeBatches, 3);
+  await worker.tick();
+  const structuredDraft = (await request(`${path}/material-adaptations?versionId=${versionId}`, main)).json.items.find((item: {id: string}) => item.id === structured.id);
+  assert.equal(structuredDraft.status, 'ready');
+  assert.equal(structuredDraft.inputTokens, 3 * 123);
+  assert.deepEqual(structuredDraft.document.map((p: {page: number}) => p.page), longPages.map(p => p.page));
+  assert.deepEqual(structuredDraft.document[0], {
+    page: 1, title: 'Página 1', text: 'Dados: 10 metros. Compare alternativas.', description: '',
+    steps: ['Compare as alternativas.'], glossary: [{ term: 'Alternativa', definition: 'Uma opção entre as disponíveis.' }],
+  });
+  const structuredPath = `${path}/material-adaptations/${structured.id}`;
+  const edited = (await request(structuredPath, main, 'PATCH', { expectedRevision: structuredDraft.revision, document: [{
+    ...structuredDraft.document[0], steps: ['Compare <A> e <B>.'],
+  }, ...structuredDraft.document.slice(1)] })).json;
+  await request(`${structuredPath}/render`, main, 'POST', { expectedRevision: edited.revision });
+  await worker.tick();
+  assert.match(renderedHtml, /font-size:22pt;line-height:1.8;color:#000;background:#fff/);
+  assert.match(renderedHtml, /<ol><li>Compare &lt;A&gt; e &lt;B&gt;\.<\/li><\/ol>/);
+  assert.match(renderedHtml, /<dl><div><dt>Alternativa<\/dt><dd>Uma opção entre as disponíveis\.<\/dd><\/div><\/dl>/);
+  assert.match(audioScript, /Passos da atividade\.\s+1\. Compare <A> e <B>\./);
+  assert.match(audioScript, /Glossário\.\s+Alternativa: Uma opção entre as disponíveis\./);
+  await request(`${structuredPath}/release`, main, 'POST', { expectedRevision: edited.revision, reviewed: true });
+  const delivered = (await request(`${path}/my-materials?versionId=${versionId}`, a)).json.items.find((item: {id: string}) => item.id === structured.id);
+  assert.deepEqual(delivered.document, edited.document);
+  assert.deepEqual(delivered.reading, { supports: structured.settings.supports, fontSize: '22', color: 'high' });
+  await request(structuredPath, main, 'DELETE');
   config.aiEnabled=false;
   await db.materialAdaptation.createMany({data:Array.from({length:41},()=>({versionId,sourceId:source.id,studentId:'demo-student-1',creatorId:mainId,requestKey:randomUUID(),requestHash:randomUUID(),settings,pages:[1],document:malicious,status:'released',expiresAt:new Date(Date.now()+86400000)}))});
-  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,41,'Nenhum material liberado deve sumir além do quadragésimo item');
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,42,'A revisão publicada e os demais materiais continuam disponíveis além do quadragésimo item');
   await request(`${path}/material-sources/${source.id}`,main,'DELETE');await file('pdf',a,404);await worker.collect();
   assert.equal(await db.materialSource.count({where:{id:source.id}}),0);
 });

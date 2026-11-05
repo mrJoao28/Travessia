@@ -59,7 +59,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   }
  }
  try{
-  for(const route of ['/','/login','/cadastro','/previa/professor','/previa/professor/missoes','/previa/professor/entregas','/previa/professor/barreiras','/previa/professor/perfil','/previa/aluno','/previa/aluno/turmas','/previa/aluno/entregas','/previa/aluno/feedback','/previa/aluno/apoios','/previa/aluno/barreiras','/previa/aluno/ajuda']){
+  for(const route of ['/','/login','/cadastro','/previa/professor','/previa/professor/missoes','/previa/professor/entregas','/previa/professor/barreiras','/previa/professor/perfil','/previa/aluno','/previa/aluno/turmas','/previa/aluno/entregas','/previa/aluno/feedback','/previa/aluno/apoios','/previa/aluno/barreiras','/previa/aluno/ajuda','/previa/aluno/primeiros-passos','/previa/professor/primeiros-passos']){
    await page.goto(route);await expect(page.locator('h1').first()).toBeVisible();
    if(route.startsWith('/previa'))await expect(page.getByText('Preparando cenário fictício…',{exact:true})).toHaveCount(0);
    await capture(route.replaceAll('/','-')||'landing');
@@ -67,10 +67,10 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await page.goto('/previa/professor/missoes/editor');await expect(page.getByLabel('Título da missão')).toBeVisible();
   await capture('editor-about');await page.getByRole('button',{name:'Continuar para as etapas →'}).click();await capture('editor-steps');
   await page.getByRole('button',{name:'Adicionar PDF de exemplo'}).click();
-  await page.getByRole('button',{name:'Salvar e continuar →'}).click();await expect(page.getByLabel('Aluno destinatário')).toBeVisible();await capture('editor-materials');
+  await page.getByRole('button',{name:'Salvar e continuar →'}).click();await expect(page.getByLabel('Aluno da turma')).toBeVisible();await capture('editor-materials');
   await page.getByRole('button',{name:'Revisar missão',exact:true}).click();await capture('editor-review');
-  await page.goto('/previa/professor/missoes/campus/adaptacoes');await expect(page.getByLabel('Aluno destinatário')).toBeVisible();
-  await page.getByText('Também ajustar a atividade',{exact:true}).click();await capture('materials-expanded');
+  await page.goto('/previa/professor/missoes/campus/adaptacoes');await expect(page.getByLabel('Aluno da turma')).toBeVisible();
+  await page.getByRole('button',{name:'Atividade e entrega',exact:true}).click();await capture('materials-expanded');
   await page.goto('/previa/aluno/missoes/campus');await expect(page.getByLabel('Planejamento e atividade')).toBeVisible();
   await page.getByRole('region',{name:'Materiais preparados para você'}).getByText('rotas-do-campus.pdf · Texto ampliado e espaçado',{exact:true}).click();
   await page.getByText('Transcrição do áudio',{exact:true}).click();await capture('student-material-audio');

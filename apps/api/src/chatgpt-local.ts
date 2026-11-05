@@ -85,7 +85,7 @@ export async function listChatGPTModels() {
   return catalog.models.filter(model => model.visibility === 'list').map(model => model.slug);
 }
 
-export async function chatgptJson(model: string, instructions: string, schema: object, input: unknown, images: { page: number; image?: Buffer }[], limit: number, signal: AbortSignal) {
+export async function chatgptJson(model: string, instructions: string, schema: object, input: unknown, images: { page: number; image?: Buffer }[], limit: number, signal: AbortSignal, maxOutputChars = 80000) {
   const session = await activeSession();
   const content: object[] = [{ type: 'input_text', text: JSON.stringify(input) }];
   for (const page of images) {
@@ -117,7 +117,7 @@ export async function chatgptJson(model: string, instructions: string, schema: o
         if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
         const event = JSON.parse(line.slice(6));
         if (event.type === 'response.output_text.delta') output += event.delta;
-        if (output.length > 80000) throw new Error('Oversized output');
+        if (output.length > maxOutputChars) throw new Error('Oversized output');
         if (event.type === 'response.completed') return { value: JSON.parse(output), inputTokens: event.response?.usage?.input_tokens as number | undefined, outputTokens: event.response?.usage?.output_tokens as number | undefined };
         if (['error', 'response.failed', 'response.incomplete'].includes(event.type)) throw new Error('Incomplete response');
       }

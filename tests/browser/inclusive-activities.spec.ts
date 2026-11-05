@@ -61,7 +61,7 @@ test('aluno escolhe apoios sem diagnóstico obrigatório e compartilha deficiên
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
 });
-test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro preserva adaptação', async ({ page }) => {
+test('professor usa pedidos autorizados e ChatGPT gera somente rascunho; erro preserva adaptação', async ({ page }) => {
   const captured = await fixture(page, 'teacher'); await page.goto('/professor/adaptacoes');
   if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
   await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
@@ -70,7 +70,7 @@ test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro pre
   const generate = page.getByRole('button', { name: 'Sugerir um texto com IA', exact: true });
   await expect(generate).toBeDisabled();
   await page.getByRole('checkbox', { name: 'Material didático', exact: true }).check();
-  await page.getByRole('checkbox', { name: 'Conferi os textos e autorizo o envio de material didático sem dados pessoais ao Gemini.', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Conferi os textos e autorizo o envio de material didático sem dados pessoais ao ChatGPT.', exact: true }).check();
   await generate.click();
   await page.getByRole('button', { name: 'Usar rascunho adaptado no editor', exact: true }).click();
   expect(captured.ai?.supportNeeds).toEqual(['short-steps']);

@@ -217,7 +217,7 @@
                   "base64": {
                     "type": "string",
                     "minLength": 8,
-                    "maxLength": 13981016
+                    "maxLength": 27962028
                   },
                   "requestKey": {
                     "type": "string",
@@ -528,6 +528,9 @@
                               "failed"
                             ]
                           },
+                          "hasReleasedVersion": {
+                            "type": "boolean"
+                          },
                           "settings": {
                             "type": "object",
                             "properties": {
@@ -603,7 +606,7 @@
                                 "page": {
                                   "type": "integer",
                                   "minimum": 1,
-                                  "maximum": 20
+                                  "maximum": 40
                                 },
                                 "title": {
                                   "type": "string",
@@ -612,11 +615,44 @@
                                 },
                                 "text": {
                                   "type": "string",
-                                  "maxLength": 12000
+                                  "maxLength": 40000
                                 },
                                 "description": {
                                   "type": "string",
                                   "maxLength": 4000
+                                },
+                                "steps": {
+                                  "maxItems": 12,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 1500
+                                  }
+                                },
+                                "glossary": {
+                                  "maxItems": 12,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "term": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 120
+                                      },
+                                      "definition": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 600
+                                      }
+                                    },
+                                    "required": [
+                                      "term",
+                                      "definition"
+                                    ],
+                                    "additionalProperties": false
+                                  }
                                 }
                               },
                               "required": [
@@ -763,12 +799,12 @@
                   },
                   "pages": {
                     "minItems": 1,
-                    "maxItems": 4,
+                    "maxItems": 40,
                     "type": "array",
                     "items": {
                       "type": "integer",
                       "minimum": 1,
-                      "maximum": 20
+                      "maximum": 40
                     }
                   },
                   "settings": {
@@ -829,6 +865,9 @@
                       "approvedForProvider"
                     ],
                     "additionalProperties": false
+                  },
+                  "autoRender": {
+                    "type": "boolean"
                   },
                   "requestKey": {
                     "type": "string",
@@ -896,6 +935,9 @@
                         "released",
                         "failed"
                       ]
+                    },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
                     },
                     "settings": {
                       "type": "object",
@@ -972,7 +1014,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -981,11 +1023,44 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
                             "maxLength": 4000
+                          },
+                          "steps": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 1500
+                            }
+                          },
+                          "glossary": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "term": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                },
+                                "definition": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 600
+                                }
+                              },
+                              "required": [
+                                "term",
+                                "definition"
+                              ],
+                              "additionalProperties": false
+                            }
                           }
                         },
                         "required": [
@@ -1195,6 +1270,9 @@
                         "failed"
                       ]
                     },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
+                    },
                     "settings": {
                       "type": "object",
                       "properties": {
@@ -1270,7 +1348,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -1279,11 +1357,44 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
                             "maxLength": 4000
+                          },
+                          "steps": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 1500
+                            }
+                          },
+                          "glossary": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "term": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                },
+                                "definition": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 600
+                                }
+                              },
+                              "required": [
+                                "term",
+                                "definition"
+                              ],
+                              "additionalProperties": false
+                            }
                           }
                         },
                         "required": [
@@ -1426,7 +1537,7 @@
                   },
                   "document": {
                     "minItems": 1,
-                    "maxItems": 4,
+                    "maxItems": 40,
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -1434,7 +1545,7 @@
                         "page": {
                           "type": "integer",
                           "minimum": 1,
-                          "maximum": 20
+                          "maximum": 40
                         },
                         "title": {
                           "type": "string",
@@ -1443,11 +1554,44 @@
                         },
                         "text": {
                           "type": "string",
-                          "maxLength": 12000
+                          "maxLength": 40000
                         },
                         "description": {
                           "type": "string",
                           "maxLength": 4000
+                        },
+                        "steps": {
+                          "maxItems": 12,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1500
+                          }
+                        },
+                        "glossary": {
+                          "maxItems": 12,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "term": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 120
+                              },
+                              "definition": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 600
+                              }
+                            },
+                            "required": [
+                              "term",
+                              "definition"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
@@ -1462,7 +1606,7 @@
                   "regeneratePage": {
                     "type": "integer",
                     "minimum": 1,
-                    "maximum": 20
+                    "maximum": 40
                   },
                   "approvedForProvider": {
                     "type": "boolean",
@@ -1525,6 +1669,9 @@
                         "released",
                         "failed"
                       ]
+                    },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
                     },
                     "settings": {
                       "type": "object",
@@ -1601,7 +1748,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -1610,11 +1757,44 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
                             "maxLength": 4000
+                          },
+                          "steps": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 1500
+                            }
+                          },
+                          "glossary": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "term": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                },
+                                "definition": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 600
+                                }
+                              },
+                              "required": [
+                                "term",
+                                "definition"
+                              ],
+                              "additionalProperties": false
+                            }
                           }
                         },
                         "required": [
@@ -1895,6 +2075,9 @@
                         "failed"
                       ]
                     },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
+                    },
                     "settings": {
                       "type": "object",
                       "properties": {
@@ -1970,7 +2153,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -1979,11 +2162,44 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
                             "maxLength": 4000
+                          },
+                          "steps": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 1500
+                            }
+                          },
+                          "glossary": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "term": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                },
+                                "definition": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 600
+                                }
+                              },
+                              "required": [
+                                "term",
+                                "definition"
+                              ],
+                              "additionalProperties": false
+                            }
                           }
                         },
                         "required": [
@@ -2186,6 +2402,9 @@
                         "failed"
                       ]
                     },
+                    "hasReleasedVersion": {
+                      "type": "boolean"
+                    },
                     "settings": {
                       "type": "object",
                       "properties": {
@@ -2261,7 +2480,7 @@
                           "page": {
                             "type": "integer",
                             "minimum": 1,
-                            "maximum": 20
+                            "maximum": 40
                           },
                           "title": {
                             "type": "string",
@@ -2270,11 +2489,44 @@
                           },
                           "text": {
                             "type": "string",
-                            "maxLength": 12000
+                            "maxLength": 40000
                           },
                           "description": {
                             "type": "string",
                             "maxLength": 4000
+                          },
+                          "steps": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 1500
+                            }
+                          },
+                          "glossary": {
+                            "maxItems": 12,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "term": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 120
+                                },
+                                "definition": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 600
+                                }
+                              },
+                              "required": [
+                                "term",
+                                "definition"
+                              ],
+                              "additionalProperties": false
+                            }
                           }
                         },
                         "required": [
@@ -2431,7 +2683,7 @@
                             ]
                           },
                           "document": {
-                            "maxItems": 4,
+                            "maxItems": 40,
                             "type": "array",
                             "items": {
                               "type": "object",
@@ -2439,7 +2691,7 @@
                                 "page": {
                                   "type": "integer",
                                   "minimum": 1,
-                                  "maximum": 20
+                                  "maximum": 40
                                 },
                                 "title": {
                                   "type": "string",
@@ -2448,11 +2700,44 @@
                                 },
                                 "text": {
                                   "type": "string",
-                                  "maxLength": 12000
+                                  "maxLength": 40000
                                 },
                                 "description": {
                                   "type": "string",
                                   "maxLength": 4000
+                                },
+                                "steps": {
+                                  "maxItems": 12,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 1500
+                                  }
+                                },
+                                "glossary": {
+                                  "maxItems": 12,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "term": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 120
+                                      },
+                                      "definition": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 600
+                                      }
+                                    },
+                                    "required": [
+                                      "term",
+                                      "definition"
+                                    ],
+                                    "additionalProperties": false
+                                  }
                                 }
                               },
                               "required": [
@@ -2463,6 +2748,50 @@
                               ],
                               "additionalProperties": false
                             }
+                          },
+                          "reading": {
+                            "type": "object",
+                            "properties": {
+                              "supports": {
+                                "maxItems": 8,
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "enum": [
+                                    "large-print",
+                                    "wide-spacing",
+                                    "high-contrast",
+                                    "literal-language",
+                                    "short-sections",
+                                    "glossary",
+                                    "image-description",
+                                    "narration"
+                                  ]
+                                }
+                              },
+                              "fontSize": {
+                                "type": "string",
+                                "enum": [
+                                  "18",
+                                  "22",
+                                  "26"
+                                ]
+                              },
+                              "color": {
+                                "type": "string",
+                                "enum": [
+                                  "default",
+                                  "high",
+                                  "dark"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "supports",
+                              "fontSize",
+                              "color"
+                            ],
+                            "additionalProperties": false
                           },
                           "hasAudio": {
                             "type": "boolean"

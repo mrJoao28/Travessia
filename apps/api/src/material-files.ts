@@ -16,12 +16,12 @@ export async function visualPage(id: string, page: number, cropped = false) {
   if (cropped) { try { return await readFile(materialPath(id, `preview-${page}.png`)); } catch (error) { if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) throw error; } }
   return readFile(materialPath(id, `page-${page}.png`));
 }
-export async function checkDiskBudget() {
+export async function checkDiskBudget(incomingBytes = 0) {
   await mkdir(materialRoot(), { recursive: true, mode: 0o700 });
   let bytes = 0;
   for (const dir of await readdir(materialRoot(), { withFileTypes: true })) {
     if (!dir.isDirectory() || !/^[a-f0-9-]{36}$/.test(dir.name)) continue;
     for (const name of await readdir(join(materialRoot(), dir.name))) bytes += (await stat(join(materialRoot(), dir.name, name))).size;
   }
-  if (bytes > Number(process.env.MATERIAL_STORAGE_LIMIT_MB ?? 1024) * 1024 * 1024) throw new Error('Material storage limit');
+  if (bytes + incomingBytes > Number(process.env.MATERIAL_STORAGE_LIMIT_MB ?? 1024) * 1024 * 1024) throw new Error('Material storage limit');
 }

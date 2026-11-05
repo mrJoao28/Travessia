@@ -104,7 +104,7 @@ try {
     check(profile.student.registration === 'docker-profile-test' && profile.teacher.teachings.length === 2, 'Perfis acadêmicos não foram salvos.');
   }
   const members = (await request('/api/v1/classrooms/demo-class-oficina/members')).json.items;
-  check(members.filter(m => m.role === 'student').length === (verifyPersistence ? 9 : 8), 'Contexto docente indisponível.');
+  check(members.filter(m => m.role === 'student').length === (verifyPersistence ? 13 : 12), 'Contexto docente indisponível.');
   const teacherMission = (await request('/api/v1/missions/demo-class-oficina-mission')).json;
   const teacherVersion = teacherMission.publishedVersion;
   const strategyPath = `/api/v1/missions/${teacherMission.id}/strategy-plans`;

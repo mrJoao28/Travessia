@@ -1,6 +1,6 @@
 # Travessia com ChatGPT Plus em teste local
 
-Branch `test/chatgpt-plus-local`. Use um banco demo dedicado e materiais fictícios. A API e o PostgreSQL devem estar acessíveis apenas em loopback. O Better Auth continua autenticando as contas de professor e aluno do Travessia. A conexão OpenAI é compartilhada apenas pelos processos dessa instalação de teste.
+Branch `test/chatgpt-plus-material-flow`. Use um banco demo dedicado e materiais fictícios. A API e o PostgreSQL devem estar acessíveis apenas em loopback. O Better Auth continua autenticando as contas de professor e aluno do Travessia. A conexão OpenAI é compartilhada apenas pelos processos dessa instalação de teste.
 
 ## Conectar a conta no navegador
 
@@ -38,7 +38,7 @@ PowerShell em que foram definidas `AI_ENABLED=true` e `CHATGPT_MODEL`. Ao testar
 audiodescrição pelo worker Docker, reconstrua a imagem e confira se ele monta a mesma
 pasta de materiais da API e a pasta de sessão do ChatGPT em modo somente leitura.
 
-O assistente de escrita da missão usa os textos didáticos salvos em **Etapas e materiais**.
+A preparação de PDFs aceita até 40 páginas e processa as solicitações em lotes no worker.
 Para adaptar um PDF, escolha **Audiodescrição** na tela de apoios do material. Se a IA
 estiver indisponível, marque **Escrever a descrição manualmente**, preencha cada página e
 gere a prévia. A síntese de voz é local. Confira o áudio e disponibilize o material; se a
