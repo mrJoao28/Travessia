@@ -299,6 +299,21 @@ export function LiveMission({
           {role === "aluno" && (
             <section className="paper" style={{ marginTop: "1rem" }}>
               <h2>Sua atividade</h2>
+              {(previousLocal || previousDrafts.length > 0) && <section className="notice">
+                <h3>Rascunhos para recuperar</h3>
+                {previousDrafts.length > 0 && <p>Há rascunhos de versões anteriores. Confira os objetivos, critérios e etapas da versão atual antes de reaproveitar o texto. O progresso anterior fica no rascunho original.</p>}
+                {previousLocal && <details>
+                  <summary>{previousLocal.versionId === version.id ? "Edição deste navegador em conflito com o servidor" : "Rascunho de uma versão anterior neste navegador"}</summary>
+                  <p className="submission-content">{previousLocal.content}</p>
+                  {!locked && <button type="button" className="button button-outline" disabled={pending} onClick={() => reuseDraft(previousLocal.content)}>Reaproveitar texto deste navegador</button>}
+                </details>}
+                {previousDrafts.map(draft => <details key={draft.id}>
+                  <summary>Rascunho salvo em {new Date(draft.updatedAt).toLocaleString("pt-BR")}</summary>
+                  <p className="submission-content">{draft.content}</p>
+                  <SubmissionMedia id={draft.id} hasAudio={draft.hasAudio} hasTextFile={draft.hasTextFile} />
+                  {!locked && <button type="button" className="button button-outline" disabled={pending} onClick={() => reuseDraft(draft.content)}>Reaproveitar texto nesta versão</button>}
+                </details>)}
+              </section>}
               {locked ? (
                 <>
                   <p className="badge">
