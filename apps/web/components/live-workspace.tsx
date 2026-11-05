@@ -214,8 +214,10 @@ function WorkspaceView({
                     </select>
                   </label>
                 )}
-              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "missao" && missionId ? (
+              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "missao" && missionId && profile ? (
                 <LiveMission
+                  key={`${profile.id}:${missionId}`}
+                  viewerId={profile.id}
                   id={missionId}
                   role={role}
                   classrooms={permitted}
@@ -304,7 +306,7 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
       </section>
     );
   const version = entry.mission.publishedVersion;
-  const submission = entry.submissions.find((s) => s.versionId === version.id);
+  const submission = entry.submissions.filter(s => s.versionId === version.id).sort((a, b) => (b.attempt ?? 1) - (a.attempt ?? 1))[0];
   const index = Math.max(
     0,
     version.steps.findIndex((step) => step.id === submission?.currentStepId),
@@ -598,6 +600,7 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+  const [requestRevision, setRequestRevision] = useState(false);
   if (submission.status === "reviewed" || done)
     return (
       <div><SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} /><p role="status">
@@ -621,7 +624,7 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
           try {
             await api("feedback", {
               params: { id: submission.id },
-              body: { content },
+              body: { content, ...(requestRevision ? { requestRevision } : {}) },
             });
             setDone(true);
           } catch (reason) {
@@ -646,6 +649,7 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
           Destinatário: estudante autor da entrega. O feedback é docente, sem
           avaliação final automática.
         </p>
+        <label className="check"><input type="checkbox" checked={requestRevision} disabled={pending} onChange={e => setRequestRevision(e.target.checked)} /> Solicitar ajustes e permitir nova tentativa</label>
         <button className="button" disabled={pending}>
           {pending ? "Publicando…" : "Publicar feedback"}
         </button>

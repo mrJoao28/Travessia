@@ -87,7 +87,7 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
       for (const [studentIndex, uid] of c.students.entries()) {
         const status = index === 0 ? 'draft' : index === 1 ? 'submitted' : index === 2 ? 'reviewed' : studentIndex < 2 ? 'submitted' : studentIndex === 2 ? 'reviewed' : 'draft';
         const submissionId = `${missionId}-submission-${uid === userId ? 'principal' : studentIndex}`;
-        await tx.submission.upsert({ where: { versionId_userId: { versionId: version.id, userId: uid } }, create: {
+        await tx.submission.upsert({ where: { versionId_userId_attempt: { versionId: version.id, userId: uid, attempt: 1 } }, create: {
           id: submissionId, versionId: version.id, userId: uid, status, content: index === 0 ? 'Planejamento em rascunho: organizar livros por título e autor.' : 'Atividade fictícia: proposta elaborada com justificativas e exemplos.',
           currentStepId: version.steps[index === 0 ? 1 : 3].id, completedStepIds: version.steps.slice(0, index === 0 ? 1 : 3).map(s => s.id),
           submittedAt: status === 'draft' ? null : new Date(dataset.anchor.getTime() - 86400000),

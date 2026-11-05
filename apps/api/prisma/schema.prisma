@@ -255,13 +255,15 @@ model Submission {
   completedStepIds Json
   currentStepId String
   revision Int @default(1)
+  attempt Int @default(1)
+  revisionRequested Boolean @default(false)
   submittedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   version MissionVersion @relation(fields: [versionId], references: [id])
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   feedback Feedback[]
-  @@unique([versionId, userId])
+  @@unique([versionId, userId, attempt])
   @@index([userId, status])
 }
 model Feedback {

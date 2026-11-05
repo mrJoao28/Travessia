@@ -63,3 +63,16 @@ node --env-file=.env.docker --import tsx apps/api/src/gemini-check.ts
 Acrescente `--smoke` ao final para chamar os três adaptadores reais com material fictício. Essa opção usa a cota Gemini do projeto. Ela verifica formato da missão, estratégia de apoio e descrição de uma página com imagem, além da preservação do texto original. O comando imprime apenas resultados e categorias de erro. Use as prévias para avaliar manualmente fidelidade, números, clareza e adequação pedagógica.
 
 Em **Ajustar o texto da prévia**, cada página remete à imagem original. Páginas extraídas por OCR pedem conferência de fórmulas, números e tabelas. Para rascunhos preparados com IA, **Refazer página com Gemini** salva o trabalho atual e enfileira somente a página confirmada. As demais páginas são preservadas. Na descrição exclusivamente visual, apenas a descrição muda. Depois, gere novamente a prévia e revise antes de disponibilizar.
+
+## Backup e ensaio de restauração
+
+Execute a partir do checkout que usa o mesmo projeto Compose e `.env.docker` da instalação. Escolha uma janela de manutenção. O backup pausa API e worker enquanto copia o PostgreSQL e o volume de materiais e reinicia os serviços que estavam ativos. Suspenda também quaisquer escritores externos ao Compose. O script usa o mesmo lock do deploy.
+
+```sh
+bash scripts/material-recovery.sh backup /caminho/privado/travessia-2026-11-04
+bash scripts/material-recovery.sh verify /caminho/privado/travessia-2026-11-04
+```
+
+Guarde o bundle completo em armazenamento privado, criptografado e fora do servidor. Ele contém dados da aplicação, inclusive arquivos privados. Use somente bundles de origem confiável. A verificação confere os hashes, restaura o dump em PostgreSQL num projeto Compose descartável e compara o volume extraído com o arquivo TAR. Ela remove os recursos temporários no final. O procedimento é um ensaio isolado. Para validar o fluxo completo de recuperação, também confira em homologação se um aluno consegue abrir um PDF e ouvir o áudio restaurado.
+
+A saúde do worker acompanha consultas concluídas na fila e prazos de trabalho por etapa. Tarefas demoradas têm janelas compatíveis com seus limites. Se a fila parar de responder, o prazo vence e o Compose pode sinalizar o contêiner como `unhealthy`. Monitore esse estado e investigue o banco e os logs do worker.
