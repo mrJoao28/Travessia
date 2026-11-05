@@ -95,10 +95,10 @@ test("preferências por teclado, Escape, persistência local e skip link", async
     "style",
     /font-size: 125%/,
   );
-  await page.getByRole("link", { name: "Ampliar texto" }).click();
+  await readingSummary.click();
   await expect(page.getByLabel("Tamanho do texto")).toBeVisible();
   await page.keyboard.press("Escape");
-  await page.getByRole("link", { name: "Ampliar texto" }).click();
+  await readingSummary.click();
   await expect(page.getByLabel("Tamanho do texto")).toBeVisible();
 });
 for (const route of routes)

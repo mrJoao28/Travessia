@@ -15,9 +15,9 @@ export function FirstStepsGuide({ title, steps }: { title: string; steps: readon
   </section>;
 }
 
-export function StudentFirstSteps({ missionHref, preview = false }: { missionHref: string; preview?: boolean }) {
+export function StudentFirstSteps({ missionHref, preview = false }: { missionHref?: string; preview?: boolean }) {
   return <FirstStepsGuide title={preview?"Primeiros passos do aluno":"Sua primeira missão está pronta"} steps={[
-    { title:"Abra a missão e os materiais", detail:"Confira o objetivo e os critérios. Em Materiais preparados para você, abra o PDF ou ouça o áudio, quando estiver disponível.", action:<Link className="button" href={missionHref}>Abrir missão</Link> },
+    { title:"Abra a missão e os materiais", detail:"Confira o objetivo e os critérios. Em Materiais preparados para você, abra o PDF ou ouça o áudio, quando estiver disponível.", action:missionHref?<Link className="button" href={missionHref}>Abrir missão</Link>:undefined },
     { title:"Faça uma etapa por vez", detail:"Consulte as instruções e os exemplos, marque as etapas concluídas e salve o rascunho para retomar de onde parou.", action:<Link className="text-link" href={preview?"/previa/aluno/apoios":"/aluno/apoios"}>Conhecer meus apoios</Link> },
     { title:"Envie e acompanhe a devolutiva", detail:"Revise o que escreveu e envie no formato permitido. Volte à missão para ler o feedback do professor." },
   ]}/>;
