@@ -1,5 +1,5 @@
 """Bounded, local PDF extraction/OCR or Portuguese narration. Never downloads URLs."""
-import json, os, pathlib, subprocess, sys, resource
+import json, os, pathlib, subprocess, sys, resource, tempfile
 mode, target = sys.argv[1:3]
 cpu_limit = 900 if mode == 'audio' else 300
 resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit, cpu_limit + 5))
@@ -55,7 +55,13 @@ try:
                         bbox=(max(0,x0-15),max(0,y0-15),min(rendered.width,x1+15),min(rendered.height,y1+15))
                         rendered.crop(bbox).save(path.parent / f'preview-{i}.png')
                 if ocr:
-                    result = subprocess.run(['tesseract', str(image), 'stdout', '-l', 'por'], check=True, capture_output=True, timeout=25)
+                    # OCR needs more pixels than the bounded image used by the preview/provider.
+                    with tempfile.TemporaryDirectory(dir=path.parent) as scratch:
+                        scan = pathlib.Path(scratch) / 'scan'
+                        subprocess.run(['pdftoppm', '-f', str(i), '-l', str(i), '-singlefile', '-scale-to', '2400', '-gray', '-png', str(path), str(scan)],
+                                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
+                        result = subprocess.run(['tesseract', str(scan.with_suffix('.png')), 'stdout', '-l', 'por'],
+                                                check=True, capture_output=True, timeout=25)
                     text = result.stdout.decode('utf-8')
                     warnings.append(f'Página {i}: OCR automático; confira palavras, números e fórmulas com o original.')
                 if image.stat().st_size > 2 * 1024 * 1024:
