@@ -279,12 +279,13 @@ export function LiveMission({
             </ul>
           </details>
           <section className="paper" aria-label="Materiais da missão">
-            <h3>Materiais</h3>
+            <h3>Materiais da missão</h3>
             {role === "professor" && !version.materials.length && <p className="small">Nenhum material na missão.</p>}
+            {role === "aluno" && !version.materials.length && <p className="small">Não há materiais textuais anexados à missão. Materiais preparados para você aparecem nesta área.</p>}
             {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
             {version.materials.map((material) => (
-              <details className="example" key={material.id}>
-                <summary>{material.title}</summary>
+              <article className="material-library-item" key={material.id}>
+                <h4>{material.title}</h4>
                 <p className="submission-content">{material.text}</p>
                 {material.hasFile && (
                   <button
@@ -308,7 +309,7 @@ export function LiveMission({
                     Abrir arquivo autorizado
                   </button>
                 )}
-              </details>
+              </article>
             ))}
           </section>
           {role === "aluno" && (
@@ -420,13 +421,13 @@ export function LiveMission({
                   </p>
                 </form>
               )}
-              <OperationStatus message={message} />
+              <OperationStatus message={message} error={saveError} />
             </section>
           )}
           <section
             id="barreira"
             className="paper"
-           
+
           >
             <BarrierComposer
               stepId={step.id}

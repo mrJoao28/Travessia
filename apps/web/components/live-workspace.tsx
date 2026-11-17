@@ -88,10 +88,20 @@ function WorkspaceView({
           : permitted;
         const preparingEditor = role === "professor" && ["editor", "nova", "turmas", "ajuda", "barreiras"].includes(section);
         const needsDeliveries = role === "aluno" || ["", "missoes", "entregas", "feedback"].includes(section);
+        // Fetch a directly requested mission once. A student can belong to
+        // several classrooms, and the API correctly rejects that mission ID
+        // when it is queried in a classroom that does not own it.
+        const requestedMission = missionId && !preparingEditor
+          ? await api("mission", { params: { id: missionId } })
+          : null;
         const data = preparingEditor ? [] : (
           await Promise.all(
             relevant.map(async (classroom) => {
-              const missions = missionId ? [await api("mission", { params: { id: missionId } })].filter(m => m.classroomId === classroom.id) : await pages("missions", classroom.id);
+              const missions = requestedMission
+                ? requestedMission.classroomId === classroom.id
+                  ? [requestedMission]
+                  : []
+                : await pages("missions", classroom.id);
               return Promise.all(
                 missions.map(async (mission) => ({
                   mission,
