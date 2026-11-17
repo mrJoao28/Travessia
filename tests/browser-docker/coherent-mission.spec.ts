@@ -123,7 +123,9 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await student.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)',{exact:true}).setInputFiles({name:'resposta.txt',mimeType:'text/plain',buffer:Buffer.from('A rota sem obstáculos permite melhor acesso.')});
   await student.getByRole('checkbox',{name:'Concluí esta etapa. Salvará com o rascunho ou envio.',exact:true}).check();
   const submissionsRequest=`**/api/v1/missions/${missionId}/submissions`;
-  await student.route(submissionsRequest,route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'TEMPORARY',message:'Temporariamente indisponível.'})}));
+  await student.route(submissionsRequest,route=>route.request().method()==='POST'
+    ? route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'TEMPORARY',message:'Temporariamente indisponível.'})})
+    : route.continue());
   await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
   await expect(student.getByRole('alert').filter({hasText:'Não foi possível concluir a operação.'})).toBeVisible();
   await expect(student.getByLabel('Planejamento e atividade',{exact:true})).toHaveValue('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');
