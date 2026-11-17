@@ -32,6 +32,7 @@ export function LiveMission({
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageIsError, setMessageIsError] = useState(false);
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
   const title = useRef<HTMLHeadingElement>(null);
@@ -102,6 +103,7 @@ export function LiveMission({
     if (pending || mediaBusy || !mission?.publishedVersion || !step) return;
     setPending(true);
     setMessage("");
+    setMessageIsError(false);
     try {
       const saved = await api("saveSubmission", {
         params: { id },
@@ -125,8 +127,10 @@ export function LiveMission({
           ? "Rascunho e etapa atual salvos no servidor."
           : "Atividade enviada. Aguarde o feedback do professor.",
       );
+      setMessageIsError(false);
     } catch (reason) {
       setMessage(errorMessage(reason));
+      setMessageIsError(true);
     } finally {
       setPending(false);
     }
@@ -185,6 +189,7 @@ export function LiveMission({
                     window.open(url.href, "_blank", "noopener,noreferrer");
                   } catch (reason) {
                     setMessage(errorMessage(reason));
+                    setMessageIsError(true);
                   }
                 }}
               >
@@ -240,6 +245,7 @@ export function LiveMission({
                     );
                     setDirty(true);
                     setMessage("");
+                    setMessageIsError(false);
                   }}
                 />
                 Concluí esta etapa. Salvará com o rascunho ou envio.
@@ -288,6 +294,7 @@ export function LiveMission({
                         setContent(e.target.value);
                         setDirty(true);
                         setMessage("");
+                        setMessageIsError(false);
                       }}
                       aria-describedby="submission-help"
                     />
@@ -301,8 +308,8 @@ export function LiveMission({
                   {formats.includes("audio") && <AudioAttachment label="Áudio da atividade (opcional)" disabled={pending || mediaBusy} id="submission" missionId={id} help="Resposta em áudio de até 30 segundos; arquivo de até 10 MB na seleção. O navegador converte localmente para WAV. Um resumo no editor é opcional." value={audio ? { base64: audio } : null} onBusy={setMediaBusy} onChange={value => { setAudio(value && "base64" in value ? value.base64 : null); setDirty(true); }} />}
                   {submission?.hasAudio && audio === undefined && <><SubmissionMedia id={submission.id} hasAudio /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setAudio(null); setDirty(true); }}>Remover áudio salvo da atividade</button></>}
                   {formats.includes("text_file") && <div className="form-stack"><label htmlFor="submission-file">Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)</label><input id="submission-file" type="file" accept=".txt,text/plain" disabled={pending || mediaBusy} onChange={async e => {
-                    const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; setMediaBusy(true); setMessage("");
-                    try { if (!/\.txt$/i.test(file.name) || file.size > 32768) throw new Error("Selecione um arquivo .txt de até 32 KiB."); const text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer()); if (text.length > 20000 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(text)) throw new Error("O arquivo precisa conter somente texto UTF-8, até 20 mil caracteres."); setTextFile({ text }); setDirty(true); } catch (reason) { setMessage(errorMessage(reason)); } finally { setMediaBusy(false); }
+                    const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; setMediaBusy(true); setMessage(""); setMessageIsError(false);
+                    try { if (!/\.txt$/i.test(file.name) || file.size > 32768) throw new Error("Selecione um arquivo .txt de até 32 KiB."); const text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer()); if (text.length > 20000 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(text)) throw new Error("O arquivo precisa conter somente texto UTF-8, até 20 mil caracteres."); setTextFile({ text }); setDirty(true); } catch (reason) { setMessage(errorMessage(reason)); setMessageIsError(true); } finally { setMediaBusy(false); }
                   }} />{textFile && <><p>Arquivo de texto preparado para salvar.</p><details><summary>Conferir texto do arquivo</summary><p className="submission-content">{textFile.text}</p></details><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo selecionado</button></>}</div>}
                   {submission?.hasTextFile && textFile === undefined && <><SubmissionMedia id={submission.id} hasTextFile /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo salvo da atividade</button></>}
                   <div className="actions">
@@ -327,7 +334,7 @@ export function LiveMission({
                   </p>
                 </form>
               )}
-              <OperationStatus message={message} />
+              <OperationStatus message={message} error={messageIsError} />
             </section>
           )}
           <section
