@@ -684,6 +684,10 @@ nav a:hover,
 .strategy-destination label.check { display: flex; gap: .65rem; align-items: flex-start; }
 .strategy-fields:disabled { opacity: .8; }
 .mission-supports { border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem; }
+.material-library-item { border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); padding: 1rem; margin-block: 1rem; min-width: 0; }
+.material-library-item h4 { margin: 0 0 .5rem; overflow-wrap: anywhere; }
+.material-library-item p { overflow-wrap: anywhere; }
+.material-library-item .actions { margin-top: 1rem; }
 @media (max-width: 1100px) { .strategy-layout { grid-template-columns: minmax(0, 1fr); } }
 .form-stack label.check {
   align-items: flex-start;

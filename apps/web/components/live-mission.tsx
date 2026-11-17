@@ -164,14 +164,14 @@ export function LiveMission({
             {new Date(version.dueAt).toLocaleDateString("pt-BR")}
           </p>
         )}
-        <h3>Materiais</h3>
+        <h3>Materiais da missão</h3>
         {!version.materials.length && (
-          <p className="small">Os PDFs e áudios liberados para você aparecem neste espaço.</p>
+          <p className="small">Não há materiais textuais anexados à missão. Materiais preparados para você aparecem abaixo quando disponíveis.</p>
         )}
         {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
         {version.materials.map((material) => (
-          <details className="example" key={material.id}>
-            <summary>{material.title}</summary>
+          <article className="material-library-item" key={material.id}>
+            <h4>{material.title}</h4>
             <p className="submission-content">{material.text}</p>
             {material.hasFile && (
               <button
@@ -196,7 +196,7 @@ export function LiveMission({
                 Abrir arquivo autorizado
               </button>
             )}
-          </details>
+          </article>
         ))}
       </section>
       <div className="two-column" style={{ marginTop: "1rem" }}>

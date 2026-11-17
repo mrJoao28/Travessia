@@ -95,8 +95,13 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   const secondInvitation=await post(teacher,`/api/v1/classrooms/${secondClassroom.id}/invitations`,{});
   await post(student,'/api/v1/invitations/accept',{token:secondInvitation.token});
   // A receives the reviewed PDF/voice and activity. B receives only the unchanged original PDF.
+  const materialsRequest=`**/api/v1/missions/${missionId}/my-materials?*`;
+  await student.route(materialsRequest,async route=>{await new Promise(resolve=>setTimeout(resolve,750));await route.continue();});
   await student.goto(`/aluno/missoes/${missionId}`);await student.getByRole('button',{name:'Comparar rotas',exact:true}).click();
-  const prepared=student.getByRole('region',{name:'Materiais preparados para você',exact:true});await prepared.getByText('rotas-campus.pdf',{exact:true}).click();
+  const prepared=student.getByRole('region',{name:'Materiais preparados para você',exact:true});
+  await expect(prepared.getByRole('status')).toHaveText('Consultando materiais preparados…');
+  await expect(prepared.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toBeVisible();
+  await student.unroute(materialsRequest);
   await expect(prepared.getByText('Compare duas rotas de 10 metros. Identifique os obstáculos e justifique uma escolha acessível.',{exact:true})).toBeVisible();
   const download=student.waitForEvent('download');await prepared.getByRole('link',{name:'Baixar PDF adaptado',exact:true}).click();expect((await download).suggestedFilename()).toBe('material-adaptado.pdf');
   const audio=await prepared.locator('audio').getAttribute('src');expect(audio).toBeTruthy();const playback=await student.request.get(audio!, {headers:{Range:'bytes=0-31'}});
@@ -106,7 +111,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   const privateMaterials=(await student.request.get(`/api/v1/missions/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items;
   await other.goto(`/aluno/missoes/${missionId}`);await other.getByRole('button',{name:'Comparar rotas',exact:true}).click();
   const originalRegion=other.getByRole('region',{name:'Materiais preparados para você',exact:true});
-  await originalRegion.getByText('rotas-campus.pdf',{exact:true}).click();
+  await expect(originalRegion.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toBeVisible();
   const originalLink=originalRegion.getByRole('link',{name:'Baixar PDF original',exact:true});await expect(originalLink).toBeVisible();
   const originalResponse=await other.request.get((await originalLink.getAttribute('href'))!);expect(originalResponse.status()).toBe(200);expect(await originalResponse.body()).toEqual(materialPdfFixture());
   await expect(originalRegion.locator('audio')).toHaveCount(0);
@@ -119,7 +124,13 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await student.getByLabel('Áudio da atividade (opcional)',{exact:true}).setInputFiles({name:'resposta-teste.wav',mimeType:'audio/wav',buffer:wav});await expect(student.getByRole('button',{name:'Remover áudio deste apoio',exact:true})).toBeVisible();
   await student.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)',{exact:true}).setInputFiles({name:'resposta.txt',mimeType:'text/plain',buffer:Buffer.from('A rota sem obstáculos permite melhor acesso.')});
   await student.getByRole('checkbox',{name:'Concluí esta etapa. Salvará com o rascunho ou envio.',exact:true}).check();
-  await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await expect(student.getByText('Rascunho e etapa atual salvos no servidor.',{exact:true})).toBeVisible();
+  const submissionsRequest=`**/api/v1/missions/${missionId}/submissions`;
+  await student.route(submissionsRequest,route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'TEMPORARY',message:'Temporariamente indisponível.'})}));
+  await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
+  await expect(student.getByRole('alert').filter({hasText:'Não foi possível concluir a operação.'})).toBeVisible();
+  await expect(student.getByLabel('Planejamento e atividade',{exact:true})).toHaveValue('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');
+  await student.unroute(submissionsRequest);
+  await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await expect(student.getByRole('status').filter({hasText:'Rascunho e etapa atual salvos no servidor.'})).toBeVisible();
   await student.getByLabel('O que dificultou esta etapa?',{exact:true}).fill('Preciso de uma descrição mais clara do obstáculo apresentado no exemplo.');
   await student.getByRole('checkbox',{name:'Compartilhar com os docentes desta turma',exact:true}).check();await student.getByRole('button',{name:'Enviar relato',exact:true}).click();
   await expect(student.getByText('Relato salvo e compartilhado com os docentes desta turma.',{exact:true})).toBeVisible();
