@@ -29,7 +29,7 @@ export function missionView(row: MissionRow, teacher: boolean) {
 export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof submissionInclude }>) {
   return { id: s.id, versionId: s.versionId, userId: s.userId, status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
-    submittedAt: s.submittedAt, updatedAt: s.updatedAt,
+    submittedAt: s.submittedAt, updatedAt: s.updatedAt, attempt: s.attempt, revisionRequested: s.revisionRequested,
     feedback: s.feedback.map(f => ({ id: f.id, content: f.content, createdAt: f.createdAt })) };
 }
 export const barrierView = (b: {id: string; stepId: string; description: string; sharedWithTeacher: boolean; response: string | null; createdAt: Date}) =>
@@ -196,22 +196,23 @@ export class ProductService {
           if (input.versionId !== version.id) return fail(409, 'VERSION_CONFLICT', 'Uma nova versão foi publicada. Recarregue a missão.');
           const stepIds = new Set(version.steps.map(s => s.id));
           if (!stepIds.has(input.currentStepId) || input.completedStepIds.some(s => !stepIds.has(s)) || new Set(input.completedStepIds).size !== input.completedStepIds.length) return fail(400, 'INVALID_PROGRESS', 'Etapas inválidas.');
-          const old = await tx.submission.findUnique({ where: { versionId_userId: { versionId: version.id, userId } } });
+          const old = await tx.submission.findFirst({ where: { versionId: version.id, userId }, orderBy: { attempt: 'desc' } });
           if ((old?.revision ?? 0) !== input.expectedRevision) {
             if (old && input.audio === undefined && input.textFile === undefined && old.content === input.content && old.status === input.status && old.currentStepId === input.currentStepId && JSON.stringify(old.completedStepIds) === JSON.stringify(input.completedStepIds)) return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: old.id }, include: submissionInclude }));
             return fail(409, 'REVISION_CONFLICT', 'A entrega mudou. Recarregue antes de salvar.');
           }
-          if (old && old.status !== 'draft') return fail(409, 'SUBMISSION_LOCKED', 'Entrega enviada preservada para revisão.');
-          const audio = input.audio === undefined ? old?.audio ?? null : input.audio === null ? null : verifySupportAudio(input.audio);
-          const textFile = input.textFile === undefined ? old?.textFile ?? null : input.textFile?.text ?? null;
+          const retry = old?.status === 'reviewed' && old.revisionRequested;
+          if (old && old.status !== 'draft' && !retry) return fail(409, 'SUBMISSION_LOCKED', 'Entrega enviada preservada para revisão.');
+          const audio = input.audio === undefined ? (retry ? null : old?.audio) ?? null : input.audio === null ? null : verifySupportAudio(input.audio);
+          const textFile = input.textFile === undefined ? (retry ? null : old?.textFile) ?? null : input.textFile?.text ?? null;
           if (textFile !== null && (Buffer.byteLength(textFile, 'utf8') > 32768 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(textFile))) return fail(400, 'INVALID_TEXT_FILE', 'Use arquivo de texto UTF-8, até 32 KiB, sem conteúdo binário.');
           const formats = allowedFormats(await learnerPlans(tx, version.id, userId));
           if ((audio && !formats.includes('audio')) || (textFile !== null && !formats.includes('text_file'))) return fail(409, 'FORMAT_NOT_ALLOWED', 'O professor não liberou este formato. Preserve sua resposta e consulte os formatos atuais.');
           if (input.status === 'submitted' && !input.content.trim() && !audio && !textFile?.trim()) return fail(400, 'EMPTY_SUBMISSION', 'Inclua sua atividade antes de enviar.');
           const data = { audio, hasAudio: !!audio, textFile, hasTextFile: textFile !== null, content: input.content, currentStepId: input.currentStepId, completedStepIds: input.completedStepIds, status: input.status,
             submittedAt: input.status === 'submitted' ? new Date() : null };
-          const saved = old ? await tx.submission.update({ where: { id: old.id }, data: { ...data, revision: { increment: 1 } }, include: submissionInclude }) :
-            await tx.submission.create({ data: { ...data, versionId: version.id, userId }, include: submissionInclude });
+          const saved = old && !retry ? await tx.submission.update({ where: { id: old.id }, data: { ...data, revision: { increment: 1 } }, include: submissionInclude }) :
+            await tx.submission.create({ data: { ...data, versionId: version.id, userId, attempt: (old?.attempt ?? 0) + 1, revision: (old?.revision ?? 0) + 1 }, include: submissionInclude });
           return submissionView(saved);
         }
         if (op === 'submissions') {
@@ -229,12 +230,12 @@ export class ProductService {
         if (op === 'submissionTextFile') { if (row.textFile === null) return missing(); return { name: 'atividade.txt', text: row.textFile }; }
         if (op === 'submission') return submissionView(row);
         if (member.role !== 'teacher' || row.status === 'draft') return missing();
-        const content = (body as Body<'feedback'>).content;
+        const { content, requestRevision = false } = body as Body<'feedback'>;
         if (row.status === 'reviewed') {
-          if (row.feedback.some(f => f.teacherId === userId && f.content === content)) return submissionView(row);
+          if (row.revisionRequested === requestRevision && row.feedback.some(f => f.teacherId === userId && f.content === content)) return submissionView(row);
           return fail(409, 'ALREADY_REVIEWED', 'Esta entrega já tem revisão.');
         }
-        const saved = await tx.submission.update({ where: { id }, data: { status: 'reviewed', feedback: { create: { teacherId: userId, content } } }, include: submissionInclude });
+        const saved = await tx.submission.update({ where: { id }, data: { status: 'reviewed', revisionRequested: requestRevision, feedback: { create: { teacherId: userId, content } } }, include: submissionInclude });
         return submissionView(saved);
       }
       if (op === 'createBarrier') {

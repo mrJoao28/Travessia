@@ -1,3 +1,4 @@
+import { PDF_EDIT_BODY_BYTES, PDF_UPLOAD_BODY_BYTES } from './material-limits.js';
 import 'reflect-metadata';
 import { MaterialService } from './materials.js';
 import { randomUUID } from 'node:crypto';
@@ -19,6 +20,13 @@ import { ProductService } from './product.service.js';
 import { budget, digest } from './rate-limit.js';
 import type { DraftProvider } from './ai.js';
 
+function requestBodyLimit({ path, method }: Request) {
+  if (method === 'POST' && /^\/v1\/missions\/[^/]+\/material-sources\/?$/.test(path)) return PDF_UPLOAD_BODY_BYTES;
+  if (method === 'PATCH' && /^\/v1\/missions\/[^/]+\/material-adaptations\/[^/]+\/?$/.test(path)) return PDF_EDIT_BODY_BYTES;
+  if (['POST', 'PATCH'].includes(method) && /^\/v1\/missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)\/?$/.test(path)) return 2 * 1024 * 1024;
+  return 64 * 1024;
+}
+
 export async function createApplication(db: PrismaClient, config: Config, provider?: DraftProvider) {
   const runtime: ProductRuntime = { handle: async () => { throw new Error('Runtime not initialized'); } };
   const app = await NestFactory.create<NestExpressApplication>(AppModule.register(runtime), { bodyParser: false, logger: false, abortOnError: false });
@@ -38,8 +46,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
     try {
       if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers.origin !== config.origin) fail(403, 'INVALID_ORIGIN', 'Origem não autorizada.');
       if (!['GET', 'HEAD', 'OPTIONS', 'DELETE'].includes(req.method) && !req.is('application/json')) fail(415, 'JSON_REQUIRED', 'Envie dados em JSON.');
-      const upload = /^\/v1\/missions\/[^/]+\/material-sources\/?$/.test(req.path) && req.method === 'POST';
-      const limit = upload ? 14 * 1024 * 1024 : /^\/v1\/missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)\/?$/.test(req.path) && ['POST', 'PATCH'].includes(req.method) ? 2 * 1024 * 1024 : 65536;
+      const limit = requestBodyLimit(req);
       if (Number(req.headers['content-length'] ?? 0) > limit) fail(413, 'BODY_TOO_LARGE', 'Conteúdo muito grande.');
       // The auth handler consumes the raw stream. Require a bounded length there;
       // the frontend proxy must buffer its small JSON body instead of streaming it.
@@ -62,8 +69,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
     } catch (error) { respondError(error, req, res); }
   });
   app.use((req: Request, res: Response, next: NextFunction) => {
-    const large = /^\/v1\/missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)\/?$/.test(req.path) && ['POST', 'PATCH'].includes(req.method);
-    expressParser.json({ limit: /^\/v1\/missions\/[^/]+\/material-sources\/?$/.test(req.path) && req.method === 'POST' ? '14mb' : large ? '2mb' : '64kb' })(req, res, next);
+    expressParser.json({ limit: requestBodyLimit(req) })(req, res, next);
   });
   runtime.handle = async (req, res) => {
     try {

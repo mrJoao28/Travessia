@@ -19,10 +19,31 @@ export function PreviewHome({role,route}:{role:'aluno'|'professor';route:string}
   </form>{message&&<p role="status">{message}</p>}
  </>;
  if(role==='professor')return <><PreviewHeading title="Missões da turma" description="Crie, prepare materiais e confira antes de publicar."/><Link className="button" href="/previa/professor/missoes/editor">Criar missão</Link><ul className="card-list">{state.missions.map(m=><li className="paper" key={m.id}><div><p className="eyebrow">{state.classrooms.find(c=>c.id===m.classroomId)?.name}</p><h2>{m.title}</h2><p>{m.description}</p><p className="small">{m.status==='published'?'Publicada':m.status==='archived'?'Arquivada':'Rascunho'} · versão {m.revision} · exemplo local</p></div><div className="actions"><Link className="button button-outline" href={`/previa/professor/missoes/${m.id}/adaptacoes`}>Preparar materiais</Link><Link className="text-link" href={`/previa/professor/missoes/${m.id}/editor`}>Editar missão</Link><button className="text-button" onClick={()=>{if(window.confirm('Arquivar esta missão fictícia?'))update(s=>({...s,missions:s.missions.map(x=>x.id===m.id?{...x,status:'archived'}:x)}));}}>Arquivar exemplo</button></div></li>)}</ul></>;
- const active=published.find(m=>state.submissions.some(s=>s.missionId===m.id&&s.studentId===student.id&&s.status==='draft'))??published[0];
- const submission=state.submissions.find(s=>s.missionId===active?.id&&s.studentId===student.id);
- return <><PreviewHeading title="Um passo de cada vez." description={`Olá, ${student.name.split(' ')[0]}. Retome sua missão de onde parou.`}/>
-  {active?<div className="content-split"><section className="paper lesson-card"><div className="course-intro"><div><p className="eyebrow">{state.classrooms.find(c=>c.id===active.classroomId)?.name}</p><h2>{active.title}</h2><p>{active.description}</p><p>Etapa {(submission?.step??0)+1} de {active.steps.length} · {active.steps[submission?.step??0]?.title}</p><Link className="button" href={`/previa/aluno/missoes/${active.id}`}>Continuar minha missão</Link></div><PathIllustration/></div></section><aside className="paper support-card"><h2>Aprenda do seu jeito</h2><p>Os materiais que a professora preparou para você acompanham a missão.</p><Link className="support-option" href={`/previa/aluno/missoes/${active.id}`}>Consultar PDF e áudio</Link><Link className="support-option" href="/previa/aluno/apoios">Meus pedidos de apoio</Link><a className="support-option" href="#preferencias">Ampliar texto</a><Link className="barrier-link" href="/previa/aluno/barreiras">Encontrou uma barreira?</Link></aside></div>:<p>Entre em uma turma fictícia para consultar as missões.</p>}
-  <div className="preview-card-grid">{published.map(m=>{const answer=state.submissions.find(s=>s.missionId===m.id&&s.studentId===student.id);return <section key={m.id} className="paper"><p className="eyebrow">{state.classrooms.find(c=>c.id===m.classroomId)?.name}</p><h2>{m.title}</h2><p>{answer?.feedback?'Feedback disponível':answer?.status==='submitted'?'Atividade enviada · aguardando feedback':'Missão em andamento'}</p><p className="small">{answer?.completed.length??0} de {m.steps.length} etapas concluídas no cenário</p><Link className="text-link" href={`/previa/aluno/missoes/${m.id}`}>Consultar missão</Link></section>;})}</div>
- </>;
+ const answerFor=(id:string,revision:number)=>state.submissions.find(s=>s.missionId===id&&s.revision===revision&&s.studentId===student.id);
+ const active=published.find(m=>answerFor(m.id,m.revision)?.status==='draft')??published[0];
+ const submission=active&&answerFor(active.id,active.revision);
+ const otherMissions=published.filter(m=>m.id!==active?.id);
+ return <div className="preview-student-home">
+  <PreviewHeading title="Um passo de cada vez." description={`Olá, ${student.name.split(' ')[0]}.`}/>
+  {active ? <section className="paper preview-student-continue" aria-labelledby="preview-current-mission">
+   <div className="preview-student-continue-copy">
+   <p className="eyebrow">{state.classrooms.find(c=>c.id===active.classroomId)?.name}</p>
+   <h2 id="preview-current-mission">{active.title}</h2>
+   <p>{active.description}</p>
+   <p className="small">{submission?.feedback?'Feedback disponível':submission?.status==='submitted'?'Atividade enviada · aguardando feedback':`Etapa ${(submission?.step??0)+1} de ${active.steps.length} · ${active.steps[submission?.step??0]?.title}`}</p>
+   <Link className="button" href={`/previa/aluno/missoes/${active.id}`}>{submission?.status==='submitted'?'Consultar atividade':submission?'Continuar minha missão':'Abrir missão'}</Link>
+   </div>
+   <PathIllustration sizes="(max-width: 600px) 208px, 320px"/>
+  </section> : <p className="paper">Entre em uma turma fictícia para consultar as missões.</p>}
+  {otherMissions.length>0&&<section className="preview-student-other" aria-labelledby="preview-other-missions">
+   <h2 id="preview-other-missions">Outras missões</h2>
+   <ul className="card-list">{otherMissions.map(m=>{
+    const answer=answerFor(m.id,m.revision);
+    return <li key={m.id} className="paper">
+     <div><h3>{m.title}</h3><p className="small">{answer?.feedback?'Feedback disponível':answer?.status==='submitted'?'Atividade enviada':`${answer?.completed.length??0} de ${m.steps.length} etapas concluídas`}</p></div>
+     <Link className="text-link" href={`/previa/aluno/missoes/${m.id}`} aria-label={`Abrir missão: ${m.title}`}>Abrir missão</Link>
+    </li>;
+   })}</ul>
+  </section>}
+ </div>;
 }

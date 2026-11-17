@@ -1,4 +1,5 @@
 "use client";
+import { PDF_MAX_BYTES, PDF_MAX_MB, PDF_MAX_PAGES } from "../lib/material-limits";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
@@ -440,14 +441,14 @@ export function LiveEditor({
                 <input ref={pdfField} id="editor-pdf-upload" type="file" accept="application/pdf,.pdf" onChange={e=>{
                   const file=e.currentTarget.files?.[0];
                   if(!file){restorePdfSelection(e.currentTarget,pendingPdf);return;}
-                  if(!/\.pdf$/i.test(file.name)||file.size>10*1024*1024){
+                  if(!/\.pdf$/i.test(file.name)||file.size>PDF_MAX_BYTES){
                     restorePdfSelection(e.currentTarget,pendingPdf);
-                    setMessage("Escolha um PDF de até 10 MB.");return;
+                    setMessage(`Escolha um PDF de até ${PDF_MAX_MB} MB.`);return;
                   }
                   setPendingPdf(file);
                 }}/>
                 {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas e continue para enviar e adaptar.</p>}
-                <p className="small">PDF de até 10 MB e 20 páginas, sem senha ou conteúdo ativo. O original fica privado para os professores. O aluno recebe a versão que você revisar e liberar.</p>
+                <p className="small">PDF de até {PDF_MAX_MB} MB e {PDF_MAX_PAGES} páginas, sem senha ou conteúdo ativo. O original fica privado para os professores. O aluno recebe a versão que você revisar e liberar.</p>
               </section>
               <h3>Conteúdo em texto (opcional)</h3>
               {input.materials.map((material, index) => (

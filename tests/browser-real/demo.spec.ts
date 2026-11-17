@@ -70,7 +70,12 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByText('Perfil de professor salvo.', { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole('link', { name: 'Voltar ao meu espaço', exact: true }).click();
-  await page.getByRole("link", { name: "Continuar missão" }).click();
+  const resume = page.getByRole("link", { name: "Continuar missão" });
+  const missionHref = await resume.getAttribute("href");
+  await expect(page.getByRole("main").locator(`a[href="${missionHref}"]`)).toHaveCount(1);
+  await expect(page.locator(".preview-student-continue .path-art img")).toBeVisible();
+  await resume.click();
+  await expect(page.locator(".student-live-mission .form-stack > :first-child").first()).toHaveAttribute("id", "etapas");
   await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
   await page.getByText("Aa · Ajustar leitura", { exact: true }).click();
   await page.getByLabel("Tamanho do texto").selectOption("1.125");
@@ -113,6 +118,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
         .analyze()
     ).violations,
   ).toEqual([]);
+  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
   await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
   await page.getByLabel('O que dificultou esta etapa?').fill('Exemplo de relato privado criado no teste integrado.');
@@ -120,7 +126,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByText('Relato privado salvo. Somente você pode consultá-lo.', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Consultar meus relatos e respostas' }).click();
   await expect(page.getByText('Exemplo de relato privado criado no teste integrado.', { exact: true })).toBeVisible();
-  await page.getByRole("link", { name: "Feedback", exact: true }).click();
+  await page.getByRole("link", { name: "Entregas", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Entregas e feedback" })).toBeVisible();
   await expect(page.locator("blockquote").first()).toBeVisible();
   await expect(page.getByText("Revisada", { exact: true })).toBeVisible();
   await page.locator('summary[aria-label="Menu da conta"]').click();
@@ -344,7 +351,14 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
     await page.goto('/aluno/missoes/demo-class-oficina-mission');
-    await page.getByRole('button', { name: /^Conhecer o desafio(?: · concluída e salva)?$/ }).click({ timeout: 15_000 });
+    const pagination = page.getByRole('navigation', { name: 'Paginação das etapas' });
+    const previous = pagination.getByRole('button', { name: 'Etapa anterior', exact: true });
+    await expect(previous).toBeVisible();
+    const stage = page.locator('#etapas h2');
+    for (let remaining = 9; remaining > 0 && (await stage.textContent())?.trim() !== 'Conhecer o desafio'; remaining--) {
+      await previous.click();
+    }
+    await expect(stage).toHaveText('Conhecer o desafio');
     const supports = page.getByRole('region', { name: 'Apoios desta etapa', exact: true });
     await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toBeVisible();
     if (suffix === 'A') {
@@ -360,6 +374,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       expect(await response.text()).not.toContain('Apoio individual de A');
     }
     await page.getByRole('button', { name: 'Próxima etapa', exact: true }).click();
+    await expect(page.locator('#etapas h2')).toBeFocused();
     await expect(supports.getByRole('status')).toHaveCount(0);
     await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toHaveCount(0);
     if (suffix === 'A') {
@@ -375,6 +390,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.screenshot({ path: 'test-results/reference-learning-needs.png', fullPage: true });
     }
     await page.goto(`/aluno/missoes/${inclusiveMission.id}`);
+    await page.getByText('Objetivos e critérios da missão', { exact: true }).click();
     await expect(page.getByText('Justificar uma escolha.', { exact: true })).toBeVisible();
     await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
     if (suffix === 'A') {
@@ -388,7 +404,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await expect(page.getByText('Rascunho e etapa atual salvos no servidor.', { exact: true })).toBeVisible();
       await page.reload();
       await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();
-      await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
+      page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
       await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
     } else {
       await expect(page.getByText('Consultar enunciado adaptado', { exact: true })).toHaveCount(0);

@@ -1,3 +1,4 @@
+import { PDF_EDIT_BODY_BYTES, PDF_UPLOAD_BODY_BYTES } from "./material-limits.ts";
 const safeMethods = new Set(["GET", "HEAD"]);
 const authPaths = new Set(["sign-in/email", "sign-up/email", "sign-out", "get-session"]);
 type ProxySettings = {
@@ -24,7 +25,7 @@ export async function proxyBackend(
     allowInternalHttp: process.env.API_INTERNAL_ALLOW_HTTP,
   },
 ) {
-  const maxBodyBytes = group === "v1" && /^missions\/[^/]+\/material-sources$/.test(path.join("/")) && request.method === "POST" ? 14 * 1024 * 1024 : group === "v1" && /^missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)$/.test(path.join("/")) && ["POST", "PATCH"].includes(request.method) ? 2 * 1024 * 1024 : 64 * 1024;
+  const maxBodyBytes = group === "v1" && /^missions\/[^/]+\/material-sources$/.test(path.join("/")) && request.method === "POST" ? PDF_UPLOAD_BODY_BYTES : group === "v1" && /^missions\/[^/]+\/material-adaptations\/[^/]+$/.test(path.join("/")) && request.method === "PATCH" ? PDF_EDIT_BODY_BYTES : group === "v1" && /^missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)$/.test(path.join("/")) && ["POST", "PATCH"].includes(request.method) ? 2 * 1024 * 1024 : 64 * 1024;
   if (!path.length || path.some((segment) => !/^[a-zA-Z0-9_-]+$/.test(segment)))
     return failure(400, "INVALID_PATH", "Caminho inválido.");
   if (group === "auth" && !authPaths.has(path.join("/")))

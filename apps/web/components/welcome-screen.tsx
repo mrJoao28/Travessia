@@ -76,6 +76,21 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
               <button className="button" disabled={pending}>{pending ? "Aguarde…" : space === "professor" ? "Criar minha turma" : "Entrar na turma"}</button>
             </form>
             <p><Link className="text-link" href={`/${space}`} onClick={()=>clearInvitation()}>Fazer isso depois</Link></p>
+            <details>
+              <summary>O que vou fazer depois?</summary>
+              <ol>
+                {space==="professor"?<>
+                  <li>Convide os alunos com um link ou código curto.</li>
+                  <li>Crie uma missão, adicione um PDF e revise os apoios antes de publicar.</li>
+                  <li>Acompanhe as entregas e escreva feedback.</li>
+                </>:<>
+                  <li>Abra a primeira missão publicada pela turma.</li>
+                  <li>Consulte os materiais e apoios, faça uma etapa por vez e salve seu rascunho.</li>
+                  <li>Envie a atividade e volte à missão para consultar o feedback.</li>
+                </>}
+              </ol>
+              <Link className="text-link" href={`/previa/${space}/primeiros-passos`}>Ver um exemplo na prévia</Link>
+            </details>
             <p className="small">A mesma conta pode participar como aluno e professor em turmas diferentes. Você pode completar os dados acadêmicos em <Link className="text-link" href={`/perfil?espaco=${space}`}>Meu perfil</Link>.</p>
           </>}
         </>}

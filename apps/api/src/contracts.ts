@@ -25,7 +25,7 @@ const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', '
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
 const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher']) });
 const feedback = z.strictObject({ id, content: text, createdAt: date });
-const submission = z.strictObject({ id, versionId: id, userId: id, status: z.enum(['draft', 'submitted', 'reviewed']),
+const submission = z.strictObject({ id, versionId: id, userId: id, attempt: z.number().int().positive().optional(), revisionRequested: z.boolean().optional(), status: z.enum(['draft', 'submitted', 'reviewed']),
   content: z.string().max(12000), hasAudio: z.boolean().optional(), hasTextFile: z.boolean().optional(), completedStepIds: z.array(id), currentStepId: id, revision: z.number().int(),
   submittedAt: date.nullable(), updatedAt: date, feedback: z.array(feedback) });
 const barrier = z.strictObject({ id, stepId: id, description: text, sharedWithTeacher: z.boolean(), response: text.nullable(), createdAt: date });
@@ -135,7 +135,7 @@ export const routes = {
       status: z.enum(['draft', 'submitted']), expectedRevision: z.number().int().min(0) }), query: empty, response: submission },
   submissions: { method: 'get', path: '/v1/missions/{id}/submissions', body: empty, query: page, response: list(submission) },
   submission: { method: 'get', path: '/v1/submissions/{id}', body: empty, query: empty, response: submission },
-  feedback: { method: 'post', path: '/v1/submissions/{id}/feedback', body: z.strictObject({ content: text }), query: empty, response: submission },
+  feedback: { method: 'post', path: '/v1/submissions/{id}/feedback', body: z.strictObject({ content: text, requestRevision: z.boolean().optional() }), query: empty, response: submission },
   createBarrier: { method: 'post', path: '/v1/steps/{id}/barriers', body: z.strictObject({ description: text, sharedWithTeacher: z.boolean() }), query: empty, response: barrier },
   barriers: { method: 'get', path: '/v1/classrooms/{id}/barriers', body: empty, query: page, response: list(barrier) },
   barrier: { method: 'get', path: '/v1/barriers/{id}', body: empty, query: empty, response: barrier },

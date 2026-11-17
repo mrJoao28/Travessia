@@ -51,6 +51,30 @@ test('TEA compartilhado: somente sugestões pertinentes, prévia automática e r
  await expect(page.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
 });
+test('contraste tem efeito imediato e os passos e o glossário são editáveis na prévia', async ({ page }) => {
+ const captured = await fixture(page, false, ['low-vision'], []);
+ await addPdf(page);
+ const settings = page.getByRole('complementary', { name: 'Preparação e revisão do material', exact: true });
+ await expect(settings.getByRole('combobox', { name: 'Cores de leitura', exact: true })).toHaveValue('high');
+ await expect(settings.getByRole('combobox', { name: 'Tamanho do texto', exact: true })).toHaveValue('22');
+ await page.getByRole('button',{name:'Ver mais apoios de leitura e compreensão'}).click();
+ await page.getByRole('checkbox',{name:/Organizar em passos curtos/}).check();
+ await page.getByRole('checkbox',{name:/Explicar termos do material/}).check();
+ await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();
+ await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
+ const prepared = page.getByRole('region',{name:'Documento preparado',exact:true});
+ await expect(prepared.getByRole('listitem')).toHaveText('Compare duas rotas.');
+ await expect(prepared.locator('dt')).toHaveText('Rota');
+ await expect(prepared.locator('dd')).toHaveText('Caminho entre dois pontos.');
+ expect(captured()?.settings.color).toBe('high');
+ await page.getByText('Ajustar o texto da prévia',{exact:true}).click();
+ await page.getByLabel('Passo 1',{exact:true}).fill('Compare as distâncias das duas rotas.');
+ await page.getByLabel('Definição 1',{exact:true}).fill('Trajeto entre a origem e o destino.');
+ await page.getByRole('button',{name:'Atualizar prévia →',exact:true}).click();
+ await expect(prepared.getByRole('listitem')).toHaveText('Compare as distâncias das duas rotas.');
+ await expect(prepared.locator('dd')).toHaveText('Trajeto entre a origem e o destino.');
+});
+
 test('baixa visão: leitura em destaque, outros pedidos recolhidos, teclado e reflow',async({page})=>{
  await page.setViewportSize({width:320,height:900});await fixture(page);await addPdf(page);
  const large=page.getByRole('checkbox',{name:/texto ampliado/i});await expect(large).toBeChecked();

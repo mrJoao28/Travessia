@@ -90,6 +90,7 @@ test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e prese
   const captured = await fixture(page, 'student'); await page.goto('/aluno/missoes/m-inclusive');
   await page.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)', { exact: true }).setInputFiles({ name: 'resposta.txt', mimeType: 'text/plain', buffer: Buffer.from('Minha resposta em arquivo.') });
   await expect(page.getByText('Arquivo de texto preparado para salvar.', { exact: true })).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
   await expect(page.getByText('O conteúdo mudou no servidor. Preserve seu texto e consulte a versão atual antes de tentar novamente.', { exact: true })).toBeVisible();
   expect(captured.submission?.content).toBe(''); expect(captured.submission?.textFile).toEqual({ text: 'Minha resposta em arquivo.' });

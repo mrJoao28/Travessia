@@ -1,5 +1,6 @@
 "use client";
 
+import { StudentFirstSteps } from "./first-steps-guide";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -90,7 +91,7 @@ function WorkspaceView({
         // Fetch a directly requested mission once. A student can belong to
         // several classrooms, and the API correctly rejects that mission ID
         // when it is queried in a classroom that does not own it.
-        const requestedMission = missionId
+        const requestedMission = missionId && !preparingEditor
           ? await api("mission", { params: { id: missionId } })
           : null;
         const data = preparingEditor ? [] : (
@@ -223,8 +224,10 @@ function WorkspaceView({
                     </select>
                   </label>
                 )}
-              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "missao" && missionId ? (
+              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "missao" && missionId && profile ? (
                 <LiveMission
+                  key={`${profile.id}:${missionId}`}
+                  viewerId={profile.id}
                   id={missionId}
                   role={role}
                   classrooms={permitted}
@@ -309,11 +312,11 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
     return (
       <section className="paper">
         <h2>{classrooms.length===1?`Você entrou na turma ${classrooms[0].name}.`:"Você já está nas suas turmas."}</h2>
-        <p>A primeira missão ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Enquanto isso, use Ajustar leitura, no início da página, se quiser mudar o tamanho do texto.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
+        <p>A primeira missão ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Enquanto isso, ajuste a leitura no início da página ou consulte Meus apoios para registrar o que ajuda você a aprender.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
       </section>
     );
   const version = entry.mission.publishedVersion;
-  const submission = entry.submissions.find((s) => s.versionId === version.id);
+  const submission = entry.submissions.filter(s => s.versionId === version.id).sort((a, b) => (b.attempt ?? 1) - (a.attempt ?? 1))[0];
   const index = Math.max(
     0,
     version.steps.findIndex((step) => step.id === submission?.currentStepId),
@@ -322,132 +325,23 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
   const firstMission=entries.every(e=>e.submissions.length===0);
   return (
     <>
-      {firstMission&&<section className="paper onboarding-student" aria-label="Como realizar sua primeira missão"><h2>Sua primeira missão está pronta</h2><p>Leia o desafio, faça uma etapa por vez e envie sua atividade quando estiver pronta. Seus materiais e apoios ficam dentro da missão.</p></section>}
-      <section className="mission-hero" aria-labelledby="mission-title">
-        <div className="hero-copy">
+      <section className="paper preview-student-continue" aria-labelledby="mission-title">
+        <div className="preview-student-continue-copy">
           <p className="eyebrow accent">{entry.classroom.name}</p>
           <h2 id="mission-title">{version.title}</h2>
-          <p className="hero-description">{version.description}</p>
-          <p className="progress-description">
-            Etapa {index + 1} de {version.steps.length} · {current?.title}
-          </p>
-          <ol
-            className="stepper"
-            style={{
-              gridTemplateColumns: `repeat(${version.steps.length},minmax(0,1fr))`,
-            }}
-            aria-label="Etapas da missão"
-          >
-            {version.steps.map((step, i) => (
-              <li
-                key={step.id}
-                className={
-                  submission?.completedStepIds.includes(step.id) || i === index
-                    ? "step-active"
-                    : ""
-                }
-                aria-current={i === index ? "step" : undefined}
-              >
-                <span className="step-dot" aria-hidden="true">
-                  {submission?.completedStepIds.includes(step.id)
-                    ? "✓"
-                    : i === index
-                      ? "●"
-                      : ""}
-                </span>
-                <span>
-                  {i + 1}. {step.title}
-                  {submission?.completedStepIds.includes(step.id) && (
-                    <span className="sr-only">, concluída</span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ol>
-          <div className="actions">
-            <Link
-              className="button"
-              href={`/aluno/missoes/${entry.mission.id}`}
-            >
-              {firstMission?"Começar minha primeira missão":"Continuar missão"}
-              <Icon name="arrow" />
-            </Link>
-            <Link
-              className="text-link"
-              href={`/aluno/missoes/${entry.mission.id}#etapas`}
-            >
-              Ver todas as etapas
-            </Link>
-          </div>
+          <p>{version.description}</p>
+          <p className="small">Etapa {index + 1} de {version.steps.length} · {current?.title}</p>
+          <Link className="button" href={`/aluno/missoes/${entry.mission.id}`}>
+            {firstMission ? "Começar minha primeira missão" : "Continuar missão"}
+            <Icon name="arrow" />
+          </Link>
         </div>
-        <PathIllustration />
+        <PathIllustration sizes="(max-width: 600px) 208px, 320px" />
       </section>
-      <div className="content-grid">
-        <section className="paper path-card">
-          <h2>Seu percurso nesta missão</h2>
-          <p className="muted">
-            Continue aprendendo com atividades pensadas para o seu
-            desenvolvimento.
-          </p>
-          <ol className="lesson-list">
-            {version.steps
-              .slice(Math.max(0, index - 1), index + 1)
-              .map((step) => (
-                <li
-                  key={step.id}
-                  className={step.id === current?.id ? "current-lesson" : ""}
-                >
-                  <span className="lesson-number">{step.position}</span>
-                  <div className="lesson-body">
-                    <p className="eyebrow accent">{entry.classroom.name}</p>
-                    <h3>
-                      <Link href={`/aluno/missoes/${entry.mission.id}`}>
-                        {step.title}
-                      </Link>
-                    </h3>
-                    <p>{step.instructions}</p>
-                  </div>
-                  <span
-                    className={`badge ${submission?.completedStepIds.includes(step.id) ? "" : "pending"}`}
-                  >
-                    {submission?.completedStepIds.includes(step.id)
-                      ? "✓ Concluída"
-                      : step.id === current?.id
-                        ? "Em andamento"
-                        : "A fazer"}
-                  </span>
-                </li>
-              ))}
-          </ol>
-        </section>
-        <section className="paper support-card">
-          <h2>Aprenda do seu jeito</h2>
-          <p>Ajuste a experiência de estudo para suas necessidades.</p>
-          <Link
-            className="support-option"
-            href={`/aluno/missoes/${entry.mission.id}#etapas`}
-          >
-            <Icon name="list" />
-            Dividir em passos<span aria-hidden="true">›</span>
-          </Link>
-          <a className="support-option" href="#preferencias">
-            <span className="type-icon" aria-hidden="true">
-              Aa
-            </span>
-            Ampliar texto<span aria-hidden="true">›</span>
-          </a>
-          <a className="support-option" href="#preferencias">
-            <Icon name="eye" />
-            Reduzir distrações<span aria-hidden="true">›</span>
-          </a>
-          <Link
-            className="barrier-link"
-            href={`/aluno/missoes/${entry.mission.id}#barreira`}
-          >
-            Encontrou uma barreira?
-          </Link>
-        </section>
-      </div>
+      {firstMission && <details className="paper student-first-mission-help">
+        <summary>Primeiros passos</summary>
+        <StudentFirstSteps />
+      </details>}
     </>
   );
 }
@@ -607,6 +501,7 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+  const [requestRevision, setRequestRevision] = useState(false);
   if (submission.status === "reviewed" || done)
     return (
       <div><SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} /><p role="status">
@@ -630,7 +525,7 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
           try {
             await api("feedback", {
               params: { id: submission.id },
-              body: { content },
+              body: { content, ...(requestRevision ? { requestRevision } : {}) },
             });
             setDone(true);
           } catch (reason) {
@@ -655,6 +550,7 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
           Destinatário: estudante autor da entrega. O feedback é docente, sem
           avaliação final automática.
         </p>
+        <label className="check"><input type="checkbox" checked={requestRevision} disabled={pending} onChange={e => setRequestRevision(e.target.checked)} /> Solicitar ajustes e permitir nova tentativa</label>
         <button className="button" disabled={pending}>
           {pending ? "Publicando…" : "Publicar feedback"}
         </button>

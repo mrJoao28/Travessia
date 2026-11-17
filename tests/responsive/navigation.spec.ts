@@ -62,11 +62,12 @@ test('menu não altera a faixa de ícones do computador; redimensionar fecha e l
  await open.click();const menu=page.getByRole('dialog',{name:'Menu',exact:true});await menu.getByRole('button',{name:'Fechar menu',exact:true}).click();await expect(open).toBeFocused();
 });
 
-test('um link para leitura no celular abre o painel visível e mantém Escape',async({page})=>{
+test('o menu do aluno no celular abre ajustes de leitura e mantém Escape',async({page})=>{
  await page.setViewportSize({width:390,height:844});await page.goto('/previa/aluno');
  await expect(page.getByRole('button',{name:'Abrir menu',exact:true})).toBeEnabled();
- await page.getByRole('link',{name:'Ampliar texto',exact:true}).click();
+ const trigger=page.getByRole('button',{name:'Abrir menu',exact:true});await trigger.click();
  const menu=page.getByRole('dialog',{name:'Menu',exact:true});await expect(menu).toBeVisible();
+ await menu.locator('#preferencias > summary').click();
  await expect(menu.getByLabel('Tamanho do texto')).toBeVisible();
- await page.keyboard.press('Escape');await expect(menu).toBeHidden();
+ await page.keyboard.press('Escape');await expect(menu).toBeHidden();await expect(trigger).toBeFocused();
 });
