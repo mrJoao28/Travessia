@@ -89,6 +89,11 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await teacher.getByRole('button',{name:'Publicar missão',exact:true}).click();await expect(teacher.getByRole('heading',{name:'Pronto para sua turma!',exact:true})).toBeVisible();
   mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());expect(mission.publishedVersion.id).toBe(versionId);
   for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/missoes/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();}
+  // A student can have multiple classroom contexts while opening a mission
+  // that belongs to only one of them.
+  const secondClassroom=await post(teacher,'/api/v1/classrooms',{name:'Outra turma da estudante'});
+  const secondInvitation=await post(teacher,`/api/v1/classrooms/${secondClassroom.id}/invitations`,{});
+  await post(student,'/api/v1/invitations/accept',{token:secondInvitation.token});
   // A receives the reviewed PDF/voice and activity. B receives only the unchanged original PDF.
   await student.goto(`/aluno/missoes/${missionId}`);await student.getByRole('button',{name:'Comparar rotas',exact:true}).click();
   const prepared=student.getByRole('region',{name:'Materiais preparados para você',exact:true});await prepared.getByText('rotas-campus.pdf',{exact:true}).click();
