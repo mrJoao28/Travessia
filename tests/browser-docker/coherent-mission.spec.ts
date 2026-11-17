@@ -128,7 +128,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
     : route.continue());
   await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
   await expect(student.getByRole('alert').filter({hasText:'Não foi possível concluir a operação.'})).toBeVisible();
-  await expect(student.getByLabel('Planejamento e atividade',{exact:true})).toHaveValue('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');
+  await expect(student.locator('#submission-content')).toHaveValue('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');
   await student.unroute(submissionsRequest);
   await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await expect(student.getByRole('status').filter({hasText:'Rascunho e etapa atual salvos no servidor.'})).toBeVisible();
   await student.getByLabel('O que dificultou esta etapa?',{exact:true}).fill('Preciso de uma descrição mais clara do obstáculo apresentado no exemplo.');
