@@ -27,8 +27,8 @@ export function LearnerMaterials({ missionId, versionId }: { missionId: string; 
       : <>
         <p role="status">{items.length === 1 ? "1 material disponível." : `${items.length} materiais disponíveis.`}</p>
         <p className="small">Use a leitura, o PDF ou o áudio que preferir.</p>
-        {items.map(item => <details className="paper" key={item.id}>
-          <summary>{item.title}</summary>
+        {items.map(item => <article className="material-library-item" key={item.id}>
+          <h4>{item.title}</h4>
           {item.mode === "original" ? <p>PDF original disponibilizado pelo professor, sem alterações.</p>
             : <div className={item.reading ? "comparison-paper" : undefined} data-color={item.reading?.color} style={item.reading ? materialReadingStyle(item.reading) : undefined}>
               <PreparedDocument document={item.document} missionId={missionId} adaptationId={item.id} />
@@ -41,7 +41,7 @@ export function LearnerMaterials({ missionId, versionId }: { missionId: string; 
             <audio controls preload="none" aria-label={`Ouvir ${item.title}`} src={materialAssetUrl(missionId, item.id, "audio")} />
             <a className="text-link" href={materialAssetUrl(missionId, item.id, "audio")} download>Baixar áudio do material</a>
           </div>}
-        </details>)}
+        </article>)}
       </>}
   </section>;
 }
