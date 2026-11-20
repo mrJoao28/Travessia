@@ -33,8 +33,17 @@ export function LearnerMaterials({ missionId, versionId }: { missionId: string; 
             : <div className={item.reading ? "comparison-paper" : undefined} data-color={item.reading?.color} style={item.reading ? materialReadingStyle(item.reading) : undefined}>
               <PreparedDocument document={item.document} missionId={missionId} adaptationId={item.id} />
             </div>}
+          <iframe
+            className="learner-material-pdf"
+            title={`Prévia do PDF: ${item.title}`}
+            src={materialAssetUrl(missionId, item.id, "pdf")}
+            loading="lazy"
+          />
           <a className="button button-outline" href={materialAssetUrl(missionId, item.id, "pdf")} download>
             {item.mode === "original" ? "Baixar PDF original" : "Baixar PDF adaptado"}
+          </a>
+          <a className="text-link" href={materialAssetUrl(missionId, item.id, "pdf")} target="_blank" rel="noopener noreferrer">
+            Abrir PDF em nova aba
           </a>
           {item.hasAudio && <div className="form-stack">
             <p>Áudio do material. As descrições visuais estão no texto acima.</p>
