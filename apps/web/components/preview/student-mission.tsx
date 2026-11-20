@@ -20,7 +20,7 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
   stepNavigation.current=false;
   heading.current?.focus({preventScroll:true});
  },[index]);
- if(!mission||!accessible)return <><PreviewHeading title="Esta missão ainda não está disponível" description="Rascunhos, versões não publicadas e turmas sem vínculo não aparecem para o aluno neste cenário."/><Link className="button" href="/previa/aluno">Voltar ao meu percurso</Link></>;
+ if(!mission||!accessible)return <><PreviewHeading title="Esta atividade ainda não está disponível" description="Rascunhos, versões não publicadas e turmas sem vínculo não aparecem para o aluno neste cenário."/><Link className="button" href="/previa/aluno">Voltar ao meu percurso</Link></>;
  const materials=state.materials.filter(m=>m.missionId===mission.id&&m.revision===mission.revision&&m.studentId===student.id&&m.released);
  const strategies=state.strategies.filter(s=>s.missionId===mission.id&&s.revision===mission.revision&&(!s.studentId||s.studentId===student.id)&&(s.step===null||s.step===index));
  const activity=state.activitySupports?.find(a=>a.missionId===mission.id&&a.revision===mission.revision&&a.studentId===student.id);
@@ -55,7 +55,7 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
   </div>
  </section>
  <details className="paper preview-student-context">
-  <summary>Objetivos e critérios da missão</summary>
+  <summary>Objetivos e critérios da atividade</summary>
   <h2>O que você vai aprender</h2><p className="submission-content">{mission.objectives}</p>
   <h3>Como sua atividade será avaliada</h3><p className="submission-content">{mission.criteria}</p>
  </details>
