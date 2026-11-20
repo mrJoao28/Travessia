@@ -61,8 +61,8 @@ test("editor salva versão, exige revisão e publica somente a versão confirmad
   await fixture(page, "teacher");
   await page.goto("/professor/missoes/test-mission/editar");
   await page
-    .getByLabel("Título da missão", { exact: true })
-    .fill("Missão revisada de teste");
+    .getByLabel("Título da atividade", { exact: true })
+    .fill("Atividade revisada de teste");
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
   await page
@@ -72,17 +72,17 @@ test("editor salva versão, exige revisão e publica somente a versão confirmad
     page.getByRole("heading", { name: "Revisão antes de publicar" }),
   ).toBeFocused();
   await expect(
-    page.getByRole("button", { name: "Publicar missão", exact: true }),
+    page.getByRole("button", { name: "Publicar atividade", exact: true }),
   ).toBeDisabled();
   await page
     .getByLabel("Revisei objetivos, critérios, etapas e materiais.")
     .check();
   await page
-    .getByRole("button", { name: "Publicar missão", exact: true })
+    .getByRole("button", { name: "Publicar atividade", exact: true })
     .click();
   await expect(
     page.getByText(
-      "Missão publicada pelo servidor e disponível para a turma.",
+      "Atividade publicada pelo servidor e disponível para a turma.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -94,12 +94,12 @@ test("planejamento manual mantém o título e dispensa o painel de escrita com I
   await page.goto("/professor/missoes/test-mission/editar");
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
-  await expect(page.getByRole('button', { name: /Pedir ajuda à IA para escrever a missão/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Pedir ajuda à IA para escrever a atividade/ })).toHaveCount(0);
   await expect(
-    page.getByLabel("Título da missão", { exact: true }),
+    page.getByLabel("Título da atividade", { exact: true }),
   ).toHaveValue(version.title);
   await expect(
-    page.getByLabel("Título da missão", { exact: true }),
+    page.getByLabel("Título da atividade", { exact: true }),
   ).toBeEnabled();
   await expect(
     page.getByRole("button", { name: "Salvar rascunho", exact: true }),
@@ -128,10 +128,10 @@ test('preparação guiada valida a etapa atual, volta por teclado e preserva con
   await fixture(page, 'teacher');
   await page.goto('/professor/missoes/test-mission/editar');
   await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
-  await page.getByLabel('Título da missão', { exact: true }).fill('');
+  await page.getByLabel('Título da atividade', { exact: true }).fill('');
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
-  await expect(page.getByLabel('Título da missão', { exact: true })).toBeFocused();
-  await page.getByLabel('Título da missão', { exact: true }).fill('Missão que quero preservar');
+  await expect(page.getByLabel('Título da atividade', { exact: true })).toBeFocused();
+  await page.getByLabel('Título da atividade', { exact: true }).fill('Atividade que quero preservar');
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   const instruction = page.getByRole('textbox', { name: 'Instrução', exact: true }).first();
   await instruction.fill('');
@@ -140,7 +140,7 @@ test('preparação guiada valida a etapa atual, volta por teclado e preserva con
   await instruction.fill('Compare as alternativas antes de escolher.');
   await page.getByRole('button', { name: '← Voltar', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByLabel('Título da missão', { exact: true })).toHaveValue('Missão que quero preservar');
+  await expect(page.getByLabel('Título da atividade', { exact: true })).toHaveValue('Atividade que quero preservar');
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await expect(instruction).toHaveValue('Compare as alternativas antes de escolher.');
   await page.route('**/api/v1/missions/test-mission', async route => route.request().method() === 'PATCH' ? route.fulfill({ status: 409, json: { code: 'VERSION_CONFLICT' } }) : route.fallback());
@@ -158,7 +158,7 @@ test('preparação guiada valida a etapa atual, volta por teclado e preserva con
 test('PDF selecionado permanece no campo ao voltar e ao recusar outro arquivo',async({page})=>{
  await fixture(page,'teacher');await page.goto('/professor/missoes/test-mission/editar');
  await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();
- const field=page.getByLabel('Adicionar PDF à missão',{exact:true});
+ const field=page.getByLabel('Adicionar PDF à atividade',{exact:true});
  const pdf={name:'material-escolhido.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\nfixture')};
  await field.setInputFiles(pdf);
  const filename=()=>field.evaluate((node:HTMLInputElement)=>node.files?.[0]?.name??'');

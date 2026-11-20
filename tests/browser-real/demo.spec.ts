@@ -26,7 +26,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     .fill(process.env.DEMO_USER_PASSWORD);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(
-    page.getByRole("link", { name: "Continuar missão" }),
+    page.getByRole("link", { name: "Continuar atividade" }),
   ).toBeVisible();
   await expect(
     page.getByText("Etapa 2 de 5 · Planejar a solução", { exact: true }),
@@ -70,7 +70,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByText('Perfil de professor salvo.', { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole('link', { name: 'Voltar ao meu espaço', exact: true }).click();
-  const resume = page.getByRole("link", { name: "Continuar missão" });
+  const resume = page.getByRole("link", { name: "Continuar atividade" });
   const missionHref = await resume.getAttribute("href");
   await expect(page.getByRole("main").locator(`a[href="${missionHref}"]`)).toHaveCount(1);
   await expect(page.locator(".preview-student-continue .path-art img")).toBeVisible();
@@ -192,20 +192,20 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   });
   await page.goto(`/professor/missoes/${encodeURIComponent(missionId)}/editar`);
   await expect(
-    page.getByLabel("Título da missão", { exact: true }),
+    page.getByLabel("Título da atividade", { exact: true }),
   ).toBeVisible();
   const originalTitle = await page
-    .getByLabel("Título da missão", { exact: true })
+    .getByLabel("Título da atividade", { exact: true })
     .inputValue();
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
-  await expect(page.getByRole('button', { name: /Pedir ajuda à IA para escrever a missão/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Pedir ajuda à IA para escrever a atividade/ })).toHaveCount(0);
   await expect(
-    page.getByLabel("Título da missão", { exact: true }),
+    page.getByLabel("Título da atividade", { exact: true }),
   ).toHaveValue(originalTitle);
-  await page.getByRole('button', { name: 'Etapa 1: Sobre a missão', exact: true }).click();
+  await page.getByRole('button', { name: 'Etapa 1: Sobre a atividade', exact: true }).click();
   await page
-    .getByLabel("Título da missão", { exact: true })
+    .getByLabel("Título da atividade", { exact: true })
     .fill(`${originalTitle} · revisão demonstrada`);
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
@@ -219,11 +219,11 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     .getByLabel("Revisei objetivos, critérios, etapas e materiais.")
     .check();
   await page
-    .getByRole("button", { name: "Publicar missão", exact: true })
+    .getByRole("button", { name: "Publicar atividade", exact: true })
     .click();
   await expect(
     page.getByText(
-      "Missão publicada pelo servidor e disponível para a turma.",
+      "Atividade publicada pelo servidor e disponível para a turma.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -242,9 +242,9 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
   await page.goto('/professor/missoes/demo-class-oficina-mission/estrategias');
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
   await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Escolha os apoios da atividade', exact: true })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
   await page.getByLabel('Texto do apoio: Checklist do próximo passo', { exact: true }).fill('Apoio coletivo real: confira os requisitos antes de entregar.');
   await page.getByLabel('Onde disponibilizar', { exact: true }).selectOption({ label: 'Etapa 1 · Conhecer o desafio' });
@@ -266,7 +266,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Salvar apoios', exact: true }).click();
   await expect(page.getByText('Apoios salvos e disponíveis aos destinatários selecionados.', { exact: true })).toBeVisible();
   await page.reload();
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
   await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('region', { name: 'Aplicações salvas', exact: true }).getByText('Alunos selecionados: Estudante Fictício 1', { exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
@@ -282,8 +282,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   }
   // Create from the same empty editor a teacher uses, without API writes.
   await page.goto('/professor?turma=demo-class-oficina');
-  await page.getByRole('link', { name: 'Criar missão', exact: true }).click();
-  await page.getByLabel('Título da missão', { exact: true }).fill('Atividade inclusiva de teste');
+  await page.getByRole('link', { name: 'Criar atividade', exact: true }).click();
+  await page.getByLabel('Título da atividade', { exact: true }).fill('Atividade inclusiva de teste');
   await page.getByLabel('Descrição', { exact: true }).fill('Compare propostas e justifique sua escolha.');
   await page.getByLabel('Objetivos de aprendizagem · um por linha', { exact: true }).fill('Justificar uma escolha.');
   await page.getByLabel('Critérios de avaliação · um por linha', { exact: true }).fill('Explicar o raciocínio.');
@@ -303,7 +303,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   expect(savedDraft.draftVersion.materials).toMatchObject([{ title: 'Texto didático público fictício', text: 'Compare custo e clareza.' }]);
   await expect(page.getByRole('textbox', { name: 'Texto do material', exact: true })).toHaveValue('Compare custo e clareza.');
   await page.reload();
-  await expect(page.getByLabel('Título da missão', { exact: true })).toHaveValue('Atividade inclusiva de teste');
+  await expect(page.getByLabel('Título da atividade', { exact: true })).toHaveValue('Atividade inclusiva de teste');
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Texto do material', exact: true })).toHaveValue('Compare custo e clareza.');
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
@@ -315,16 +315,16 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Salvar e revisar', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Revisão antes de publicar', exact: true })).toBeFocused();
-  await expect(page.getByRole('button', { name: 'Publicar missão', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Publicar atividade', exact: true })).toBeDisabled();
   await page.getByLabel('Revisei objetivos, critérios, etapas e materiais.', { exact: true }).check();
-  await page.getByRole('button', { name: 'Publicar missão', exact: true }).click();
-  await expect(page.getByText('Missão publicada pelo servidor e disponível para a turma.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Publicar atividade', exact: true }).click();
+  await expect(page.getByText('Atividade publicada pelo servidor e disponível para a turma.', { exact: true })).toBeVisible();
   // Read only: capture the authoritative published version for later assertions.
   const createdMissionResponse = await page.request.get(`/api/v1/missions/${createdMissionId}`);
   expect(createdMissionResponse.status()).toBe(200);
   const inclusiveMission = await createdMissionResponse.json();
-  await page.getByRole('link', { name: 'Preparar apoios desta missão', exact: true }).click();
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  await page.getByRole('link', { name: 'Preparar apoios desta atividade', exact: true }).click();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
   await page.getByText('Ajustar instruções ou entregas para a turma inteira', {exact:true}).click();
   await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
@@ -390,7 +390,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.screenshot({ path: 'test-results/reference-learning-needs.png', fullPage: true });
     }
     await page.goto(`/aluno/missoes/${inclusiveMission.id}`);
-    await page.getByText('Objetivos e critérios da missão', { exact: true }).click();
+    await page.getByText('Objetivos e critérios da atividade', { exact: true }).click();
     await expect(page.getByText('Justificar uma escolha.', { exact: true })).toBeVisible();
     await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
     if (suffix === 'A') {

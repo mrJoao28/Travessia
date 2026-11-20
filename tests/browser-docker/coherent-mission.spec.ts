@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { materialPdfFixture } from '../../scripts/material-fixture.mjs';
 
-test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação individual, A/B, entrega, barreira e feedback',async({browser,baseURL})=>{
+test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação individual, A/B, entrega, barreira e feedback',async({browser,baseURL})=>{
  if(!process.env.TRAVESSIA_WEB_TEST_URL)throw new Error('Execute o runner Docker isolado.');
  const contexts=await Promise.all([browser.newContext({baseURL}),browser.newContext({baseURL}),browser.newContext({baseURL})]);
  const [teacher,student,other]=await Promise.all(contexts.map(c=>c.newPage()));
@@ -35,7 +35,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await student.getByRole('button',{name:'Salvar compartilhamento de Turma do fluxo completo',exact:true}).click();await expect(student.getByText('Compartilhamento salvo para os docentes desta turma.',{exact:true})).toBeVisible();
   // Mission creation uses the same editor and saved version throughout preparation.
   await teacher.goto(`/professor/missoes/nova?turma=${classroom.id}`);
-  await teacher.getByLabel('Título da missão',{exact:true}).fill('Rotas acessíveis no campus');
+  await teacher.getByLabel('Título da atividade',{exact:true}).fill('Rotas acessíveis no campus');
   await teacher.getByLabel('Descrição',{exact:true}).fill('Compare duas rotas e justifique como torná-las acessíveis.');
   await teacher.getByLabel('Objetivos de aprendizagem · um por linha',{exact:true}).fill('Comparar as rotas de 10 metros.');
   await teacher.getByLabel('Critérios de avaliação · um por linha',{exact:true}).fill('Justificar com os dados do material.');
@@ -43,7 +43,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await teacher.getByLabel('Título da etapa',{exact:true}).fill('Comparar rotas');await teacher.getByLabel('Instrução',{exact:true}).fill('Compare duas rotas de 10 metros e justifique sua escolha.');
   await teacher.getByLabel('Exemplo de apoio',{exact:true}).fill('Observe distância, obstáculos e acesso.');
   await expect(teacher.getByText(/Uploads permanecem desativados/)).toHaveCount(0);
-  await teacher.getByLabel('Adicionar PDF à missão',{exact:true}).setInputFiles({name:'rotas-campus.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
+  await teacher.getByLabel('Adicionar PDF à atividade',{exact:true}).setInputFiles({name:'rotas-campus.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
   await teacher.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();
   await expect(teacher.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();
   const missionId=new URL(teacher.url()).pathname.split('/')[3];
@@ -86,7 +86,7 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await teacher.getByRole('button',{name:'Disponibilizar para Aluno B do fluxo →',exact:true}).click();
   await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
   await teacher.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await teacher.getByRole('checkbox',{name:'Revisei objetivos, critérios, etapas e materiais.',exact:true}).check();
-  await teacher.getByRole('button',{name:'Publicar missão',exact:true}).click();await expect(teacher.getByRole('heading',{name:'Pronto para sua turma!',exact:true})).toBeVisible();
+  await teacher.getByRole('button',{name:'Publicar atividade',exact:true}).click();await expect(teacher.getByRole('heading',{name:'Pronto para sua turma!',exact:true})).toBeVisible();
   mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());expect(mission.publishedVersion.id).toBe(versionId);
   for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/missoes/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();}
   // A receives the reviewed PDF/voice and activity. B receives only the unchanged original PDF.

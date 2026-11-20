@@ -63,7 +63,7 @@ test('aluno escolhe apoios sem diagnóstico obrigatório e compartilha deficiên
 });
 test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro preserva adaptação', async ({ page }) => {
   const captured = await fixture(page, 'teacher'); await page.goto('/professor/adaptacoes');
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
   await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
   await page.getByRole('button', { name: 'Preparar adaptação com os apoios de Aluno A', exact: true }).click();
   await page.getByText('Pedir uma sugestão à IA (opcional)', { exact: true }).click();
@@ -97,13 +97,13 @@ test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e prese
   await expect(page.getByText('Arquivo de texto preparado para salvar.', { exact: true })).toBeVisible();
 });
 
-test('apoios partem da missão e exigem destinatários e nova revisão após voltar para editar', async ({ page }) => {
+test('apoios partem da atividade e exigem destinatários e nova revisão após voltar para editar', async ({ page }) => {
   await fixture(page, 'teacher');
   await page.goto('/professor/missoes/m-inclusive/apoios');
   await expect(page.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
   await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
-  await expect(page.getByLabel('Missão para adaptar', { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('Atividade para adaptar', { exact: true })).toHaveCount(0);
   await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
   await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
   await expect(page.getByRole('main').getByRole('alert')).toContainText('Escolha pelo menos um aluno');

@@ -155,7 +155,7 @@ test("editor ordena por teclado e exige revisão antes da publicação local", a
   );
   await expect(page.getByLabel("Título da etapa").nth(1)).toBeFocused();
   await page.getByRole("button", { name: "Salvar e continuar →" }).click();
-  await page.getByRole("button", { name: "Revisar missão" }).click();
+  await page.getByRole("button", { name: "Revisar atividade" }).click();
   await expect(
     page.getByRole("heading", { name: "Revisão antes de publicar" }),
   ).toBeFocused();
@@ -163,10 +163,10 @@ test("editor ordena por teclado e exige revisão antes da publicação local", a
     .getByLabel("Revisei o conteúdo, os critérios e os materiais.")
     .check();
   await page
-    .getByRole("button", { name: "Publicar missão", exact: true })
+    .getByRole("button", { name: "Publicar atividade", exact: true })
     .click();
   await expect(page.getByRole("heading", {name: "Publicação simulada concluída"})).toBeVisible();
-  await expect(page.getByText("Nenhuma missão foi publicada no servidor. O cenário local foi atualizado.")).toBeVisible();
+  await expect(page.getByText("Nenhuma atividade foi publicada no servidor. O cenário local foi atualizado.")).toBeVisible();
 });
 test("erro real de login mantém campos e foco no resumo — transporte controlado no teste", async ({
   page,

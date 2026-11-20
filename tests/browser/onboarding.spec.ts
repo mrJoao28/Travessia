@@ -18,7 +18,7 @@ async function classroomFixture(page:Page,role:'teacher'|'student'){
 test('primeira turma mostra três passos, convite curto, link e mensagem por e-mail',async({page})=>{
  await classroomFixture(page,'teacher');await page.setViewportSize({width:1440,height:1000});await page.goto('/professor?turma=first-class');
  await expect(page.getByRole('heading',{name:'Primeiros passos da sua turma',exact:true})).toBeVisible();
- await expect(page.getByRole('link',{name:'Criar primeira missão',exact:true})).toHaveAttribute('href','/professor/missoes/nova?turma=first-class');
+ await expect(page.getByRole('link',{name:'Criar primeira atividade',exact:true})).toHaveAttribute('href','/professor/missoes/nova?turma=first-class');
  await page.getByRole('button',{name:'Convidar alunos',exact:true}).focus();await page.keyboard.press('Enter');
  await expect(page.getByText('Alunos da turma e convites',{exact:true})).toBeFocused();
  await page.getByRole('button',{name:'Gerar convite de aluno',exact:true}).click();
@@ -35,8 +35,8 @@ test('aluno que entrou em uma turma vazia recebe orientação clara',async({page
  await classroomFixture(page,'student');await page.goto('/aluno?turma=first-class');
  await expect(page.getByRole('heading',{name:'Você entrou na turma Laboratório de projetos.',exact:true})).toBeVisible();
  await expect(page.getByRole('link',{name:'Consultar minhas turmas',exact:true})).toHaveAttribute('href','/aluno/turmas');
- await expect(page.getByText('Retome sua missão de onde parou.',{exact:true})).toHaveCount(0);
- await expect(page.getByRole('link',{name:'Começar minha primeira missão',exact:true})).toHaveCount(0);
+ await expect(page.getByText('Retome sua atividade de onde parou.',{exact:true})).toHaveCount(0);
+ await expect(page.getByRole('link',{name:'Começar minha primeira atividade',exact:true})).toHaveCount(0);
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  await page.screenshot({path:'test-results/reference-first-steps-student-empty.png',fullPage:true});
 });
