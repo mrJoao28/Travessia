@@ -232,7 +232,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         </div>}
         {showActivity&&version&&student&&<StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} disabled={busy||!!pending} onDirty={activityChanged}/>}
         <div className="material-workspace-settings-content form-stack" hidden={showActivity&&!!student}>
-          {archived?<p className="notice">Missão arquivada. Consulte os materiais salvos abaixo.</p>:<>
+          {archived?<p className="notice">Atividade arquivada. Consulte os materiais salvos abaixo.</p>:<>
           {(step===1||step===3)&&supportOptions}
           {fileRow}
           {!source&&student&&<p className="small">Escolha ou adicione um PDF para gerar a prévia.</p>}

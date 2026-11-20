@@ -17,9 +17,9 @@ export function LiveStrategies({ entries, initialMissionId, initialVersionId }: 
   const [unsaved,setUnsaved]=useState(false);
   const [missionId, setMissionId] = useState(initialMissionId ?? entries[0]?.mission.id ?? "");
   const entry = entries.find(e => e.mission.id === missionId);
-  if (!entry) return <section className="paper"><h2>Escolha uma missão da sua turma</h2><p>Crie e salve uma missão para preparar seus apoios.</p><Link className="text-link" href="/professor/missoes">Consultar minhas missões</Link></section>;
+  if (!entry) return <section className="paper"><h2>Escolha uma atividade da sua turma</h2><p>Crie e salve uma atividade para preparar seus apoios.</p><Link className="text-link" href="/professor/missoes">Consultar minhas atividades</Link></section>;
   return <div className="material-mission-workspace">
-    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/missoes/${entry.mission.id}/editar`}>← Voltar à missão</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector material-mission-selector"><label htmlFor="strategy-mission">Missão</label>
+    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/missoes/${entry.mission.id}/editar`}>← Voltar à atividade</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector material-mission-selector"><label htmlFor="strategy-mission">Atividade</label>
       <select id="strategy-mission" value={missionId} onChange={e => {if(!unsaved||window.confirm("Descartar os apoios ainda não salvos?")){setUnsaved(false);setMissionId(e.target.value);}}}>
         {entries.map(({ mission, classroom }) => <option key={mission.id} value={mission.id}>{classroom.name} · {(mission.publishedVersion ?? mission.draftVersion)?.title}</option>)}
       </select>
@@ -32,10 +32,10 @@ function StrategyMission({ entry, initialVersionId, unsaved, onUnsavedChange }: 
   const versions = [entry.mission.publishedVersion, entry.mission.draftVersion].filter((v): v is NonNullable<typeof v> => !!v);
   const [versionId, setVersionId] = useState(versions.find(v => v.id === initialVersionId)?.id ?? versions[0]?.id ?? "");
   const version = versions.find(v => v.id === versionId);
-  if (!version) return <p className="paper">Salve uma versão da missão antes de preparar os apoios.</p>;
+  if (!version) return <p className="paper">Salve uma versão da atividade antes de preparar os apoios.</p>;
   return <>
     {initialVersionId && !versions.some(v => v.id === initialVersionId) && <p className="notice">A versão escolhida mudou. Confira a versão disponível antes de preparar o apoio.</p>}
-    <div className="classroom-selector material-mission-selector"><label htmlFor="strategy-version">Versão da missão</label>
+    <div className="classroom-selector material-mission-selector"><label htmlFor="strategy-version">Versão da atividade</label>
       <select id="strategy-version" value={versionId} onChange={e => {if(!unsaved||window.confirm("Descartar os apoios ainda não salvos e trocar de versão?")){onUnsavedChange(false);setVersionId(e.target.value);}}}>
         {versions.map(v => <option key={v.id} value={v.id}>{v.id === entry.mission.publishedVersion?.id ? "Publicada · visível aos alunos" : "Rascunho · aguarda publicação"} · {v.title}</option>)}
       </select>
@@ -50,7 +50,7 @@ export function MissionSupportsEditor({ entry, version, initialFile, onFileRecei
  return <div className="mission-support-editor">
     <IndividualMaterials key={`materials-${version.id}`} missionId={entry.mission.id} versionId={version.id} classroomId={entry.classroom.id} archived={entry.mission.status === "archived"} version={version} initialFile={initialFile} onFileReceived={onFileReceived} onUnsavedChange={onUnsavedChange} />
     <section className="paper material-extra-tools form-stack" aria-label="Orientações e apoios da turma">
-      <button type="button" className="button button-outline" aria-expanded={showTools} aria-controls="mission-support-tools" onClick={()=>setShowTools(value=>!value)}>Outros apoios da missão</button>
+      <button type="button" className="button button-outline" aria-expanded={showTools} aria-controls="mission-support-tools" onClick={()=>setShowTools(value=>!value)}>Outros apoios da atividade</button>
       <div id="mission-support-tools" className="form-stack" hidden={!showTools}>
         <button type="button" className="text-button" aria-expanded={showStrategies} aria-controls="mission-strategy-form" onClick={()=>{setOpenedStrategies(true);setShowStrategies(value=>!value);}}>Outros apoios: checklists, exemplos e orientações para a turma</button>
         <div id="mission-strategy-form" hidden={!showStrategies}>{openedStrategies&&<StrategyForm key={version.id} entry={entry} version={version} />}</div>
@@ -136,13 +136,13 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
   const archived = entry.mission.status === "archived";
   return <>
     <p className="small">Os apoios são opcionais e não alteram os objetivos ou critérios de avaliação. Prepare o conteúdo para esta atividade, sem exigir diagnóstico.</p>
-    {archived && <p className="demo-banner">Missão arquivada: aplicações disponíveis apenas para consulta.</p>}
+    {archived && <p className="demo-banner">Atividade arquivada: aplicações disponíveis apenas para consulta.</p>}
     <form onSubmit={e => { e.preventDefault(); void save(); }}>
       <fieldset className="strategy-fields" disabled={pending || mediaBusy || aiBusy || archived}>
         <legend className="sr-only">Preparar estratégias pedagógicas</legend>
         <div className="strategy-layout">
           <section aria-label="Biblioteca de estratégias">
-            <h2 ref={formTitle} tabIndex={-1}>{editing ? "Editar aplicação" : "Escolha os apoios da missão"}</h2>
+            <h2 ref={formTitle} tabIndex={-1}>{editing ? "Editar aplicação" : "Escolha os apoios da atividade"}</h2>
             <div className="form-stack profile-grid">
               <div className="form-stack"><label htmlFor="strategy-search">Buscar estratégia</label><input id="strategy-search" type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Ex.: exemplo, checklist" /></div>
               <div className="form-stack"><label htmlFor="strategy-category">Barreira / tipo de apoio</label><select id="strategy-category" value={category} onChange={e => setCategory(e.target.value)}><option value="">Todos os tipos de apoio</option>{categories.map(value => <option key={value}>{value}</option>)}</select></div>
@@ -167,7 +167,7 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
           <aside className="paper form-stack strategy-destination" aria-label="Configuração da aplicação">
             <h2>Aplicar estratégias</h2>
             <p>{chosen.length} {chosen.length === 1 ? "apoio selecionado" : "apoios selecionados"}</p>
-            <label htmlFor="strategy-step">Onde disponibilizar</label><select id="strategy-step" value={stepId} onChange={e => { change(); setStepId(e.target.value); }}><option value="">Na missão inteira</option>{version.steps.map(s => <option key={s.id} value={s.id}>Etapa {s.position} · {s.title}</option>)}</select>
+            <label htmlFor="strategy-step">Onde disponibilizar</label><select id="strategy-step" value={stepId} onChange={e => { change(); setStepId(e.target.value); }}><option value="">Na atividade inteira</option>{version.steps.map(s => <option key={s.id} value={s.id}>Etapa {s.position} · {s.title}</option>)}</select>
             <fieldset className="strategy-fields"><legend>Destinatários</legend>
               <label className="check"><input type="radio" name="support-audience" checked={audience === "classroom"} onChange={() => { change(); setAudience("classroom"); }} />Turma inteira</label>
               <label className="check"><input type="radio" name="support-audience" checked={audience === "students"} onChange={() => { change(); setAudience("students"); }} />Alunos selecionados</label>
@@ -188,9 +188,9 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
       </fieldset>
     </form>
     <OperationStatus message={message} error={failed} />
-    {preview && <section className="paper strategy-preview" aria-label="Prévia do aluno"><h2 ref={previewTitle} tabIndex={-1}>Prévia dos apoios para o aluno</h2><p>{stepId ? version.steps.find(s => s.id === stepId)?.title : "Apoios disponíveis em todas as etapas desta missão"}</p>{chosen.map(s => <details className="example" key={s.id}><summary>{s.title}</summary><p className="submission-content">{contents[s.id]}</p>{audios[s.id] && <SupportAudio missionId={entry.mission.id} {...audios[s.id]!} />}</details>)}<p className="small">Esta prévia não salva nem publica os apoios.</p></section>}
+    {preview && <section className="paper strategy-preview" aria-label="Prévia do aluno"><h2 ref={previewTitle} tabIndex={-1}>Prévia dos apoios para o aluno</h2><p>{stepId ? version.steps.find(s => s.id === stepId)?.title : "Apoios disponíveis em todas as etapas desta atividade"}</p>{chosen.map(s => <details className="example" key={s.id}><summary>{s.title}</summary><p className="submission-content">{contents[s.id]}</p>{audios[s.id] && <SupportAudio missionId={entry.mission.id} {...audios[s.id]!} />}</details>)}<p className="small">Esta prévia não salva nem publica os apoios.</p></section>}
     <section className="strategy-saved" aria-label="Aplicações salvas"><h2>Aplicações nesta versão</h2>{!plans.length && <p>Nenhuma aplicação salva nesta versão.</p>}
-      {plans.map(plan => <article className="paper" key={plan.id}><h3>{plan.stepId ? `Etapa · ${version.steps.find(s => s.id === plan.stepId)?.title}` : "Missão inteira"}</h3><p>{plan.audience === "classroom" ? "Turma inteira" : `Alunos selecionados: ${plan.recipients.map(s => s.name).join(", ")}`}</p>
+      {plans.map(plan => <article className="paper" key={plan.id}><h3>{plan.stepId ? `Etapa · ${version.steps.find(s => s.id === plan.stepId)?.title}` : "Atividade inteira"}</h3><p>{plan.audience === "classroom" ? "Turma inteira" : `Alunos selecionados: ${plan.recipients.map(s => s.name).join(", ")}`}</p>
         {plan.items.map(item => <details key={item.id}><summary>{item.title}</summary><p className="submission-content">{item.content}</p>{item.hasAudio && <SupportAudio missionId={entry.mission.id} itemId={item.id} />}</details>)}
         <div className="actions"><button className="button button-outline" disabled={pending || mediaBusy || aiBusy || archived} onClick={() => {
           setEditing(plan); setSelected(plan.items.map(i => i.strategyId)); setContents(Object.fromEntries(plan.items.map(i => [i.strategyId, i.content])));

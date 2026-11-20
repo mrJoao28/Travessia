@@ -15,7 +15,7 @@ export function StudentHomePreview() {
     <>
       <div className="page-heading">
         <h1>Um passo de cada vez.</h1>
-        <p>Retome sua missão de onde parou.</p>
+        <p>Retome sua atividade de onde parou.</p>
       </div>
       <section className="mission-hero" aria-labelledby="mission-title">
         <div className="hero-copy">
@@ -29,7 +29,7 @@ export function StudentHomePreview() {
           </p>
           <ol
             className="stepper"
-            aria-label="Etapas da missão — exemplo fictício"
+            aria-label="Etapas da atividade — exemplo fictício"
           >
             {librarySteps.map((step, index) => (
               <li
@@ -51,7 +51,7 @@ export function StudentHomePreview() {
           </ol>
           <div className="actions">
             <Link className="button" href="/previa/aluno/missoes/biblioteca">
-              Continuar missão <Icon name="arrow" />
+              Continuar atividade <Icon name="arrow" />
             </Link>
             <Link
               className="text-link"

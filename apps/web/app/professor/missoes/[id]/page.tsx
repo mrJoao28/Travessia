@@ -3,7 +3,7 @@ import {
   requestedClassroom,
   type ClassroomQuery,
 } from "../../../../lib/classroom-context";
-export const metadata = { title: "Consultar missão · Travessia" };
+export const metadata = { title: "Consultar atividade · Travessia" };
 export default async function Page({
   params,
   searchParams,

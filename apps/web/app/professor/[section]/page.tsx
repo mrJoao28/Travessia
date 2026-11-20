@@ -7,7 +7,7 @@ import {
 const titles: Record<string, string> = {
   adaptacoes: "Adaptações",
   turmas: "Minhas turmas",
-  missoes: "Missões",
+  missoes: "Atividades",
   entregas: "Entregas da turma",
   barreiras: "Apoios e barreiras",
   ajuda: "Ajuda",
