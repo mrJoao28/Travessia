@@ -90,7 +90,11 @@ export async function api<K extends keyof ApiOperations>(
       AI_TIMEOUT: "O Gemini demorou demais. Confira o estado do rascunho antes de tentar com menos material.",
     };
     const message = Object.hasOwn(geminiErrors, code) ? geminiErrors[code] :
-      response.status === 401
+      code === "MEMBERSHIP_EXISTS"
+        ? "Sua conta já possui um vínculo com essa turma. Se deveria entrar como monitor, peça ao professor um novo convite de monitor."
+        : code === "INVALID_INVITATION"
+          ? "Este convite está indisponível ou expirou. Confira o código ou peça um novo ao professor."
+        : response.status === 401
         ? "Sua sessão expirou. Entre novamente para salvar. Seu texto permanece nesta tela."
         : response.status === 409
           ? "O conteúdo mudou no servidor. Preserve seu texto e consulte a versão atual antes de tentar novamente."
