@@ -6,6 +6,7 @@ import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { MissionSupportsEditor } from "./live-strategies";
 import { SupportGenerator } from "./support-generator";
 import { GroupManager } from "./group-manager";
+import { TeacherNeedsNotice } from "./teacher-needs-notice";
 import { OperationStatus } from "./operation-status";
 import {
   api,
@@ -655,6 +656,7 @@ export function LiveEditor({
         )}
         {!monitor && stage === 2 && <div className="form-stack">
           {mission && storedVersion?.workMode === "group" && <GroupManager missionId={mission.id} />}
+          {mission && <TeacherNeedsNotice classroomId={mission.classroomId} activityId={mission.id} />}
           {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da atividade",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
           <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da atividade, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
           {mission && storedVersion && !dirty && storedVersion.materials.length > 0 && (
