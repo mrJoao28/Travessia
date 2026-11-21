@@ -50,6 +50,7 @@ export const submission: ApiResponse<"submission"> = {
   id: "test-submission",
   versionId: version.id,
   userId: me.id,
+  groupId: null,
   status: "draft",
   content: "Planejamento inicial fictício.",
   completedStepIds: ["step-one"],
@@ -57,6 +58,7 @@ export const submission: ApiResponse<"submission"> = {
   revision: 3,
   submittedAt: null,
   updatedAt: version.createdAt,
+  gradingSteps: [],
   feedback: [],
 };
 
