@@ -109,8 +109,8 @@ function WorkspaceView({
                 missions.map(async (mission) => ({
                   mission,
                   classroom,
-                  submissions: needsDeliveries && classroom.role === "teacher" ? await pages("submissions", mission.id) : [],
-                  groups: needsDeliveries && classroom.role === "teacher" && (mission.publishedVersion ?? mission.draftVersion)?.workMode === "group" ? (await api("groups", { params: { id: mission.id } })).items : [],
+                  submissions: needsDeliveries ? await pages("submissions", mission.id) : [],
+                  groups: needsDeliveries && (mission.publishedVersion ?? mission.draftVersion)?.workMode === "group" ? (await api("groups", { params: { id: mission.id } })).items : [],
                 })),
               );
             }),
@@ -145,6 +145,7 @@ function WorkspaceView({
   return (
     <Workspace
       role={role}
+      teachingLabel={chosen?.role === "monitor" ? "monitor" : "professor"}
       preferences={profile?.preferences}
       account={
         profile
@@ -188,7 +189,7 @@ function WorkspaceView({
               Ambiente de demonstração · dados fictícios
             </p>
           )}
-          {((section === "turmas" && (chosen?.role === "teacher" || !permitted.length)) ||
+          {((section === "turmas" && (chosen?.role === "teacher" || chosen?.role === "monitor" || !permitted.length)) ||
             (!permitted.length && role === "professor")) && (
             <ClassroomTools
               teacher={role === "professor"}
@@ -242,9 +243,9 @@ function WorkspaceView({
                   classrooms={permitted}
                 />
               ) : section === "editor" && missionId ? (
-                <LiveEditor id={missionId} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} classroomRoles={Object.fromEntries(permitted.map(room => [room.id, room.role]))} />
+                <LiveEditor id={missionId} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
               ) : section === "nova" && chosen ? (
-                <LiveEditor classroomId={chosen.id} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} classroomRoles={Object.fromEntries(permitted.map(room => [room.id, room.role]))} />
+                <LiveEditor classroomId={chosen.id} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
               ) : section === "barreiras" && chosen ? (
                 <LiveBarriers classroom={chosen} />
               ) : section === "turmas" ? (
@@ -375,7 +376,7 @@ function TeacherDashboard({
           <p className="eyebrow accent">Planejar, acompanhar e incluir</p>
           <h2>{classroom?.name ?? "Minhas atividades"}</h2>
           <p>
-            {classroom.role === 'monitor' ? 'Prepare rascunhos para o professor revisar e publicar.' : hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira atividade seguindo os passos abaixo."}
+            {classroom.role === 'monitor' ? (hasPublished ? 'Acompanhe as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.' : 'Sua turma está pronta. Convide os alunos e prepare a primeira atividade.') : hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira atividade seguindo os passos abaixo."}
           </p>
           <div className="actions">
             {classroom && (hasPublished || classroom.role === 'monitor') && (
@@ -386,20 +387,20 @@ function TeacherDashboard({
                 Criar atividade
               </Link>
             )}
-            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/entregas">
+            {(classroom.role === 'teacher' || classroom.role === 'monitor') && <Link className="text-link" href="/professor/entregas">
               Consultar entregas
             </Link>}
-            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/barreiras">
+            {(classroom.role === 'teacher' || classroom.role === 'monitor') && <Link className="text-link" href="/professor/barreiras">
               Apoios e barreiras
             </Link>}
-            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link>}
+            {(classroom.role === 'teacher' || classroom.role === 'monitor') && <Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link>}
           </div>
         </div>
         <PathIllustration variant="teacher" />
       </section>
-      {!hasPublished && classroom.role === 'teacher' && <TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id} onInvite={()=>{if(invitationsRef.current){invitationsRef.current.open=true;invitationsRef.current.querySelector('summary')?.focus();invitationsRef.current.scrollIntoView({block:'start'});}}}/>}
-      {classroom.role === 'monitor' && <p className="notice">Você pode criar e editar rascunhos nesta turma. O professor revisa, publica e acompanha as entregas.</p>}
-      {classroom.role === 'teacher' && <details ref={invitationsRef} className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
+      {!hasPublished && (classroom.role === 'teacher' || classroom.role === 'monitor') && <TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id} onInvite={()=>{if(invitationsRef.current){invitationsRef.current.open=true;invitationsRef.current.querySelector('summary')?.focus();invitationsRef.current.scrollIntoView({block:'start'});}}}/>}
+      {classroom.role === 'monitor' && <p className="notice">Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.</p>}
+      {(classroom.role === 'teacher' || classroom.role === 'monitor') && <details ref={invitationsRef} className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
           <li className="paper" key={mission.id}>
@@ -432,7 +433,7 @@ function TeacherDashboard({
                 Editar e revisar
               </Link>
             )}
-            {room.role === 'teacher' && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Preparar apoios</Link>}
+            {(room.role === 'teacher' || room.role === 'monitor') && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Preparar apoios</Link>}
           </li>
         ))}
       </ul>

@@ -17,12 +17,14 @@ export function Workspace({
   preview = false,
   preferences,
   account,
+  teachingLabel,
 }: {
   role: "aluno" | "professor";
   children: React.ReactNode;
   preview?: boolean;
   preferences?: ApiResponse<"preferences">;
   account?: AccountView;
+  teachingLabel?: "professor" | "monitor";
 }) {
   const [collapsed,setCollapsed]=useState(false),[ready,setReady]=useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -126,7 +128,7 @@ export function Workspace({
               <button ref={menuTrigger} type="button" className="sidebar-toggle" aria-label={toggleLabel} aria-expanded={mobile?mobileOpen:!collapsed} aria-controls={mobile?"mobile-workspace-navigation":sidebarId} aria-haspopup={mobile?"dialog":undefined} disabled={!ready} onClick={()=>mobile?setMobileOpen(true):setCollapsed(v=>!v)}>
                 {mobile?<><span className="menu-bars" aria-hidden="true">☰</span><span>Menu</span></>:<Icon name={collapsed?'panel-open':'panel-close'}/>}
               </button>
-            </NavigationHint><span className="eyebrow workspace-context">Área {student ? "do aluno" : "do professor"}</span></div>
+            </NavigationHint><span className="eyebrow workspace-context">Área {student ? "do aluno" : `do ${teachingLabel ?? "professor"}`}</span></div>
             <div className="topbar-actions">
               {!mobile&&<ReadingPreferences accountPreferences={preferences} />}
               <AccountMenu

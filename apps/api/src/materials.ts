@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type { Body, Operation } from './contracts.js';
 import { serial } from './database.js';
 import { fail, missing } from './errors.js';
-import { scopedMission } from './product.service.js';
+import { isInstructorRole, scopedMission } from './product.service.js';
 import { budget, digest } from './rate-limit.js';
 import { documentPage, materialContentLength, materialDocument, materialReleaseSnapshot, storedMaterialSettings } from './material-contracts.js';
 import { checkDiskBudget, materialPath, removeMaterialFiles, storeOriginal } from './material-files.js';
@@ -193,7 +193,7 @@ export class MaterialService {
     return serial(this.db, async tx => {
       const { row, member } = await scopedMission(tx, userId, p.id);
       if (p.kind === 'original') {
-        if (member.role !== 'teacher') return missing();
+        if (!isInstructorRole(member.role)) return missing();
         const source = await tx.materialSource.findFirst({ where: { id: p.assetId, version: { missionId: row.id }, status: 'ready', expiresAt: { gt: new Date() } } });
         if (!source || ![row.draftVersionId, row.publishedVersionId].includes(source.versionId)) return missing();
         return { path: materialPath(source.id, 'original.pdf'), mime: 'application/pdf', name: 'original.pdf' };
@@ -214,7 +214,7 @@ export class MaterialService {
       }
       // A teacher may compare verified source pages before creating an adaptation.
       // Students still need a released, personally addressed adaptation below.
-      if (member.role === 'teacher' && p.kind.startsWith('page-')) {
+      if (isInstructorRole(member.role) && p.kind.startsWith('page-')) {
         const source=await tx.materialSource.findFirst({where:{id:p.assetId,version:{missionId:row.id},status:'ready',expiresAt:{gt:new Date()}}});
         if(source){
           if(![row.draftVersionId,row.publishedVersionId].includes(source.versionId)||!extractedPages.parse(source.pages).some(v=>v.page===Number(p.kind.slice(5))))return missing();
