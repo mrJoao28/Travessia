@@ -13,6 +13,7 @@ export const me: ApiResponse<"me"> = {
 export const version: NonNullable<ApiResponse<"mission">["publishedVersion"]> = {
   id: "version-current",
   missionId: "test-mission",
+  workMode: "individual",
   title: "Uma biblioteca para todos",
   description: "Crie um sistema de empréstimo de livros.",
   objectives: ["Planejar uma solução."],
