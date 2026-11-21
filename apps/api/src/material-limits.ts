@@ -5,6 +5,9 @@ export const PDF_UPLOAD_BODY_BYTES = 28 * 1024 * 1024;
 export const PDF_EDIT_BODY_BYTES = 12 * 1024 * 1024;
 export const PDF_TEXT_PER_PAGE = 40000;
 export const PDF_DOCUMENT_CHARACTERS = PDF_MAX_PAGES * (PDF_TEXT_PER_PAGE + 4000);
+export const MATERIAL_DRAFT_RETENTION_MS = 90 * 86400000;
+export const MATERIAL_PUBLISHED_RETENTION_MS = 365 * 86400000;
+export const publishedMaterialExpiry = (from = new Date()) => new Date(from.getTime() + MATERIAL_PUBLISHED_RETENTION_MS);
 
 // Keep provider context and image payloads bounded while preserving page boundaries.
 export function materialBatches<T extends { text: string }>(pages: T[]): T[][] {

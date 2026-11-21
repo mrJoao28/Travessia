@@ -4,51 +4,51 @@ import type { operations } from '@travessia/contracts/api';
 export const apiRoutes = {
   "materialSources": {
     "method": "GET",
-    "path": "/missions/{id}/material-sources"
+    "path": "/activities/{id}/material-sources"
   },
   "uploadMaterialSource": {
     "method": "POST",
-    "path": "/missions/{id}/material-sources"
+    "path": "/activities/{id}/material-sources"
   },
   "deleteMaterialSource": {
     "method": "DELETE",
-    "path": "/missions/{id}/material-sources/{sourceId}"
+    "path": "/activities/{id}/material-sources/{sourceId}"
   },
   "materialAdaptations": {
     "method": "GET",
-    "path": "/missions/{id}/material-adaptations"
+    "path": "/activities/{id}/material-adaptations"
   },
   "prepareMaterial": {
     "method": "POST",
-    "path": "/missions/{id}/material-adaptations"
+    "path": "/activities/{id}/material-adaptations"
   },
   "releaseOriginalMaterial": {
     "method": "POST",
-    "path": "/missions/{id}/original-materials"
+    "path": "/activities/{id}/original-materials"
   },
   "editMaterial": {
     "method": "PATCH",
-    "path": "/missions/{id}/material-adaptations/{adaptationId}"
+    "path": "/activities/{id}/material-adaptations/{adaptationId}"
   },
   "removeMaterial": {
     "method": "DELETE",
-    "path": "/missions/{id}/material-adaptations/{adaptationId}"
+    "path": "/activities/{id}/material-adaptations/{adaptationId}"
   },
   "renderMaterial": {
     "method": "POST",
-    "path": "/missions/{id}/material-adaptations/{adaptationId}/render"
+    "path": "/activities/{id}/material-adaptations/{adaptationId}/render"
   },
   "releaseMaterial": {
     "method": "POST",
-    "path": "/missions/{id}/material-adaptations/{adaptationId}/release"
+    "path": "/activities/{id}/material-adaptations/{adaptationId}/release"
   },
   "learnerMaterials": {
     "method": "GET",
-    "path": "/missions/{id}/my-materials"
+    "path": "/activities/{id}/my-materials"
   },
   "materialAsset": {
     "method": "GET",
-    "path": "/missions/{id}/material-assets/{assetId}/{kind}"
+    "path": "/activities/{id}/material-assets/{assetId}/{kind}"
   },
   "health": {
     "method": "GET",
@@ -92,23 +92,23 @@ export const apiRoutes = {
   },
   "adaptationPlans": {
     "method": "GET",
-    "path": "/missions/{id}/adaptations"
+    "path": "/activities/{id}/adaptations"
   },
   "createAdaptation": {
     "method": "POST",
-    "path": "/missions/{id}/adaptations"
+    "path": "/activities/{id}/adaptations"
   },
   "updateAdaptation": {
     "method": "PATCH",
-    "path": "/missions/{id}/adaptations/{planId}"
+    "path": "/activities/{id}/adaptations/{planId}"
   },
   "removeAdaptation": {
     "method": "POST",
-    "path": "/missions/{id}/adaptations/{planId}/remove"
+    "path": "/activities/{id}/adaptations/{planId}/remove"
   },
   "learnerAdaptations": {
     "method": "GET",
-    "path": "/missions/{id}/my-adaptations"
+    "path": "/activities/{id}/my-adaptations"
   },
   "submissionAudio": {
     "method": "GET",
@@ -124,35 +124,35 @@ export const apiRoutes = {
   },
   "strategyRecipients": {
     "method": "GET",
-    "path": "/missions/{id}/strategy-recipients"
+    "path": "/activities/{id}/strategy-recipients"
   },
   "strategyPlans": {
     "method": "GET",
-    "path": "/missions/{id}/strategy-plans"
+    "path": "/activities/{id}/strategy-plans"
   },
   "createStrategyPlan": {
     "method": "POST",
-    "path": "/missions/{id}/strategy-plans"
+    "path": "/activities/{id}/strategy-plans"
   },
   "updateStrategyPlan": {
     "method": "PATCH",
-    "path": "/missions/{id}/strategy-plans/{planId}"
+    "path": "/activities/{id}/strategy-plans/{planId}"
   },
   "removeStrategyPlan": {
     "method": "POST",
-    "path": "/missions/{id}/strategy-plans/{planId}/remove"
+    "path": "/activities/{id}/strategy-plans/{planId}/remove"
   },
   "missionSupports": {
     "method": "GET",
-    "path": "/missions/{id}/supports"
+    "path": "/activities/{id}/supports"
   },
   "supportAudio": {
     "method": "GET",
-    "path": "/missions/{id}/support-audio/{itemId}"
+    "path": "/activities/{id}/support-audio/{itemId}"
   },
   "generateSupports": {
     "method": "POST",
-    "path": "/missions/{id}/ai-supports"
+    "path": "/activities/{id}/ai-supports"
   },
   "preferences": {
     "method": "PATCH",
@@ -192,35 +192,35 @@ export const apiRoutes = {
   },
   "missions": {
     "method": "GET",
-    "path": "/classrooms/{id}/missions"
+    "path": "/classrooms/{id}/activities"
   },
   "createMission": {
     "method": "POST",
-    "path": "/classrooms/{id}/missions"
+    "path": "/classrooms/{id}/activities"
   },
   "mission": {
     "method": "GET",
-    "path": "/missions/{id}"
+    "path": "/activities/{id}"
   },
   "editMission": {
     "method": "PATCH",
-    "path": "/missions/{id}"
+    "path": "/activities/{id}"
   },
   "publish": {
     "method": "POST",
-    "path": "/missions/{id}/publish"
+    "path": "/activities/{id}/publish"
   },
   "archive": {
     "method": "POST",
-    "path": "/missions/{id}/archive"
+    "path": "/activities/{id}/archive"
   },
   "saveSubmission": {
     "method": "POST",
-    "path": "/missions/{id}/submissions"
+    "path": "/activities/{id}/submissions"
   },
   "submissions": {
     "method": "GET",
-    "path": "/missions/{id}/submissions"
+    "path": "/activities/{id}/submissions"
   },
   "submission": {
     "method": "GET",
@@ -256,7 +256,7 @@ export const apiRoutes = {
   },
   "generate": {
     "method": "POST",
-    "path": "/missions/{id}/ai-drafts"
+    "path": "/activities/{id}/ai-drafts"
   },
   "generation": {
     "method": "GET",

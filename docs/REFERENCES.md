@@ -25,7 +25,7 @@ Quando chegar:
 2. Identificar recomendações aplicáveis e seu contexto; separar evidência de hipótese.
 3. Traduzir recomendações em requisitos de interface, autoria e avaliação com docente/especialista.
 4. Revisar possíveis conflitos e limitações, preservando objetivos de aprendizagem e escolhas individuais.
-5. Validar com estudantes e atualizar missões/documentação com histórico.
+5. Validar com estudantes e atualizar atividades/documentação com histórico.
 
 Não indexar automaticamente arquivos com dados pessoais como base de conhecimento do Gemini. Aprovar material e finalidade antes de qualquer envio externo.
 

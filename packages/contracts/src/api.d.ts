@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/v1/missions/{id}/material-sources": {
+    "/v1/activities/{id}/material-sources": {
         parameters: {
             query?: never;
             header?: never;
@@ -20,7 +20,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/material-sources/{sourceId}": {
+    "/v1/activities/{id}/material-sources/{sourceId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -36,7 +36,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/material-adaptations": {
+    "/v1/activities/{id}/material-adaptations": {
         parameters: {
             query?: never;
             header?: never;
@@ -52,7 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/original-materials": {
+    "/v1/activities/{id}/original-materials": {
         parameters: {
             query?: never;
             header?: never;
@@ -68,7 +68,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/material-adaptations/{adaptationId}": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,7 +84,7 @@ export interface paths {
         patch: operations["editMaterial"];
         trace?: never;
     };
-    "/v1/missions/{id}/material-adaptations/{adaptationId}/render": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}/render": {
         parameters: {
             query?: never;
             header?: never;
@@ -100,7 +100,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/material-adaptations/{adaptationId}/release": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}/release": {
         parameters: {
             query?: never;
             header?: never;
@@ -116,7 +116,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/my-materials": {
+    "/v1/activities/{id}/my-materials": {
         parameters: {
             query?: never;
             header?: never;
@@ -132,7 +132,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/material-assets/{assetId}/{kind}": {
+    "/v1/activities/{id}/material-assets/{assetId}/{kind}": {
         parameters: {
             query?: never;
             header?: never;
@@ -260,7 +260,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/adaptations": {
+    "/v1/activities/{id}/adaptations": {
         parameters: {
             query?: never;
             header?: never;
@@ -276,7 +276,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/adaptations/{planId}": {
+    "/v1/activities/{id}/adaptations/{planId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -292,7 +292,7 @@ export interface paths {
         patch: operations["updateAdaptation"];
         trace?: never;
     };
-    "/v1/missions/{id}/adaptations/{planId}/remove": {
+    "/v1/activities/{id}/adaptations/{planId}/remove": {
         parameters: {
             query?: never;
             header?: never;
@@ -308,7 +308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/my-adaptations": {
+    "/v1/activities/{id}/my-adaptations": {
         parameters: {
             query?: never;
             header?: never;
@@ -372,7 +372,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/strategy-recipients": {
+    "/v1/activities/{id}/strategy-recipients": {
         parameters: {
             query?: never;
             header?: never;
@@ -388,7 +388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/strategy-plans": {
+    "/v1/activities/{id}/strategy-plans": {
         parameters: {
             query?: never;
             header?: never;
@@ -404,7 +404,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/strategy-plans/{planId}": {
+    "/v1/activities/{id}/strategy-plans/{planId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -420,7 +420,7 @@ export interface paths {
         patch: operations["updateStrategyPlan"];
         trace?: never;
     };
-    "/v1/missions/{id}/strategy-plans/{planId}/remove": {
+    "/v1/activities/{id}/strategy-plans/{planId}/remove": {
         parameters: {
             query?: never;
             header?: never;
@@ -436,7 +436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/supports": {
+    "/v1/activities/{id}/supports": {
         parameters: {
             query?: never;
             header?: never;
@@ -452,7 +452,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/support-audio/{itemId}": {
+    "/v1/activities/{id}/support-audio/{itemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -468,7 +468,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/ai-supports": {
+    "/v1/activities/{id}/ai-supports": {
         parameters: {
             query?: never;
             header?: never;
@@ -596,7 +596,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/classrooms/{id}/missions": {
+    "/v1/classrooms/{id}/activities": {
         parameters: {
             query?: never;
             header?: never;
@@ -612,7 +612,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}": {
+    "/v1/activities/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -628,7 +628,7 @@ export interface paths {
         patch: operations["editMission"];
         trace?: never;
     };
-    "/v1/missions/{id}/publish": {
+    "/v1/activities/{id}/publish": {
         parameters: {
             query?: never;
             header?: never;
@@ -644,7 +644,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/archive": {
+    "/v1/activities/{id}/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -660,7 +660,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/submissions": {
+    "/v1/activities/{id}/submissions": {
         parameters: {
             query?: never;
             header?: never;
@@ -804,7 +804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/missions/{id}/ai-drafts": {
+    "/v1/activities/{id}/ai-drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1029,7 +1029,9 @@ export interface operations {
                             id: string;
                             versionId: string;
                             sourceId: string;
-                            studentId: string;
+                            studentId: string | null;
+                            /** @enum {string} */
+                            audience: "student" | "classroom";
                             /** @enum {string} */
                             status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                             hasReleasedVersion?: boolean;
@@ -1096,7 +1098,9 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     sourceId: string;
-                    studentId: string;
+                    studentId?: string;
+                    /** @enum {string} */
+                    audience?: "student" | "classroom";
                     pages: number[];
                     settings: {
                         supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
@@ -1128,7 +1132,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1215,7 +1221,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1350,7 +1358,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1432,7 +1442,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1516,7 +1528,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1594,9 +1608,11 @@ export interface operations {
                             /** @enum {string} */
                             mode?: "adapted" | "original";
                             /** @enum {string} */
-                            scope?: "mission" | "individual";
+                            scope?: "activity" | "individual";
                             /** @enum {string} */
                             status?: "processing" | "ready" | "failed";
+                            /** Format: date-time */
+                            expiresAt?: string;
                             document: {
                                 page: number;
                                 title: string;
@@ -3079,7 +3095,7 @@ export interface operations {
                             id: string;
                             name: string;
                             /** @enum {string} */
-                            role: "student" | "teacher";
+                            role: "student" | "teacher" | "monitor";
                         }[];
                         nextCursor: string | null;
                     };
@@ -3125,7 +3141,7 @@ export interface operations {
                         id: string;
                         name: string;
                         /** @enum {string} */
-                        role: "student" | "teacher";
+                        role: "student" | "teacher" | "monitor";
                     };
                 };
             };
@@ -3169,7 +3185,7 @@ export interface operations {
                             id: string;
                             name: string;
                             /** @enum {string} */
-                            role: "student" | "teacher";
+                            role: "student" | "teacher" | "monitor";
                             active: boolean;
                         }[];
                         nextCursor: string | null;
@@ -3253,6 +3269,8 @@ export interface operations {
                     "application/json": {
                         items: {
                             id: string;
+                            /** @enum {string} */
+                            role: "student" | "monitor";
                             reusable: boolean;
                             /** Format: date-time */
                             createdAt: string;
@@ -3291,6 +3309,8 @@ export interface operations {
             content: {
                 "application/json": {
                     reusable?: boolean;
+                    /** @enum {string} */
+                    role?: "student" | "monitor";
                 };
             };
         };
@@ -3305,6 +3325,8 @@ export interface operations {
                         id: string;
                         token: string;
                         code: string;
+                        /** @enum {string} */
+                        role: "student" | "monitor";
                         reusable: boolean;
                         /** Format: date-time */
                         createdAt: string;
@@ -3392,7 +3414,7 @@ export interface operations {
                         id: string;
                         name: string;
                         /** @enum {string} */
-                        role: "student" | "teacher";
+                        role: "student" | "teacher" | "monitor";
                     };
                 };
             };
@@ -3739,6 +3761,7 @@ export interface operations {
                         text: string;
                     }[];
                     expectedDraftVersionId: string | null;
+                    carryForwardMaterialIds?: string[];
                 };
             };
         };

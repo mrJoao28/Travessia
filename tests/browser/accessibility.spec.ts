@@ -6,7 +6,7 @@ test("espaçamento de texto, cores do sistema e movimento reduzido mantêm o con
 }) => {
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.setViewportSize({ width: 320, height: 800 });
-  await page.goto("/previa/aluno/missoes/biblioteca");
+  await page.goto("/previa/aluno/atividades/biblioteca");
   await expect(page.getByRole("heading", { name: "Compreender o problema", exact: true })).toBeVisible();
   await expect(page.getByLabel("Planejamento da solução")).toBeVisible();
   await page.addStyleTag({
@@ -37,13 +37,13 @@ const routes = [
   "/previa/aluno/turmas",
   "/previa/aluno/entregas",
   "/previa/aluno/barreiras",
-  "/previa/aluno/missoes/biblioteca",
+  "/previa/aluno/atividades/biblioteca",
   "/previa/professor",
   "/previa/professor/entregas",
   "/previa/professor/barreiras",
-  "/previa/professor/missoes/editor",
-  "/previa/professor/missoes/campus/adaptacoes",
-  "/previa/aluno/missoes/campus",
+  "/previa/professor/atividades/editor",
+  "/previa/professor/atividades/campus/adaptacoes",
+  "/previa/aluno/atividades/campus",
   "/previa/aluno/apoios",
   "/previa/professor/perfil",
 ];
@@ -115,7 +115,7 @@ for (const route of routes)
     ).toBe(true);
   });
 test("prévia preserva atividade e não fabrica salvamento", async ({ page }) => {
-  await page.goto("/previa/aluno/missoes/biblioteca");
+  await page.goto("/previa/aluno/atividades/biblioteca");
   await page
     .getByLabel("Planejamento da solução")
     .fill("Planejamento fictício de teste.");
@@ -146,7 +146,7 @@ test("barreira informa destinatário antes do envio", async ({ page }) => {
 test("editor ordena por teclado e exige revisão antes da publicação local", async ({
   page,
 }) => {
-  await page.goto("/previa/professor/missoes/editor");
+  await page.goto("/previa/professor/atividades/editor");
   await page.getByRole("button", { name: "Continuar para as etapas →" }).click();
   await page.getByRole("button", { name: "Mover etapa 1 para baixo" }).focus();
   await page.keyboard.press("Enter");
@@ -155,7 +155,7 @@ test("editor ordena por teclado e exige revisão antes da publicação local", a
   );
   await expect(page.getByLabel("Título da etapa").nth(1)).toBeFocused();
   await page.getByRole("button", { name: "Salvar e continuar →" }).click();
-  await page.getByRole("button", { name: "Revisar missão" }).click();
+  await page.getByRole("button", { name: "Revisar atividade" }).click();
   await expect(
     page.getByRole("heading", { name: "Revisão antes de publicar" }),
   ).toBeFocused();
@@ -163,10 +163,10 @@ test("editor ordena por teclado e exige revisão antes da publicação local", a
     .getByLabel("Revisei o conteúdo, os critérios e os materiais.")
     .check();
   await page
-    .getByRole("button", { name: "Publicar missão", exact: true })
+    .getByRole("button", { name: "Publicar atividade", exact: true })
     .click();
   await expect(page.getByRole("heading", {name: "Publicação simulada concluída"})).toBeVisible();
-  await expect(page.getByText("Nenhuma missão foi publicada no servidor. O cenário local foi atualizado.")).toBeVisible();
+  await expect(page.getByText("Nenhuma atividade foi publicada no servidor. O cenário local foi atualizado.")).toBeVisible();
 });
 test("erro real de login mantém campos e foco no resumo — transporte controlado no teste", async ({
   page,

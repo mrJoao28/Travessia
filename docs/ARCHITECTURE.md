@@ -18,7 +18,7 @@ Monorepo npm Workspaces; Node.js 24; frontend Next.js/React/TypeScript; API Nest
 
 ## Modelo
 
-User, Profile, Classroom, Membership (único por usuário/turma), Invitation, Mission, MissionVersion, Step, Material, Submission, Feedback, BarrierReport, ReadingPreferences, AiGeneration, AuditEvent. Dados pessoais não pertencem ao contrato público das missões. Todo recurso privado tem uma cadeia verificável até turma/proprietário. Papel é definido no vínculo, não em um campo global editável do perfil.
+User, Profile, Classroom, Membership (único por usuário/turma), Invitation, Mission, MissionVersion, Step, Material, Submission, Feedback, BarrierReport, ReadingPreferences, AiGeneration, AuditEvent. Dados pessoais não pertencem ao contrato público das atividades. Todo recurso privado tem uma cadeia verificável até turma/proprietário. Papel é definido no vínculo, não em um campo global editável do perfil.
 
 ## Confiança e acesso
 
@@ -30,7 +30,7 @@ Acesso de negócio ao banco passa pela API. Não presumir que consultas Prisma r
 
 Professor escolhe material permitido → API valida autorização/cota → registro persistido de geração → chamada Gemini aguardada, com timeout e saída limitados → validação de JSON/conteúdo → rascunho privado → revisão/publicação pelo professor. Nenhuma ferramenta de navegação, execução de código ou mutação de banco é entregue ao modelo. Arquivos são dados não confiáveis.
 
-Falhas da IA não bloqueiam missões existentes. Usar geração limitada por requisição para compatibilidade com Vercel. Não há worker contínuo ou pg-boss ativo neste MVP. Persistir estado, controlar concorrência e evitar publicação duplicada; uma tentativa externa repetida pode gerar cobrança. Processamento durável de longa duração será decisão futura, caso necessário.
+Falhas da IA não bloqueiam atividades existentes. Usar geração limitada por requisição para compatibilidade com Vercel. Não há worker contínuo ou pg-boss ativo neste MVP. Persistir estado, controlar concorrência e evitar publicação duplicada; uma tentativa externa repetida pode gerar cobrança. Processamento durável de longa duração será decisão futura, caso necessário.
 
 ## Deploy
 

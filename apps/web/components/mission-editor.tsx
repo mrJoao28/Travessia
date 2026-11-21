@@ -65,7 +65,7 @@ export function MissionEditor() {
   return (
     <div className="two-column">
       <section className="paper">
-        <h2>Rascunho de missão</h2>
+        <h2>Rascunho de atividade</h2>
         <p>
           Revise objetivos, critérios e instruções. As alterações ficam apenas
           nesta tela da prévia.
@@ -76,13 +76,13 @@ export function MissionEditor() {
           onSubmit={(event) => {
             event.preventDefault();
             setMessage(
-              "Publicação indisponível nesta prévia. Nenhuma missão foi publicada. O conteúdo permanece no editor.",
+              "Publicação indisponível nesta prévia. Nenhuma atividade foi publicada. O conteúdo permanece no editor.",
             );
           }}
           onChange={() => setMessage("")}
         >
           <label htmlFor="mission-title">
-            Título da missão
+            Título da atividade
             <input
               id="mission-title"
               required
@@ -235,7 +235,7 @@ export function MissionEditor() {
               }
             }}
           >
-            Revisar missão
+            Revisar atividade
           </button>
           {review && (
             <section className="notice" aria-labelledby="review-title">
@@ -259,7 +259,7 @@ export function MissionEditor() {
                 Revisei o conteúdo, os critérios e os materiais.
               </label>
               <button className="button" type="submit">
-                Publicar missão
+                Publicar atividade
               </button>
             </section>
           )}

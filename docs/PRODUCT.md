@@ -1,11 +1,11 @@
 # Produto e MVP
 
-Travessia oferece aprendizagem por missões acessíveis no ensino superior. O professor define objetivos, etapas, materiais e rubrica; o estudante participa com apoios selecionáveis e comunica barreiras. A instituição pode ser futura compradora, mas não há entidade ou painel institucional no MVP.
+Travessia oferece aprendizagem por atividades acessíveis no ensino superior. O professor define objetivos, etapas, materiais e rubrica; o estudante participa com apoios selecionáveis e comunica barreiras. A instituição pode ser futura compradora, mas não há entidade ou painel institucional no MVP.
 
 ## Pessoas e fluxos
 
 - Professor cria uma turma e convida alunos por um vínculo controlado.
-- Professor cria um rascunho de missão, manualmente ou com assistência Gemini, revisa e publica.
+- Professor cria um rascunho de atividade, manualmente ou com assistência Gemini, revisa e publica.
 - Aluno consulta o enunciado, objetivos e critérios antes de começar. Cada etapa informa o que fazer e como pedir ajuda.
 - Aluno escolhe preferências e apoios sem apresentar diagnóstico. Essas escolhas não alteram notas automaticamente.
 - Aluno envia trabalho e recebe feedback docente. Novos envios e correções preservam histórico conforme política de retenção definida.
@@ -13,7 +13,7 @@ Travessia oferece aprendizagem por missões acessíveis no ensino superior. O pr
 
 ## Recorte inicial
 
-Um piloto com uma turma e três missões. Fluxo principal: criar turma → convidar aluno → publicar missão → enviar trabalho → dar feedback. IA começa no planejamento docente. Missões precisam de critérios e formatos de entrega coerentes: um áudio pode explicar uma solução, mas não substitui o código quando programar é a competência avaliada.
+Um piloto com uma turma e três atividades. Fluxo principal: criar turma → convidar aluno → publicar atividade → enviar trabalho → dar feedback. IA começa no planejamento docente. Atividades precisam de critérios e formatos de entrega coerentes: um áudio pode explicar uma solução, mas não substitui o código quando programar é a competência avaliada.
 
 ## Aprendizagem e impacto
 
@@ -25,4 +25,4 @@ Módulo institucional, certificados oficiais, diagnóstico, laudos, perfis clín
 
 ## Estado
 
-As telas atuais são uma demonstração. A referência pedagógica especializada do usuário ainda será adicionada. Não usar esta ausência para inventar protocolos por condição; implementar acessibilidade técnica e validar as missões com docentes e estudantes.
+As telas atuais são uma demonstração. A referência pedagógica especializada do usuário ainda será adicionada. Não usar esta ausência para inventar protocolos por condição; implementar acessibilidade técnica e validar as atividades com docentes e estudantes.

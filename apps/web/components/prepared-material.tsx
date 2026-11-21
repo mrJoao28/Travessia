@@ -9,7 +9,7 @@ export function materialReadingStyle(settings: Reading, zoom = 1): CSSProperties
 }
 
 export function materialAssetUrl(missionId: string, assetId: string, kind: "original" | "pdf" | "audio" | `page-${number}`) {
-  return `/api/v1/missions/${encodeURIComponent(missionId)}/material-assets/${encodeURIComponent(assetId)}/${kind}`;
+  return `/api/v1/activities/${encodeURIComponent(missionId)}/material-assets/${encodeURIComponent(assetId)}/${kind}`;
 }
 export function PreparedDocument({ document, missionId, adaptationId }: { document: Document; missionId?: string; adaptationId?: string }) {
   return <>{document.map(page => (

@@ -22,7 +22,7 @@ Banco Supabase dedicado a demo, DEMO_MODE=true e DEMO_ONLY=true, sem dados reais
 | Programação I | Aluno | “Uma biblioteca para todos”: 5 etapas, atual 2/5; planejamento em rascunho |
 | Cálculo Aplicado | Aluno | “Energia no campus”: etapas parcialmente concluídas; entrega enviada, aguardando avaliação |
 | Estatística | Aluno | “O tempo na fila”: entrega revisada, feedback docente com orientação de melhoria |
-| Oficina de Projetos Inclusivos | Professor | 8 alunos fictícios, 2 entregas enviadas, 1 revisada, missão publicada e rascunho para edição |
+| Oficina de Projetos Inclusivos | Professor | 8 alunos fictícios, 2 entregas enviadas, 1 revisada, atividade publicada e rascunho para edição |
 
 Na oficina, incluir um relato fictício “O material está disponível apenas como imagem”, autorizado para o docente, com possibilidade de responder. Criar também caso de relato não compartilhado para testes; esse caso não pode aparecer no painel do professor. Professores/alunos fictícios usam endereços reservados em example.invalid, sem envio de mensagem. Materiais didáticos são exemplos próprios e sem dados pessoais.
 
@@ -34,7 +34,7 @@ Status, etapas, entregas e feedback precisam ser entidades reais no banco. Não 
 2. Usar preferências de leitura e consultar exemplo da etapa.
 3. Salvar uma atividade e consultar entrega com feedback já existente em Estatística.
 4. Mudar para contexto docente permitido da Oficina.
-5. Ver entregas, responder à barreira compartilhada e editar/publicar uma missão.
+5. Ver entregas, responder à barreira compartilhada e editar/publicar uma atividade.
 6. Se Gemini estiver habilitado, gerar um rascunho com material fictício, revisar e publicar; se indisponível, usar rascunho pré-criado claramente identificado.
 
 Não expor senha/email em gravações, prints ou console. Usar banner discreto “Ambiente de demonstração · dados fictícios”. Os fluxos principais continuam utilizáveis com IA desativada. Reset de demo via CLI, nunca por endpoint público.

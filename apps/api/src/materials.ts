@@ -8,14 +8,14 @@ import { scopedMission } from './product.service.js';
 import { budget, digest } from './rate-limit.js';
 import { documentPage, materialContentLength, materialDocument, materialReleaseSnapshot, storedMaterialSettings } from './material-contracts.js';
 import { checkDiskBudget, materialPath, removeMaterialFiles, storeOriginal } from './material-files.js';
-import { materialBatches, PDF_DOCUMENT_CHARACTERS, PDF_MAX_BYTES, PDF_MAX_MB, PDF_MAX_PAGES, PDF_TEXT_PER_PAGE } from './material-limits.js';
+import { materialBatches, PDF_DOCUMENT_CHARACTERS, PDF_MAX_BYTES, PDF_MAX_MB, PDF_MAX_PAGES, PDF_TEXT_PER_PAGE, publishedMaterialExpiry } from './material-limits.js';
 import type { Config } from './config.js';
 export const extractedPages = z.array(z.strictObject({ page: z.number().int().min(1).max(PDF_MAX_PAGES), text: z.string().max(PDF_TEXT_PER_PAGE), hasVisual: z.boolean(), ocr: z.boolean() })).max(PDF_MAX_PAGES);
 export const sourcePublic = (s: MaterialSource) => ({ id: s.id, versionId: s.versionId, title: s.title, status: s.status, pageCount: s.pageCount,
   pages: s.status === 'ready' ? extractedPages.parse(s.pages) : [], warnings: z.array(z.string()).parse(s.warnings), expiresAt: s.expiresAt });
 export const adaptationPublic = (s: MaterialAdaptation) => {
   const { regeneratePage: _queuedPage, autoRender: _autoRender, ...settings } = storedMaterialSettings.parse(s.settings);
-  return { mode: settings.deliveryMode??'adapted', id: s.id, versionId: s.versionId, sourceId: s.sourceId, studentId: s.studentId,
+  return { mode: settings.deliveryMode??'adapted', id: s.id, versionId: s.versionId, sourceId: s.sourceId, studentId: s.studentId, audience: s.studentId === null ? 'classroom' : 'student',
   status: s.status, hasReleasedVersion: s.status === 'released' || !!s.releasedSnapshot, settings, pages: z.array(z.number()).parse(s.pages), document: z.array(documentPage).parse(s.document), revision: s.revision,
   error: s.error, hasAudio: s.hasAudio, inputTokens: s.inputTokens, outputTokens: s.outputTokens, expiresAt: s.expiresAt };
 };
@@ -26,34 +26,33 @@ export class MaterialService {
     try { return await serial(this.db, async tx => {
       const learner = op === 'learnerMaterials';
       const { row, member } = await scopedMission(tx, userId, p.id, !learner);
-      const current = (versionId: string) => { if (![row.draftVersionId, row.publishedVersionId].includes(versionId)) return fail(409, 'VERSION_CONFLICT', 'A versão mudou. Reabra a missão.'); };
+      const current = (versionId: string) => { if (![row.draftVersionId, row.publishedVersionId].includes(versionId)) return fail(409, 'VERSION_CONFLICT', 'A versão mudou. Reabra a atividade.'); };
       if (learner) {
         if (member.role !== 'student') return missing();
         const { versionId } = query as { versionId: string };
         if (row.publishedVersionId !== versionId) return missing();
-        const [sources, rows] = await Promise.all([
-          tx.materialSource.findMany({ where: { versionId, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 }),
-          tx.materialAdaptation.findMany({ where: { versionId, studentId: userId, OR: [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 }),
-        ]);
-        const missionMaterials = sources.map(source => ({ id: source.id, title: source.title, mode: 'original' as const, scope: 'mission' as const,
-          status: source.status === 'ready' ? 'ready' as const : source.status === 'failed' ? 'failed' as const : 'processing' as const, document: [] as [], hasAudio: false }));
-        const individualMaterials = rows.flatMap(a => {
+        const originals = await tx.materialSource.findMany({ where: { versionId, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 });
+        const rows = await tx.materialAdaptation.findMany({ where: { versionId, AND: [{ OR: [{ studentId: userId }, { studentId: null }] }, { OR: [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }] }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
+        return { items: [
+          ...originals.map(source => ({ id: source.id, title: source.title, mode: 'original' as const, scope: 'activity' as const,
+            status: source.status === 'ready' ? 'ready' as const : source.status === 'failed' ? 'failed' as const : 'processing' as const, expiresAt: source.expiresAt, document: [] as [], hasAudio: false })),
+          ...rows.filter(a => storedMaterialSettings.parse(a.settings).deliveryMode !== 'original').map(a => {
           const { deliveryMode = 'adapted', supports, fontSize, color } = storedMaterialSettings.parse(a.settings);
-          // The uploaded original is already available to the whole class as a mission material.
-          // Keep only optional per-student adaptations here to avoid listing that PDF twice.
-          if (deliveryMode === 'original') return [];
           const snapshot = a.releasedSnapshot ? materialReleaseSnapshot.parse(a.releasedSnapshot) : null;
-          return [{ id: a.id, title: a.source.title, mode: deliveryMode, scope: 'individual' as const, status: 'ready' as const,
-            hasAudio: snapshot?.hasAudio ?? a.hasAudio, document: snapshot?.document ?? materialDocument.parse(a.document), reading: { supports, fontSize, color } }];
-        });
-        return { items: [...missionMaterials, ...individualMaterials] };
+          return { id: a.id, title: a.source.title, mode: deliveryMode, scope: 'individual' as const, status: 'ready' as const, expiresAt: a.expiresAt, hasAudio: snapshot?.hasAudio ?? a.hasAudio,
+            ...(deliveryMode === 'original'
+              ? { document: [] }
+              : { document: snapshot?.document ?? materialDocument.parse(a.document), reading: { supports, fontSize, color } }),
+          };
+          }),
+        ] };
       }
       if (['materialSources', 'materialAdaptations'].includes(op)) {
         const { versionId } = query as { versionId: string }; current(versionId);
         return { items: op === 'materialSources' ? (await tx.materialSource.findMany({ where: { versionId, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 })).map(sourcePublic)
           : (await tx.materialAdaptation.findMany({ where: { versionId, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 100 })).map(adaptationPublic) };
       }
-      if (row.status === 'archived') return fail(409, 'MISSION_ARCHIVED', 'Missão arquivada.');
+      if (row.status === 'archived') return fail(409, 'MISSION_ARCHIVED', 'Atividade arquivada.');
       if (op === 'uploadMaterialSource') {
         const input = body as Body<'uploadMaterialSource'>; current(input.versionId);
         const invalidBase64 = input.base64.length % 4 !== 0 || /[^A-Za-z0-9+/]/.test(input.base64.replace(/={1,2}$/, ''));
@@ -104,7 +103,7 @@ export class MaterialService {
         } };
         current(input.versionId);
         const source = await tx.materialSource.findFirst({ where: { id: input.sourceId, versionId: input.versionId, status: 'ready', expiresAt: { gt: new Date() } } }); if (!source) return missing();
-        if (!await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: input.studentId, role: 'student', active: true } })) return fail(400, 'INVALID_RECIPIENTS', 'Escolha um aluno ativo desta turma.');
+        if (input.audience !== 'classroom' && !await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: input.studentId, role: 'student', active: true } })) return fail(400, 'INVALID_RECIPIENTS', 'Escolha um aluno ativo desta turma.');
         const selected = extractedPages.parse(source.pages).filter(v => input.pages.includes(v.page));
         if (selected.length !== input.pages.length) return fail(400, 'INVALID_PAGES', 'Confira as páginas.');
         const requiresAi = input.settings.supports.some(s => ['literal-language', 'short-sections', 'glossary'].includes(s));
@@ -116,7 +115,7 @@ export class MaterialService {
         if (await tx.materialAdaptation.count({ where: { versionId: input.versionId } }) >= 100) return fail(409, 'MATERIAL_LIMIT', 'Até 100 adaptações por versão.');
         // Reuse only same recipient, source, version and instructions; never broaden release.
         const candidates = await tx.materialAdaptation.findMany({
-          where: { versionId: input.versionId, studentId: input.studentId, requestHash, status: { not: 'failed' }, expiresAt: { gt: new Date() } },
+          where: { versionId: input.versionId, studentId: input.audience === 'classroom' ? null : input.studentId, requestHash, status: { not: 'failed' }, expiresAt: { gt: new Date() } },
           orderBy: { expiresAt: 'desc' },
         });
         const cached = candidates.find(candidate => {
@@ -132,7 +131,7 @@ export class MaterialService {
         await budget(tx, `material-prepare:${userId}`, input.settings.useAi ? 10 : 30, 86400);
         if (input.settings.useAi && await tx.materialAdaptation.count({ where: { creatorId: userId, status: { in: ['queued', 'generating'] }, settings: { path: ['useAi'], equals: true } } })) return fail(429, 'AI_BUSY', 'Aguarde sua preparação em andamento.');
         if (input.settings.useAi) await budget(tx, `material-ai-batches:${userId}`, 80, 86400, materialBatches(selected).length);
-        const saved = await tx.materialAdaptation.create({ data: { versionId: input.versionId, sourceId: source.id, studentId: input.studentId, creatorId: userId,
+        const saved = await tx.materialAdaptation.create({ data: { versionId: input.versionId, sourceId: source.id, studentId: input.audience === 'classroom' ? null : input.studentId!, creatorId: userId,
           requestKey: input.requestKey, requestHash, settings: { ...input.settings, ...(input.autoRender ? { autoRender: true } : {}) }, pages: [...input.pages].sort((a,b)=>a-b), expiresAt: source.expiresAt } });
         await tx.auditEvent.create({ data: { actorId: userId, action: 'material.prepare', resourceId: saved.id } });
         return adaptationPublic(saved);
@@ -157,7 +156,7 @@ export class MaterialService {
             return fail(409, 'INVALID_REGENERATION', 'Escolha uma página de um rascunho ainda não disponibilizado.');
           if (!this.config.aiEnabled || !settings.useAi || !edit.approvedForProvider)
             return fail(400, 'AI_REQUIRED', 'Autorize o envio da página original ao Gemini para refazer o trecho.');
-          if (!await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: old.studentId, role: 'student', active: true } }))
+          if (old.studentId && !await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: old.studentId, role: 'student', active: true } }))
             return missing();
           if (await tx.materialAdaptation.count({ where: { creatorId: userId, status: { in: ['queued', 'generating'] }, settings: { path: ['useAi'], equals: true } } }))
             return fail(429, 'AI_BUSY', 'Aguarde sua preparação em andamento.');
@@ -179,8 +178,10 @@ export class MaterialService {
       if (op === 'releaseMaterial') {
         if (old.status === 'released') return adaptationPublic(old);
         if (old.status !== 'ready') return fail(409, 'REVIEW_REQUIRED', 'Gere e confira os arquivos desta revisão antes de liberar.');
-        if (!await tx.membership.findFirst({ where: { userId: old.studentId, classroomId: row.classroomId, active: true, role: 'student' } })) return missing();
-        const saved = await tx.materialAdaptation.update({ where: { id: old.id }, data: { status: 'released', releasedSnapshot: { revision: old.revision, document: materialDocument.parse(old.document), hasAudio: old.hasAudio } } });
+        if (old.studentId && !await tx.membership.findFirst({ where: { userId: old.studentId, classroomId: row.classroomId, active: true, role: 'student' } })) return missing();
+        const keepUntil = row.publishedVersionId === old.versionId ? publishedMaterialExpiry() : old.expiresAt;
+        const saved = await tx.materialAdaptation.update({ where: { id: old.id }, data: { status: 'released', expiresAt: keepUntil, releasedSnapshot: { revision: old.revision, document: materialDocument.parse(old.document), hasAudio: old.hasAudio } } });
+        if (row.publishedVersionId === old.versionId) await tx.materialSource.update({ where: { id: old.sourceId }, data: { expiresAt: keepUntil } });
         await tx.auditEvent.create({ data: { actorId: userId, action: 'material.release', resourceId: old.id } }); return adaptationPublic(saved);
       }
       return missing();
@@ -196,10 +197,10 @@ export class MaterialService {
         return { path: materialPath(source.id, 'original.pdf'), mime: 'application/pdf', name: 'original.pdf' };
       }
       if (!['pdf','audio'].includes(p.kind) && !(/^page-[1-9][0-9]?$/.test(p.kind) && Number(p.kind.slice(5)) <= PDF_MAX_PAGES)) return missing();
-      if (member.role === 'student' && p.kind === 'pdf') {
-        if (!row.publishedVersionId) return missing();
-        const source = await tx.materialSource.findFirst({ where: { id: p.assetId, versionId: row.publishedVersionId, status: 'ready', expiresAt: { gt: new Date() } } });
-        if (source) return { path: materialPath(source.id, 'original.pdf'), mime: 'application/pdf', name: 'material-da-missao.pdf' };
+      if (p.kind === 'pdf' && member.role === 'student') {
+        const original = await tx.materialSource.findFirst({ where: { id: p.assetId, versionId: row.publishedVersionId ?? undefined,
+          version: { missionId: row.id }, status: 'ready', expiresAt: { gt: new Date() } } });
+        if (original) return { path: materialPath(original.id, 'original.pdf'), mime: 'application/pdf', name: 'material-original.pdf' };
       }
       // A teacher may compare verified source pages before creating an adaptation.
       // Students still need a released, personally addressed adaptation below.
@@ -214,7 +215,7 @@ export class MaterialService {
         ? [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }]
         : [{ status: { in: ['ready', 'released'] } }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } } });
       if (!a || ![row.draftVersionId, row.publishedVersionId].includes(a.versionId)) return missing();
-      if (member.role === 'student' && (a.studentId !== userId || a.versionId !== row.publishedVersionId)) return missing();
+      if (member.role === 'student' && (a.studentId !== null && a.studentId !== userId || a.versionId !== row.publishedVersionId)) return missing();
       if(storedMaterialSettings.parse(a.settings).deliveryMode==='original'){if(p.kind!=='pdf')return missing();return {path:materialPath(a.sourceId,'original.pdf'),mime:'application/pdf',name:'material-original.pdf'};}
       if (p.kind.startsWith('page-')) {
         const page = Number(p.kind.slice(5)); if (!z.array(z.number()).parse(a.pages).includes(page)) return missing();

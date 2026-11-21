@@ -5,10 +5,10 @@ import { materialPdfFixture } from '../../scripts/material-fixture.mjs';
 
 import {fixture,addPdf} from '../fixtures/individual-materials';
 
-test('PDF da missão é anexado para toda a turma sem selecionar aluno',async({page})=>{
+test('PDF da atividade é anexado para toda a turma sem selecionar aluno',async({page})=>{
  const captured=await fixture(page,false,[],[]);await addPdf(page,'');
  await expect(page.getByLabel('Aluno da turma',{exact:true})).toHaveValue('');
- await expect(page.getByText('O PDF original anexado à missão será mostrado a todos os alunos depois que você publicar. Não é necessário liberá-lo aluno por aluno.',{exact:true})).toBeVisible();
+ await expect(page.getByText('O PDF original anexado à atividade será mostrado a todos os alunos depois que você publicar. Não é necessário liberá-lo aluno por aluno.',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Usar PDF original',exact:true})).toHaveCount(0);
  await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
  await page.screenshot({path:'test-results/reference-material-no-disclosure.png',fullPage:true});
@@ -141,7 +141,7 @@ test('trocar o arquivo retira a prévia anterior e sua confirmação de revisão
  await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
- await page.getByLabel('Adicionar PDF à missão',{exact:true}).setInputFiles({name:'outro-material.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
+ await page.getByLabel('Adicionar PDF à atividade',{exact:true}).setInputFiles({name:'outro-material.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toHaveCount(0);
  await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
