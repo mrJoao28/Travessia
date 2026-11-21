@@ -242,6 +242,7 @@ export class ProductService {
           if (member.role !== 'teacher' || row.status === 'archived') return missing();
           const group = await tx.missionGroup.findFirst({ where: { id: p.groupId, missionId: id } });
           if (!group) return missing();
+          if (await tx.materialAdaptation.count({ where: { groupId: group.id } })) return fail(409, 'GROUP_HAS_MATERIALS', 'Retire os materiais destinados a esta equipe antes de removê-la.');
           if (await tx.submission.count({ where: { groupId: group.id } })) return fail(409, 'GROUP_HAS_SUBMISSIONS', 'Esta equipe já possui uma entrega.');
           await tx.missionGroup.delete({ where: { id: group.id } });
           await tx.auditEvent.create({ data: { actorId: userId, action: 'group.remove', resourceId: group.id } });

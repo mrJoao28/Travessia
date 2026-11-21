@@ -231,6 +231,15 @@ test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega ún
   await request(`${path}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true });
   assert.deepEqual((await request(`${path}/groups`, a)).json.items.map((g: any) => g.id), [team.id]);
   assert.deepEqual((await request(`${path}/groups`, c)).json.items, []);
+  const teamSource = await db.materialSource.create({ data: { versionId: created.draftVersion.id, creatorId: mainId, title: 'Leitura da equipe', hash: randomUUID(), requestKey: randomUUID(), status: 'ready', pageCount: 1, pages: [{ page: 1, text: 'Texto da equipe.', hasVisual: false, ocr: false }], warnings: [], expiresAt: new Date(Date.now() + 86400000) } });
+  const teamMaterialInput = { versionId: created.draftVersion.id, sourceId: teamSource.id, groupId: team.id, audience: 'group', pages: [1], settings: { supports: ['large-print'], fontSize: '22', color: 'default', useAi: false, approvedForProvider: false }, requestKey: randomUUID() };
+  const teamMaterial = (await request(`${path}/material-adaptations`, main, 'POST', teamMaterialInput)).json;
+  assert.equal(teamMaterial.groupId, team.id); assert.equal(teamMaterial.studentId, null); assert.equal(teamMaterial.audience, 'group');
+  await db.materialAdaptation.update({ where: { id: teamMaterial.id }, data: { status: 'released', releasedSnapshot: { revision: 1, document: [{ page: 1, title: 'Equipe', text: 'Texto da equipe.', description: '' }], hasAudio: false } } });
+  for (const cookie of [a, b]) assert.ok((await request(`${path}/my-materials?versionId=${created.draftVersion.id}`, cookie)).json.items.some((item: any) => item.id === teamMaterial.id));
+  assert.ok(!(await request(`${path}/my-materials?versionId=${created.draftVersion.id}`, c)).json.items.some((item: any) => item.id === teamMaterial.id));
+  await request(`${path}/groups/${team.id}`, main, 'DELETE', undefined, 409);
+  await request(`${path}/material-adaptations`, main, 'POST', { ...teamMaterialInput, groupId: 'not-this-activity', requestKey: randomUUID() }, 400);
   const input = { versionId: created.draftVersion.id, content: 'Texto coletivo', completedStepIds: [], currentStepId: created.draftVersion.steps[0].id, status: 'draft', expectedRevision: 0 };
   await request(`${path}/submissions`, c, 'POST', input, 409);
   const first = (await request(`${path}/submissions`, a, 'POST', input)).json;

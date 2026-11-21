@@ -535,11 +535,24 @@
                               }
                             ]
                           },
+                          "groupId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "audience": {
                             "type": "string",
                             "enum": [
                               "student",
-                              "classroom"
+                              "classroom",
+                              "group"
                             ]
                           },
                           "status": {
@@ -824,11 +837,17 @@
                     "minLength": 1,
                     "maxLength": 100
                   },
+                  "groupId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
                   "audience": {
                     "type": "string",
                     "enum": [
                       "student",
-                      "classroom"
+                      "classroom",
+                      "group"
                     ]
                   },
                   "pages": {
@@ -964,11 +983,24 @@
                         }
                       ]
                     },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "audience": {
                       "type": "string",
                       "enum": [
                         "student",
-                        "classroom"
+                        "classroom",
+                        "group"
                       ]
                     },
                     "status": {
@@ -1313,11 +1345,24 @@
                         }
                       ]
                     },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "audience": {
                       "type": "string",
                       "enum": [
                         "student",
-                        "classroom"
+                        "classroom",
+                        "group"
                       ]
                     },
                     "status": {
@@ -1728,11 +1773,24 @@
                         }
                       ]
                     },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "audience": {
                       "type": "string",
                       "enum": [
                         "student",
-                        "classroom"
+                        "classroom",
+                        "group"
                       ]
                     },
                     "status": {
@@ -2148,11 +2206,24 @@
                         }
                       ]
                     },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "audience": {
                       "type": "string",
                       "enum": [
                         "student",
-                        "classroom"
+                        "classroom",
+                        "group"
                       ]
                     },
                     "status": {
@@ -2490,11 +2561,24 @@
                         }
                       ]
                     },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "audience": {
                       "type": "string",
                       "enum": [
                         "student",
-                        "classroom"
+                        "classroom",
+                        "group"
                       ]
                     },
                     "status": {

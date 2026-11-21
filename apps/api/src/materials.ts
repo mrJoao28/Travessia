@@ -15,7 +15,7 @@ export const sourcePublic = (s: MaterialSource) => ({ id: s.id, versionId: s.ver
   pages: s.status === 'ready' ? extractedPages.parse(s.pages) : [], warnings: z.array(z.string()).parse(s.warnings), expiresAt: s.expiresAt });
 export const adaptationPublic = (s: MaterialAdaptation) => {
   const { regeneratePage: _queuedPage, autoRender: _autoRender, ...settings } = storedMaterialSettings.parse(s.settings);
-  return { mode: settings.deliveryMode??'adapted', id: s.id, versionId: s.versionId, sourceId: s.sourceId, studentId: s.studentId, audience: s.studentId === null ? 'classroom' : 'student',
+  return { mode: settings.deliveryMode??'adapted', id: s.id, versionId: s.versionId, sourceId: s.sourceId, studentId: s.studentId, groupId: s.groupId, audience: s.groupId ? 'group' : s.studentId === null ? 'classroom' : 'student',
   status: s.status, hasReleasedVersion: s.status === 'released' || !!s.releasedSnapshot, settings, pages: z.array(z.number()).parse(s.pages), document: z.array(documentPage).parse(s.document), revision: s.revision,
   error: s.error, hasAudio: s.hasAudio, inputTokens: s.inputTokens, outputTokens: s.outputTokens, expiresAt: s.expiresAt };
 };
@@ -32,7 +32,23 @@ export class MaterialService {
         const { versionId } = query as { versionId: string };
         if (row.publishedVersionId !== versionId) return missing();
         const originals = await tx.materialSource.findMany({ where: { versionId, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 });
-        const rows = await tx.materialAdaptation.findMany({ where: { versionId, AND: [{ OR: [{ studentId: userId }, { studentId: null }] }, { OR: [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }] }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true, downloadAllowed: true, pages: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
+        const groupMemberships = await tx.missionGroupMember.findMany({ where: { userId, group: { missionId: row.id } }, select: { groupId: true } });
+        const rows = await tx.materialAdaptation.findMany({
+          where: {
+            versionId,
+            AND: [
+              { OR: [
+                { studentId: userId, groupId: null },
+                { studentId: null, groupId: null },
+                { groupId: { in: groupMemberships.map(group => group.groupId) } },
+              ] },
+              { OR: [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }] },
+            ],
+            expiresAt: { gt: new Date() },
+            source: { status: 'ready', expiresAt: { gt: new Date() } },
+          },
+          include: { source: { select: { title: true, downloadAllowed: true, pages: true } } }, orderBy: { createdAt: 'asc' }, take: 100,
+        });
         return { items: [
           ...originals.map(source => ({ id: source.id, title: source.title, mode: 'original' as const, scope: 'activity' as const,
             status: source.status === 'ready' ? 'ready' as const : source.status === 'failed' ? 'failed' as const : 'processing' as const, downloadAllowed: source.downloadAllowed,
@@ -105,7 +121,12 @@ export class MaterialService {
         } };
         current(input.versionId);
         const source = await tx.materialSource.findFirst({ where: { id: input.sourceId, versionId: input.versionId, status: 'ready', expiresAt: { gt: new Date() } } }); if (!source) return missing();
-        if (input.audience !== 'classroom' && !await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: input.studentId, role: 'student', active: true } })) return fail(400, 'INVALID_RECIPIENTS', 'Escolha um aluno ativo desta turma.');
+        let targetGroup: { id: string } | null = null;
+        if (input.audience === 'group') {
+          const version = await tx.missionVersion.findUnique({ where: { id: input.versionId }, select: { workMode: true } });
+          targetGroup = await tx.missionGroup.findFirst({ where: { id: input.groupId, missionId: row.id, members: { some: { user: { memberships: { some: { classroomId: row.classroomId, active: true, role: 'student' } } } } } }, select: { id: true } });
+          if (version?.workMode !== 'group' || !targetGroup) return fail(400, 'INVALID_RECIPIENTS', 'Escolha uma equipe ativa desta atividade em grupo.');
+        } else if (input.audience !== 'classroom' && !await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: input.studentId, role: 'student', active: true } })) return fail(400, 'INVALID_RECIPIENTS', 'Escolha um aluno ativo desta turma.');
         const selected = extractedPages.parse(source.pages).filter(v => input.pages.includes(v.page));
         if (selected.length !== input.pages.length) return fail(400, 'INVALID_PAGES', 'Confira as páginas.');
         const requiresAi = input.settings.supports.some(s => ['literal-language', 'short-sections', 'glossary'].includes(s));
@@ -117,7 +138,7 @@ export class MaterialService {
         if (await tx.materialAdaptation.count({ where: { versionId: input.versionId } }) >= 100) return fail(409, 'MATERIAL_LIMIT', 'Até 100 adaptações por versão.');
         // Reuse only same recipient, source, version and instructions; never broaden release.
         const candidates = await tx.materialAdaptation.findMany({
-          where: { versionId: input.versionId, studentId: input.audience === 'classroom' ? null : input.studentId, requestHash, status: { not: 'failed' }, expiresAt: { gt: new Date() } },
+          where: { versionId: input.versionId, studentId: input.audience === 'classroom' || input.audience === 'group' ? null : input.studentId, groupId: targetGroup?.id ?? null, requestHash, status: { not: 'failed' }, expiresAt: { gt: new Date() } },
           orderBy: { expiresAt: 'desc' },
         });
         const cached = candidates.find(candidate => {
@@ -133,7 +154,7 @@ export class MaterialService {
         await budget(tx, `material-prepare:${userId}`, input.settings.useAi ? 10 : 30, 86400);
         if (input.settings.useAi && await tx.materialAdaptation.count({ where: { creatorId: userId, status: { in: ['queued', 'generating'] }, settings: { path: ['useAi'], equals: true } } })) return fail(429, 'AI_BUSY', 'Aguarde sua preparação em andamento.');
         if (input.settings.useAi) await budget(tx, `material-ai-batches:${userId}`, 80, 86400, materialBatches(selected).length);
-        const saved = await tx.materialAdaptation.create({ data: { versionId: input.versionId, sourceId: source.id, studentId: input.audience === 'classroom' ? null : input.studentId!, creatorId: userId,
+        const saved = await tx.materialAdaptation.create({ data: { versionId: input.versionId, sourceId: source.id, studentId: input.audience === 'classroom' || input.audience === 'group' ? null : input.studentId!, groupId: targetGroup?.id ?? null, creatorId: userId,
           requestKey: input.requestKey, requestHash, settings: { ...input.settings, ...(input.autoRender ? { autoRender: true } : {}) }, pages: [...input.pages].sort((a,b)=>a-b), expiresAt: source.expiresAt } });
         await tx.auditEvent.create({ data: { actorId: userId, action: 'material.prepare', resourceId: saved.id } });
         return adaptationPublic(saved);
@@ -226,7 +247,9 @@ export class MaterialService {
         : [{ status: { in: ['ready', 'released'] } }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } },
         include: { source: { select: { downloadAllowed: true, pages: true } } } });
       if (!a || ![row.draftVersionId, row.publishedVersionId].includes(a.versionId)) return missing();
-      if (member.role === 'student' && (a.studentId !== null && a.studentId !== userId || a.versionId !== row.publishedVersionId)) return missing();
+      if (member.role === 'student' && (a.versionId !== row.publishedVersionId || (a.groupId
+        ? !await tx.missionGroupMember.findFirst({ where: { groupId: a.groupId, userId, user: { memberships: { some: { classroomId: row.classroomId, role: 'student', active: true } } } } })
+        : a.studentId !== null && a.studentId !== userId))) return missing();
       if (p.kind === 'pdf' && member.role === 'student' && !a.source.downloadAllowed) return missing();
       if (p.kind === 'download') {
         if (member.role !== 'student') return missing();
