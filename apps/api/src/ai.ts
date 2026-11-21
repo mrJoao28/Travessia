@@ -137,6 +137,7 @@ export class AiService {
         include: { version: { include: { mission: true, steps: { orderBy: { position: 'asc' } } } } } });
       if (!row) return missing();
       if (row.status !== 'submitted') return fail(409, 'SUBMISSION_NOT_PENDING', 'A sugestão só pode ser solicitada para uma entrega ainda não revisada.');
+      if (!row.content.trim()) return fail(400, 'NO_TEXT_ANSWER', 'A correção por IA precisa de uma resposta em texto. Arquivos e áudios não são enviados.');
       const steps = row.version.steps.map((step, index) => ({ stepId: step.id, stepRef: `step-${index + 1}`, title: step.title, instructions: step.instructions, maxPoints: step.maxPoints }));
       const providerInput = { answer: row.content, objectives: z.array(z.string()).parse(row.version.objectives),
         criteria: z.array(z.string()).parse(row.version.criteria), steps: steps.map(step => ({ stepRef: step.stepRef, title: step.title, instructions: step.instructions, maxPoints: step.maxPoints })) };
