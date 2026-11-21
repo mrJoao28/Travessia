@@ -7373,7 +7373,8 @@
                             "type": "string",
                             "enum": [
                               "student",
-                              "teacher"
+                              "teacher",
+                              "monitor"
                             ]
                           }
                         },
@@ -7484,7 +7485,8 @@
                       "type": "string",
                       "enum": [
                         "student",
-                        "teacher"
+                        "teacher",
+                        "monitor"
                       ]
                     }
                   },
@@ -7597,7 +7599,8 @@
                             "type": "string",
                             "enum": [
                               "student",
-                              "teacher"
+                              "teacher",
+                              "monitor"
                             ]
                           },
                           "active": {
@@ -7806,6 +7809,13 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "student",
+                              "monitor"
+                            ]
+                          },
                           "reusable": {
                             "type": "boolean"
                           },
@@ -7822,6 +7832,7 @@
                         },
                         "required": [
                           "id",
+                          "role",
                           "reusable",
                           "createdAt",
                           "expiresAt"
@@ -7905,6 +7916,13 @@
                 "properties": {
                   "reusable": {
                     "type": "boolean"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "student",
+                      "monitor"
+                    ]
                   }
                 },
                 "additionalProperties": false
@@ -7933,6 +7951,13 @@
                       "type": "string",
                       "pattern": "^[A-HJ-NP-Z2-9]{8}$"
                     },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "student",
+                        "monitor"
+                      ]
+                    },
                     "reusable": {
                       "type": "boolean"
                     },
@@ -7951,6 +7976,7 @@
                     "id",
                     "token",
                     "code",
+                    "role",
                     "reusable",
                     "createdAt",
                     "expiresAt"
@@ -8129,7 +8155,8 @@
                       "type": "string",
                       "enum": [
                         "student",
-                        "teacher"
+                        "teacher",
+                        "monitor"
                       ]
                     }
                   },

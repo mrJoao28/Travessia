@@ -23,7 +23,7 @@ const version = missionInput.extend({ id, missionId: id, source: z.enum(['manual
   materials: z.array(z.strictObject({ id, title: short, text, hasFile: z.boolean() })) });
 const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', 'published', 'archived']),
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
-const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher']) });
+const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher', 'monitor']) });
 const feedback = z.strictObject({ id, content: text, createdAt: date });
 const submission = z.strictObject({ id, versionId: id, userId: id, attempt: z.number().int().positive().optional(), revisionRequested: z.boolean().optional(), status: z.enum(['draft', 'submitted', 'reviewed']),
   content: z.string().max(12000), hasAudio: z.boolean().optional(), hasTextFile: z.boolean().optional(), completedStepIds: z.array(id), currentStepId: id, revision: z.number().int(),
@@ -117,11 +117,11 @@ export const routes = {
   classrooms: { method: 'get', path: '/v1/classrooms', body: empty, query: page, response: list(classroom) },
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short }), query: empty, response: classroom },
   members: { method: 'get', path: '/v1/classrooms/{id}/members', body: empty, query: page,
-    response: list(z.strictObject({ id, name: z.string(), role: z.enum(['student', 'teacher']), active: z.boolean() })) },
+    response: list(z.strictObject({ id, name: z.string(), role: z.enum(['student', 'teacher', 'monitor']), active: z.boolean() })) },
   revokeMember: { method: 'delete', path: '/v1/classrooms/{id}/members/{memberId}', body: empty, query: empty, response: z.strictObject({ revoked: z.literal(true) }) },
-  invitations: { method: 'get', path: '/v1/classrooms/{id}/invitations', body: empty, query: page, response: list(z.strictObject({ id, reusable: z.boolean(), createdAt: date, expiresAt: date })) },
-  invite: { method: 'post', path: '/v1/classrooms/{id}/invitations', body: z.strictObject({ reusable: z.boolean().optional() }), query: empty,
-    response: z.strictObject({ id, token: z.string(), code: z.string().regex(/^[A-HJ-NP-Z2-9]{8}$/), reusable: z.boolean(), createdAt: date, expiresAt: date }) },
+  invitations: { method: 'get', path: '/v1/classrooms/{id}/invitations', body: empty, query: page, response: list(z.strictObject({ id, role: z.enum(['student', 'monitor']), reusable: z.boolean(), createdAt: date, expiresAt: date })) },
+  invite: { method: 'post', path: '/v1/classrooms/{id}/invitations', body: z.strictObject({ reusable: z.boolean().optional(), role: z.enum(['student', 'monitor']).optional() }), query: empty,
+    response: z.strictObject({ id, token: z.string(), code: z.string().regex(/^[A-HJ-NP-Z2-9]{8}$/), role: z.enum(['student', 'monitor']), reusable: z.boolean(), createdAt: date, expiresAt: date }) },
   revokeInvite: { method: 'delete', path: '/v1/classrooms/{id}/invitations/{invitationId}', body: empty, query: empty, response: z.strictObject({ revoked: z.literal(true) }) },
   acceptInvite: { method: 'post', path: '/v1/invitations/accept', body: z.strictObject({ token: z.string().regex(/^(?:[a-f0-9]{64}|[A-HJ-NP-Z2-9]{8})$/) }), query: empty, response: classroom },
   missions: { method: 'get', path: '/v1/classrooms/{id}/activities', body: empty, query: page, response: list(mission) },

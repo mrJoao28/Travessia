@@ -3,9 +3,9 @@
  * Este módulo não implementa autenticação nem substitui guards e filtros SQL.
  */
 export type Actor = { id: string };
-export type Membership = { userId: string; classroomId: string; role: 'teacher' | 'student' };
+export type Membership = { userId: string; classroomId: string; role: 'teacher' | 'student' | 'monitor' };
 export type Resource = { classroomId: string; ownerId: string; sharedWithTeachers?: boolean };
-export type Action = 'readPublishedMission' | 'manageMission' | 'readSubmission' | 'submitWork' | 'readBarrier';
+export type Action = 'readPublishedMission' | 'draftMission' | 'manageMission' | 'readSubmission' | 'submitWork' | 'readBarrier';
 
 export function canAccess(
   actor: Actor | null,
@@ -18,6 +18,7 @@ export function canAccess(
   if (!membership) return false;
   switch (action) {
     case 'readPublishedMission': return true;
+    case 'draftMission': return membership.role === 'teacher' || membership.role === 'monitor';
     case 'manageMission': return membership.role === 'teacher';
     case 'readSubmission': return membership.role === 'teacher' || resource.ownerId === actor.id;
     case 'submitWork': return membership.role === 'student' && resource.ownerId === actor.id;

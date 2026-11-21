@@ -125,6 +125,7 @@ model ReadingPreferences {
 enum Role {
   student
   teacher
+  monitor
 }
 enum MissionStatus {
   draft
@@ -174,6 +175,7 @@ model Invitation {
   tokenHash String @unique
   codeHash String? @unique
   reusable Boolean @default(false)
+  role Role @default(student)
   expiresAt DateTime
   revokedAt DateTime?
   consumedAt DateTime?

@@ -233,9 +233,9 @@ function WorkspaceView({
                   classrooms={permitted}
                 />
               ) : section === "editor" && missionId ? (
-                <LiveEditor id={missionId} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
+                <LiveEditor id={missionId} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} classroomRoles={Object.fromEntries(permitted.map(room => [room.id, room.role]))} />
               ) : section === "nova" && chosen ? (
-                <LiveEditor classroomId={chosen.id} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
+                <LiveEditor classroomId={chosen.id} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} classroomRoles={Object.fromEntries(permitted.map(room => [room.id, room.role]))} />
               ) : section === "barreiras" && chosen ? (
                 <LiveBarriers classroom={chosen} />
               ) : section === "turmas" ? (
@@ -358,7 +358,7 @@ function TeacherDashboard({
   const invitationsRef=useRef<HTMLDetailsElement>(null);
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
-  if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para criar atividades, preparar apoios e acompanhar as entregas.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul><Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link></section>;
+  if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para preparar atividades.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><p>{room.role === 'monitor' ? 'Monitor' : 'Professor'}</p><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul></section>;
   return (
     <>
       <section className="paper teacher-overview">
@@ -366,10 +366,10 @@ function TeacherDashboard({
           <p className="eyebrow accent">Planejar, acompanhar e incluir</p>
           <h2>{classroom?.name ?? "Minhas atividades"}</h2>
           <p>
-            {hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira atividade seguindo os passos abaixo."}
+            {classroom.role === 'monitor' ? 'Prepare rascunhos para o professor revisar e publicar.' : hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira atividade seguindo os passos abaixo."}
           </p>
           <div className="actions">
-            {classroom && hasPublished && (
+            {classroom && (hasPublished || classroom.role === 'monitor') && (
               <Link
                 className="button"
                 href={`/professor/atividades/nova?turma=${encodeURIComponent(classroom.id)}`}
@@ -377,19 +377,20 @@ function TeacherDashboard({
                 Criar atividade
               </Link>
             )}
-            <Link className="text-link" href="/professor/entregas">
+            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/entregas">
               Consultar entregas
-            </Link>
-            <Link className="text-link" href="/professor/barreiras">
+            </Link>}
+            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/barreiras">
               Apoios e barreiras
-            </Link>
-            <Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link>
+            </Link>}
+            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link>}
           </div>
         </div>
         <PathIllustration variant="teacher" />
       </section>
-      {!hasPublished&&<TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id} onInvite={()=>{if(invitationsRef.current){invitationsRef.current.open=true;invitationsRef.current.querySelector('summary')?.focus();invitationsRef.current.scrollIntoView({block:'start'});}}}/>}
-      {classroom && <details ref={invitationsRef} className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
+      {!hasPublished && classroom.role === 'teacher' && <TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id} onInvite={()=>{if(invitationsRef.current){invitationsRef.current.open=true;invitationsRef.current.querySelector('summary')?.focus();invitationsRef.current.scrollIntoView({block:'start'});}}}/>} 
+      {classroom.role === 'monitor' && <p className="notice">Você pode criar e editar rascunhos nesta turma. O professor revisa, publica e acompanha as entregas.</p>}
+      {classroom.role === 'teacher' && <details ref={invitationsRef} className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
           <li className="paper" key={mission.id}>
@@ -422,7 +423,7 @@ function TeacherDashboard({
                 Editar e revisar
               </Link>
             )}
-            <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Preparar apoios</Link>
+            {room.role === 'teacher' && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Preparar apoios</Link>}
           </li>
         ))}
       </ul>

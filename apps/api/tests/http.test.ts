@@ -279,6 +279,46 @@ test('código curto da turma é privado, reutilizável, transacional e desativá
  // Failed attempts, including valid-shaped guesses, are bounded per authenticated account.
  for(let i=0;i<21;i++){const response=await fetch(base+'/v1/invitations/accept',{method:'POST',headers:{cookie:three.cookie,origin:config.origin,'Content-Type':'application/json'},body:JSON.stringify({token:'ZZZZZZZZ'})});assert.ok([400,429].includes(response.status));if(i===20)assert.equal(response.status,429);}
 });
+test('monitor entra por convite único e apenas prepara rascunhos da turma', async () => {
+  const monitor = await provision('monitor-invite-test');
+  const outsider = await provision('monitor-invite-outsider');
+  await request(`/v1/classrooms/${workshop}/invitations`, a, 'POST', { role: 'monitor' }, 404);
+  await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { role: 'monitor', reusable: true }, 400);
+  const invitation = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { role: 'monitor' })).json;
+  assert.equal(invitation.reusable, false);
+  assert.equal(invitation.role, 'monitor');
+  assert.ok((await request(`/v1/classrooms/${workshop}/invitations`, main)).json.items.some((item: {id: string; role: string}) => item.id === invitation.id && item.role === 'monitor'));
+  const consumed = await Promise.all([monitor, outsider].map(async person => {
+    const response = await fetch(base + '/v1/invitations/accept', { method: 'POST', headers: { cookie: person.cookie, origin: config.origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: invitation.code }) });
+    return { status: response.status, body: await response.json(), person };
+  }));
+  assert.deepEqual(consumed.map(item => item.status).sort(), [200, 400]);
+  const joined = consumed.find(item => item.status === 200)!;
+  assert.equal(joined.body.role, 'monitor');
+  await request('/v1/invitations/accept', consumed.find(item => item.status === 400)!.person.cookie, 'POST', { token: invitation.token }, 400);
+  const rooms = (await request('/v1/classrooms', joined.person.cookie)).json.items;
+  assert.ok(rooms.some((room: {id: string; role: string}) => room.id === workshop && room.role === 'monitor'));
+  const draft = (await request(`/v1/classrooms/${workshop}/missions`, joined.person.cookie, 'POST', fixture)).json;
+  assert.equal(draft.status, 'draft');
+  await request(`/v1/classrooms/${workshop}/missions`, a, 'POST', fixture, 404);
+  assert.equal((await request(`/v1/missions/${draft.id}`, joined.person.cookie)).json.draftVersion.id, draft.draftVersion.id);
+  const edited = (await request(`/v1/missions/${draft.id}`, joined.person.cookie, 'PATCH', { ...fixture, title: 'Rascunho preparado pelo monitor', expectedDraftVersionId: draft.draftVersion.id })).json;
+  assert.equal(edited.draftVersion.title, 'Rascunho preparado pelo monitor');
+  await request(`/v1/missions/${draft.id}/publish`, joined.person.cookie, 'POST', { versionId: edited.draftVersion.id, reviewed: true }, 404);
+  await request(`/v1/missions/${draft.id}/archive`, joined.person.cookie, 'POST', {}, 404);
+  await request(`/v1/missions/${draft.id}/submissions`, joined.person.cookie, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/members`, joined.person.cookie, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/invitations`, joined.person.cookie, 'POST', { role: 'monitor' }, 404);
+  await request(`/v1/classrooms/demo-class-programacao/missions`, joined.person.cookie, 'GET', undefined, 404);
+  await request(`/v1/missions/${draft.id}`, '', 'GET', undefined, 401);
+  const ownerView = (await request(`/v1/missions/${draft.id}`, main)).json;
+  assert.equal(ownerView.draftVersion.id, edited.draftVersion.id);
+  await request(`/v1/missions/${draft.id}`, a, 'PATCH', { ...fixture, expectedDraftVersionId: edited.draftVersion.id }, 404);
+  const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: joined.person.user.id, classroomId: workshop } } });
+  await request(`/v1/classrooms/${workshop}/members/${member.id}`, main, 'DELETE');
+  await request(`/v1/missions/${draft.id}`, joined.person.cookie, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/missions`, joined.person.cookie, 'POST', fixture, 404);
+});
 test('barreiras só chegam ao professor com compartilhamento explícito', async () => {
   await request('/v1/barriers/demo-barrier-private', main, 'GET', undefined, 404);
   await request('/v1/barriers/demo-barrier-private', a);
