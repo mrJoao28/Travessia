@@ -399,7 +399,7 @@ test('monitor entra por convite único e administra sua turma como professor', a
   await request(`/v1/classrooms/demo-class-programacao/missions`, joined.person.cookie, 'GET', undefined, 404);
   await request(`/v1/missions/${draft.id}`, '', 'GET', undefined, 401);
   const ownerView = (await request(`/v1/missions/${draft.id}`, main)).json;
-  assert.equal(ownerView.draftVersion.id, edited.draftVersion.id);
+  assert.equal(ownerView.publishedVersion.id, edited.draftVersion.id);
   await request(`/v1/missions/${draft.id}`, a, 'PATCH', { ...fixture, expectedDraftVersionId: edited.draftVersion.id }, 404);
   const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: joined.person.user.id, classroomId: workshop } } });
   await request(`/v1/classrooms/${workshop}/members/${member.id}`, main, 'DELETE');
