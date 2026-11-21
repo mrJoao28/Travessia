@@ -14,6 +14,7 @@ const port = (getPort.address() as {port: number}).port;
 await new Promise<void>((resolvePort, reject) => getPort.close(error => error ? reject(error) : resolvePort()));
 const platform = process.platform === 'win32' ? 'windows' : process.platform;
 const native = await import(`@embedded-postgres/${platform}-${process.arch}`) as {initdb: string; pg_ctl: string};
+const nativeEnv = { ...process.env, LD_LIBRARY_PATH: [resolve(native.initdb, '../../lib'), process.env.LD_LIBRARY_PATH].filter(Boolean).join(':') };
 async function execute(file: string, args: string[], options: {windowsHide?: boolean; env?: NodeJS.ProcessEnv} = {}) {
   await new Promise<void>((resolveRun, reject) => {
     const child = spawn(file, args, { stdio: 'ignore', windowsHide: true, env: options.env ?? process.env });
@@ -36,9 +37,9 @@ try {
   await run('node_modules/prisma/build/index.js', ['generate', '--schema', 'apps/api/prisma/schema.prisma']);
   const { PrismaClient } = await import('@prisma/client');
   phase = 'inicializar PostgreSQL';
-  await execute(native.initdb, ['-D', databaseDir, '-U', 'postgres', '--pwfile', passwordFile, '-A', 'scram-sha-256', '--locale=C', '--encoding=UTF8'], { windowsHide: true });
+  await execute(native.initdb, ['-D', databaseDir, '-U', 'postgres', '--pwfile', passwordFile, '-A', 'scram-sha-256', '--locale=C', '--encoding=UTF8'], { windowsHide: true, env: nativeEnv });
   phase = 'iniciar PostgreSQL';
-  await execute(native.pg_ctl, ['-D', databaseDir, '-l', join(directory, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port} -c unix_socket_directories=''`, '-w', '-t', '30', 'start'], { windowsHide: true });
+  await execute(native.pg_ctl, ['-D', databaseDir, '-l', join(directory, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port} -c unix_socket_directories=''`, '-w', '-t', '30', 'start'], { windowsHide: true, env: nativeEnv });
   started = true;
   phase = 'criar banco isolado';
   const admin = new PrismaClient({ datasourceUrl: `postgresql://postgres:${password}@127.0.0.1:${port}/postgres`, log: [] });
@@ -63,5 +64,5 @@ try {
 } catch {
   console.error(`Testes API falharam na etapa: ${phase}. Confira a saída anterior.`); process.exitCode = 1;
 } finally {
-  if (started) await execute(native.pg_ctl, ['-D', databaseDir, '-m', 'fast', '-w', '-t', '10', 'stop'], { windowsHide: true });
+  if (started) await execute(native.pg_ctl, ['-D', databaseDir, '-m', 'fast', '-w', '-t', '10', 'stop'], { windowsHide: true, env: nativeEnv });
 }

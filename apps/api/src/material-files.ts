@@ -18,7 +18,7 @@ export async function copyMaterialFiles(fromId: string, toId: string) {
   let bytes = 0;
   for (const name of await readdir(from)) bytes += (await stat(join(from, name))).size;
   await checkDiskBudget(bytes);
-  await cp(from, to, { recursive: true, errorOnExist: true, force: false, mode: 0o700 });
+  await cp(from, to, { recursive: true, errorOnExist: true, force: false });
 }
 export async function visualPage(id: string, page: number, cropped = false) {
   if (cropped) { try { return await readFile(materialPath(id, `preview-${page}.png`)); } catch (error) { if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) throw error; } }
