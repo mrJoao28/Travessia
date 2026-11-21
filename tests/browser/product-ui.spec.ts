@@ -11,9 +11,11 @@ test("monitor tem ferramentas docentes na turma e é identificado como monitor",
   await expect(page.getByRole("heading", { name: version.title, exact: true })).toBeVisible();
   await expect(page.getByText("Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Criar atividade", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Consultar entregas", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Apoios e barreiras", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Gerenciar turmas e convites", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Entregas", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Consultar entregas", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Gerenciar turmas e convites", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Configurar materiais e apoios", exact: true })).toBeVisible();
 
   await page.goto("/professor/turmas");
   await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
@@ -46,6 +48,7 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
   );
   await page.goto("/aluno/atividades/test-mission");
   await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
+  await expect(page.getByRole("link", { name: "← Voltar às entregas da turma", exact: true })).toHaveAttribute("href", "/aluno/entregas?turma=test-classroom");
   expect(
     (
       await new AxeBuilder({ page })
