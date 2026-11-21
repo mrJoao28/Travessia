@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { resolve } from "node:path";
 
 const config: NextConfig = {
+  experimental: { agentUpgrade: "security" },
   poweredByHeader: false,
   devIndicators: false,
   output: process.env.NEXT_STANDALONE === "true" ? "standalone" : undefined,
