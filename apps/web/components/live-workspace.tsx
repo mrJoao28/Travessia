@@ -494,7 +494,7 @@ function SubmissionList({
                 Consultar atividade
               </Link>
               {role === "professor" && (
-                <TeacherFeedback submission={submission} steps={submission.gradingSteps} />
+                <TeacherFeedback missionId={entry.mission.id} submission={submission} steps={submission.gradingSteps} />
               )}
             </div>
           </li>
@@ -505,7 +505,7 @@ function SubmissionList({
 }
 
 type ScoredStep = Submission["gradingSteps"][number];
-function TeacherFeedback({ submission, steps }: { submission: Submission; steps: ScoredStep[] }) {
+function TeacherFeedback({ missionId, submission, steps }: { missionId: string; submission: Submission; steps: ScoredStep[] }) {
   const [content, setContent] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
@@ -513,6 +513,11 @@ function TeacherFeedback({ submission, steps }: { submission: Submission; steps:
   const [requestRevision, setRequestRevision] = useState(false);
   const [scores, setScores] = useState<Record<string, { points: string; comment: string }>>({});
   const [confirmedScores, setConfirmedScores] = useState(false);
+  const [deadlineMessage, setDeadlineMessage] = useState("");
+  const [timeZone, setTimeZone] = useState("UTC");
+  const [deadlinePending, setDeadlinePending] = useState<string | null>(null);
+  const [deadlineValues, setDeadlineValues] = useState<Record<string, string>>(() => Object.fromEntries(steps.map(step => [step.id, toLocalDateTime(step.dueAt)])));
+  useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
   const gradedSteps = steps.filter(step => step.maxPoints !== null);
   const totalPoints = gradedSteps.reduce((sum, step) => sum + Number(scores[step.id]?.points || 0), 0);
   if (submission.status === "reviewed" || done)
@@ -528,6 +533,29 @@ function TeacherFeedback({ submission, steps }: { submission: Submission; steps:
       <summary>Consultar entrega e escrever feedback</summary>
       <p className="submission-content">{submission.content}</p>
       <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
+      {steps.some(step => step.completedAt) && <section aria-label="Registro de prazo das etapas">
+        <h3>Entrega por etapa</h3>
+        <ul>{steps.filter(step => step.completedAt).map(step => <li key={step.id}>{step.title}: entregue {step.late ? "com atraso" : "no prazo"} em {formatTeacherDeadline(step.completedAt!, timeZone)}</li>)}</ul>
+      </section>}
+      {steps.some(step => step.baseDueAt) && <details className="paper">
+        <summary>Prorrogar prazo de etapa para este estudante</summary>
+        <p className="small">O prazo individual vale somente para este estudante e não bloqueia o acesso nem apaga rascunhos.</p>
+        {steps.filter(step => step.baseDueAt).map(step => <fieldset className="editor-step" key={step.id}>
+          <legend>{step.title}</legend>
+          <p className="small">Prazo original: {formatTeacherDeadline(step.baseDueAt!, timeZone)}</p>
+          <label>Prazo individual (horário local · {timeZone})
+            <input type="datetime-local" value={deadlineValues[step.id] ?? ""} disabled={deadlinePending !== null}
+              onChange={event => setDeadlineValues(all => ({ ...all, [step.id]: event.target.value }))} />
+          </label>
+          <div className="actions">
+            <button type="button" className="button button-outline" disabled={deadlinePending !== null || !deadlineValues[step.id]}
+              onClick={() => void saveDeadline(step.id)}>{deadlinePending === step.id ? "Salvando…" : "Salvar prorrogação"}</button>
+            {step.deadlineExtended && <button type="button" className="text-button" disabled={deadlinePending !== null}
+              onClick={() => void saveDeadline(step.id, true)}>Restaurar prazo original</button>}
+          </div>
+        </fieldset>)}
+        <OperationStatus message={deadlineMessage} />
+      </details>}
       <form
         className="form-stack"
         onSubmit={async (e) => {
@@ -590,4 +618,24 @@ function TeacherFeedback({ submission, steps }: { submission: Submission; steps:
       </form>
     </details>
   );
+
+  async function saveDeadline(stepId: string, restore = false) {
+    setDeadlinePending(stepId); setDeadlineMessage("");
+    try {
+      const step = steps.find(item => item.id === stepId)!;
+      const dueAt = restore ? null : new Date(deadlineValues[stepId]).toISOString();
+      await api("setStepDeadlineExtension", { params: { id: missionId, stepId }, body: { studentId: submission.userId, dueAt } });
+      setDeadlineValues(all => ({ ...all, [stepId]: toLocalDateTime(restore ? step.baseDueAt : dueAt) }));
+      setDeadlineMessage(restore ? "Prazo individual removido. O prazo original voltou a valer." : "Prorrogação salva para este estudante.");
+    } catch (reason) { setDeadlineMessage(errorMessage(reason)); }
+    finally { setDeadlinePending(null); }
+  }
+}
+
+function toLocalDateTime(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value); date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); return date.toISOString().slice(0, 16);
+}
+function formatTeacherDeadline(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short", timeZone }).format(new Date(value));
 }

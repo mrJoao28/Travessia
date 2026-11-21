@@ -21,7 +21,7 @@ export type MissionInput = z.infer<typeof missionInput>;
 const version = missionInput.extend({ id, missionId: id, source: z.enum(['manual', 'gemini', 'demo_fixture']),
   createdAt: date, dueAt: date.nullable(),
   steps: z.array(z.strictObject({ id, position: z.number().int(), title: short, instructions: text, example: text,
-    dueAt: date.nullable(), maxPoints: z.number().int().min(0).max(100).nullable() })),
+    dueAt: date.nullable(), deadlineExtended: z.boolean(), maxPoints: z.number().int().min(0).max(100).nullable() })),
   materials: z.array(z.strictObject({ id, title: short, text, hasFile: z.boolean() })) });
 const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', 'published', 'archived']),
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
@@ -31,7 +31,7 @@ const feedback = z.strictObject({ id, content: text, createdAt: date,
   scores: z.array(stepScore).nullable(), totalPoints: z.number().int().min(0).nullable() });
 const submission = z.strictObject({ id, versionId: id, userId: id, attempt: z.number().int().positive().optional(), revisionRequested: z.boolean().optional(), status: z.enum(['draft', 'submitted', 'reviewed']),
   content: z.string().max(12000), hasAudio: z.boolean().optional(), hasTextFile: z.boolean().optional(), completedStepIds: z.array(id), currentStepId: id, revision: z.number().int(),
-  submittedAt: date.nullable(), updatedAt: date, gradingSteps: z.array(z.strictObject({ id, title: short, maxPoints: z.number().int().min(0).max(100).nullable() })), feedback: z.array(feedback) });
+  submittedAt: date.nullable(), updatedAt: date, gradingSteps: z.array(z.strictObject({ id, title: short, dueAt: date.nullable(), baseDueAt: date.nullable(), deadlineExtended: z.boolean(), completedAt: date.nullable(), late: z.boolean(), maxPoints: z.number().int().min(0).max(100).nullable() })), feedback: z.array(feedback) });
 const barrier = z.strictObject({ id, stepId: id, description: text, sharedWithTeacher: z.boolean(), response: text.nullable(), createdAt: date });
 const generation = z.strictObject({ id, missionId: id, status: z.enum(['running', 'succeeded', 'failed', 'cancelled']),
   outputVersionId: id.nullable(), createdAt: date });
@@ -140,6 +140,8 @@ export const routes = {
   submissions: { method: 'get', path: '/v1/activities/{id}/submissions', body: empty, query: page, response: list(submission) },
   submission: { method: 'get', path: '/v1/submissions/{id}', body: empty, query: empty, response: submission },
   feedback: { method: 'post', path: '/v1/submissions/{id}/feedback', body: z.strictObject({ content: text, requestRevision: z.boolean().optional(), scores: z.array(stepScore).max(10).optional() }), query: empty, response: submission },
+  setStepDeadlineExtension: { method: 'patch', path: '/v1/activities/{id}/steps/{stepId}/deadline-extension', body: z.strictObject({ studentId: id, dueAt: date.nullable() }), query: empty,
+    response: z.strictObject({ stepId: id, studentId: id, dueAt: date.nullable() }) },
   createBarrier: { method: 'post', path: '/v1/steps/{id}/barriers', body: z.strictObject({ description: text, sharedWithTeacher: z.boolean() }), query: empty, response: barrier },
   barriers: { method: 'get', path: '/v1/classrooms/{id}/barriers', body: empty, query: page, response: list(barrier) },
   barrier: { method: 'get', path: '/v1/barriers/{id}', body: empty, query: empty, response: barrier },

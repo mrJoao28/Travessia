@@ -18,23 +18,31 @@ import { MATERIAL_DRAFT_RETENTION_MS, publishedMaterialExpiry } from './material
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
 const missionInclude = { draftVersion: { include: versionInclude }, publishedVersion: { include: versionInclude } };
 const submissionInclude = { feedback: { orderBy: { createdAt: 'asc' as const } },
-  version: { include: { steps: { orderBy: { position: 'asc' as const } } } } };
+  version: { include: { steps: { orderBy: { position: 'asc' as const }, include: { deadlineExtensions: true } } } } };
 type MissionRow = Prisma.MissionGetPayload<{ include: typeof missionInclude }>;
 
 export function missionView(row: MissionRow, teacher: boolean) {
   const version = (v: MissionRow['draftVersion']) => v && ({ id: v.id, missionId: v.missionId, title: v.title,
     description: v.description, objectives: v.objectives, criteria: v.criteria, source: v.source, dueAt: v.dueAt,
     createdAt: v.createdAt, steps: v.steps.map(s => ({ id: s.id, position: s.position, title: s.title, instructions: s.instructions, example: s.example,
-      dueAt: s.dueAt, maxPoints: s.maxPoints })),
+      dueAt: s.dueAt, deadlineExtended: false, maxPoints: s.maxPoints })),
     materials: v.materials.map(m => ({ id: m.id, title: m.title, text: m.text, hasFile: Boolean(m.storagePath) })) });
   return { id: row.id, classroomId: row.classroomId, status: row.status,
     draftVersion: teacher ? version(row.draftVersion) : null, publishedVersion: version(row.publishedVersion) };
 }
 export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof submissionInclude }>) {
+  const completions = s.stepCompletedAt && typeof s.stepCompletedAt === 'object' && !Array.isArray(s.stepCompletedAt)
+    ? s.stepCompletedAt as Record<string, string> : {};
   return { id: s.id, versionId: s.versionId, userId: s.userId, status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
     submittedAt: s.submittedAt, updatedAt: s.updatedAt, attempt: s.attempt, revisionRequested: s.revisionRequested,
-    gradingSteps: s.version.steps.map(step => ({ id: step.id, title: step.title, maxPoints: step.maxPoints })),
+    gradingSteps: s.version.steps.map(step => {
+      const extension = step.deadlineExtensions.find(item => item.studentId === s.userId);
+      const dueAt = extension?.dueAt ?? step.dueAt;
+      const completedAt = completions[step.id] ?? null;
+      return { id: step.id, title: step.title, maxPoints: step.maxPoints, dueAt, baseDueAt: step.dueAt, deadlineExtended: Boolean(extension), completedAt,
+        late: Boolean(completedAt && dueAt && new Date(completedAt) > dueAt) };
+    }),
     feedback: s.feedback.map(f => ({ id: f.id, content: f.content, createdAt: f.createdAt,
       scores: f.scores, totalPoints: f.totalPoints })) };
 }
@@ -177,9 +185,36 @@ export class ProductService {
           return pagination(rows.map(barrierView), paging.limit);
         }
       }
-      if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions'].includes(op)) {
-        const { row, member } = await scopedMission(tx, userId, id, ['publish', 'archive'].includes(op), ['mission', 'editMission'].includes(op));
-        if (op === 'mission') return missionView(row, member.role !== 'student');
+      if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions', 'setStepDeadlineExtension'].includes(op)) {
+        const { row, member } = await scopedMission(tx, userId, id, ['publish', 'archive', 'setStepDeadlineExtension'].includes(op), ['mission', 'editMission'].includes(op));
+        if (op === 'mission') {
+          const view = missionView(row, member.role !== 'student');
+          if (member.role !== 'student' || !view.publishedVersion) return view;
+          const extensions = await tx.stepDeadlineExtension.findMany({ where: { studentId: userId, step: { versionId: view.publishedVersion.id } } });
+          return { ...view, publishedVersion: { ...view.publishedVersion, steps: view.publishedVersion.steps.map(step => {
+            const extension = extensions.find(item => item.stepId === step.id);
+            return extension ? { ...step, dueAt: extension.dueAt, deadlineExtended: true } : step;
+          }) } };
+        }
+        if (op === 'setStepDeadlineExtension') {
+          if (member.role !== 'teacher' || !row.publishedVersion) return missing();
+          const step = row.publishedVersion.steps.find(item => item.id === p.stepId);
+          if (!step) return missing();
+          if (!step.dueAt) return fail(409, 'STEP_HAS_NO_DEADLINE', 'Defina um prazo para a etapa antes de prorrogar.');
+          const input = body as Body<'setStepDeadlineExtension'>;
+          const student = await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: input.studentId, active: true, role: 'student' } });
+          if (!student) return missing();
+          if (input.dueAt === null) {
+            await tx.stepDeadlineExtension.deleteMany({ where: { stepId: step.id, studentId: input.studentId } });
+            return { stepId: step.id, studentId: input.studentId, dueAt: null };
+          }
+          const dueAt = new Date(input.dueAt);
+          if (dueAt <= step.dueAt) return fail(400, 'INVALID_EXTENSION', 'A prorrogação precisa ser posterior ao prazo original.');
+          const extension = await tx.stepDeadlineExtension.upsert({ where: { stepId_studentId: { stepId: step.id, studentId: input.studentId } },
+            create: { stepId: step.id, studentId: input.studentId, teacherId: userId, dueAt }, update: { teacherId: userId, dueAt } });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'step.deadline-extension', resourceId: extension.id } });
+          return { stepId: step.id, studentId: input.studentId, dueAt: extension.dueAt };
+        }
         if (op === 'editMission') {
           if (member.role === 'student') return missing();
           const input = body as Body<'editMission'>;
@@ -238,7 +273,10 @@ export class ProductService {
           const formats = allowedFormats(await learnerPlans(tx, version.id, userId));
           if ((audio && !formats.includes('audio')) || (textFile !== null && !formats.includes('text_file'))) return fail(409, 'FORMAT_NOT_ALLOWED', 'O professor não liberou este formato. Preserve sua resposta e consulte os formatos atuais.');
           if (input.status === 'submitted' && !input.content.trim() && !audio && !textFile?.trim()) return fail(400, 'EMPTY_SUBMISSION', 'Inclua sua atividade antes de enviar.');
-          const data = { audio, hasAudio: !!audio, textFile, hasTextFile: textFile !== null, content: input.content, currentStepId: input.currentStepId, completedStepIds: input.completedStepIds, status: input.status,
+          const completedAt: Record<string, string> = retry ? {} : old?.stepCompletedAt && typeof old.stepCompletedAt === 'object' && !Array.isArray(old.stepCompletedAt)
+            ? { ...(old.stepCompletedAt as Record<string, string>) } : {};
+          for (const completedId of input.completedStepIds) if (!completedAt[completedId]) completedAt[completedId] = new Date().toISOString();
+          const data = { audio, hasAudio: !!audio, textFile, hasTextFile: textFile !== null, content: input.content, currentStepId: input.currentStepId, completedStepIds: input.completedStepIds, stepCompletedAt: completedAt, status: input.status,
             submittedAt: input.status === 'submitted' ? new Date() : null };
           const saved = old && !retry ? await tx.submission.update({ where: { id: old.id }, data: { ...data, revision: { increment: 1 } }, include: submissionInclude }) :
             await tx.submission.create({ data: { ...data, versionId: version.id, userId, attempt: (old?.attempt ?? 0) + 1, revision: (old?.revision ?? 0) + 1 }, include: submissionInclude });
@@ -251,7 +289,7 @@ export class ProductService {
         }
       }
       if (['submission', 'feedback', 'submissionAudio', 'submissionTextFile'].includes(op)) {
-        const row = await tx.submission.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { ...submissionInclude, version: { include: { mission: true, steps: { orderBy: { position: 'asc' as const } } } } } });
+        const row = await tx.submission.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { ...submissionInclude, version: { include: { mission: true, steps: { orderBy: { position: 'asc' as const }, include: { deadlineExtensions: true } } } } } });
         if (!row) return missing();
         const member = await membership(tx, userId, row.version.mission.classroomId);
         if (row.userId !== userId && (member.role !== 'teacher' || row.status === 'draft')) return missing();

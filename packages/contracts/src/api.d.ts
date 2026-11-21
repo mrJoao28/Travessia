@@ -708,6 +708,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/activities/{id}/steps/{stepId}/deadline-extension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["setStepDeadlineExtension"];
+        trace?: never;
+    };
     "/v1/steps/{id}/barriers": {
         parameters: {
             query?: never;
@@ -3472,6 +3488,7 @@ export interface operations {
                                     instructions: string;
                                     example: string;
                                     dueAt: string | null;
+                                    deadlineExtended: boolean;
                                     maxPoints: number | null;
                                 }[];
                                 materials: {
@@ -3500,6 +3517,7 @@ export interface operations {
                                     instructions: string;
                                     example: string;
                                     dueAt: string | null;
+                                    deadlineExtended: boolean;
                                     maxPoints: number | null;
                                 }[];
                                 materials: {
@@ -3591,6 +3609,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -3619,6 +3638,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -3687,6 +3707,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -3715,6 +3736,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -3806,6 +3828,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -3834,6 +3857,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -3910,6 +3934,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -3938,6 +3963,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -4010,6 +4036,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -4038,6 +4065,7 @@ export interface operations {
                                 instructions: string;
                                 example: string;
                                 dueAt: string | null;
+                                deadlineExtended: boolean;
                                 maxPoints: number | null;
                             }[];
                             materials: {
@@ -4112,6 +4140,11 @@ export interface operations {
                             gradingSteps: {
                                 id: string;
                                 title: string;
+                                dueAt: string | null;
+                                baseDueAt: string | null;
+                                deadlineExtended: boolean;
+                                completedAt: string | null;
+                                late: boolean;
                                 maxPoints: number | null;
                             }[];
                             feedback: {
@@ -4199,6 +4232,11 @@ export interface operations {
                         gradingSteps: {
                             id: string;
                             title: string;
+                            dueAt: string | null;
+                            baseDueAt: string | null;
+                            deadlineExtended: boolean;
+                            completedAt: string | null;
+                            late: boolean;
                             maxPoints: number | null;
                         }[];
                         feedback: {
@@ -4268,6 +4306,11 @@ export interface operations {
                         gradingSteps: {
                             id: string;
                             title: string;
+                            dueAt: string | null;
+                            baseDueAt: string | null;
+                            deadlineExtended: boolean;
+                            completedAt: string | null;
+                            late: boolean;
                             maxPoints: number | null;
                         }[];
                         feedback: {
@@ -4349,6 +4392,11 @@ export interface operations {
                         gradingSteps: {
                             id: string;
                             title: string;
+                            dueAt: string | null;
+                            baseDueAt: string | null;
+                            deadlineExtended: boolean;
+                            completedAt: string | null;
+                            late: boolean;
                             maxPoints: number | null;
                         }[];
                         feedback: {
@@ -4363,6 +4411,53 @@ export interface operations {
                             }[] | null;
                             totalPoints: number | null;
                         }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    setStepDeadlineExtension: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                stepId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    studentId: string;
+                    dueAt: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        stepId: string;
+                        studentId: string;
+                        dueAt: string | null;
                     };
                 };
             };

@@ -1,4 +1,4 @@
-Warning: truncated output (original token count: 11105)
+Warning: truncated output (original token count: 11157)
 Total output lines: 500
 
 import assert from 'node:assert/strict';
@@ -240,7 +240,7 @@ test('feedback com ajustes abre nova tentativa e preserva a entrega revisada', a
   assert.equal(prior.feedback[0].content, 'Compare mais uma hipótese.');
 });
 test('prazo e nota por etapa: professor confirma pontos e total calculado para o aluno', async () => {
-  const dueAt = '2027-04-21T15:00:00.000Z';
+  const dueAt = '2000-04-21T15:00:00.000Z';
   const input = { ...fixture, steps: [
     { ...fixture.steps[0], dueAt, maxPoints: 4 },
     { title: 'Justificar', instructions: 'Justifique sua escolha.', example: 'Liste seus motivos.', dueAt: null, maxPoints: 6 },
@@ -250,10 +250,28 @@ test('prazo e nota por etapa: professor confirma pontos e total calculado para o
   await request(`${path}/publish`, main, 'POST', { versionId: mission.draftVersion.id, reviewed: true });
   const version = (await request(path, a)).json.publishedVersion;
   assert.equal(version.steps[0].dueAt, dueAt);
+  assert.equal(version.steps[0].deadlineExtended, false);
   assert.deepEqual(version.steps.map((step: { maxPoints: number }) => step.maxPoints), [4, 6]);
-  const sent = (await request(`${path}/submissions`, a, 'POST', { versionId: version.id,
-    currentStepId: version.steps[0].id, completedStepIds: version.steps.map((step: { id: string }) => step.id),
-    content: 'Minha justificativa.', status: 'submitted', expectedRe…1105 tokens truncated…iqueOrThrow({where:{userId_classroomId:{userId:one.user.id,classroomId:workshop}}});
+  const extendedUntil = '2099-04-22T15:00:00.000Z';
+  await request(`/v1/activities/${mission.id}/steps/${version.steps[0].id}/deadline-extension`, main, 'PATCH', { studentId: 'demo-student-1', dueAt: dueAt }, 4…1157 tokens truncated…`, main, 'POST', {})).json;
+  await request(`/v1/classrooms/${workshop}/invitations/${revoked.id}`, main, 'DELETE');
+  await request('/v1/invitations/accept', outsider1.cookie, 'POST', { token: revoked.token }, 400);
+});
+test('código curto da turma é privado, reutilizável, transacional e desativável', async()=>{
+ const one=await provision('short-invite-one'),two=await provision('short-invite-two'),three=await provision('short-invite-three');
+ await request(`/v1/classrooms/${workshop}/invitations`,a,'GET',undefined,404);
+ await request(`/v1/classrooms/${workshop}/invitations`,otherTeacher,'GET',undefined,404);
+ await request(`/v1/classrooms/${workshop}/invitations`,a,'POST',{reusable:true},404);
+ const invite=(await request(`/v1/classrooms/${workshop}/invitations`,main,'POST',{reusable:true})).json;
+ assert.match(invite.code,/^[A-HJ-NP-Z2-9]{8}$/);assert.equal(invite.reusable,true);
+ const stored=await db.invitation.findUniqueOrThrow({where:{id:invite.id}});
+ assert.ok(stored.codeHash&&stored.codeHash!==invite.code);assert.equal(stored.reusable,true);
+ const list=(await request(`/v1/classrooms/${workshop}/invitations`,main)).json.items;
+ assert.ok(list.some((r:any)=>r.id===invite.id));assert.ok(list.every((r:any)=>!('token' in r)&&!('code' in r)&&!('tokenHash' in r)&&!('codeHash' in r)));
+ const joined=await Promise.all([request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code}),request('/v1/invitations/accept',two.cookie,'POST',{token:invite.token})]);
+ assert.ok(joined.every(r=>r.json.role==='student'));assert.equal((await db.invitation.findUniqueOrThrow({where:{id:invite.id}})).consumedAt,null);
+ await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code},409);
+ const member=await db.membership.findUniqueOrThrow({where:{userId_classroomId:{userId:one.user.id,classroomId:workshop}}});
  await request(`/v1/classrooms/${workshop}/members/${member.id}`,main,'DELETE');
  await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code},409);
  await request(`/v1/classrooms/${workshop}/invitations/${invite.id}`,main,'DELETE');
@@ -436,6 +454,9 @@ test('áudio privado: validação de bytes, A/B, preservação, referências cru
   assert.equal(Buffer.from(verifySupportAudio(audio)).toString('base64'), audio);
   for (const invalid of [Buffer.from('<script>bad</script>').toString('base64'), audio + 'AAAA', audio.replace(/^U/, 'X')]) assert.throws(() => verifySupportAudio(invalid));
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+Warning: truncated output (original token count: 11918)
+Total output lines: 500
+
   const path = `/v1/missions/${created.id}`;
   const versionId = created.draftVersion.id;
   const input = { versionId, stepId: null, audience: 'students', studentIds: ['demo-student-1'], reviewed: true,
@@ -454,9 +475,6 @@ test('áudio privado: validação de bytes, A/B, preservação, referências cru
   await request(`${path}/strategy-plans`, main, 'POST', { ...input, requestKey: randomUUID(), items: [{ ...input.items[0], audio: { base64: Buffer.from('invalid-file').toString('base64') } }] }, 400);
   const updated = (await request(`${path}/strategy-plans/${plan.id}`, main, 'PATCH', { versionId, stepId: null, audience: input.audience, studentIds: input.studentIds, reviewed: true,
     expectedRevision: 1, items: [{ ...input.items[0], audio: { itemId: plan.items[0].id } }] })).json;
-Warning: truncated output (original token count: 11809)
-Total output lines: 500
-
   await request(audioPath, a, 'GET', undefined, 404);
   const newPath = `${path}/support-audio/${updated.items[0].id}`;
   assert.equal((await request(newPath, a)).json.base64, audio);
@@ -648,29 +666,17 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
   await request(`${path}/publish`, main, 'POST', { versionId: next.draftVersion.id, reviewed: true });
   const retained = (await request(`${path}/material-sources?versionId=${next.draftVersion.id}`, main)).json.items[0];
   assert.ok(new Date(retained.expiresAt).getTime() > Date.now() + 300 * 86400000, 'published material follows the one year retention policy');
-  const carriedItems = (await request(`${path}/my-materials?versionId=${next.draftVersion.id}`, a)).json.items;
-  assert.equal(carriedItems[0].id, copied.id);
-  const carriedPdf = await fetch(`${base}${path}/material-assets/${copied.id}/pdf`, { headers: { cookie: a } });
-  assert.equal(carriedPdf.status, 200);
-  assert.deepEqual(Buffer.from(await carriedPdf.arrayBuffer()), bytes);
-  await request(`${path}/material-assets/${source.id}/pdf`, a, 'GET', undefined, 404);
-});
-
-test('IA indisponível clara; cota concorrente, deduplicação e revisão humana', { timeout: 30000 }, async () => {
-  let mission = (await request(`/v1/missions/${workshop}-draft`, main)).json;
-  const input = { materialIds: [mission.draftVersion.materials[0].id], objectives: ['Comparar soluções.'], approvedForProvider: true, idempotencyKey: randomUUID() };
-  await request(`/v1/missions/${mission.id}/ai-drafts`, main, 'POST', input, 503);
-  config.aiEnabled = true; config.model = 'fake-test-only'; hold = true;
-  const generating = request(`/v1/missions/${mission.id}/ai-drafts`, main, 'POST', input);
-  while (!release) await new Promise(resolve => setTimeout(resolve, 10));
-  await request(`/v1/missions/${mission.id}/ai-drafts`, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 429);
-  release(); hold = false;
-  const generated = (await generating).json;
-  assert.equal(generated.status, 'succeeded'); assert.equal(providerCalls, 1);
-  assert.ok(!providerInput.includes('example.invalid') && !providerInput.includes('Joao Felipe') && !providerInput.includes('Relato'));
-  await request(`/v1/ai-generations/${generated.id}`, a, 'GET', undefined, 404);
-  mission = (await request(`/v1/missions/${mission.id}`, main)).json;
-  assert.equal(mission.status, 'draft'); assert.equal(mission.publishedVersion, null); assert.equal(mission.d…1809 tokens truncated…-1',classroomId:workshop}},data:{active:false}});await file('pdf',a,404);
+  const carriedItems = (await request(`${path}/my-materials?v…1918 tokens truncated…=${versionId}`,main)).json.items[0]; assert.equal(rendered.status,'ready');assert.equal(rendered.hasAudio,true);
+  await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:rendered.revision},400);
+  await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:rendered.revision,reviewed:true});
+  const student = (await request(`${path}/my-materials?versionId=${versionId}`,a)).json; assert.equal(student.items.length,2);assert.ok(!JSON.stringify(student).includes('studentId'));
+  assert.equal(student.items.find((item: {id:string})=>item.id===plan.id).scope,'individual');
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,1);
+  async function file(kind:string, cookie:string,status=200) { const r=await fetch(`${base}${path}/material-assets/${plan.id}/${kind}`,{headers:{cookie}});assert.equal(r.status,status);return r; }
+  assert.equal((await file('pdf',a)).headers.get('content-type'),'application/pdf');
+  await file('audio',a);await file('page-1',a);await file('page-2',a,404);await file('pdf',b,404);await file('audio',otherTeacher,404);
+  await request(`${path}/material-assets/${source.id}/original`,a,'GET',undefined,404);
+  await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:false}});await file('pdf',a,404);
   await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:true}});
   const replacement = [{ ...malicious[0], text: 'Versão nova para revisar.' }];
   const pendingRevision = (await request(`${path}/material-adaptations/${plan.id}`,main,'PATCH',{

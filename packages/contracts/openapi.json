@@ -8465,6 +8465,9 @@
                                             }
                                           ]
                                         },
+                                        "deadlineExtended": {
+                                          "type": "boolean"
+                                        },
                                         "maxPoints": {
                                           "anyOf": [
                                             {
@@ -8485,6 +8488,7 @@
                                         "instructions",
                                         "example",
                                         "dueAt",
+                                        "deadlineExtended",
                                         "maxPoints"
                                       ],
                                       "additionalProperties": false
@@ -8656,6 +8660,9 @@
                                             }
                                           ]
                                         },
+                                        "deadlineExtended": {
+                                          "type": "boolean"
+                                        },
                                         "maxPoints": {
                                           "anyOf": [
                                             {
@@ -8676,6 +8683,7 @@
                                         "instructions",
                                         "example",
                                         "dueAt",
+                                        "deadlineExtended",
                                         "maxPoints"
                                       ],
                                       "additionalProperties": false
@@ -9094,6 +9102,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -9114,6 +9125,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -9285,6 +9297,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -9305,6 +9320,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -9568,6 +9584,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -9588,6 +9607,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -9759,6 +9779,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -9779,6 +9802,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -10205,6 +10229,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -10225,6 +10252,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -10396,6 +10424,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -10416,6 +10447,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -10706,6 +10738,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -10726,6 +10761,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -10897,6 +10933,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -10917,6 +10956,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -11193,6 +11233,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -11213,6 +11256,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -11384,6 +11428,9 @@
                                       }
                                     ]
                                   },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
                                   "maxPoints": {
                                     "anyOf": [
                                       {
@@ -11404,6 +11451,7 @@
                                   "instructions",
                                   "example",
                                   "dueAt",
+                                  "deadlineExtended",
                                   "maxPoints"
                                 ],
                                 "additionalProperties": false
@@ -11740,6 +11788,48 @@
                             "minLength": 1,
                             "maxLength": 200
                           },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "baseDueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "deadlineExtended": {
+                            "type": "boolean"
+                          },
+                          "completedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          },
                           "maxPoints": {
                             "anyOf": [
                               {
@@ -11756,6 +11846,11 @@
                         "required": [
                           "id",
                           "title",
+                          "dueAt",
+                          "baseDueAt",
+                          "deadlineExtended",
+                          "completedAt",
+                          "late",
                           "maxPoints"
                         ],
                         "additionalProperties": false
@@ -12035,6 +12130,48 @@
                                   "minLength": 1,
                                   "maxLength": 200
                                 },
+                                "dueAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "baseDueAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "deadlineExtended": {
+                                  "type": "boolean"
+                                },
+                                "completedAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "late": {
+                                  "type": "boolean"
+                                },
                                 "maxPoints": {
                                   "anyOf": [
                                     {
@@ -12051,6 +12188,11 @@
                               "required": [
                                 "id",
                                 "title",
+                                "dueAt",
+                                "baseDueAt",
+                                "deadlineExtended",
+                                "completedAt",
+                                "late",
                                 "maxPoints"
                               ],
                               "additionalProperties": false
@@ -12320,6 +12462,48 @@
                             "minLength": 1,
                             "maxLength": 200
                           },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "baseDueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "deadlineExtended": {
+                            "type": "boolean"
+                          },
+                          "completedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          },
                           "maxPoints": {
                             "anyOf": [
                               {
@@ -12336,6 +12520,11 @@
                         "required": [
                           "id",
                           "title",
+                          "dueAt",
+                          "baseDueAt",
+                          "deadlineExtended",
+                          "completedAt",
+                          "late",
                           "maxPoints"
                         ],
                         "additionalProperties": false
@@ -12645,6 +12834,48 @@
                             "minLength": 1,
                             "maxLength": 200
                           },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "baseDueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "deadlineExtended": {
+                            "type": "boolean"
+                          },
+                          "completedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          },
                           "maxPoints": {
                             "anyOf": [
                               {
@@ -12661,6 +12892,11 @@
                         "required": [
                           "id",
                           "title",
+                          "dueAt",
+                          "baseDueAt",
+                          "deadlineExtended",
+                          "completedAt",
+                          "late",
                           "maxPoints"
                         ],
                         "additionalProperties": false
@@ -12758,6 +12994,146 @@
                     "updatedAt",
                     "gradingSteps",
                     "feedback"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}/steps/{stepId}/deadline-extension": {
+      "patch": {
+        "operationId": "setStepDeadlineExtension",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "stepId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "studentId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "dueAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "studentId",
+                  "dueAt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "stepId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "studentId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "dueAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "stepId",
+                    "studentId",
+                    "dueAt"
                   ],
                   "additionalProperties": false
                 }
