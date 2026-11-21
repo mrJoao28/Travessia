@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
 import { materialAssetUrl, materialReadingStyle, PreparedDocument } from "./prepared-material";
 
-function LearnerPdfPreview({ missionId, assetId, title, downloadAllowed, downloadLabel }: { missionId:string; assetId:string; title:string; downloadAllowed:boolean; downloadLabel:string }) {
+function LearnerPdfPreview({ missionId, assetId, title, downloadLabel }: { missionId:string; assetId:string; title:string; downloadLabel:string }) {
   const [assetState,setAssetState]=useState<"checking"|"available"|"failed">("checking");
   const [frameLoaded,setFrameLoaded]=useState(false);
   const url=materialAssetUrl(missionId,assetId,"pdf");
@@ -22,8 +22,7 @@ function LearnerPdfPreview({ missionId, assetId, title, downloadAllowed, downloa
       : <p role="status">O arquivo está disponível e a prévia está sendo aberta…</p>}
     <section className="paper form-stack" aria-label="Download do documento">
       <h5>Download do documento</h5>
-      {downloadAllowed ? <a className="button button-outline" href={materialAssetUrl(missionId,assetId,"download")}>{downloadLabel}</a>
-        : <p className="small">O professor não disponibilizou o botão de download. A prévia continua disponível no site.</p>}
+      <a className="button button-outline" href={materialAssetUrl(missionId,assetId,"download")}>{downloadLabel}</a>
     </section>
   </div>;
 }
@@ -68,11 +67,11 @@ export function LearnerMaterials({ missionId, versionId }: { missionId: string; 
               <PreparedDocument document={item.document} missionId={missionId} adaptationId={item.id} />
             </div>}
           {item.status !== "processing" && <>
-            <LearnerPdfPreview missionId={missionId} assetId={item.id} title={item.title} downloadAllowed={item.downloadAllowed}
+            <LearnerPdfPreview missionId={missionId} assetId={item.id} title={item.title}
               downloadLabel={item.scope === "activity" ? "Baixar PDF da atividade" : item.mode === "original" ? "Baixar PDF original" : "Baixar PDF adaptado"} />
-            {item.downloadAllowed && <a className="text-link" href={materialAssetUrl(missionId, item.id, "pdf")} target="_blank" rel="noopener noreferrer">
+            <a className="text-link" href={materialAssetUrl(missionId, item.id, "pdf")} target="_blank" rel="noopener noreferrer">
               Abrir PDF em nova aba
-            </a>}
+            </a>
             {item.hasAudio && <div className="form-stack">
               <p>Áudio do material. As descrições visuais estão no texto acima.</p>
               <audio controls preload="none" aria-label={`Ouvir ${item.title}`} src={materialAssetUrl(missionId, item.id, "audio")} />
