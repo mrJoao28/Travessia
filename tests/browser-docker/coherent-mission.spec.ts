@@ -45,7 +45,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await expect(teacher.getByText(/Uploads permanecem desativados/)).toHaveCount(0);
   await teacher.getByLabel('Adicionar PDF à atividade',{exact:true}).setInputFiles({name:'rotas-campus.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
   await teacher.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();
-  await expect(teacher.getByRole('heading',{name:'Adaptar material',exact:true})).toBeVisible();
+  await expect(teacher.getByRole('heading',{name:'Quer oferecer alguma ajuda?',exact:true})).toBeVisible();
   const missionId=new URL(teacher.url()).pathname.split('/')[3];
   let mission=await teacher.request.get(`/api/v1/activities/${missionId}`).then(r=>r.json());const versionId=mission.draftVersion.id;
   await teacher.getByLabel('Destinatário da adaptação',{exact:true}).selectOption(studentId);
