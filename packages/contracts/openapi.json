@@ -512,9 +512,23 @@
                             "maxLength": 100
                           },
                           "studentId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "audience": {
                             "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
+                            "enum": [
+                              "student",
+                              "classroom"
+                            ]
                           },
                           "status": {
                             "type": "string",
@@ -701,6 +715,7 @@
                           "versionId",
                           "sourceId",
                           "studentId",
+                          "audience",
                           "status",
                           "settings",
                           "pages",
@@ -797,6 +812,13 @@
                     "minLength": 1,
                     "maxLength": 100
                   },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "student",
+                      "classroom"
+                    ]
+                  },
                   "pages": {
                     "minItems": 1,
                     "maxItems": 40,
@@ -878,7 +900,6 @@
                 "required": [
                   "versionId",
                   "sourceId",
-                  "studentId",
                   "pages",
                   "settings",
                   "requestKey"
@@ -920,9 +941,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -1109,6 +1144,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -1254,9 +1290,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -1443,6 +1493,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -1654,9 +1705,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -1843,6 +1908,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -2059,9 +2125,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -2248,6 +2328,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -2386,9 +2467,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -2575,6 +2670,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",

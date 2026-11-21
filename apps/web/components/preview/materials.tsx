@@ -63,7 +63,7 @@ export function PreviewMaterials({missionId='campus',embedded=false}:{missionId?
  };
  const document=current&&!pending?previewDocument(source,current.preset):[];
  const adaptation:ApiResponse<'prepareMaterial'>|undefined=current?{
-  id:current.id,versionId:sourceView.versionId,sourceId:sourceView.id,studentId:current.studentId,
+  id:current.id,versionId:sourceView.versionId,sourceId:sourceView.id,studentId:current.studentId,audience:'student',
   mode:current.preset==='original'?'original':'adapted',settings:{
    supports:[...presetSupports[current.preset],...(current.audio&&current.preset!=='description'?['narration' as const]:[])],
    fontSize:current.preset==='expanded'?'22':'18',color:current.preset==='expanded'?'high':'default',useAi:false,approvedForProvider:false,

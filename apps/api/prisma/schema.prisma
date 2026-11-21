@@ -438,7 +438,7 @@ model MaterialAdaptation {
   id String @id @default(uuid())
   versionId String
   sourceId String
-  studentId String
+  studentId String?
   creatorId String
   requestKey String
   requestHash String
