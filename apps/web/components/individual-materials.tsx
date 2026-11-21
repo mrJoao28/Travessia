@@ -177,7 +177,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const locked=busy||!!pending||dirty||activityDirty;
   function chooseSource(id:string){setSourceId(id);setReaderView('original');setSelectedId('');setDocument([]);setEditText(false);setStep(1);setApproved(false);change();}
   function activityChanged(value:boolean){setActivityDirty(value);if(value)setReviewed(false);}
-  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo adicionado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'}`:labels[source.status]}</p></div></div>:null;
+  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo verificado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · disponível até ${new Date(source.expiresAt).toLocaleDateString('pt-BR')}`:labels[source.status]}</p></div></div>:null;
   if(loading)return <p role="status">Carregando alunos e materiais…</p>;
   const released=!!current&&current.status==='released'&&(forClassroom?current.studentId===null:current.studentId===studentId);
   const fileControl=<div className="workspace-file-control">
@@ -211,7 +211,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     });
   }
   return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material individual">
-    <header><h2>{recipientChosen?`Apoios para ${recipient}`:'Material da turma e adaptações'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o destinatário.'):'O PDF original vai para toda a turma ao publicar. Escolha a turma ou um aluno para preparar uma versão adaptada.'}</p></header>
+    <header><h2>{recipientChosen?`Apoios para ${recipient}`:'Material da turma e adaptações'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o destinatário.'):'O PDF original vai para toda a turma ao publicar. Escolha a turma ou um aluno para preparar uma versão adaptada.'}</p><p className="small">Materiais publicados ficam disponíveis por 365 dias após a publicação. A data aparece em cada arquivo.</p></header>
     {(error||message)&&<OperationStatus message={error||message} error={!!error}/>}
     {error&&<button className="text-button" type="button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo</button>}
     <div className="material-reference-desk">

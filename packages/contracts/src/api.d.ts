@@ -1611,6 +1611,8 @@ export interface operations {
                             scope?: "activity" | "individual";
                             /** @enum {string} */
                             status?: "processing" | "ready" | "failed";
+                            /** Format: date-time */
+                            expiresAt?: string;
                             document: {
                                 page: number;
                                 title: string;
@@ -3759,6 +3761,7 @@ export interface operations {
                         text: string;
                     }[];
                     expectedDraftVersionId: string | null;
+                    carryForwardMaterialIds?: string[];
                 };
             };
         };

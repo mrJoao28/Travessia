@@ -34,6 +34,7 @@ export function LearnerMaterials({ missionId, versionId }: { missionId: string; 
         <p className="small">Os PDFs anexados à atividade aparecem para toda a turma. Apoios preparados pelo professor também aparecem aqui.</p>
         {items.map(item => <article className="material-library-item" key={item.id}>
           <h4>{item.title}</h4>
+          {item.expiresAt && <p className="small">Disponível até {new Date(item.expiresAt).toLocaleDateString("pt-BR")}.</p>}
           {item.status === "processing" ? <p role="status">PDF da atividade em processamento. Esta área será atualizada automaticamente.</p>
             : item.status === "failed" ? <p role="status">Não foi possível preparar este PDF para visualização. Avise o professor da turma.</p>
             : item.scope === "activity" ? <p>PDF anexado à atividade para todos os alunos da turma.</p>

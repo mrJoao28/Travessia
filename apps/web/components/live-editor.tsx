@@ -15,6 +15,7 @@ import {
 
 type Input = ApiBody<"createMission">;
 type Version = NonNullable<ApiResponse<"mission">["draftVersion"]>;
+type CarriedSource = ApiResponse<"materialSources">["items"][number];
 function editable(version: Version): Input {
   return {
     title: version.title,
@@ -80,7 +81,18 @@ export function LiveEditor({
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [carrySources, setCarrySources] = useState<CarriedSource[]>([]);
+  const [carryForwardMaterialIds, setCarryForwardMaterialIds] = useState<string[]>([]);
   const [review, setReview] = useState<string | null>(null);
+  useEffect(() => {
+    const published = mission?.publishedVersion;
+    if (!mission || !published) { setCarrySources([]); return; }
+    let active = true;
+    void api("materialSources", { params: { id: mission.id }, query: { versionId: published.id } })
+      .then(value => { if (active) setCarrySources(value.items.filter(source => source.status === "ready")); })
+      .catch(() => { if (active) setCarrySources([]); });
+    return () => { active = false; };
+  }, [mission?.id, mission?.publishedVersion?.id]);
   useEffect(() => {
     if (review) document.getElementById("publish-review")?.focus();
   }, [review]);
@@ -157,12 +169,14 @@ export function LiveEditor({
             body: {
               ...input,
               expectedDraftVersionId: mission.draftVersion?.id ?? null,
+              carryForwardMaterialIds,
             },
           })
         : await api("createMission", {
             params: { id: classroomId ?? "" },
             body: input,
           });
+      setCarryForwardMaterialIds([]);
       adopt(value);
       setMessage("Rascunho salvo no servidor. Ainda não publicado.");
       if (!id)
@@ -453,6 +467,13 @@ export function LiveEditor({
                 {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas para anexá-lo à atividade; após a publicação e a verificação do arquivo, ele aparecerá para todos os alunos ativos da turma.</p>}
                 <p className="small">PDF de até {PDF_MAX_MB} MB e {PDF_MAX_PAGES} páginas, sem senha ou conteúdo ativo. A publicação da atividade disponibiliza este arquivo para toda a turma. Apoios individuais continuam opcionais.</p>
               </section>}
+              {mission?.publishedVersion && carrySources.length > 0 && <fieldset className="mission-file-entry form-stack"><legend>PDFs que acompanham a nova versão</legend>
+                <p className="small">Selecione os PDFs originais verificados que devem ser copiados para este rascunho. Apoios adaptados precisam ser preparados e revisados novamente.</p>
+                {carrySources.map(source => <label className="check" key={source.id}><input type="checkbox" checked={carryForwardMaterialIds.includes(source.id)} onChange={event => {
+                  setCarryForwardMaterialIds(previous => event.target.checked ? [...previous, source.id] : previous.filter(id => id !== source.id));
+                  setDirty(true); setConfirmed(false); setReview(null);
+                }}/>{source.title} · {source.pageCount} {source.pageCount === 1 ? "página" : "páginas"} · manter até {new Date(source.expiresAt).toLocaleDateString("pt-BR")}</label>)}
+              </fieldset>}
               <h3>Conteúdo em texto (opcional)</h3>
               {input.materials.map((material, index) => (
                 <fieldset key={index} className="editor-step">

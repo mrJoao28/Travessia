@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile, rename, readdir, stat } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile, rename, readdir, stat, cp } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 export const materialRoot = () => resolve(process.env.MATERIAL_STORAGE_DIR ?? '/tmp/travessia-materials');
@@ -12,6 +12,14 @@ export async function storeOriginal(id: string, bytes: Buffer) {
   await writeFile(temporary, bytes, { mode: 0o600, flag: 'wx' }); await rename(temporary, materialPath(id, 'original.pdf'));
 }
 export async function removeMaterialFiles(id: string) { materialPath(id, 'original.pdf'); await rm(join(materialRoot(), id), { recursive: true, force: true }); }
+export async function copyMaterialFiles(fromId: string, toId: string) {
+  materialPath(fromId, 'original.pdf'); materialPath(toId, 'original.pdf');
+  const from = join(materialRoot(), fromId), to = join(materialRoot(), toId);
+  let bytes = 0;
+  for (const name of await readdir(from)) bytes += (await stat(join(from, name))).size;
+  await checkDiskBudget(bytes);
+  await cp(from, to, { recursive: true, errorOnExist: true, force: false, mode: 0o700 });
+}
 export async function visualPage(id: string, page: number, cropped = false) {
   if (cropped) { try { return await readFile(materialPath(id, `preview-${page}.png`)); } catch (error) { if (!(error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT')) throw error; } }
   return readFile(materialPath(id, `page-${page}.png`));
