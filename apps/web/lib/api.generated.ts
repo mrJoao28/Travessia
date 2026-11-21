@@ -216,15 +216,15 @@ export const apiRoutes = {
   },
   "groups": {
     "method": "GET",
-    "path": "/missions/{id}/groups"
+    "path": "/activities/{id}/groups"
   },
   "createGroup": {
     "method": "POST",
-    "path": "/missions/{id}/groups"
+    "path": "/activities/{id}/groups"
   },
   "removeGroup": {
     "method": "DELETE",
-    "path": "/missions/{id}/groups/{groupId}"
+    "path": "/activities/{id}/groups/{groupId}"
   },
   "saveSubmission": {
     "method": "POST",

@@ -8423,6 +8423,13 @@
                                       }
                                     ]
                                   },
+                                  "workMode": {
+                                    "type": "string",
+                                    "enum": [
+                                      "individual",
+                                      "group"
+                                    ]
+                                  },
                                   "steps": {
                                     "type": "array",
                                     "items": {
@@ -8557,6 +8564,7 @@
                                   "objectives",
                                   "criteria",
                                   "dueAt",
+                                  "workMode",
                                   "steps",
                                   "materials",
                                   "id",
@@ -8618,6 +8626,13 @@
                                       }
                                     ]
                                   },
+                                  "workMode": {
+                                    "type": "string",
+                                    "enum": [
+                                      "individual",
+                                      "group"
+                                    ]
+                                  },
                                   "steps": {
                                     "type": "array",
                                     "items": {
@@ -8752,6 +8767,7 @@
                                   "objectives",
                                   "criteria",
                                   "dueAt",
+                                  "workMode",
                                   "steps",
                                   "materials",
                                   "id",
@@ -8891,6 +8907,13 @@
                       {
                         "type": "null"
                       }
+                    ]
+                  },
+                  "workMode": {
+                    "type": "string",
+                    "enum": [
+                      "individual",
+                      "group"
                     ]
                   },
                   "steps": {
@@ -9060,6 +9083,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -9194,6 +9224,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -9255,6 +9286,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -9389,6 +9427,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -9542,6 +9581,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -9676,6 +9722,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -9737,6 +9784,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -9871,6 +9925,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -9996,6 +10051,13 @@
                       {
                         "type": "null"
                       }
+                    ]
+                  },
+                  "workMode": {
+                    "type": "string",
+                    "enum": [
+                      "individual",
+                      "group"
                     ]
                   },
                   "steps": {
@@ -10187,6 +10249,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10321,6 +10390,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -10382,6 +10452,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10516,6 +10593,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -10696,6 +10774,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10830,6 +10915,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -10891,6 +10977,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -11025,6 +11118,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -11191,6 +11285,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -11325,6 +11426,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -11386,6 +11488,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -11520,6 +11629,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -11541,6 +11651,314 @@
                     "status",
                     "draftVersion",
                     "publishedVersion"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}/groups": {
+      "get": {
+        "operationId": "groups",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "studentIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "studentIds"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createGroup",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "studentIds": {
+                    "minItems": 2,
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "studentIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "studentIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "studentIds"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}/groups/{groupId}": {
+      "delete": {
+        "operationId": "removeGroup",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "removed"
                   ],
                   "additionalProperties": false
                 }
@@ -11711,6 +12129,18 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 100
+                    },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "attempt": {
                       "type": "integer",
@@ -11939,6 +12369,7 @@
                     "id",
                     "versionId",
                     "userId",
+                    "groupId",
                     "status",
                     "content",
                     "completedStepIds",
@@ -12053,6 +12484,18 @@
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 100
+                          },
+                          "groupId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           },
                           "attempt": {
                             "type": "integer",
@@ -12281,6 +12724,7 @@
                           "id",
                           "versionId",
                           "userId",
+                          "groupId",
                           "status",
                           "content",
                           "completedStepIds",
@@ -12385,6 +12829,18 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 100
+                    },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "attempt": {
                       "type": "integer",
@@ -12613,6 +13069,7 @@
                     "id",
                     "versionId",
                     "userId",
+                    "groupId",
                     "status",
                     "content",
                     "completedStepIds",
@@ -12758,6 +13215,18 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "attempt": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
@@ -12985,6 +13454,7 @@
                     "id",
                     "versionId",
                     "userId",
+                    "groupId",
                     "status",
                     "content",
                     "completedStepIds",

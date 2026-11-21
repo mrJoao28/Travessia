@@ -660,6 +660,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/activities/{id}/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["groups"];
+        put?: never;
+        post: operations["createGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activities/{id}/groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeGroup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/activities/{id}/submissions": {
         parameters: {
             query?: never;
@@ -3481,6 +3513,8 @@ export interface operations {
                                 objectives: string[];
                                 criteria: string[];
                                 dueAt: string | null;
+                                /** @enum {string} */
+                                workMode: "individual" | "group";
                                 steps: {
                                     id: string;
                                     position: number;
@@ -3510,6 +3544,8 @@ export interface operations {
                                 objectives: string[];
                                 criteria: string[];
                                 dueAt: string | null;
+                                /** @enum {string} */
+                                workMode: "individual" | "group";
                                 steps: {
                                     id: string;
                                     position: number;
@@ -3570,6 +3606,8 @@ export interface operations {
                     objectives: string[];
                     criteria: string[];
                     dueAt?: string | null;
+                    /** @enum {string} */
+                    workMode?: "individual" | "group";
                     steps: {
                         title: string;
                         instructions: string;
@@ -3602,6 +3640,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3631,6 +3671,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3700,6 +3742,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3729,6 +3773,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3787,6 +3833,8 @@ export interface operations {
                     objectives: string[];
                     criteria: string[];
                     dueAt?: string | null;
+                    /** @enum {string} */
+                    workMode?: "individual" | "group";
                     steps: {
                         title: string;
                         instructions: string;
@@ -3821,6 +3869,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3850,6 +3900,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3927,6 +3979,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3956,6 +4010,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -4029,6 +4085,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -4058,6 +4116,8 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
@@ -4081,6 +4141,132 @@ export interface operations {
                             /** Format: date-time */
                             createdAt: string;
                         } | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    groups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            name: string;
+                            studentIds: string[];
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    createGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    studentIds: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        studentIds: string[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    removeGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        removed: true;
                     };
                 };
             };
@@ -4124,6 +4310,7 @@ export interface operations {
                             id: string;
                             versionId: string;
                             userId: string;
+                            groupId: string | null;
                             attempt?: number;
                             revisionRequested?: boolean;
                             /** @enum {string} */
@@ -4216,6 +4403,7 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
@@ -4290,6 +4478,7 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
@@ -4376,6 +4565,7 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
