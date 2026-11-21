@@ -24,7 +24,7 @@ export const materialReleaseSnapshot = z.strictObject({
 });
 const key = z.string().min(1).max(100);
 export const sourceView = z.strictObject({ id: key, versionId: key, title: z.string(), status: z.enum(['queued', 'extracting', 'ready', 'failed']),
-  pageCount: z.number().int(), pages: z.array(z.strictObject({ page: z.number().int(), text: z.string(), hasVisual: z.boolean(), ocr: z.boolean() })), warnings: z.array(z.string()), expiresAt: z.iso.datetime() });
+  downloadAllowed: z.boolean(), pageCount: z.number().int(), pages: z.array(z.strictObject({ page: z.number().int(), text: z.string(), hasVisual: z.boolean(), ocr: z.boolean() })), warnings: z.array(z.string()), expiresAt: z.iso.datetime() });
 export const materialView = z.strictObject({ mode: z.enum(['adapted','original']).optional(), id: key, versionId: key, sourceId: key, studentId: key.nullable(), audience: z.enum(['student','classroom']), status: z.enum(['queued', 'generating', 'draft', 'rendering', 'ready', 'released', 'failed']), hasReleasedVersion: z.boolean().optional(),
   settings: materialSettings, pages: z.array(z.number().int()), document: z.array(documentPage), revision: z.number().int(), error: z.string().nullable(),
   hasAudio: z.boolean(), inputTokens: z.number().nullable(), outputTokens: z.number().nullable(), expiresAt: z.iso.datetime() });
@@ -33,7 +33,7 @@ const empty = z.strictObject({});
 const versionQuery = z.strictObject({ versionId: key });
 export const materialRoutes = {
   materialSources: { method: 'get', path: '/v1/activities/{id}/material-sources', body: empty, query: versionQuery, response: z.strictObject({ items: z.array(sourceView) }) },
-  uploadMaterialSource: { method: 'post', path: '/v1/activities/{id}/material-sources', body: z.strictObject({ versionId: key, title: z.string().trim().min(1).max(150), base64: z.string().min(8).max(4 * Math.ceil(PDF_MAX_BYTES / 3)), requestKey: z.uuid() }), query: empty, response: sourceView },
+  uploadMaterialSource: { method: 'post', path: '/v1/activities/{id}/material-sources', body: z.strictObject({ versionId: key, title: z.string().trim().min(1).max(150), downloadAllowed: z.boolean(), base64: z.string().min(8).max(4 * Math.ceil(PDF_MAX_BYTES / 3)), requestKey: z.uuid() }), query: empty, response: sourceView },
   deleteMaterialSource: { method: 'delete', path: '/v1/activities/{id}/material-sources/{sourceId}', body: empty, query: empty, response: z.strictObject({ removed: z.literal(true) }) },
   materialAdaptations: { method: 'get', path: '/v1/activities/{id}/material-adaptations', body: empty, query: versionQuery, response: z.strictObject({ items: z.array(materialView) }) },
   releaseOriginalMaterial: { method: 'post', path: '/v1/activities/{id}/original-materials', body: z.strictObject({versionId:key,sourceId:key,studentId:key,requestKey:z.uuid(),reviewed:z.literal(true)}), query:empty,response:materialView },
@@ -43,6 +43,6 @@ export const materialRoutes = {
   renderMaterial: { method: 'post', path: '/v1/activities/{id}/material-adaptations/{adaptationId}/render', body: z.strictObject({ expectedRevision: z.number().int().min(1) }), query: empty, response: materialView },
   releaseMaterial: { method: 'post', path: '/v1/activities/{id}/material-adaptations/{adaptationId}/release', body: z.strictObject({ expectedRevision: z.number().int().min(1), reviewed: z.literal(true) }), query: empty, response: materialView },
   removeMaterial: { method: 'delete', path: '/v1/activities/{id}/material-adaptations/{adaptationId}', body: empty, query: empty, response: z.strictObject({ removed: z.literal(true) }) },
-  learnerMaterials: { method: 'get', path: '/v1/activities/{id}/my-materials', body: empty, query: versionQuery, response: z.strictObject({ items: z.array(z.strictObject({ id: key, title: z.string(), mode:z.enum(['adapted','original']).optional(), scope:z.enum(['activity','individual']).optional(), status:z.enum(['processing','ready','failed']).optional(), expiresAt:z.iso.datetime().optional(), document: z.array(documentPage).max(PDF_MAX_PAGES), reading: materialReading.optional(), hasAudio: z.boolean() })) }) },
+  learnerMaterials: { method: 'get', path: '/v1/activities/{id}/my-materials', body: empty, query: versionQuery, response: z.strictObject({ items: z.array(z.strictObject({ id: key, title: z.string(), mode:z.enum(['adapted','original']).optional(), scope:z.enum(['activity','individual']).optional(), status:z.enum(['processing','ready','failed']).optional(), downloadAllowed: z.boolean(), expiresAt:z.iso.datetime().optional(), document: z.array(documentPage).max(PDF_MAX_PAGES), reading: materialReading.optional(), hasAudio: z.boolean() })) }) },
   materialAsset: { method: 'get', path: '/v1/activities/{id}/material-assets/{assetId}/{kind}', body: empty, query: empty, response: z.string(), binary: true },
 } as const;

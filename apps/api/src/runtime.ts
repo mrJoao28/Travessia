@@ -73,7 +73,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
   });
   runtime.handle = async (req, res) => {
     try {
-      const match = mapped.find(m => m.route.method.toUpperCase() === req.method && m.regexes.some(regex => regex.test(req.path)));
+      const match = mapped.find(m => (m.route.method.toUpperCase() === req.method || m.name === 'materialAsset' && req.method === 'HEAD' && m.route.method.toUpperCase() === 'GET') && m.regexes.some(regex => regex.test(req.path)));
       if (!match) return missing();
       const values = match.regexes.find(regex => regex.test(req.path))!.exec(req.path)!;
       const params = Object.fromEntries(match.names.map((name, i) => [name, decodeURIComponent(values[i + 1])]));
@@ -89,7 +89,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
       const query = match.route.query.parse(req.query);
       if (match.name === 'materialAsset') {
         const asset = await new MaterialService(db, config).asset(userId, params);
-        res.type(asset.mime); res.setHeader('Content-Disposition', `${(asset.mime === 'image/png' || asset.mime === 'audio/mpeg' || asset.mime === 'application/pdf') ? 'inline' : 'attachment'}; filename="${asset.name}"`);
+        res.type(asset.mime); res.setHeader('Content-Disposition', `${asset.disposition ?? ((asset.mime === 'image/png' || asset.mime === 'audio/mpeg' || asset.mime === 'application/pdf') ? 'inline' : 'attachment')}; filename="${asset.name}"`);
         await new Promise<void>((resolve, reject) => res.sendFile(asset.path, error => error ? reject(new HttpException({ code: 'ASSET_UNAVAILABLE', message: 'Arquivo indisponível.' }, 404)) : resolve())); return;
       }
       const result = await service.execute(match.name, userId, params, body, query);

@@ -13,21 +13,26 @@ const error = z.strictObject({ code: z.string(), message: z.string(), requestId:
 export const preferences = z.strictObject({ fontSize: z.enum(['default', 'large', 'larger']).optional(),
   spacing: z.enum(['default', 'wide']).optional(), contrast: z.enum(['default', 'high']).optional(), reducedDistractions: z.boolean().optional() });
 export const missionInput = z.strictObject({ title: short, description: text, objectives: z.array(short).min(1).max(10),
-  criteria: z.array(short).min(1).max(10), dueAt: date.nullable().optional(),
-  steps: z.array(z.strictObject({ title: short, instructions: text, example: text })).min(1).max(10),
+  criteria: z.array(short).min(1).max(10), dueAt: date.nullable().optional(), workMode: z.enum(['individual', 'group']).optional(),
+  steps: z.array(z.strictObject({ title: short, instructions: text, example: text,
+    dueAt: date.nullable().optional(), maxPoints: z.number().int().min(0).max(100).nullable().optional() })).min(1).max(10),
   materials: z.array(z.strictObject({ title: short, text })).max(10) });
 export type MissionInput = z.infer<typeof missionInput>;
 const version = missionInput.extend({ id, missionId: id, source: z.enum(['manual', 'gemini', 'demo_fixture']),
-  createdAt: date, dueAt: date.nullable(),
-  steps: z.array(z.strictObject({ id, position: z.number().int(), title: short, instructions: text, example: text })),
+  createdAt: date, dueAt: date.nullable(), workMode: z.enum(['individual', 'group']),
+  steps: z.array(z.strictObject({ id, position: z.number().int(), title: short, instructions: text, example: text,
+    dueAt: date.nullable(), deadlineExtended: z.boolean(), maxPoints: z.number().int().min(0).max(100).nullable() })),
   materials: z.array(z.strictObject({ id, title: short, text, hasFile: z.boolean() })) });
 const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', 'published', 'archived']),
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
 const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher', 'monitor']) });
-const feedback = z.strictObject({ id, content: text, createdAt: date });
-const submission = z.strictObject({ id, versionId: id, userId: id, attempt: z.number().int().positive().optional(), revisionRequested: z.boolean().optional(), status: z.enum(['draft', 'submitted', 'reviewed']),
+const stepScore = z.strictObject({ stepId: id, points: z.number().int().min(0).max(100), comment: z.string().trim().max(1000) });
+const feedbackDraft = z.strictObject({ content: z.string().trim().min(1).max(6000), scores: z.array(stepScore).max(10) });
+const feedback = z.strictObject({ id, content: text, createdAt: date,
+  scores: z.array(stepScore).nullable(), totalPoints: z.number().int().min(0).nullable() });
+const submission = z.strictObject({ id, versionId: id, userId: id, groupId: id.nullable(), attempt: z.number().int().positive().optional(), revisionRequested: z.boolean().optional(), status: z.enum(['draft', 'submitted', 'reviewed']),
   content: z.string().max(12000), hasAudio: z.boolean().optional(), hasTextFile: z.boolean().optional(), completedStepIds: z.array(id), currentStepId: id, revision: z.number().int(),
-  submittedAt: date.nullable(), updatedAt: date, feedback: z.array(feedback) });
+  submittedAt: date.nullable(), updatedAt: date, gradingSteps: z.array(z.strictObject({ id, title: short, dueAt: date.nullable(), baseDueAt: date.nullable(), deadlineExtended: z.boolean(), completedAt: date.nullable(), late: z.boolean(), maxPoints: z.number().int().min(0).max(100).nullable() })), feedback: z.array(feedback) });
 const barrier = z.strictObject({ id, stepId: id, description: text, sharedWithTeacher: z.boolean(), response: text.nullable(), createdAt: date });
 const generation = z.strictObject({ id, missionId: id, status: z.enum(['running', 'succeeded', 'failed', 'cancelled']),
   outputVersionId: id.nullable(), createdAt: date });
@@ -130,12 +135,19 @@ export const routes = {
   editMission: { method: 'patch', path: '/v1/activities/{id}', body: missionInput.extend({ expectedDraftVersionId: id.nullable(), carryForwardMaterialIds: z.array(id).max(30).optional() }), query: empty, response: mission },
   publish: { method: 'post', path: '/v1/activities/{id}/publish', body: z.strictObject({ versionId: id, reviewed: z.literal(true) }), query: empty, response: mission },
   archive: { method: 'post', path: '/v1/activities/{id}/archive', body: empty, query: empty, response: mission },
+  groups: { method: 'get', path: '/v1/activities/{id}/groups', body: empty, query: empty, response: z.strictObject({ items: z.array(z.strictObject({ id, name: short, studentIds: z.array(id) })) }) },
+  createGroup: { method: 'post', path: '/v1/activities/{id}/groups', body: z.strictObject({ name: z.string().trim().min(1).max(150), studentIds: unique(id, 50).min(2) }), query: empty, response: z.strictObject({ id, name: short, studentIds: z.array(id) }) },
+  removeGroup: { method: 'delete', path: '/v1/activities/{id}/groups/{groupId}', body: empty, query: empty, response: z.strictObject({ removed: z.literal(true) }) },
   saveSubmission: { method: 'post', path: '/v1/activities/{id}/submissions',
     body: z.strictObject({ versionId: id, content: z.string().max(12000), audio: z.string().min(60).max(1400000).nullable().optional(), textFile: z.strictObject({ text: z.string().max(20000) }).nullable().optional(), completedStepIds: z.array(id).max(10), currentStepId: id,
       status: z.enum(['draft', 'submitted']), expectedRevision: z.number().int().min(0) }), query: empty, response: submission },
   submissions: { method: 'get', path: '/v1/activities/{id}/submissions', body: empty, query: page, response: list(submission) },
   submission: { method: 'get', path: '/v1/submissions/{id}', body: empty, query: empty, response: submission },
-  feedback: { method: 'post', path: '/v1/submissions/{id}/feedback', body: z.strictObject({ content: text, requestRevision: z.boolean().optional() }), query: empty, response: submission },
+  feedback: { method: 'post', path: '/v1/submissions/{id}/feedback', body: z.strictObject({ content: text, requestRevision: z.boolean().optional(), scores: z.array(stepScore).max(10).optional() }), query: empty, response: submission },
+  generateFeedbackDraft: { method: 'post', path: '/v1/submissions/{id}/ai-feedback-draft', body: z.strictObject({ approvedForProvider: z.literal(true), idempotencyKey: z.uuid() }), query: empty,
+    response: z.strictObject({ id, status: z.enum(['running', 'succeeded', 'failed']), draft: feedbackDraft.nullable() }) },
+  setStepDeadlineExtension: { method: 'patch', path: '/v1/activities/{id}/steps/{stepId}/deadline-extension', body: z.strictObject({ studentId: id, dueAt: date.nullable() }), query: empty,
+    response: z.strictObject({ stepId: id, studentId: id, dueAt: date.nullable() }) },
   createBarrier: { method: 'post', path: '/v1/steps/{id}/barriers', body: z.strictObject({ description: text, sharedWithTeacher: z.boolean() }), query: empty, response: barrier },
   barriers: { method: 'get', path: '/v1/classrooms/{id}/barriers', body: empty, query: page, response: list(barrier) },
   barrier: { method: 'get', path: '/v1/barriers/{id}', body: empty, query: empty, response: barrier },

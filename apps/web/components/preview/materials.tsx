@@ -58,7 +58,7 @@ export function PreviewMaterials({missionId='campus',embedded=false}:{missionId?
  const file=previewFiles[source];
  const sourceView:ApiResponse<'uploadMaterialSource'>={
   id:`preview-source-${source}`,versionId:`preview-version-${mission.revision}`,title:file.filename,
-  status:'ready',pageCount:originals.length,pages:originals.map(p=>({page:p.page,text:p.text,hasVisual:p.page===2,ocr:false})),
+  status:'ready',downloadAllowed:true,pageCount:originals.length,pages:originals.map(p=>({page:p.page,text:p.text,hasVisual:p.page===2,ocr:false})),
   warnings:[],expiresAt:'2099-01-01T00:00:00.000Z',
  };
  const document=current&&!pending?previewDocument(source,current.preset):[];

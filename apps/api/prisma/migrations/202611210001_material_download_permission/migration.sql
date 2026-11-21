@@ -1,0 +1,4 @@
+BEGIN;
+ALTER TABLE "MaterialSource"
+ADD COLUMN "downloadAllowed" BOOLEAN NOT NULL DEFAULT false;
+COMMIT;

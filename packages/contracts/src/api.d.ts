@@ -660,6 +660,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/activities/{id}/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["groups"];
+        put?: never;
+        post: operations["createGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activities/{id}/groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeGroup"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/activities/{id}/submissions": {
         parameters: {
             query?: never;
@@ -706,6 +738,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/submissions/{id}/ai-feedback-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["generateFeedbackDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activities/{id}/steps/{stepId}/deadline-extension": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["setStepDeadlineExtension"];
         trace?: never;
     };
     "/v1/steps/{id}/barriers": {
@@ -874,6 +938,7 @@ export interface operations {
                             title: string;
                             /** @enum {string} */
                             status: "queued" | "extracting" | "ready" | "failed";
+                            downloadAllowed: boolean;
                             pageCount: number;
                             pages: {
                                 page: number;
@@ -917,6 +982,7 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     title: string;
+                    downloadAllowed: boolean;
                     base64: string;
                     /** Format: uuid */
                     requestKey: string;
@@ -936,6 +1002,7 @@ export interface operations {
                         title: string;
                         /** @enum {string} */
                         status: "queued" | "extracting" | "ready" | "failed";
+                        downloadAllowed: boolean;
                         pageCount: number;
                         pages: {
                             page: number;
@@ -1611,6 +1678,7 @@ export interface operations {
                             scope?: "activity" | "individual";
                             /** @enum {string} */
                             status?: "processing" | "ready" | "failed";
+                            downloadAllowed: boolean;
                             /** Format: date-time */
                             expiresAt?: string;
                             document: {
@@ -3465,12 +3533,17 @@ export interface operations {
                                 objectives: string[];
                                 criteria: string[];
                                 dueAt: string | null;
+                                /** @enum {string} */
+                                workMode: "individual" | "group";
                                 steps: {
                                     id: string;
                                     position: number;
                                     title: string;
                                     instructions: string;
                                     example: string;
+                                    dueAt: string | null;
+                                    deadlineExtended: boolean;
+                                    maxPoints: number | null;
                                 }[];
                                 materials: {
                                     id: string;
@@ -3491,12 +3564,17 @@ export interface operations {
                                 objectives: string[];
                                 criteria: string[];
                                 dueAt: string | null;
+                                /** @enum {string} */
+                                workMode: "individual" | "group";
                                 steps: {
                                     id: string;
                                     position: number;
                                     title: string;
                                     instructions: string;
                                     example: string;
+                                    dueAt: string | null;
+                                    deadlineExtended: boolean;
+                                    maxPoints: number | null;
                                 }[];
                                 materials: {
                                     id: string;
@@ -3548,10 +3626,14 @@ export interface operations {
                     objectives: string[];
                     criteria: string[];
                     dueAt?: string | null;
+                    /** @enum {string} */
+                    workMode?: "individual" | "group";
                     steps: {
                         title: string;
                         instructions: string;
                         example: string;
+                        dueAt?: string | null;
+                        maxPoints?: number | null;
                     }[];
                     materials: {
                         title: string;
@@ -3578,12 +3660,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3604,12 +3691,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3670,12 +3762,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3696,12 +3793,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3751,10 +3853,14 @@ export interface operations {
                     objectives: string[];
                     criteria: string[];
                     dueAt?: string | null;
+                    /** @enum {string} */
+                    workMode?: "individual" | "group";
                     steps: {
                         title: string;
                         instructions: string;
                         example: string;
+                        dueAt?: string | null;
+                        maxPoints?: number | null;
                     }[];
                     materials: {
                         title: string;
@@ -3783,12 +3889,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3809,12 +3920,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3883,12 +3999,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3909,12 +4030,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3979,12 +4105,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -4005,12 +4136,17 @@ export interface operations {
                             objectives: string[];
                             criteria: string[];
                             dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group";
                             steps: {
                                 id: string;
                                 position: number;
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -4025,6 +4161,132 @@ export interface operations {
                             /** Format: date-time */
                             createdAt: string;
                         } | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    groups: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            name: string;
+                            studentIds: string[];
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    createGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    studentIds: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        studentIds: string[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    removeGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        removed: true;
                     };
                 };
             };
@@ -4068,6 +4330,7 @@ export interface operations {
                             id: string;
                             versionId: string;
                             userId: string;
+                            groupId: string | null;
                             attempt?: number;
                             revisionRequested?: boolean;
                             /** @enum {string} */
@@ -4081,11 +4344,27 @@ export interface operations {
                             submittedAt: string | null;
                             /** Format: date-time */
                             updatedAt: string;
+                            gradingSteps: {
+                                id: string;
+                                title: string;
+                                dueAt: string | null;
+                                baseDueAt: string | null;
+                                deadlineExtended: boolean;
+                                completedAt: string | null;
+                                late: boolean;
+                                maxPoints: number | null;
+                            }[];
                             feedback: {
                                 id: string;
                                 content: string;
                                 /** Format: date-time */
                                 createdAt: string;
+                                scores: {
+                                    stepId: string;
+                                    points: number;
+                                    comment: string;
+                                }[] | null;
+                                totalPoints: number | null;
                             }[];
                         }[];
                         nextCursor: string | null;
@@ -4144,6 +4423,7 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
@@ -4157,11 +4437,27 @@ export interface operations {
                         submittedAt: string | null;
                         /** Format: date-time */
                         updatedAt: string;
+                        gradingSteps: {
+                            id: string;
+                            title: string;
+                            dueAt: string | null;
+                            baseDueAt: string | null;
+                            deadlineExtended: boolean;
+                            completedAt: string | null;
+                            late: boolean;
+                            maxPoints: number | null;
+                        }[];
                         feedback: {
                             id: string;
                             content: string;
                             /** Format: date-time */
                             createdAt: string;
+                            scores: {
+                                stepId: string;
+                                points: number;
+                                comment: string;
+                            }[] | null;
+                            totalPoints: number | null;
                         }[];
                     };
                 };
@@ -4202,6 +4498,7 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
@@ -4215,11 +4512,27 @@ export interface operations {
                         submittedAt: string | null;
                         /** Format: date-time */
                         updatedAt: string;
+                        gradingSteps: {
+                            id: string;
+                            title: string;
+                            dueAt: string | null;
+                            baseDueAt: string | null;
+                            deadlineExtended: boolean;
+                            completedAt: string | null;
+                            late: boolean;
+                            maxPoints: number | null;
+                        }[];
                         feedback: {
                             id: string;
                             content: string;
                             /** Format: date-time */
                             createdAt: string;
+                            scores: {
+                                stepId: string;
+                                points: number;
+                                comment: string;
+                            }[] | null;
+                            totalPoints: number | null;
                         }[];
                     };
                 };
@@ -4253,6 +4566,11 @@ export interface operations {
                 "application/json": {
                     content: string;
                     requestRevision?: boolean;
+                    scores?: {
+                        stepId: string;
+                        points: number;
+                        comment: string;
+                    }[];
                 };
             };
         };
@@ -4267,6 +4585,7 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
@@ -4280,12 +4599,131 @@ export interface operations {
                         submittedAt: string | null;
                         /** Format: date-time */
                         updatedAt: string;
+                        gradingSteps: {
+                            id: string;
+                            title: string;
+                            dueAt: string | null;
+                            baseDueAt: string | null;
+                            deadlineExtended: boolean;
+                            completedAt: string | null;
+                            late: boolean;
+                            maxPoints: number | null;
+                        }[];
                         feedback: {
                             id: string;
                             content: string;
                             /** Format: date-time */
                             createdAt: string;
+                            scores: {
+                                stepId: string;
+                                points: number;
+                                comment: string;
+                            }[] | null;
+                            totalPoints: number | null;
                         }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    generateFeedbackDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @constant */
+                    approvedForProvider: true;
+                    /** Format: uuid */
+                    idempotencyKey: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        /** @enum {string} */
+                        status: "running" | "succeeded" | "failed";
+                        draft: {
+                            content: string;
+                            scores: {
+                                stepId: string;
+                                points: number;
+                                comment: string;
+                            }[];
+                        } | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    setStepDeadlineExtension: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                stepId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    studentId: string;
+                    dueAt: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        stepId: string;
+                        studentId: string;
+                        dueAt: string | null;
                     };
                 };
             };
