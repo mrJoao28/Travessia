@@ -27,6 +27,8 @@ function editable(version: Version): Input {
       title: step.title,
       instructions: step.instructions,
       example: step.example,
+      dueAt: step.dueAt,
+      maxPoints: step.maxPoints,
     })),
     materials: version.materials.map((material) => ({
       title: material.title,
@@ -375,6 +377,18 @@ export function LiveEditor({
                         }
                       />
                     </label>
+                    <label htmlFor={`live-step-due-${stepKeys[index]}`}>
+                      Data de entrega da etapa (opcional)
+                      <input id={`live-step-due-${stepKeys[index]}`} type="datetime-local"
+                        value={step.dueAt ? (() => { const date = new Date(step.dueAt); return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); })() : ""}
+                        onChange={(e) => change({ ...input, steps: input.steps.map((s, i) => i === index ? { ...s, dueAt: e.target.value ? new Date(e.target.value).toISOString() : null } : s) })} />
+                    </label>
+                    <label htmlFor={`live-step-points-${stepKeys[index]}`}>
+                      Pontuação máxima da etapa (opcional)
+                      <input id={`live-step-points-${stepKeys[index]}`} type="number" min="0" max="100" step="1"
+                        value={step.maxPoints ?? ""}
+                        onChange={(e) => change({ ...input, steps: input.steps.map((s, i) => i === index ? { ...s, maxPoints: e.target.value === "" ? null : Number(e.target.value) } : s) })} />
+                    </label>
                   </div>
                   <div className="actions">
                     {([-1, 1] as const).map((direction) => (
@@ -586,6 +600,8 @@ export function LiveEditor({
                   <strong>{step.title}</strong>
                   <p>{step.instructions}</p>
                   <p>Exemplo: {step.example}</p>
+                  {step.dueAt && <p>Entrega da etapa: {new Date(step.dueAt).toLocaleString("pt-BR")}</p>}
+                  {step.maxPoints !== null && step.maxPoints !== undefined && <p>Pontuação máxima: {step.maxPoints}</p>}
                 </li>
               ))}
             </ol>

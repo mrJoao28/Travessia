@@ -3471,6 +3471,8 @@ export interface operations {
                                     title: string;
                                     instructions: string;
                                     example: string;
+                                    dueAt: string | null;
+                                    maxPoints: number | null;
                                 }[];
                                 materials: {
                                     id: string;
@@ -3497,6 +3499,8 @@ export interface operations {
                                     title: string;
                                     instructions: string;
                                     example: string;
+                                    dueAt: string | null;
+                                    maxPoints: number | null;
                                 }[];
                                 materials: {
                                     id: string;
@@ -3552,6 +3556,8 @@ export interface operations {
                         title: string;
                         instructions: string;
                         example: string;
+                        dueAt?: string | null;
+                        maxPoints?: number | null;
                     }[];
                     materials: {
                         title: string;
@@ -3584,6 +3590,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3610,6 +3618,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3676,6 +3686,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3702,6 +3714,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3755,6 +3769,8 @@ export interface operations {
                         title: string;
                         instructions: string;
                         example: string;
+                        dueAt?: string | null;
+                        maxPoints?: number | null;
                     }[];
                     materials: {
                         title: string;
@@ -3789,6 +3805,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3815,6 +3833,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3889,6 +3909,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3915,6 +3937,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -3985,6 +4009,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -4011,6 +4037,8 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                dueAt: string | null;
+                                maxPoints: number | null;
                             }[];
                             materials: {
                                 id: string;
@@ -4081,11 +4109,22 @@ export interface operations {
                             submittedAt: string | null;
                             /** Format: date-time */
                             updatedAt: string;
+                            gradingSteps: {
+                                id: string;
+                                title: string;
+                                maxPoints: number | null;
+                            }[];
                             feedback: {
                                 id: string;
                                 content: string;
                                 /** Format: date-time */
                                 createdAt: string;
+                                scores: {
+                                    stepId: string;
+                                    points: number;
+                                    comment: string;
+                                }[] | null;
+                                totalPoints: number | null;
                             }[];
                         }[];
                         nextCursor: string | null;
@@ -4157,11 +4196,22 @@ export interface operations {
                         submittedAt: string | null;
                         /** Format: date-time */
                         updatedAt: string;
+                        gradingSteps: {
+                            id: string;
+                            title: string;
+                            maxPoints: number | null;
+                        }[];
                         feedback: {
                             id: string;
                             content: string;
                             /** Format: date-time */
                             createdAt: string;
+                            scores: {
+                                stepId: string;
+                                points: number;
+                                comment: string;
+                            }[] | null;
+                            totalPoints: number | null;
                         }[];
                     };
                 };
@@ -4215,11 +4265,22 @@ export interface operations {
                         submittedAt: string | null;
                         /** Format: date-time */
                         updatedAt: string;
+                        gradingSteps: {
+                            id: string;
+                            title: string;
+                            maxPoints: number | null;
+                        }[];
                         feedback: {
                             id: string;
                             content: string;
                             /** Format: date-time */
                             createdAt: string;
+                            scores: {
+                                stepId: string;
+                                points: number;
+                                comment: string;
+                            }[] | null;
+                            totalPoints: number | null;
                         }[];
                     };
                 };
@@ -4253,6 +4314,11 @@ export interface operations {
                 "application/json": {
                     content: string;
                     requestRevision?: boolean;
+                    scores?: {
+                        stepId: string;
+                        points: number;
+                        comment: string;
+                    }[];
                 };
             };
         };
@@ -4280,11 +4346,22 @@ export interface operations {
                         submittedAt: string | null;
                         /** Format: date-time */
                         updatedAt: string;
+                        gradingSteps: {
+                            id: string;
+                            title: string;
+                            maxPoints: number | null;
+                        }[];
                         feedback: {
                             id: string;
                             content: string;
                             /** Format: date-time */
                             createdAt: string;
+                            scores: {
+                                stepId: string;
+                                points: number;
+                                comment: string;
+                            }[] | null;
+                            totalPoints: number | null;
                         }[];
                     };
                 };

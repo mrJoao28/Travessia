@@ -17,13 +17,15 @@ import { MATERIAL_DRAFT_RETENTION_MS, publishedMaterialExpiry } from './material
 
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
 const missionInclude = { draftVersion: { include: versionInclude }, publishedVersion: { include: versionInclude } };
-const submissionInclude = { feedback: { orderBy: { createdAt: 'asc' as const } } };
+const submissionInclude = { feedback: { orderBy: { createdAt: 'asc' as const } },
+  version: { include: { steps: { orderBy: { position: 'asc' as const } } } } };
 type MissionRow = Prisma.MissionGetPayload<{ include: typeof missionInclude }>;
 
 export function missionView(row: MissionRow, teacher: boolean) {
   const version = (v: MissionRow['draftVersion']) => v && ({ id: v.id, missionId: v.missionId, title: v.title,
     description: v.description, objectives: v.objectives, criteria: v.criteria, source: v.source, dueAt: v.dueAt,
-    createdAt: v.createdAt, steps: v.steps.map(s => ({ id: s.id, position: s.position, title: s.title, instructions: s.instructions, example: s.example })),
+    createdAt: v.createdAt, steps: v.steps.map(s => ({ id: s.id, position: s.position, title: s.title, instructions: s.instructions, example: s.example,
+      dueAt: s.dueAt, maxPoints: s.maxPoints })),
     materials: v.materials.map(m => ({ id: m.id, title: m.title, text: m.text, hasFile: Boolean(m.storagePath) })) });
   return { id: row.id, classroomId: row.classroomId, status: row.status,
     draftVersion: teacher ? version(row.draftVersion) : null, publishedVersion: version(row.publishedVersion) };
@@ -32,7 +34,9 @@ export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof 
   return { id: s.id, versionId: s.versionId, userId: s.userId, status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
     submittedAt: s.submittedAt, updatedAt: s.updatedAt, attempt: s.attempt, revisionRequested: s.revisionRequested,
-    feedback: s.feedback.map(f => ({ id: f.id, content: f.content, createdAt: f.createdAt })) };
+    gradingSteps: s.version.steps.map(step => ({ id: step.id, title: step.title, maxPoints: step.maxPoints })),
+    feedback: s.feedback.map(f => ({ id: f.id, content: f.content, createdAt: f.createdAt,
+      scores: f.scores, totalPoints: f.totalPoints })) };
 }
 export const barrierView = (b: {id: string; stepId: string; description: string; sharedWithTeacher: boolean; response: string | null; createdAt: Date}) =>
   ({ id: b.id, stepId: b.stepId, description: b.description, sharedWithTeacher: b.sharedWithTeacher, response: b.response, createdAt: b.createdAt });
@@ -53,7 +57,8 @@ export async function scopedMission(tx: Tx, userId: string, id: string, teacher 
 export async function createVersion(tx: Tx, missionId: string, input: MissionInput, source = 'manual') {
   return tx.missionVersion.create({ data: { missionId, title: input.title, description: input.description,
     objectives: input.objectives, criteria: input.criteria, dueAt: input.dueAt ? new Date(input.dueAt) : null, source,
-    steps: { create: input.steps.map((s, position) => ({ ...s, position: position + 1 })) }, materials: { create: input.materials } }, include: versionInclude });
+    steps: { create: input.steps.map((s, position) => ({ title: s.title, instructions: s.instructions, example: s.example,
+      dueAt: s.dueAt ? new Date(s.dueAt) : null, maxPoints: s.maxPoints ?? null, position: position + 1 })) }, materials: { create: input.materials } }, include: versionInclude });
 }
 function pagination<T extends {id: string}>(rows: T[], limit: number) {
   const hasNext = rows.length > limit;
@@ -202,7 +207,8 @@ export class ProductService {
           const v = row.draftVersion;
           missionInput.parse({ title: v.title, description: v.description, objectives: v.objectives, criteria: v.criteria,
             dueAt: v.dueAt?.toISOString() ?? null,
-            steps: v.steps.map(s => ({ title: s.title, instructions: s.instructions, example: s.example })),
+            steps: v.steps.map(s => ({ title: s.title, instructions: s.instructions, example: s.example,
+              dueAt: s.dueAt?.toISOString() ?? null, maxPoints: s.maxPoints })),
             materials: v.materials.map(m => ({ title: m.title, text: m.text })) });
           const changed = await tx.mission.update({ where: { id }, data: { status: 'published', publishedVersionId: input.versionId, draftVersionId: null }, include: missionInclude });
           const keepUntil = publishedMaterialExpiry();
@@ -245,7 +251,7 @@ export class ProductService {
         }
       }
       if (['submission', 'feedback', 'submissionAudio', 'submissionTextFile'].includes(op)) {
-        const row = await tx.submission.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { ...submissionInclude, version: { include: { mission: true } } } });
+        const row = await tx.submission.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { ...submissionInclude, version: { include: { mission: true, steps: { orderBy: { position: 'asc' as const } } } } } });
         if (!row) return missing();
         const member = await membership(tx, userId, row.version.mission.classroomId);
         if (row.userId !== userId && (member.role !== 'teacher' || row.status === 'draft')) return missing();
@@ -253,12 +259,25 @@ export class ProductService {
         if (op === 'submissionTextFile') { if (row.textFile === null) return missing(); return { name: 'atividade.txt', text: row.textFile }; }
         if (op === 'submission') return submissionView(row);
         if (member.role !== 'teacher' || row.status === 'draft') return missing();
-        const { content, requestRevision = false } = body as Body<'feedback'>;
+        const { content, requestRevision = false, scores } = body as Body<'feedback'>;
+        let totalPoints: number | null = null;
+        const graded = await tx.step.findMany({ where: { versionId: row.versionId, maxPoints: { not: null } }, select: { id: true, maxPoints: true } });
+        if (!requestRevision && graded.length && scores === undefined)
+          return fail(400, 'MISSING_SCORES', 'Informe a nota de cada etapa antes de concluir a avaliação.');
+        if (scores !== undefined) {
+          if (requestRevision) return fail(400, 'INVALID_SCORES', 'Avalie após a revisão solicitada.');
+          if (graded.length !== scores.length || new Set(scores.map(score => score.stepId)).size !== scores.length ||
+            scores.some(score => !graded.some(step => step.id === score.stepId && score.points <= step.maxPoints!)))
+            return fail(400, 'INVALID_SCORES', 'Informe uma nota válida para cada etapa com pontuação.');
+          totalPoints = scores.reduce((sum, score) => sum + score.points, 0);
+        }
         if (row.status === 'reviewed') {
-          if (row.revisionRequested === requestRevision && row.feedback.some(f => f.teacherId === userId && f.content === content)) return submissionView(row);
+          if (row.revisionRequested === requestRevision && row.feedback.some(f => f.teacherId === userId && f.content === content &&
+            JSON.stringify(f.scores ?? null) === JSON.stringify(scores ?? null))) return submissionView(row);
           return fail(409, 'ALREADY_REVIEWED', 'Esta entrega já tem revisão.');
         }
-        const saved = await tx.submission.update({ where: { id }, data: { status: 'reviewed', revisionRequested: requestRevision, feedback: { create: { teacherId: userId, content } } }, include: submissionInclude });
+        const saved = await tx.submission.update({ where: { id }, data: { status: 'reviewed', revisionRequested: requestRevision,
+          feedback: { create: { teacherId: userId, content, scores: scores ?? undefined, totalPoints } } }, include: submissionInclude });
         return submissionView(saved);
       }
       if (op === 'createBarrier') {

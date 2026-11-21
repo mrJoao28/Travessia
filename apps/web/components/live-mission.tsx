@@ -234,6 +234,8 @@ export function LiveMission({
             <h2 ref={title} tabIndex={-1}>
               {step.title}
             </h2>
+            {step.dueAt && <p className="small">Entrega desta etapa: {new Date(step.dueAt).toLocaleString("pt-BR")}</p>}
+            {step.maxPoints !== null && <p className="small">Pontuação máxima: {step.maxPoints}</p>}
             <p className="submission-content">{step.instructions}</p>
             {step.example && <details className="example" key={step.id}>
               <summary>Ver um exemplo</summary>

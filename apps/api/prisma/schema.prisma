@@ -226,6 +226,8 @@ model Step {
   title String
   instructions String
   example String
+  dueAt DateTime?
+  maxPoints Int?
   version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   barriers BarrierReport[]
   strategyPlans StrategyPlan[]
@@ -273,6 +275,8 @@ model Feedback {
   submissionId String
   teacherId String
   content String
+  scores Json?
+  totalPoints Int?
   createdAt DateTime @default(now())
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   @@index([submissionId])

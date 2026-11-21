@@ -236,6 +236,37 @@ test('feedback com ajustes abre nova tentativa e preserva a entrega revisada', a
   assert.equal(prior.content, input.content);
   assert.equal(prior.feedback[0].content, 'Compare mais uma hipótese.');
 });
+test('prazo e nota por etapa: professor confirma pontos e total calculado para o aluno', async () => {
+  const dueAt = '2027-04-21T15:00:00.000Z';
+  const input = { ...fixture, steps: [
+    { ...fixture.steps[0], dueAt, maxPoints: 4 },
+    { title: 'Justificar', instructions: 'Justifique sua escolha.', example: 'Liste seus motivos.', dueAt: null, maxPoints: 6 },
+  ] };
+  const mission = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', input)).json;
+  const path = `/v1/missions/${mission.id}`;
+  await request(`${path}/publish`, main, 'POST', { versionId: mission.draftVersion.id, reviewed: true });
+  const version = (await request(path, a)).json.publishedVersion;
+  assert.equal(version.steps[0].dueAt, dueAt);
+  assert.deepEqual(version.steps.map((step: { maxPoints: number }) => step.maxPoints), [4, 6]);
+  const sent = (await request(`${path}/submissions`, a, 'POST', { versionId: version.id,
+    currentStepId: version.steps[0].id, completedStepIds: version.steps.map((step: { id: string }) => step.id),
+    content: 'Minha justificativa.', status: 'submitted', expectedRevision: 0 })).json;
+  const next = (await request(path, main, 'PATCH', { ...fixture, expectedDraftVersionId: null })).json;
+  await request(`${path}/publish`, main, 'POST', { versionId: next.draftVersion.id, reviewed: true });
+  assert.deepEqual((await request(`/v1/submissions/${sent.id}`, main)).json.gradingSteps.map((step: { maxPoints: number }) => step.maxPoints), [4, 6]);
+  const feedbackPath = `/v1/submissions/${sent.id}/feedback`;
+  const scores = [{ stepId: version.steps[0].id, points: 3, comment: 'Bom início.' },
+    { stepId: version.steps[1].id, points: 5, comment: '' }];
+  await request(feedbackPath, main, 'POST', { content: 'Confira os motivos.' }, 400);
+  await request(feedbackPath, main, 'POST', { content: 'Confira os motivos.', scores: [scores[0]] }, 400);
+  await request(feedbackPath, main, 'POST', { content: 'Confira os motivos.', scores: [{ ...scores[0], points: 5 }, scores[1]] }, 400);
+  await request(feedbackPath, b, 'POST', { content: 'Não autorizado.', scores }, 404);
+  const reviewed = (await request(feedbackPath, main, 'POST', { content: 'Confira os motivos.', scores })).json;
+  assert.equal(reviewed.feedback[0].totalPoints, 8);
+  assert.deepEqual(reviewed.feedback[0].scores, scores);
+  const studentView = (await request(`/v1/submissions/${sent.id}`, a)).json;
+  assert.equal(studentView.feedback[0].totalPoints, 8);
+});
 test('convite opaco: papel fixo, consumo atômico, expiração e revogação', async () => {
   const outsider1 = await provision('new-student-1'); const outsider2 = await provision('new-student-2');
   const invite = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', {})).json;
