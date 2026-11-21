@@ -80,7 +80,8 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await teacher.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await teacher.getByRole('checkbox',{name:'Revisei objetivos, critérios, etapas e materiais.',exact:true}).check();
   await teacher.getByRole('button',{name:'Publicar atividade',exact:true}).click();await expect(teacher.getByRole('heading',{name:'Pronto para sua turma!',exact:true})).toBeVisible();
   mission=await teacher.request.get(`/api/v1/activities/${missionId}`).then(r=>r.json());expect(mission.publishedVersion.id).toBe(versionId);
-  for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/atividades/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Adaptar material',exact:true})).toBeVisible();}
+  const sections=[['apoios','Materiais e apoios da atividade'],['adaptacoes','Adaptar material para um aluno'],['estrategias','Estratégias de apoio']] as const;
+  for(const [suffix,title] of sections){await teacher.goto(`/professor/atividades/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:title,exact:true})).toBeVisible();}
   // A receives the mission PDF plus the reviewed individual adaptation; B receives the same mission PDF without any per-student release.
   const secondClassroom=await post(teacher,'/api/v1/classrooms',{name:'Outra turma da estudante'});
   const secondInvitation=await post(teacher,`/api/v1/classrooms/${secondClassroom.id}/invitations`,{});

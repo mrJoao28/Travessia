@@ -203,6 +203,7 @@ export function LiveMission({
   }
   return (
     <>
+      {role === "aluno" && <p className="teacher-mission-context"><Link className="text-link" href={`/aluno/entregas?turma=${encodeURIComponent(classroom.id)}`}>← Voltar às entregas da turma</Link></p>}
       <section className="paper">
         <p className="eyebrow accent">{classroom.name}</p>
         <h2>{version.title}</h2>
