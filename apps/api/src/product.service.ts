@@ -133,6 +133,16 @@ export class ProductService {
         return { id: c.id, name: c.name, role: invite.role };
       });
     }
+    if (op === 'leaveClassroom') {
+      return serial(this.db, async tx => {
+        const member = await tx.membership.findFirst({ where: { userId, classroomId: id, active: true, role: { in: ['student', 'monitor'] } } });
+        if (!member) return missing();
+        const changed = await tx.membership.updateMany({ where: { id: member.id, userId, classroomId: id, active: true }, data: { active: false } });
+        if (!changed.count) return missing();
+        await tx.auditEvent.create({ data: { actorId: userId, resourceId: member.id, action: 'membership.leave' } });
+        return { left: true };
+      });
+    }
     if (op === 'generateSupports') return this.ai.generateSupports(userId, id, body as Body<'generateSupports'>);
     if (op === 'generateFeedbackDraft') return this.ai.generateFeedbackDraft(userId, id, body as Body<'generateFeedbackDraft'>);
     if (op === 'generate') return this.ai.generate(userId, id, body as Body<'generate'>);

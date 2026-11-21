@@ -170,6 +170,10 @@ export const apiRoutes = {
     "method": "GET",
     "path": "/classrooms/{id}/members"
   },
+  "leaveClassroom": {
+    "method": "POST",
+    "path": "/classrooms/{id}/leave"
+  },
   "revokeMember": {
     "method": "DELETE",
     "path": "/classrooms/{id}/members/{memberId}"
