@@ -2,7 +2,7 @@
 
 ## Professor
 
-Depois de criar uma turma, a página mostra três ações: convidar alunos, preparar a primeira missão e acompanhar respostas. O convite pode ser preparado antes ou depois da missão. O botão de convidar abre a área de participantes com foco visível. Se já existe um rascunho, a ação retoma esse rascunho; quando há missão publicada, aparece o painel habitual.
+Depois de criar uma turma, a página mostra três ações: convidar alunos, preparar a primeira atividade e acompanhar respostas. O convite pode ser preparado antes ou depois da atividade. O botão de convidar abre a área de participantes com foco visível. Se já existe um rascunho, a ação retoma esse rascunho; quando há atividade publicada, aparece o painel habitual.
 
 Em **Gerar convite de aluno**, o professor recebe um código aleatório de oito caracteres e um link. Pode copiar qualquer um ou preencher um e-mail e escolher **Convidar por e-mail**. Esse botão abre uma mensagem pronta no aplicativo de e-mail do professor; ele confere o destinatário e envia. O Travessia não envia a mensagem por um serviço SMTP nem confirma entrega. Sem aplicativo configurado, use **Copiar link**. Nenhum e-mail é enviado durante os testes ou pela prévia.
 
@@ -12,7 +12,7 @@ O convite da turma permite a entrada de vários alunos durante sete dias, até s
 
 O aluno pode digitar o código (inclusive em minúsculas ou com separadores) ou colar o link da própria instalação. Ao abrir o link, vê as opções de entrar ou criar conta. O convite continua após login/cadastro e o aluno precisa confirmar **Entrar na turma**; abrir um link nunca cria vínculo automaticamente.
 
-Depois de entrar em uma turma sem atividade, a página explica que a missão ainda será publicada. Quando aparece uma missão e não há trabalho anterior, a ação principal é **Começar minha primeira missão**. Com rascunho ou atividade já existente, o percurso continua mostrando retomada.
+Depois de entrar em uma turma sem atividade, a página explica que a atividade ainda será publicada. Quando aparece uma atividade e não há trabalho anterior, a ação principal é **Começar minha primeira atividade**. Com rascunho ou atividade já existente, o percurso continua mostrando retomada.
 
 ## API e compatibilidade
 
@@ -29,4 +29,4 @@ O segredo do convite viaja no fragmento `#convite=...`, sem entrar em consultas 
 
 A migration `202611020001_classroom_invites` adiciona campos à tabela existente. Não altera contas, vínculos ou convites anteriores. Execute as migrations pelo fluxo normal antes de iniciar a nova API: `npm run db:migrate` para execução direta ou `npm run docker:migrate` nos containers; `npm run docker:up` e o deploy de prod já incluem a tarefa explícita de migration.
 
-Os testes incluem atualização de banco anterior com convite preservado, concorrência entre dois alunos, uso único legado, expiração, desativação por link/código, isolamento docente/aluno, vínculo revogado e limitação de tentativas. A interface cobre teclado, foco, axe, reflow, mensagem de e-mail, turma vazia e continuidade sem armazenamento. O fluxo integrado usa cadastro, sessão e banco reais; testa convite antes do cadastro e o início da primeira missão publicada. Capturas de tela não substituem observação de usabilidade com professores e estudantes.
+Os testes incluem atualização de banco anterior com convite preservado, concorrência entre dois alunos, uso único legado, expiração, desativação por link/código, isolamento docente/aluno, vínculo revogado e limitação de tentativas. A interface cobre teclado, foco, axe, reflow, mensagem de e-mail, turma vazia e continuidade sem armazenamento. O fluxo integrado usa cadastro, sessão e banco reais; testa convite antes do cadastro e o início da primeira atividade publicada. Capturas de tela não substituem observação de usabilidade com professores e estudantes.

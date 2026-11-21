@@ -1,24 +1,24 @@
-# Estratégias pedagógicas por missão e etapa
+# Estratégias pedagógicas por atividade e etapa
 
 ## Uso
 
-No espaço do professor, abrir **Estratégias** na navegação ou **Estratégias pedagógicas** no cartão de uma missão. Escolher a missão e a versão publicada/rascunho. A biblioteca oferece busca e filtro por barreira/tipo de apoio, sem diagnóstico ou classificação clínica.
+No espaço do professor, abrir **Estratégias** na navegação ou **Estratégias pedagógicas** no cartão de uma atividade. Escolher a atividade e a versão publicada/rascunho. A biblioteca oferece busca e filtro por barreira/tipo de apoio, sem diagnóstico ou classificação clínica.
 
 1. Marcar uma ou mais estratégias e preparar o texto de cada apoio para a atividade real. Os exemplos do catálogo são ilustrativos; o botão para copiá-los exige posterior revisão do professor.
-2. Escolher a missão inteira ou uma etapa da versão selecionada.
+2. Escolher a atividade inteira ou uma etapa da versão selecionada.
 3. Escolher turma inteira ou alunos selecionados, com vínculo ativo na turma.
 4. Conferir a prévia do aluno, revisar conteúdo/destino/destinatários e salvar.
 5. Consultar, editar ou remover aplicações na lista da mesma versão. A remoção pede confirmação e não altera entregas nem outros apoios.
 
-Os alunos recebem os apoios como seções opcionais junto das instruções da etapa. Apoios da missão inteira aparecem em todas as etapas; os de uma etapa aparecem somente nela. Abertura de um apoio não registra uso, diagnóstico, nota ou conclusão de etapa. Não há inferência automática de deficiência ou recomendação por rótulo.
+Os alunos recebem os apoios como seções opcionais junto das instruções da etapa. Apoios da atividade inteira aparecem em todas as etapas; os de uma etapa aparecem somente nela. Abertura de um apoio não registra uso, diagnóstico, nota ou conclusão de etapa. Não há inferência automática de deficiência ou recomendação por rótulo.
 
-Aplicações em versão publicada ficam disponíveis imediatamente aos destinatários. Aplicações em rascunho ficam privadas até a publicação daquela versão. Criar uma versão nova não copia apoios automaticamente: etapas e conteúdo podem ter mudado, e o professor precisa revisar/reaplicar. Pedidos de uma versão desatualizada não recebem apoios da versão nova silenciosamente. Missões arquivadas aceitam apenas consulta docente, sem novas aplicações/alterações.
+Aplicações em versão publicada ficam disponíveis imediatamente aos destinatários. Aplicações em rascunho ficam privadas até a publicação daquela versão. Criar uma versão nova não copia apoios automaticamente: etapas e conteúdo podem ter mudado, e o professor precisa revisar/reaplicar. Pedidos de uma versão desatualizada não recebem apoios da versão nova silenciosamente. Atividades arquivadas aceitam apenas consulta docente, sem novas aplicações/alterações.
 
 ## Biblioteca inicial
 
 O catálogo é local à API, em `strategy-catalog.ts`, sem IA ou chamadas externas. Inclui checklist, exemplo comentado, glossário, descrição textual de imagens, transcrição de mídia, instruções por escrito, roteiro de planejamento e orientação de teclado. Cada item tem descrição, orientação e exemplo ilustrativo. A função de biblioteca/vínculos foi inspirada nos módulos `estrategiaService` e `disciplinaService` dos arquivos Mais Acesso fornecidos pelo usuário; não houve cópia do banco, importação de informações de estudantes ou integração de autenticação.
 
-Os textos foram escritos para este produto e são modelos de autoria para revisão docente. Descrição e transcrição precisam ser preparadas e conferidas pelo professor. Selecionar um item não descreve imagens, produz legendas sincronizadas, transcreve mídia, gera Libras, cria uploads ou corrige ferramentas externas automaticamente. A função não altera os objetivos e critérios da missão e não inclui o módulo de adaptação por Gemini, que é outra funcionalidade.
+Os textos foram escritos para este produto e são modelos de autoria para revisão docente. Descrição e transcrição precisam ser preparadas e conferidas pelo professor. Selecionar um item não descreve imagens, produz legendas sincronizadas, transcreve mídia, gera Libras, cria uploads ou corrige ferramentas externas automaticamente. A função não altera os objetivos e critérios da atividade e não inclui o módulo de adaptação por Gemini, que é outra funcionalidade.
 
 Referências técnicas consultadas para orientar a implementação:
 
@@ -31,9 +31,9 @@ Essas referências não constituem validação pedagógica do catálogo nem indi
 
 ## Persistência, autorização e limites
 
-`StrategyPlan` liga uma aplicação a MissionVersion e, opcionalmente, Step. `StrategyItem` guarda título/identificador da estratégia e texto revisado; `StrategyRecipient` guarda destinatários individuais. A migration é aditiva, transacional e aplica a mesma política de tabelas privadas/RLS da base existente. Não muda contas, perfis, vínculos, conteúdo de missões, sessões ou entregas.
+`StrategyPlan` liga uma aplicação a MissionVersion e, opcionalmente, Step. `StrategyItem` guarda título/identificador da estratégia e texto revisado; `StrategyRecipient` guarda destinatários individuais. A migration é aditiva, transacional e aplica a mesma política de tabelas privadas/RLS da base existente. Não muda contas, perfis, vínculos, conteúdo de atividades, sessões ou entregas.
 
-Todas as rotas exigem sessão validada. Consultar/criar/editar/remover aplicações e listar destinatários exige vínculo docente ativo na turma da missão. Destinatários precisam ser alunos ativos da mesma turma; IDs de professor, outra turma ou vínculo revogado são rejeitados. A API valida que a etapa pertence à versão e que a versão é o rascunho/publicação atual da missão.
+Todas as rotas exigem sessão validada. Consultar/criar/editar/remover aplicações e listar destinatários exige vínculo docente ativo na turma da atividade. Destinatários precisam ser alunos ativos da mesma turma; IDs de professor, outra turma ou vínculo revogado são rejeitados. A API valida que a etapa pertence à versão e que a versão é o rascunho/publicação atual da atividade.
 
 O endpoint do aluno filtra destinatários no banco e retorna somente identificador do item, título, texto e etapa. Não retorna audiência, destinatários, nomes de outros alunos ou conteúdo dos apoios alheios. Revogação de vínculo bloqueia novas consultas, mesmo conhecendo IDs. Dados já lidos podem permanecer na memória do navegador até a próxima consulta, como nos demais recursos da aplicação.
 
@@ -44,12 +44,12 @@ Até 20 aplicações por versão, 8 estratégias por aplicação, 50 destinatár
 | Operação | Acesso |
 |---|---|
 | GET /v1/strategies | Catálogo genérico para sessão válida |
-| GET /v1/missions/{id}/strategy-recipients | Docente; alunos ativos, somente ID/nome, paginado |
-| GET /v1/missions/{id}/strategy-plans?versionId=… | Docente; aplicações da versão atual selecionada |
-| POST /v1/missions/{id}/strategy-plans | Docente; aplicação revisada e chave de idempotência |
-| PATCH /v1/missions/{id}/strategy-plans/{planId} | Docente; substituição revisada, versão fixa e revisão esperada |
-| POST /v1/missions/{id}/strategy-plans/{planId}/remove | Docente; remoção com revisão esperada |
-| GET /v1/missions/{id}/supports?versionId=… | Aluno ativo; somente apoios próprios/coletivos da versão publicada atual |
+| GET /v1/activities/{id}/strategy-recipients | Docente; alunos ativos, somente ID/nome, paginado |
+| GET /v1/activities/{id}/strategy-plans?versionId=… | Docente; aplicações da versão atual selecionada |
+| POST /v1/activities/{id}/strategy-plans | Docente; aplicação revisada e chave de idempotência |
+| PATCH /v1/activities/{id}/strategy-plans/{planId} | Docente; substituição revisada, versão fixa e revisão esperada |
+| POST /v1/activities/{id}/strategy-plans/{planId}/remove | Docente; remoção com revisão esperada |
+| GET /v1/activities/{id}/supports?versionId=… | Aluno ativo; somente apoios próprios/coletivos da versão publicada atual |
 
 ## Atualizar Docker
 
@@ -75,7 +75,7 @@ Na seleção, o navegador aceita os formatos que consegue decodificar (por exemp
 
 A assistência gera checklists, exemplos comentados, glossários, instruções claras e roteiros de planejamento. Não gera voz, descrições de imagens que não recebeu nem transcrições automáticas. O professor escolhe até três materiais textuais e confere a prévia exata dos objetivos, instruções da etapa e materiais antes de autorizar a solicitação. Nenhum destinatário, perfil, relato ou entrega é coletado para o prompt. As orientações genéricas das estratégias também são enviadas. Não incluir dados pessoais nos próprios textos didáticos.
 
-O retorno é JSON validado, exibido como rascunho separado. Usar um rascunho preenche o editor e desmarca a revisão; salvar com confirmação explícita continua obrigatório. Nenhum plano é criado pela geração. Solicitações persistem no registro AiGeneration para deduplicação; supportDraft contém o rascunho privado recuperável pelo autor ao repetir a mesma solicitação autorizada. Entradas brutas não vão para logs. Cotas compartilhadas com a geração de missões: uma operação em andamento por usuário, até 10 solicitações por 24 horas e 5 por turma. Não há retry automático do provedor. Timeout de 20 segundos, expiração de reserva de 25 segundos, entrada de até 14 mil caracteres, saída de até cinco itens de 3 mil caracteres. Acesso e versão são revalidados após o retorno.
+O retorno é JSON validado, exibido como rascunho separado. Usar um rascunho preenche o editor e desmarca a revisão; salvar com confirmação explícita continua obrigatório. Nenhum plano é criado pela geração. Solicitações persistem no registro AiGeneration para deduplicação; supportDraft contém o rascunho privado recuperável pelo autor ao repetir a mesma solicitação autorizada. Entradas brutas não vão para logs. Cotas compartilhadas com a geração de atividades: uma operação em andamento por usuário, até 10 solicitações por 24 horas e 5 por turma. Não há retry automático do provedor. Timeout de 20 segundos, expiração de reserva de 25 segundos, entrada de até 14 mil caracteres, saída de até cinco itens de 3 mil caracteres. Acesso e versão são revalidados após o retorno.
 
 Configuração somente no backend / `.env.docker`: `AI_ENABLED=true`, `GEMINI_API_KEY` e `GEMINI_MODEL` válidos. Use o modelo disponível na sua conta; não há chave ou modelo fictício usado em produção. Fora da demonstração isolada, a configuração existente exige `GEMINI_PUBLIC_USE_APPROVED=true` após a avaliação de termos e público. Com IA desativada ou sem configuração, a criação manual permanece disponível. Nunca coloque a chave no navegador ou no Git. A implementação usa o SDK @google/genai já instalado; não usa OpenAI.
 
@@ -83,8 +83,8 @@ Rotas adicionais implementadas:
 
 | Operação | Rota | Permissão |
 |---|---|---|
-| Áudio do apoio | GET /v1/missions/{id}/support-audio/{itemId} | Docente da turma ou aluno destinatário da versão publicada |
-| Rascunho Gemini | POST /v1/missions/{id}/ai-supports | Docente ativo da turma |
+| Áudio do apoio | GET /v1/activities/{id}/support-audio/{itemId} | Docente da turma ou aluno destinatário da versão publicada |
+| Rascunho Gemini | POST /v1/activities/{id}/ai-supports | Docente ativo da turma |
 
 O corpo JSON dos endpoints de criar/editar aplicações aceita até 2 MiB; autenticação e demais operações mantêm 64 KiB. Áudios não são enviados ao Gemini. O limite da gravação mantém armazenamento e requisição pequenos neste MVP; gravações maiores e vídeo exigirão uma solução de mídia específica.
 

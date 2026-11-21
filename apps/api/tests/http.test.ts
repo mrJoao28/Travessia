@@ -181,6 +181,10 @@ test('perfil rejeita promoção, troca de dono, campos excluídos e disciplinas 
 });
 test('rascunho privado, publicação com revisão explícita e versões imutáveis', async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const canonical = (await request(`/v1/activities/${created.id}`, main)).json;
+  const legacy = (await request(`/v1/missions/${created.id}`, main)).json;
+  assert.equal(canonical.id, created.id); assert.equal(legacy.id, created.id);
+  assert.equal(canonical.draftVersion.title, fixture.title);
   await request(`/v1/missions/${created.id}`, a, 'GET', undefined, 404);
   await request(`/v1/missions/${created.id}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: false }, 400);
   const published = (await request(`/v1/missions/${created.id}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true })).json;
@@ -590,7 +594,7 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
     const items = (await request(`${path}/my-materials?versionId=${versionId}`, cookie)).json.items;
     assert.equal(items.length, 1);
     assert.deepEqual({ id: items[0].id, title: items[0].title, mode: items[0].mode, scope: items[0].scope, status: items[0].status },
-      { id: source.id, title: 'Material da turma.pdf', mode: 'original', scope: 'mission', status: 'ready' });
+      { id: source.id, title: 'Material da turma.pdf', mode: 'original', scope: 'activity', status: 'ready' });
     assert.deepEqual(items[0].document, []);
     const pdf = await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { headers: { cookie } });
     assert.equal(pdf.status, 200);

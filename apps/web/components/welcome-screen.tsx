@@ -68,7 +68,7 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
               }
             }}>
               <h2>{space === "professor" ? "Crie sua primeira turma" : "Entre na sua turma"}</h2>
-              <p>{space === "professor" ? "Dê um nome à turma. Depois você poderá convidar os alunos e preparar a primeira missão." : "Cole o link do convite ou digite o código curto que o professor compartilhou. Ainda não recebeu? Você pode entrar depois."}</p>
+              <p>{space === "professor" ? "Dê um nome à turma. Depois você poderá convidar os alunos e preparar a primeira atividade." : "Cole o link do convite ou digite o código curto que o professor compartilhou. Ainda não recebeu? Você pode entrar depois."}</p>
               <label htmlFor="welcome-value">{space === "professor" ? "Nome da turma" : "Código de convite"}
                 <input id="welcome-value" name="value" required maxLength={space === "professor" ? 200 : 2048} minLength={1}
                   value={value} onChange={e=>setValue(e.target.value)} autoComplete="off" disabled={pending} />
@@ -81,12 +81,12 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
               <ol>
                 {space==="professor"?<>
                   <li>Convide os alunos com um link ou código curto.</li>
-                  <li>Crie uma missão, adicione um PDF e revise os apoios antes de publicar.</li>
+                  <li>Crie uma atividade, adicione um PDF e revise os apoios antes de publicar.</li>
                   <li>Acompanhe as entregas e escreva feedback.</li>
                 </>:<>
-                  <li>Abra a primeira missão publicada pela turma.</li>
+                  <li>Abra a primeira atividade publicada pela turma.</li>
                   <li>Consulte os materiais e apoios, faça uma etapa por vez e salve seu rascunho.</li>
-                  <li>Envie a atividade e volte à missão para consultar o feedback.</li>
+                  <li>Envie sua resposta e volte à atividade para consultar o feedback.</li>
                 </>}
               </ol>
               <Link className="text-link" href={`/previa/${space}/primeiros-passos`}>Ver um exemplo na prévia</Link>

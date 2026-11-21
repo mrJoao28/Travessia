@@ -21,7 +21,7 @@ Base CSS: `9749473afeb79201fc3eb9580dd90bd8e66d53df`. As medidas abaixo vieram d
 | Campos das etapas, tablet 1024 px | 649 px | 905 px |
 | Campos das etapas, celular 320 px | 217 px | 236 px |
 | Campo da preparação individual, 320 px e texto 200% | 188 px | 260 px |
-| Revisão da missão, 1280 px e texto 200% | Cabeçalho invisível; fluxo interrompido | Visível; fluxo concluído |
+| Revisão da atividade, 1280 px e texto 200% | Cabeçalho invisível; fluxo interrompido | Visível; fluxo concluído |
 
 A primeira matriz Chromium completou 325 observações (25 estados × 13 formatos), sem rolagem horizontal da página. Esses números descrevem aquela execução inicial, não certificam acessibilidade nem substituem as execuções posteriores ampliadas.
 
@@ -32,7 +32,7 @@ Configuração: `playwright.responsive.config.ts`; cenários: `tests/responsive/
 A matriz ampliada tem 15 perfis por engine: 320×568, 360×800, 390×844, 430×932, 844×390, 768×1024, 1024×768, 1280×720, 1440×900, 1920×1080, 2560×1440, texto 200% em 320/1024/1280 px e tema escuro em 390 px. São 45 testes, em Chromium, Firefox e WebKit. Cada teste percorre 32 estados de interface, incluindo:
 
 - login, cadastro e espaços públicos de prévia;
-- turmas, missões, entregas, feedback, apoios, barreiras e ajuda;
+- turmas, atividades, entregas, feedback, apoios, barreiras e ajuda;
 - quatro etapas do editor, tanto na prévia quanto no componente autenticado;
 - PDF, transcrição, áudio e campos de resposta do aluno;
 - menu aberto/recolhido, ajustes de leitura e perfil com disciplinas adicionais;

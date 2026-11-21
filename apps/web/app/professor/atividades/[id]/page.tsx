@@ -3,7 +3,7 @@ import {
   requestedClassroom,
   type ClassroomQuery,
 } from "../../../../lib/classroom-context";
-export const metadata = { title: "Consultar missão · Travessia" };
+export const metadata = { title: "Consultar atividade · Travessia" };
 export default async function Page({
   params,
   searchParams,
@@ -15,7 +15,7 @@ export default async function Page({
   return (
     <LiveWorkspace
       role="professor"
-      section={id === "nova" ? "nova" : "missao"}
+      section={id === "nova" ? "nova" : "atividade"}
       missionId={id === "nova" ? undefined : id}
       classroomId={await requestedClassroom(searchParams)}
     />

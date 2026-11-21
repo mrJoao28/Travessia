@@ -7,12 +7,12 @@ Oito pessoas fictícias participam de três turmas de exemplo. Marina Costa pref
 ## Roteiro completo
 
 1. No professor, consulte turmas, alunos e convites de exemplo. Crie outra turma, gere um convite e experimente a entrada pelo aluno, se desejar.
-2. Abra **Missões → Criar missão**. Edite os objetivos ou peça o rascunho claramente identificado como **IA simulada**.
+2. Abra **Atividades → Criar atividade**. Edite os objetivos ou peça o rascunho claramente identificado como **IA simulada**.
 3. Organize as etapas por teclado. Escolha um dos três PDFs fictícios e avance para os apoios.
-4. Escolha o aluno, o formato do material e o áudio opcional. Confira o original e o preparado; abra ou baixe os arquivos. Você também pode editar instruções e permitir respostas em áudio ou arquivo de texto. Em **Outros apoios da missão**, experimente os oito tipos de estratégia, para toda a turma ou para o aluno selecionado e em uma etapa específica.
-5. Confirme a revisão antes de disponibilizar. Revise a missão e confirme a publicação simulada. Um rascunho de nova versão preserva a publicação anterior até a revisão.
+4. Escolha o aluno, o formato do material e o áudio opcional. Confira o original e o preparado; abra ou baixe os arquivos. Você também pode editar instruções e permitir respostas em áudio ou arquivo de texto. Em **Outros apoios da atividade**, experimente os oito tipos de estratégia, para toda a turma ou para o aluno selecionado e em uma etapa específica.
+5. Confirme a revisão antes de disponibilizar. Revise a atividade e confirme a publicação simulada. Um rascunho de nova versão preserva a publicação anterior até a revisão.
 6. Use **Ver no espaço do aluno**. Consulte PDF, áudio e transcrição. Marque etapas, escreva, salve o rascunho, recarregue a página e envie a atividade. Anexos são amostras fictícias, sem gravação ou upload pessoal.
-7. Volte a **Entregas** no professor e publique feedback local. O aluno pode consultar a orientação em sua missão e na lista de feedback.
+7. Volte a **Entregas** no professor e publique feedback local. O aluno pode consultar a orientação em sua atividade e na lista de feedback.
 8. Experimente relatos privados/compartilhados, resposta do professor, perfil e pedidos de apoio opcionais. **Ajustar leitura** mantém as preferências existentes do site.
 
 Os exemplos cobrem comparação de rotas, um programa de empréstimos de livros e cálculo de energia (9,6 + 1,2 = 10,8 kWh). As observações do campus não certificam acessibilidade de um percurso real.
@@ -27,7 +27,7 @@ Reprodução opcional dos assets: instale ReportLab, pypdf, Poppler e fontes Dej
 
 ## Persistência e limites
 
-Somente a chave `travessia:interactive-preview:v1` guarda o cenário no navegador. **Reiniciar cenário** restaura os exemplos sem apagar preferências de leitura ou outras chaves. JSON inválido volta ao cenário inicial; armazenamento bloqueado mostra aviso e mantém a navegação na sessão. Limites: dez turmas, vinte missões, dez etapas por missão e sessenta preparações/relatos. Use apenas dados fictícios, inclusive nos campos editáveis. Não há garantia de sincronização entre abas.
+Somente a chave `travessia:interactive-preview:v1` guarda o cenário no navegador. **Reiniciar cenário** restaura os exemplos sem apagar preferências de leitura ou outras chaves. JSON inválido volta ao cenário inicial; armazenamento bloqueado mostra aviso e mantém a navegação na sessão. Limites: dez turmas, vinte atividades, dez etapas por atividade e sessenta preparações/relatos. Use apenas dados fictícios, inclusive nos campos editáveis. Não há garantia de sincronização entre abas.
 
 A seleção de aluno e a filtragem de destinatários são demonstrações de interface. Todos os assets são públicos; isso não é controle de acesso. Em `/aluno` e `/professor`, autorização e arquivos privados continuam sob responsabilidade do servidor.
 

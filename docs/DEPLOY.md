@@ -20,7 +20,7 @@ APP_PUBLIC_ORIGIN define a origem pública da autenticação. ALLOW_LOCAL_HTTP v
 
 Migrations e seed não executam em build, healthcheck ou na inicialização da aplicação. docker:up orquestra a migration em uma tarefa temporária antes de iniciar o conjunto. Nenhuma conta ou dado real é migrado implicitamente. A adaptação do schema de alunos/professores fica para etapa própria.
 
-Gemini continua limitado por requisição, com revisão humana e quotas persistidas. O worker durável processa PDFs e voz local no volume privado material-data. O banco atende autenticação, missões e metadados de materiais sem Supabase; Storage permanece opcional para objetos previamente verificados.
+Gemini continua limitado por requisição, com revisão humana e quotas persistidas. O worker durável processa PDFs e voz local no volume privado material-data. O banco atende autenticação, atividades e metadados de materiais sem Supabase; Storage permanece opcional para objetos previamente verificados.
 
 Os documentos antigos específicos da Vercel são históricos. Sua configuração não é requisito para os containers.
 

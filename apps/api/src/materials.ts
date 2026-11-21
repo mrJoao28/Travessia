@@ -35,7 +35,7 @@ export class MaterialService {
           tx.materialSource.findMany({ where: { versionId, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 }),
           tx.materialAdaptation.findMany({ where: { versionId, studentId: userId, OR: [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 }),
         ]);
-        const missionMaterials = sources.map(source => ({ id: source.id, title: source.title, mode: 'original' as const, scope: 'mission' as const,
+        const missionMaterials = sources.map(source => ({ id: source.id, title: source.title, mode: 'original' as const, scope: 'activity' as const,
           status: source.status === 'ready' ? 'ready' as const : source.status === 'failed' ? 'failed' as const : 'processing' as const, document: [] as [], hasAudio: false }));
         const individualMaterials = rows.flatMap(a => {
           const { deliveryMode = 'adapted', supports, fontSize, color } = storedMaterialSettings.parse(a.settings);
@@ -199,7 +199,7 @@ export class MaterialService {
       if (member.role === 'student' && p.kind === 'pdf') {
         if (!row.publishedVersionId) return missing();
         const source = await tx.materialSource.findFirst({ where: { id: p.assetId, versionId: row.publishedVersionId, status: 'ready', expiresAt: { gt: new Date() } } });
-        if (source) return { path: materialPath(source.id, 'original.pdf'), mime: 'application/pdf', name: 'material-da-missao.pdf' };
+        if (source) return { path: materialPath(source.id, 'original.pdf'), mime: 'application/pdf', name: 'material-da-atividade.pdf' };
       }
       // A teacher may compare verified source pages before creating an adaptation.
       // Students still need a released, personally addressed adaptation below.

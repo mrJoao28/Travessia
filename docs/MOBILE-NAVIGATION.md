@@ -4,7 +4,7 @@
 
 Até 1024 CSS px, o menu lateral permanente sai da área de conteúdo. O cabeçalho apresenta a marca Travessia, o botão **Menu**, a conta e uma linha própria para **Área do professor/aluno**. A identificação não disputa os poucos pixels restantes com três controles.
 
-O botão abre um painel vertical nativo de diálogo com destinos nomeados, página atual, ajustes de leitura/aparência recolhidos e Ajuda. Os ajustes ficam dentro do painel, sem popovers atravessando a tela. O conteúdo da missão e os formulários continuam montados.
+O botão abre um painel vertical nativo de diálogo com destinos nomeados, página atual, ajustes de leitura/aparência recolhidos e Ajuda. Os ajustes ficam dentro do painel, sem popovers atravessando a tela. O conteúdo da atividade e os formulários continuam montados.
 
 No computador, o menu lateral e sua faixa de ícones continuam disponíveis. A escolha local `travessia:sidebar:v1` não é alterada ao abrir ou fechar o painel móvel. Ao redimensionar para computador, o painel fecha e o bloqueio de rolagem é removido.
 
@@ -16,7 +16,7 @@ Os links de leitura por fragmento continuam funcionando no celular: o painel abr
 
 ## Verificação
 
-- Matriz existente: criação e revisão de missão, materiais, PDF/áudio, entrega e perfil, em Chromium, Firefox e WebKit.
+- Matriz existente: criação e revisão de atividade, materiais, PDF/áudio, entrega e perfil, em Chromium, Firefox e WebKit.
 - Casos adicionais: cabeçalho fechado e menu aberto de aluno/professor em 320, 390, 705, 844 (paisagem) e 1024 px.
 - Verificação do caso relatado: 705×607, tema escuro e texto 200%, sem a identificação quebrada em letras.
 - Foco inicial, Tab/Shift+Tab, fundo inerte, Escape, retorno de foco, links, estado do computador e liberação da rolagem ao redimensionar.
