@@ -16,6 +16,7 @@ async function fixture(page: Page, role: 'student' | 'teacher') {
     if (path === '/classrooms') return respond({ items: [{ id: 'c-inclusive', name: 'Turma inclusiva', role }], nextCursor: null });
     if (path === '/classrooms/c-inclusive/activities') return respond({ items: [mission], nextCursor: null });
     if (path === '/activities/m-inclusive') return respond(mission);
+    if (path === '/activities/m-inclusive/groups') return respond({ items: [] });
     if (path === '/activities/m-inclusive/submissions') {
       if (route.request().method() === 'POST') { captured.submission = route.request().postDataJSON(); return route.fulfill({ status: 409, json: { code: 'REVISION_CONFLICT' } }); }
       return respond({ items: [], nextCursor: null });

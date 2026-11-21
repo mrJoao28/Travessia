@@ -13,6 +13,7 @@ export const me: ApiResponse<"me"> = {
 export const version: NonNullable<ApiResponse<"mission">["publishedVersion"]> = {
   id: "version-current",
   missionId: "test-mission",
+  workMode: "individual",
   title: "Uma biblioteca para todos",
   description: "Crie um sistema de empréstimo de livros.",
   objectives: ["Planejar uma solução."],
@@ -49,6 +50,7 @@ export const submission: ApiResponse<"submission"> = {
   id: "test-submission",
   versionId: version.id,
   userId: me.id,
+  groupId: null,
   status: "draft",
   content: "Planejamento inicial fictício.",
   completedStepIds: ["step-one"],
@@ -56,6 +58,7 @@ export const submission: ApiResponse<"submission"> = {
   revision: 3,
   submittedAt: null,
   updatedAt: version.createdAt,
+  gradingSteps: [],
   feedback: [],
 };
 
@@ -77,6 +80,7 @@ export async function fixture(page: Page, role: "student" | "teacher") {
     if (path === "/me") return respond(me);
     if (path === "/activities/test-mission/my-adaptations") return respond({ versionId: version.id, items: [], allowedFormats: ["text"] });
     if (path === "/activities/test-mission/supports") return respond({ versionId: version.id, items: [] });
+    if (path === "/activities/test-mission/groups") return respond({ items: [] });
     if (path === "/classrooms")
       return respond({
         items: [

@@ -22,7 +22,7 @@ const submissionInclude = { feedback: { orderBy: { createdAt: 'asc' as const } }
 type MissionRow = Prisma.MissionGetPayload<{ include: typeof missionInclude }>;
 
 export function missionView(row: MissionRow, teacher: boolean) {
-  const version = (v: MissionRow['draftVersion']) => v && ({ id: v.id, missionId: v.missionId, title: v.title,
+  const version = (v: MissionRow['draftVersion']) => v && ({ id: v.id, missionId: v.missionId, title: v.title, workMode: v.workMode,
     description: v.description, objectives: v.objectives, criteria: v.criteria, source: v.source, dueAt: v.dueAt,
     createdAt: v.createdAt, steps: v.steps.map(s => ({ id: s.id, position: s.position, title: s.title, instructions: s.instructions, example: s.example,
       dueAt: s.dueAt, deadlineExtended: false, maxPoints: s.maxPoints })),
@@ -33,7 +33,7 @@ export function missionView(row: MissionRow, teacher: boolean) {
 export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof submissionInclude }>) {
   const completions = s.stepCompletedAt && typeof s.stepCompletedAt === 'object' && !Array.isArray(s.stepCompletedAt)
     ? s.stepCompletedAt as Record<string, string> : {};
-  return { id: s.id, versionId: s.versionId, userId: s.userId, status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
+  return { id: s.id, versionId: s.versionId, userId: s.userId, groupId: s.groupId, status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
     submittedAt: s.submittedAt, updatedAt: s.updatedAt, attempt: s.attempt, revisionRequested: s.revisionRequested,
     gradingSteps: s.version.steps.map(step => {
@@ -63,7 +63,7 @@ export async function scopedMission(tx: Tx, userId: string, id: string, teacher 
   return { row, member };
 }
 export async function createVersion(tx: Tx, missionId: string, input: MissionInput, source = 'manual') {
-  return tx.missionVersion.create({ data: { missionId, title: input.title, description: input.description,
+  return tx.missionVersion.create({ data: { missionId, title: input.title, description: input.description, workMode: input.workMode ?? 'individual',
     objectives: input.objectives, criteria: input.criteria, dueAt: input.dueAt ? new Date(input.dueAt) : null, source,
     steps: { create: input.steps.map((s, position) => ({ title: s.title, instructions: s.instructions, example: s.example,
       dueAt: s.dueAt ? new Date(s.dueAt) : null, maxPoints: s.maxPoints ?? null, position: position + 1 })) }, materials: { create: input.materials } }, include: versionInclude });
@@ -185,7 +185,7 @@ export class ProductService {
           return pagination(rows.map(barrierView), paging.limit);
         }
       }
-      if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions', 'setStepDeadlineExtension'].includes(op)) {
+      if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'removeGroup'].includes(op)) {
         const { row, member } = await scopedMission(tx, userId, id, ['publish', 'archive', 'setStepDeadlineExtension'].includes(op), ['mission', 'editMission'].includes(op));
         if (op === 'mission') {
           const view = missionView(row, member.role !== 'student');
@@ -215,6 +215,34 @@ export class ProductService {
           await tx.auditEvent.create({ data: { actorId: userId, action: 'step.deadline-extension', resourceId: extension.id } });
           return { stepId: step.id, studentId: input.studentId, dueAt: extension.dueAt };
         }
+        if (op === 'groups') {
+          const relevant = member.role === 'student' ? row.publishedVersion : row.draftVersion ?? row.publishedVersion;
+          if (relevant?.workMode !== 'group') return { items: [] };
+          const groups = await tx.missionGroup.findMany({ where: { missionId: id, ...(member.role === 'student' ? { members: { some: { userId } } } : {}) }, include: { members: { select: { userId: true } } }, orderBy: { name: 'asc' } });
+          return { items: groups.map(g => ({ id: g.id, name: g.name, studentIds: g.members.map(m => m.userId) })) };
+        }
+        if (op === 'createGroup') {
+          if (member.role !== 'teacher' || row.status === 'archived') return missing();
+          if (row.draftVersion?.workMode !== 'group' && row.publishedVersion?.workMode !== 'group') return fail(409, 'INDIVIDUAL_ACTIVITY', 'Esta atividade é individual.');
+          const data = body as Body<'createGroup'>;
+          if (await tx.missionGroup.count({ where: { missionId: id, name: data.name } })) return fail(409, 'GROUP_NAME_EXISTS', 'Já existe uma equipe com este nome nesta atividade.');
+          const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
+          if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');
+          const already = await tx.missionGroupMember.count({ where: { userId: { in: data.studentIds }, group: { missionId: id } } });
+          if (already) return fail(409, 'GROUP_MEMBERSHIP_EXISTS', 'Um aluno já pertence a outra equipe desta atividade.');
+          const group = await tx.missionGroup.create({ data: { missionId: id, name: data.name, members: { create: data.studentIds.map(userId => ({ userId })) } } });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'group.create', resourceId: group.id } });
+          return { id: group.id, name: group.name, studentIds: data.studentIds };
+        }
+        if (op === 'removeGroup') {
+          if (member.role !== 'teacher' || row.status === 'archived') return missing();
+          const group = await tx.missionGroup.findFirst({ where: { id: p.groupId, missionId: id } });
+          if (!group) return missing();
+          if (await tx.submission.count({ where: { groupId: group.id } })) return fail(409, 'GROUP_HAS_SUBMISSIONS', 'Esta equipe já possui uma entrega.');
+          await tx.missionGroup.delete({ where: { id: group.id } });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'group.remove', resourceId: group.id } });
+          return { removed: true };
+        }
         if (op === 'editMission') {
           if (member.role === 'student') return missing();
           const input = body as Body<'editMission'>;
@@ -241,7 +269,7 @@ export class ProductService {
           if (row.status === 'archived' || row.draftVersionId !== input.versionId || !row.draftVersion) return fail(409, 'VERSION_CONFLICT', 'Selecione o rascunho atual para revisão.');
           const v = row.draftVersion;
           missionInput.parse({ title: v.title, description: v.description, objectives: v.objectives, criteria: v.criteria,
-            dueAt: v.dueAt?.toISOString() ?? null,
+            dueAt: v.dueAt?.toISOString() ?? null, workMode: v.workMode,
             steps: v.steps.map(s => ({ title: s.title, instructions: s.instructions, example: s.example,
               dueAt: s.dueAt?.toISOString() ?? null, maxPoints: s.maxPoints })),
             materials: v.materials.map(m => ({ title: m.title, text: m.text })) });
@@ -260,7 +288,9 @@ export class ProductService {
           if (input.versionId !== version.id) return fail(409, 'VERSION_CONFLICT', 'Uma nova versão foi publicada. Recarregue a missão.');
           const stepIds = new Set(version.steps.map(s => s.id));
           if (!stepIds.has(input.currentStepId) || input.completedStepIds.some(s => !stepIds.has(s)) || new Set(input.completedStepIds).size !== input.completedStepIds.length) return fail(400, 'INVALID_PROGRESS', 'Etapas inválidas.');
-          const old = await tx.submission.findFirst({ where: { versionId: version.id, userId }, orderBy: { attempt: 'desc' } });
+          const group = version.workMode === 'group' ? await tx.missionGroup.findFirst({ where: { missionId: row.id, members: { some: { userId, user: { memberships: { some: { classroomId: row.classroomId, active: true, role: 'student' } } } } } } }) : null;
+          if (version.workMode === 'group' && !group) return fail(409, 'GROUP_REQUIRED', 'Peça ao professor para incluir você em uma equipe desta atividade.');
+          const old = await tx.submission.findFirst({ where: { versionId: version.id, ...(group ? { groupId: group.id } : { userId, groupId: null }) }, orderBy: { attempt: 'desc' } });
           if ((old?.revision ?? 0) !== input.expectedRevision) {
             if (old && input.audio === undefined && input.textFile === undefined && old.content === input.content && old.status === input.status && old.currentStepId === input.currentStepId && JSON.stringify(old.completedStepIds) === JSON.stringify(input.completedStepIds)) return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: old.id }, include: submissionInclude }));
             return fail(409, 'REVISION_CONFLICT', 'A entrega mudou. Recarregue antes de salvar.');
@@ -279,12 +309,12 @@ export class ProductService {
           const data = { audio, hasAudio: !!audio, textFile, hasTextFile: textFile !== null, content: input.content, currentStepId: input.currentStepId, completedStepIds: input.completedStepIds, stepCompletedAt: completedAt, status: input.status,
             submittedAt: input.status === 'submitted' ? new Date() : null };
           const saved = old && !retry ? await tx.submission.update({ where: { id: old.id }, data: { ...data, revision: { increment: 1 } }, include: submissionInclude }) :
-            await tx.submission.create({ data: { ...data, versionId: version.id, userId, attempt: (old?.attempt ?? 0) + 1, revision: (old?.revision ?? 0) + 1 }, include: submissionInclude });
+            await tx.submission.create({ data: { ...data, versionId: version.id, userId, groupId: group?.id ?? null, attempt: (old?.attempt ?? 0) + 1, revision: (old?.revision ?? 0) + 1 }, include: submissionInclude });
           return submissionView(saved);
         }
         if (op === 'submissions') {
           const rows = await tx.submission.findMany({ ...pageArgs(paging), where: { ...after(paging), version: { missionId: id },
-            ...(member.role === 'student' ? { userId } : { status: { in: ['submitted', 'reviewed'] } }) }, include: submissionInclude });
+            ...(member.role === 'student' ? { OR: [{ userId, groupId: null }, { group: { members: { some: { userId } } } }] } : { status: { in: ['submitted', 'reviewed'] } }) }, include: submissionInclude });
           return pagination(rows.map(submissionView), paging.limit);
         }
       }
@@ -292,7 +322,8 @@ export class ProductService {
         const row = await tx.submission.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { ...submissionInclude, version: { include: { mission: true, steps: { orderBy: { position: 'asc' as const }, include: { deadlineExtensions: true } } } } } });
         if (!row) return missing();
         const member = await membership(tx, userId, row.version.mission.classroomId);
-        if (row.userId !== userId && (member.role !== 'teacher' || row.status === 'draft')) return missing();
+        const groupMember = member.role === 'student' && row.groupId && await tx.missionGroupMember.findUnique({ where: { groupId_userId: { groupId: row.groupId, userId } } });
+        if (row.userId !== userId && !groupMember && (member.role !== 'teacher' || row.status === 'draft')) return missing();
         if (op === 'submissionAudio') { if (!row.audio) return missing(); return { base64: Buffer.from(row.audio).toString('base64'), mimeType: 'audio/wav' }; }
         if (op === 'submissionTextFile') { if (row.textFile === null) return missing(); return { name: 'atividade.txt', text: row.textFile }; }
         if (op === 'submission') return submissionView(row);

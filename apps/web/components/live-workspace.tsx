@@ -30,6 +30,7 @@ export type MissionEntry = {
   mission: Mission;
   classroom: Classroom;
   submissions: Submission[];
+  groups?: ApiResponse<"groups">["items"];
 };
 
 export function LiveWorkspace({
@@ -107,6 +108,7 @@ function WorkspaceView({
                   mission,
                   classroom,
                   submissions: needsDeliveries ? await pages("submissions", mission.id) : [],
+                  groups: needsDeliveries && (mission.publishedVersion ?? mission.draftVersion)?.workMode === "group" ? (await api("groups", { params: { id: mission.id } })).items : [],
                 })),
               );
             }),
@@ -463,6 +465,7 @@ function SubmissionList({
                     ?.title
                 }
               </h2>
+              {submission.groupId && <p>Equipe: {entry.groups?.find(group => group.id === submission.groupId)?.name ?? "Equipe da atividade"}</p>}
               <p className="badge">
                 {submission.status === "draft"
                   ? "Rascunho"
@@ -607,8 +610,7 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
             onChange={e => setConfirmedScores(e.target.checked)} /> Conferi as notas e confirmo a avaliação final.</label>
         </>}
         <p className="small">
-          Destinatário: estudante autor da entrega. O feedback é docente, sem
-          avaliação final automática.
+          Destinatário: {submission.groupId ? "integrantes da equipe" : "estudante autor da entrega"}. O feedback e a avaliação ficam pendentes de validação docente; nada é publicado automaticamente pela IA.
         </p>
         <label className="check"><input type="checkbox" checked={requestRevision} disabled={pending} onChange={e => setRequestRevision(e.target.checked)} /> Solicitar ajustes e permitir nova tentativa</label>
         <button className="button" disabled={pending}>

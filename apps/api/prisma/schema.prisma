@@ -23,6 +23,7 @@ model User {
   teacherProfile TeacherProfile?
   preferences   ReadingPreferences?
   memberships   Membership[]
+  missionGroups MissionGroupMember[]
   submissions   Submission[]
   studentDeadlineExtensions StepDeadlineExtension[] @relation("studentDeadlineExtensions")
   teacherDeadlineExtensions StepDeadlineExtension[] @relation("teacherDeadlineExtensions")
@@ -195,6 +196,7 @@ model Mission {
   createdAt DateTime @default(now())
   classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   versions MissionVersion[] @relation("versions")
+  groups MissionGroup[]
   draftVersion MissionVersion? @relation("draft", fields: [draftVersionId], references: [id])
   publishedVersion MissionVersion? @relation("published", fields: [publishedVersionId], references: [id])
   @@index([classroomId, status])
@@ -208,6 +210,7 @@ model MissionVersion {
   criteria Json
   source String @default("manual")
   dueAt DateTime?
+  workMode String @default("individual")
   createdAt DateTime @default(now())
   mission Mission @relation("versions", fields: [missionId], references: [id], onDelete: Cascade)
   draftOf Mission? @relation("draft")
@@ -253,6 +256,8 @@ model Submission {
   id String @id @default(uuid())
   versionId String
   userId String
+  groupId String?
+  group MissionGroup? @relation(fields: [groupId], references: [id])
   status SubmissionStatus @default(draft)
   content String
   audio Bytes?
@@ -272,7 +277,25 @@ model Submission {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   feedback Feedback[]
   @@unique([versionId, userId, attempt])
+  @@unique([versionId, groupId, attempt])
   @@index([userId, status])
+}
+model MissionGroup {
+  id String @id @default(uuid())
+  missionId String
+  name String @db.VarChar(150)
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  members MissionGroupMember[]
+  submissions Submission[]
+  @@unique([missionId, name])
+}
+model MissionGroupMember {
+  groupId String
+  userId String
+  group MissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([groupId, userId])
+  @@index([userId])
 }
 model Feedback {
   id String @id @default(uuid())

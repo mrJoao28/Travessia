@@ -11,6 +11,7 @@ import { SubmissionMedia } from "./submission-media";
 import { LearnerMaterials } from "./learner-materials";
 import { readStudentDraft, storeStudentDraft } from "../lib/student-draft";
 import { MissionSupports } from "./mission-supports";
+import { GroupManager } from "./group-manager";
 
 export function LiveMission({
   id,
@@ -24,6 +25,7 @@ export function LiveMission({
   viewerId: string;
 }) {
   const [mission, setMission] = useState<Mission | null>(null);
+  const [team, setTeam] = useState<string | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [index, setIndex] = useState(0);
   const [formats, setFormats] = useState<("text" | "audio" | "text_file")[] | null>(null);
@@ -56,8 +58,8 @@ export function LiveMission({
   useEffect(() => {
     let active = true;
     setLoading(true);
-    Promise.all([api("mission", { params: { id } }), pages("submissions", id)])
-      .then(([value, deliveries]) => {
+    Promise.all([api("mission", { params: { id } }), pages("submissions", id), api("groups", { params: { id } })])
+      .then(([value, deliveries, groups]) => {
         if (!active) return;
         const attempts = deliveries.filter(s => s.versionId === value.publishedVersion?.id)
           .sort((a, b) => (b.attempt ?? 1) - (a.attempt ?? 1));
@@ -75,6 +77,7 @@ export function LiveMission({
         setRecovered(!!recover);
         setDirty(!!recover);
         setMission(value);
+        setTeam(groups.items.find(group => group.studentIds.includes(viewerId))?.name ?? null);
         setSubmission(current ?? null);
         setContent(recover ? local.content : current?.content ?? "");
         setCompleted(recover ? local.completed.filter(id => version.steps.some(step => step.id === id)) : current?.completedStepIds ?? []);
@@ -204,6 +207,7 @@ export function LiveMission({
         <p className="eyebrow accent">{classroom.name}</p>
         <h2>{version.title}</h2>
         <p>{version.description}</p>
+        {version.workMode === "group" && <p>{role === "aluno" ? team ? `Atividade em grupo · ${team}. Sua equipe compartilha esta entrega.` : "Atividade em grupo · você ainda não foi incluído em uma equipe. Solicite ao professor." : "Atividade em grupo · uma entrega por equipe."}</p>}
         {version.dueAt && (
           <p>
             Entrega prevista:{" "}
@@ -211,6 +215,7 @@ export function LiveMission({
           </p>
         )}
       </section>
+      {role === "professor" && version.workMode === "group" && <GroupManager missionId={id} />}
       <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
         <div className="form-stack">
           <section className="paper preview-student-stage form-stack" id="etapas">
@@ -392,7 +397,7 @@ export function LiveMission({
                   <p id="submission-help" className="small">
                     O envio torna esta entrega disponível aos docentes de{" "}
                     {classroom.name}. O texto e o progresso são salvos automaticamente. O rascunho
-                    permanece privado para você.
+                    {version.workMode === "group" ? "fica visível aos integrantes da sua equipe." : "permanece privado para você."}
                   </p>
                   {formats === null && <p role="status">Os formatos adicionais aparecem quando a consulta de adaptações da atividade for concluída.</p>}
                   {formats?.length === 1 && <p className="small">Formato disponível nesta atividade: texto no editor.</p>}
@@ -429,6 +434,7 @@ export function LiveMission({
                 </form>
               )}
               <OperationStatus message={message} error={saveError} />
+              {saveError && version.workMode === "group" && <button type="button" className="text-button" onClick={() => window.location.reload()}>Recarregar a entrega da equipe</button>}
             </section>
           )}
           <section
