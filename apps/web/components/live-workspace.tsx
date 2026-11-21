@@ -519,6 +519,10 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
   const [deadlineMessage, setDeadlineMessage] = useState("");
   const [timeZone, setTimeZone] = useState("UTC");
   const [deadlinePending, setDeadlinePending] = useState<string | null>(null);
+  const [aiPending, setAiPending] = useState(false);
+  const [aiConsent, setAiConsent] = useState(false);
+  const [aiMessage, setAiMessage] = useState("");
+  const aiRequest = useRef<{ revision: number; key: string } | null>(null);
   const [deadlineValues, setDeadlineValues] = useState<Record<string, string>>(() => Object.fromEntries(steps.map(step => [step.id, toLocalDateTime(step.dueAt)])));
   useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
   const gradedSteps = steps.filter(step => step.maxPoints !== null);
@@ -581,6 +585,16 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
           }
         }}
       >
+        <details className="teacher-ai">
+          <summary>Preparar correção e feedback com IA (opcional)</summary>
+          <p>A IA recebe somente o texto da resposta, os objetivos, critérios e etapas desta atividade. Áudio, arquivos, identidade e perfil do aluno não são enviados. Confira se o texto não contém dados pessoais antes de autorizar. A sugestão pode errar; você revisa e decide o que publicar.</p>
+          <label className="check"><input type="checkbox" checked={aiConsent} disabled={aiPending || pending}
+            onChange={event => setAiConsent(event.target.checked)} />Revisei a resposta e autorizo enviar seu texto ao Gemini para preparar um rascunho privado para mim.</label>
+          <button type="button" className="button button-outline" disabled={!aiConsent || aiPending || pending || requestRevision}
+            onClick={() => void prepareFeedbackDraft()}>{aiPending ? "Preparando rascunho…" : "Gerar sugestão de correção e feedback"}</button>
+          {requestRevision && <p className="small">Desative “Solicitar ajustes” para pedir uma sugestão de pontuação. Você ainda pode preparar o feedback manualmente.</p>}
+          <OperationStatus message={aiMessage} />
+        </details>
         <label htmlFor={`feedback-${submission.id}`}>
           Orientação para o próximo passo
           <textarea
@@ -631,6 +645,27 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
       setDeadlineMessage(restore ? "Prazo individual removido. O prazo original voltou a valer." : "Prorrogação salva para este estudante.");
     } catch (reason) { setDeadlineMessage(errorMessage(reason)); }
     finally { setDeadlinePending(null); }
+  }
+
+  async function prepareFeedbackDraft() {
+    if (!aiConsent || aiPending || pending || requestRevision) return;
+    if ((content.trim() || Object.keys(scores).length) && !window.confirm("Substituir o feedback ou as notas que você já digitou pelo novo rascunho da IA?")) return;
+    setAiPending(true); setAiMessage("");
+    const key = aiRequest.current?.revision === submission.revision ? aiRequest.current.key : crypto.randomUUID();
+    aiRequest.current = { revision: submission.revision, key };
+    try {
+      const result = await api("generateFeedbackDraft", { params: { id: submission.id },
+        body: { approvedForProvider: true, idempotencyKey: key } });
+      if (result.status !== "succeeded" || !result.draft) {
+        if (result.status === "failed") aiRequest.current = null;
+        throw new Error("A sugestão não foi concluída. Escreva o feedback manualmente ou tente novamente.");
+      }
+      setContent(result.draft.content);
+      setScores(Object.fromEntries(result.draft.scores.map(score => [score.stepId, { points: String(score.points), comment: score.comment }])));
+      setConfirmedScores(false);
+      setAiMessage("Rascunho preenchido. Revise o texto e cada pontuação antes de publicar.");
+    } catch (reason) { setAiMessage(errorMessage(reason)); }
+    finally { setAiPending(false); }
   }
 }
 
