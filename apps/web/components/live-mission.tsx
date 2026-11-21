@@ -44,7 +44,9 @@ export function LiveMission({
   const [previousDrafts, setPreviousDrafts] = useState<Submission[]>([]);
   const [previousLocal, setPreviousLocal] = useState<ReturnType<typeof readStudentDraft>>(null);
   const [recovered, setRecovered] = useState(false);
+  const [timeZone, setTimeZone] = useState("UTC");
   const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
   const stepNavigation = useRef(false);
   useLayoutEffect(() => {
     if (!stepNavigation.current) return;
@@ -234,6 +236,11 @@ export function LiveMission({
             <h2 ref={title} tabIndex={-1}>
               {step.title}
             </h2>
+            {step.dueAt && <p className="small">{step.deadlineExtended ? "Prazo individual prorrogado até" : "Prazo desta etapa"}: {formatDeadline(step.dueAt, timeZone)}</p>}
+            {submission?.gradingSteps.find(item => item.id === step.id)?.completedAt && <p className="small" role="status">
+              Etapa registrada {submission.gradingSteps.find(item => item.id === step.id)?.late ? "com atraso" : "no prazo"} em {formatDeadline(submission.gradingSteps.find(item => item.id === step.id)!.completedAt!, timeZone)}.
+            </p>}
+            {step.maxPoints !== null && <p className="small">Pontuação máxima: {step.maxPoints}</p>}
             <p className="submission-content">{step.instructions}</p>
             {step.example && <details className="example" key={step.id}>
               <summary>Ver um exemplo</summary>
@@ -471,4 +478,8 @@ export function LiveMission({
       </div>
     </>
   );
+}
+
+function formatDeadline(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short", timeZone }).format(new Date(value));
 }

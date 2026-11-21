@@ -24,6 +24,8 @@ model User {
   preferences   ReadingPreferences?
   memberships   Membership[]
   submissions   Submission[]
+  studentDeadlineExtensions StepDeadlineExtension[] @relation("studentDeadlineExtensions")
+  teacherDeadlineExtensions StepDeadlineExtension[] @relation("teacherDeadlineExtensions")
   barriers      BarrierReport[]
   generations   AiGeneration[]
   learningNeeds LearningNeeds?
@@ -226,10 +228,13 @@ model Step {
   title String
   instructions String
   example String
+  dueAt DateTime?
+  maxPoints Int?
   version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   barriers BarrierReport[]
   strategyPlans StrategyPlan[]
   activityAdaptations ActivityAdaptation[]
+  deadlineExtensions StepDeadlineExtension[]
   @@unique([versionId, position])
 }
 model Material {
@@ -255,6 +260,7 @@ model Submission {
   textFile String?
   hasTextFile Boolean @default(false)
   completedStepIds Json
+  stepCompletedAt Json @default("{}")
   currentStepId String
   revision Int @default(1)
   attempt Int @default(1)
@@ -273,9 +279,24 @@ model Feedback {
   submissionId String
   teacherId String
   content String
+  scores Json?
+  totalPoints Int?
   createdAt DateTime @default(now())
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   @@index([submissionId])
+}
+model StepDeadlineExtension {
+  id String @id @default(uuid())
+  stepId String
+  studentId String
+  teacherId String
+  dueAt DateTime
+  updatedAt DateTime @updatedAt
+  step Step @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  student User @relation("studentDeadlineExtensions", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher User @relation("teacherDeadlineExtensions", fields: [teacherId], references: [id], onDelete: Cascade)
+  @@unique([stepId, studentId])
+  @@index([studentId])
 }
 model BarrierReport {
   id String @id @default(uuid())

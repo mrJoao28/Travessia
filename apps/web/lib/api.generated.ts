@@ -230,6 +230,10 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/submissions/{id}/feedback"
   },
+  "setStepDeadlineExtension": {
+    "method": "PATCH",
+    "path": "/activities/{id}/steps/{stepId}/deadline-extension"
+  },
   "createBarrier": {
     "method": "POST",
     "path": "/steps/{id}/barriers"
