@@ -1269,6 +1269,7 @@ body {
 }
 
 .mission-supports audio, .strategy-content audio, .strategy-preview audio, .strategy-saved audio { width: 100%; max-width: 100%; }
+.learner-material-pdf { display: block; width: 100%; height: min(70vh, 48rem); min-height: 24rem; margin-block: 1rem; border: 1px solid var(--border); border-radius: .5rem; background: var(--surface); }
 .strategy-content input[type="file"] { width: 100%; min-width: 0; }
 
 .form-stack audio { max-width: 100%; width: 100%; }

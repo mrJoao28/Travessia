@@ -20,6 +20,10 @@ const config: NextConfig = {
           },
         ],
       },
+      {
+        source: "/api/v1/missions/:id/material-assets/:assetId/pdf",
+        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
     ];
   },
 };
