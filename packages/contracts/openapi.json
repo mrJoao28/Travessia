@@ -2808,6 +2808,14 @@
                           "downloadAllowed": {
                             "type": "boolean"
                           },
+                          "previewPages": {
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 40
+                            }
+                          },
                           "expiresAt": {
                             "type": "string",
                             "format": "date-time",
@@ -2932,6 +2940,7 @@
                           "id",
                           "title",
                           "downloadAllowed",
+                          "previewPages",
                           "document",
                           "hasAudio"
                         ],
