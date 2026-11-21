@@ -45,11 +45,11 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await expect(teacher.getByText(/Uploads permanecem desativados/)).toHaveCount(0);
   await teacher.getByLabel('Adicionar PDF à missão',{exact:true}).setInputFiles({name:'rotas-campus.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
   await teacher.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();
-  await expect(teacher.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();
+  await expect(teacher.getByRole('heading',{name:'PDF da missão e apoios opcionais',exact:true})).toBeVisible();
   const missionId=new URL(teacher.url()).pathname.split('/')[3];
   let mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());const versionId=mission.draftVersion.id;
   await teacher.getByLabel('Aluno da turma',{exact:true}).selectOption(studentId);
-  await expect(teacher.getByText('Arquivo adicionado · 1 página',{exact:true})).toBeVisible({timeout:90000});
+  await expect(teacher.getByText(/PDF da missão · 1 página · aparece para toda a turma após publicar/)).toBeVisible({timeout:90000});
   await expect(teacher.getByRole('checkbox',{name:/texto ampliado/i})).toBeChecked();
   await expect(teacher.getByRole('checkbox',{name:/Organizar em passos curtos/})).toHaveCount(0);
   await teacher.getByRole('checkbox',{name:/^Audiodescrição/}).check();
@@ -76,29 +76,20 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await teacher.screenshot({path:'test-results/reference-coherent-comparison-desktop.png',fullPage:true});
   await teacher.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();await teacher.getByRole('button',{name:'Disponibilizar para Marina do fluxo →',exact:true}).click();
   await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
-  await teacher.getByRole('button',{name:'Preparar outro material',exact:true}).click();
-  await teacher.getByLabel('Aluno da turma',{exact:true}).selectOption(otherId);
-  await expect(teacher.getByText('Nenhuma deficiência informada',{exact:true})).toBeVisible();
-  await expect(teacher.getByRole('button',{name:'Usar PDF original',exact:true})).toBeVisible();
-  await teacher.screenshot({path:'test-results/reference-coherent-no-disclosure.png',fullPage:true});
-  await teacher.getByRole('button',{name:'Usar PDF original',exact:true}).click();
-  await teacher.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
-  await teacher.getByRole('button',{name:'Disponibilizar para Aluno B do fluxo →',exact:true}).click();
-  await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
   await teacher.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await teacher.getByRole('checkbox',{name:'Revisei objetivos, critérios, etapas e materiais.',exact:true}).check();
   await teacher.getByRole('button',{name:'Publicar missão',exact:true}).click();await expect(teacher.getByRole('heading',{name:'Pronto para sua turma!',exact:true})).toBeVisible();
   mission=await teacher.request.get(`/api/v1/missions/${missionId}`).then(r=>r.json());expect(mission.publishedVersion.id).toBe(versionId);
-  for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/missoes/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();}
-  // A receives the reviewed PDF/voice and activity. B receives only the unchanged original PDF.
+  for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/missoes/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'PDF da missão e apoios opcionais',exact:true})).toBeVisible();}
+  // A receives the mission PDF plus the reviewed individual adaptation; B receives the same mission PDF without any per-student release.
   const secondClassroom=await post(teacher,'/api/v1/classrooms',{name:'Outra turma da estudante'});
   const secondInvitation=await post(teacher,`/api/v1/classrooms/${secondClassroom.id}/invitations`,{});
   await post(student,'/api/v1/invitations/accept',{token:secondInvitation.token});
   const materialsRequest=`**/api/v1/missions/${missionId}/my-materials?*`;
   await student.route(materialsRequest,async route=>{await new Promise(resolve=>setTimeout(resolve,750));await route.continue();});
   await student.goto(`/aluno/missoes/${missionId}`);await expect(student.locator('#etapas h2')).toHaveText('Comparar rotas');
-  const prepared=student.getByRole('region',{name:'Materiais preparados para você',exact:true});
-  await expect(prepared.getByRole('status')).toHaveText('Consultando materiais preparados…');
-  await expect(prepared.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toBeVisible();
+  const prepared=student.getByRole('region',{name:'PDFs da missão e apoios para você',exact:true});
+  await expect(prepared.getByRole('status')).toHaveText('Consultando materiais da missão…');
+  await expect(prepared.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toHaveCount(2);
   await student.unroute(materialsRequest);
   await expect(prepared.getByText('Compare duas rotas de 10 metros. Identifique os obstáculos e justifique uma escolha acessível.',{exact:true})).toBeVisible();
   const download=student.waitForEvent('download');await prepared.getByRole('link',{name:'Baixar PDF adaptado',exact:true}).click();expect((await download).suggestedFilename()).toBe('material-adaptado.pdf');
@@ -108,14 +99,15 @@ test('fluxo completo real: cadastro, turma, missão, PDF/voz, adaptação indivi
   await student.getByText('Consultar enunciado adaptado',{exact:true}).click();await expect(student.getByText('Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.',{exact:true})).toBeVisible();
   const privateMaterials=(await student.request.get(`/api/v1/missions/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items;
   await other.goto(`/aluno/missoes/${missionId}`);await expect(other.locator('#etapas h2')).toHaveText('Comparar rotas');
-  const originalRegion=other.getByRole('region',{name:'Materiais preparados para você',exact:true});
-  await expect(originalRegion.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toBeVisible();
-  const originalLink=originalRegion.getByRole('link',{name:'Baixar PDF original',exact:true});await expect(originalLink).toBeVisible();
+  const originalRegion=other.getByRole('region',{name:'PDFs da missão e apoios para você',exact:true});
+  await expect(originalRegion.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toHaveCount(1);
+  const originalLink=originalRegion.getByRole('link',{name:'Baixar PDF da missão',exact:true});await expect(originalLink).toBeVisible();
   const originalResponse=await other.request.get((await originalLink.getAttribute('href'))!);expect(originalResponse.status()).toBe(200);expect(await originalResponse.body()).toEqual(materialPdfFixture());
   await expect(originalRegion.locator('audio')).toHaveCount(0);
-  const ownOriginal=(await other.request.get(`/api/v1/missions/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items[0];expect(ownOriginal.mode).toBe('original');expect(ownOriginal.document).toEqual([]);
-  expect((await student.request.get(`/api/v1/missions/${missionId}/material-assets/${ownOriginal.id}/pdf`)).status()).toBe(404);
-  expect((await other.request.get(`/api/v1/missions/${missionId}/material-assets/${privateMaterials[0].id}/pdf`)).status()).toBe(404);
+  const ownMissionMaterial=(await other.request.get(`/api/v1/missions/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items.find((item:{scope:string})=>item.scope==='mission');expect(ownMissionMaterial.mode).toBe('original');expect(ownMissionMaterial.document).toEqual([]);
+  expect((await student.request.get(`/api/v1/missions/${missionId}/material-assets/${ownMissionMaterial.id}/pdf`)).status()).toBe(200);
+  const privateAdaptation=privateMaterials.find((item:{scope:string})=>item.scope==='individual');expect(privateAdaptation).toBeTruthy();
+  expect((await other.request.get(`/api/v1/missions/${missionId}/material-assets/${privateAdaptation.id}/pdf`)).status()).toBe(404);
   await expect(other.getByLabel('Áudio da atividade (opcional)',{exact:true})).toHaveCount(0);
   const wav=Buffer.alloc(32044);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(16000,24);wav.writeUInt32LE(32000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(32000,40);
   await student.getByLabel('Planejamento e atividade',{exact:true}).fill('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');

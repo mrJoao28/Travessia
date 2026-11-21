@@ -569,6 +569,50 @@ test('adaptação valida versões, edições concorrentes, arquivos de texto e f
   await request(`${path}/archive`, main, 'POST', {});
   await request(`${path}/adaptations`, main, 'POST', { ...input, versionId: draft.id, requestKey: randomUUID() }, 409);
 });
+test('PDF da missão publicada aparece para toda a turma com autorização ativa', async () => {
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const versionId = created.draftVersion.id, path = `/v1/missions/${created.id}`;
+  const bytes = Buffer.from('%PDF-1.4\nmaterial didático da turma');
+  const source = (await request(`${path}/material-sources`, main, 'POST', {
+    versionId, title: 'Material da turma.pdf', base64: bytes.toString('base64'), requestKey: randomUUID(),
+  })).json;
+  await request(`${path}/my-materials?versionId=${versionId}`, a, 'GET', undefined, 404);
+  await request(`${path}/publish`, main, 'POST', { versionId, reviewed: true });
+  for (const cookie of [a, b]) {
+    const processing = (await request(`${path}/my-materials?versionId=${versionId}`, cookie)).json.items[0];
+    assert.equal(processing.id, source.id);assert.equal(processing.status, 'processing');
+    await request(`${path}/material-assets/${source.id}/pdf`, cookie, 'GET', undefined, 404);
+  }
+  await db.materialSource.update({ where: { id: source.id }, data: { status: 'ready', pageCount: 1 } });
+  await writeFile(materialPath(source.id, 'original.pdf'), bytes);
+
+  for (const cookie of [a, b]) {
+    const items = (await request(`${path}/my-materials?versionId=${versionId}`, cookie)).json.items;
+    assert.equal(items.length, 1);
+    assert.deepEqual({ id: items[0].id, title: items[0].title, mode: items[0].mode, scope: items[0].scope, status: items[0].status },
+      { id: source.id, title: 'Material da turma.pdf', mode: 'original', scope: 'mission', status: 'ready' });
+    assert.deepEqual(items[0].document, []);
+    const pdf = await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { headers: { cookie } });
+    assert.equal(pdf.status, 200);
+    assert.equal(pdf.headers.get('content-type'), 'application/pdf');
+    assert.deepEqual(Buffer.from(await pdf.arrayBuffer()), bytes);
+  }
+  await request(`${path}/my-materials?versionId=${versionId}`, '', 'GET', undefined, 401);
+  await request(`${path}/my-materials?versionId=${versionId}`, otherTeacher, 'GET', undefined, 404);
+  await request(`${path}/material-assets/${source.id}/pdf`, otherTeacher, 'GET', undefined, 404);
+  await request(`${path}/material-assets/${source.id}/original`, a, 'GET', undefined, 404);
+  await request(`${path}/material-assets/${source.id}/audio`, a, 'GET', undefined, 404);
+  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } }, data: { active: false } });
+  await request(`${path}/my-materials?versionId=${versionId}`, b, 'GET', undefined, 404);
+  await request(`${path}/material-assets/${source.id}/pdf`, b, 'GET', undefined, 404);
+  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } }, data: { active: true } });
+
+  const next = (await request(path, main, 'PATCH', { ...fixture, title: 'Nova versão sem PDF herdado', expectedDraftVersionId: null })).json;
+  await request(`${path}/publish`, main, 'POST', { versionId: next.draftVersion.id, reviewed: true });
+  assert.deepEqual((await request(`${path}/my-materials?versionId=${next.draftVersion.id}`, a)).json.items, []);
+  await request(`${path}/material-assets/${source.id}/pdf`, a, 'GET', undefined, 404);
+});
+
 test('IA indisponível clara; cota concorrente, deduplicação e revisão humana', { timeout: 30000 }, async () => {
   let mission = (await request(`/v1/missions/${workshop}-draft`, main)).json;
   const input = { materialIds: [mission.draftVersion.materials[0].id], objectives: ['Comparar soluções.'], approvedForProvider: true, idempotencyKey: randomUUID() };
@@ -634,7 +678,9 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   let draft = (await request(`${path}/material-adaptations?versionId=${versionId}`, main)).json.items[0];
   assert.equal(draft.status,'draft');
   await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:1,reviewed:true},409);
-  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,0);
+  const missionPdf = (await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items;
+  assert.equal(missionPdf.length,1);assert.equal(missionPdf[0].id,source.id);assert.equal(missionPdf[0].status,'ready');
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items[0].id,source.id);
   const malicious = [{page:1,title:'Teste',text:'<script>alert(1)</script> Dados: 10 metros.',description:'Diagrama.'}];
   draft=(await request(`${path}/material-adaptations/${plan.id}`,main,'PATCH',{expectedRevision:1,document:malicious})).json;
   await request(`${path}/material-adaptations/${plan.id}`,main,'PATCH',{expectedRevision:1,document:malicious},409);
@@ -643,8 +689,9 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   let rendered = (await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items[0]; assert.equal(rendered.status,'ready');assert.equal(rendered.hasAudio,true);
   await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:rendered.revision},400);
   await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:rendered.revision,reviewed:true});
-  const student = (await request(`${path}/my-materials?versionId=${versionId}`,a)).json; assert.equal(student.items.length,1);assert.ok(!JSON.stringify(student).includes('studentId'));
-  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,0);
+  const student = (await request(`${path}/my-materials?versionId=${versionId}`,a)).json; assert.equal(student.items.length,2);assert.ok(!JSON.stringify(student).includes('studentId'));
+  assert.equal(student.items.find((item: {id:string})=>item.id===plan.id).scope,'individual');
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,1);
   async function file(kind:string, cookie:string,status=200) { const r=await fetch(`${base}${path}/material-assets/${plan.id}/${kind}`,{headers:{cookie}});assert.equal(r.status,status);return r; }
   assert.equal((await file('pdf',a)).headers.get('content-type'),'application/pdf');
   await file('audio',a);await file('page-1',a);await file('page-2',a,404);await file('pdf',b,404);await file('audio',otherTeacher,404);
@@ -657,7 +704,7 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   })).json;
   assert.equal(pendingRevision.hasReleasedVersion, true);
   await file('pdf',a); await file('audio',a); await file('pdf',b,404);
-  const deliveredText = async () => (await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items[0].document[0].text;
+  const deliveredText = async () => (await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.find((item:{id:string})=>item.id===plan.id).document[0].text;
   assert.equal(await deliveredText(), malicious[0].text);
   await request(`${path}/material-adaptations/${plan.id}/render`,main,'POST',{expectedRevision:pendingRevision.revision});
   await worker.tick();
@@ -721,7 +768,7 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   await request(structuredPath, main, 'DELETE');
   config.aiEnabled=false;
   await db.materialAdaptation.createMany({data:Array.from({length:41},()=>({versionId,sourceId:source.id,studentId:'demo-student-1',creatorId:mainId,requestKey:randomUUID(),requestHash:randomUUID(),settings,pages:[1],document:malicious,status:'released',expiresAt:new Date(Date.now()+86400000)}))});
-  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,42,'A revisão publicada e os demais materiais continuam disponíveis além do quadragésimo item');
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,43,'O PDF da missão e os materiais liberados continuam disponíveis além do quadragésimo item');
   await request(`${path}/material-sources/${source.id}`,main,'DELETE');await file('pdf',a,404);await worker.collect();
   assert.equal(await db.materialSource.count({where:{id:source.id}}),0);
 });
@@ -746,7 +793,7 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
  await file(a,404);await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
  assert.deepEqual(Buffer.from(await (await file(a)).arrayBuffer()),bytes);
  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items[0].mode,'original');
- assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,0);
+ assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,1);
  await file(b,404);await file(otherTeacher,404);await file(a,404,'audio');await file(a,404,'page-1');
  await request(`${path}/material-assets/${source.id}/original`,a,'GET',undefined,404);
  await request(`${path}/material-adaptations/${original.id}/render`,main,'POST',{expectedRevision:1},409);
@@ -814,7 +861,7 @@ test('narração integral: quatro páginas preservadas, descrição IA separada 
     assert.ok(!spoken.includes('Resumo que deve ser ignorado.'));
     await request(`${path}/material-assets/${plan.id}/audio`,a,'GET',undefined,404);
     await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:draft.revision,reviewed:true});
-    const own=(await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items[0];assert.equal(own.hasAudio,true);assert.equal(own.document.length,4);
+    const own=(await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.find((item:{id:string})=>item.id===plan.id);assert.equal(own.hasAudio,true);assert.equal(own.document.length,4);
     assert.equal((await fetch(`${base}${path}/material-assets/${plan.id}/audio`,{headers:{cookie:a}})).status,200);
     await request(`${path}/material-assets/${plan.id}/audio`,b,'GET',undefined,404);
   } finally { config.aiEnabled=false; }
