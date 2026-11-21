@@ -214,6 +214,18 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/activities/{id}/archive"
   },
+  "groups": {
+    "method": "GET",
+    "path": "/activities/{id}/groups"
+  },
+  "createGroup": {
+    "method": "POST",
+    "path": "/activities/{id}/groups"
+  },
+  "removeGroup": {
+    "method": "DELETE",
+    "path": "/activities/{id}/groups/{groupId}"
+  },
   "saveSubmission": {
     "method": "POST",
     "path": "/activities/{id}/submissions"
@@ -229,6 +241,14 @@ export const apiRoutes = {
   "feedback": {
     "method": "POST",
     "path": "/submissions/{id}/feedback"
+  },
+  "generateFeedbackDraft": {
+    "method": "POST",
+    "path": "/submissions/{id}/ai-feedback-draft"
+  },
+  "setStepDeadlineExtension": {
+    "method": "PATCH",
+    "path": "/activities/{id}/steps/{stepId}/deadline-extension"
   },
   "createBarrier": {
     "method": "POST",

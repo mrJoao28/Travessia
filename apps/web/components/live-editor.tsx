@@ -5,6 +5,8 @@ import Link from "next/link";
 import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { MissionSupportsEditor } from "./live-strategies";
 import { SupportGenerator } from "./support-generator";
+import { GroupManager } from "./group-manager";
+import { TeacherNeedsNotice } from "./teacher-needs-notice";
 import { OperationStatus } from "./operation-status";
 import {
   api,
@@ -23,10 +25,13 @@ function editable(version: Version): Input {
     objectives: version.objectives,
     criteria: version.criteria,
     dueAt: version.dueAt,
+    workMode: version.workMode,
     steps: version.steps.map((step) => ({
       title: step.title,
       instructions: step.instructions,
       example: step.example,
+      dueAt: step.dueAt,
+      maxPoints: step.maxPoints,
     })),
     materials: version.materials.map((material) => ({
       title: material.title,
@@ -45,6 +50,7 @@ const empty: Input = {
   objectives: [""],
   criteria: [""],
   dueAt: null,
+  workMode: "individual",
   steps: [{ title: "", instructions: "", example: "" }],
   materials: [],
 };
@@ -268,6 +274,12 @@ export function LiveEditor({
                   }
                 />
               </label>
+              <label htmlFor="editor-work-mode">Forma de realização
+                <select id="editor-work-mode" value={input.workMode ?? "individual"} onChange={e => change({ ...input, workMode: e.target.value as "individual" | "group" })}>
+                  <option value="individual">Individual: cada aluno envia sua atividade</option>
+                  <option value="group">Em grupo: uma entrega compartilhada por equipe</option>
+                </select>
+              </label>
               <label htmlFor="editor-objectives">
                 Objetivos de aprendizagem · um por linha
                 <textarea
@@ -374,6 +386,18 @@ export function LiveEditor({
                           })
                         }
                       />
+                    </label>
+                    <label htmlFor={`live-step-due-${stepKeys[index]}`}>
+                      Data de entrega da etapa (opcional)
+                      <input id={`live-step-due-${stepKeys[index]}`} type="datetime-local"
+                        value={step.dueAt ? (() => { const date = new Date(step.dueAt); return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); })() : ""}
+                        onChange={(e) => change({ ...input, steps: input.steps.map((s, i) => i === index ? { ...s, dueAt: e.target.value ? new Date(e.target.value).toISOString() : null } : s) })} />
+                    </label>
+                    <label htmlFor={`live-step-points-${stepKeys[index]}`}>
+                      Pontuação máxima da etapa (opcional)
+                      <input id={`live-step-points-${stepKeys[index]}`} type="number" min="0" max="100" step="1"
+                        value={step.maxPoints ?? ""}
+                        onChange={(e) => change({ ...input, steps: input.steps.map((s, i) => i === index ? { ...s, maxPoints: e.target.value === "" ? null : Number(e.target.value) } : s) })} />
                     </label>
                   </div>
                   <div className="actions">
@@ -586,6 +610,8 @@ export function LiveEditor({
                   <strong>{step.title}</strong>
                   <p>{step.instructions}</p>
                   <p>Exemplo: {step.example}</p>
+                  {step.dueAt && <p>Entrega da etapa: {new Date(step.dueAt).toLocaleString("pt-BR")}</p>}
+                  {step.maxPoints !== null && step.maxPoints !== undefined && <p>Pontuação máxima: {step.maxPoints}</p>}
                 </li>
               ))}
             </ol>
@@ -629,6 +655,8 @@ export function LiveEditor({
           </section>
         )}
         {!monitor && stage === 2 && <div className="form-stack">
+          {mission && storedVersion?.workMode === "group" && <GroupManager missionId={mission.id} />}
+          {mission && <TeacherNeedsNotice classroomId={mission.classroomId} activityId={mission.id} />}
           {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da atividade",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
           <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da atividade, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
           {mission && storedVersion && !dirty && storedVersion.materials.length > 0 && (

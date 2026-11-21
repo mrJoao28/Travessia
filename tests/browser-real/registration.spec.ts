@@ -41,12 +41,12 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     await expect(invite).toHaveValue(/^[A-HJ-NP-Z2-9]{8}$/);
     const token = await invite.inputValue();
     const link=await teacher.getByLabel('Link de convite',{exact:true}).inputValue();
-    await teacher.getByLabel('E-mail do aluno',{exact:true}).fill(studentEmail);
+    await teacher.getByLabel('E-mail da pessoa convidada',{exact:true}).fill(studentEmail);
     const mail=new URL((await teacher.getByRole('link',{name:'Convidar por e-mail',exact:true}).getAttribute('href'))!);
     expect(mail.searchParams.get('body')).toContain(link);expect(mail.searchParams.get('body')).toContain(token);
     await student.goto(link);
     await expect(student.getByRole('heading',{name:'Você recebeu um convite de turma',exact:true})).toBeVisible();
-    await student.getByRole('link',{name:'Criar conta de aluno',exact:true}).click();
+    await student.getByRole('link',{name:'Criar conta',exact:true}).click();
     await register(student, 'aluno', studentEmail,true);
     await expect(student.getByLabel('Código de convite',{exact:true})).toHaveValue(token);
     expect((await student.request.get('/api/v1/classrooms').then(r => r.json())).items).toHaveLength(0);
@@ -58,8 +58,8 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     expect((await student.request.get('/api/v1/classrooms').then(r => r.json())).items[0].role).toBe('student');
     await expect(student.getByRole('heading',{name:'Você entrou na turma Turma de cadastro inclusivo.',exact:true})).toBeVisible();
     const input={title:'Primeira atividade do laboratório',description:'Compare duas soluções para organizar o laboratório.',objectives:['Comparar duas alternativas.'],criteria:['Justificar uma escolha com dois dados.'],steps:[{title:'Conhecer o desafio',instructions:'Leia os dados e compare as alternativas.',example:'Compare custo e clareza.'}],materials:[]};
-    const createdResponse=await teacher.request.post(`/api/v1/classrooms/${classroomId}/missions`,{headers:{Origin:baseURL!},data:input});expect(createdResponse.status()).toBe(200);const created=await createdResponse.json();
-    expect((await teacher.request.post(`/api/v1/missions/${created.id}/publish`,{headers:{Origin:baseURL!},data:{versionId:created.draftVersion.id,reviewed:true}})).status()).toBe(200);
+    const createdResponse=await teacher.request.post(`/api/v1/classrooms/${classroomId}/activities`,{headers:{Origin:baseURL!},data:input});expect(createdResponse.status()).toBe(200);const created=await createdResponse.json();
+    expect((await teacher.request.post(`/api/v1/activities/${created.id}/publish`,{headers:{Origin:baseURL!},data:{versionId:created.draftVersion.id,reviewed:true}})).status()).toBe(200);
     await student.reload();await expect(student.getByRole('link',{name:'Começar minha primeira atividade',exact:true})).toBeVisible();
     await student.getByRole('link',{name:'Começar minha primeira atividade',exact:true}).click();await expect(student.getByRole('heading',{name:input.title,exact:true})).toBeVisible();
 

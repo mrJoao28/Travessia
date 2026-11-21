@@ -218,6 +218,34 @@ test('entregas: autoria, isolamento A/B, draft privado e controle de concorrênc
   const reviewed = (await request(`/v1/submissions/${sent.id}/feedback`, main, 'POST', { content: 'Compare também uma segunda alternativa.' })).json;
   assert.equal(reviewed.status, 'reviewed'); assert.equal(reviewed.feedback.length, 1);
 });
+test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega única', async () => {
+  const c = (await provision('demo-student-3')).cookie;
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', { ...fixture, workMode: 'group' })).json;
+  const path = `/v1/missions/${created.id}`;
+  assert.equal(created.draftVersion.workMode, 'group');
+  await request(`${path}/groups`, a, 'GET', undefined, 404);
+  await request(`${path}/groups`, a, 'POST', { name: 'Invasora', studentIds: ['demo-student-1', 'demo-student-2'] }, 404);
+  await request(`${path}/groups`, main, 'POST', { name: 'Inválida', studentIds: ['demo-student-1', mainId] }, 400);
+  const team = (await request(`${path}/groups`, main, 'POST', { name: 'Equipe A', studentIds: ['demo-student-1', 'demo-student-2'] })).json;
+  await request(`${path}/groups`, main, 'POST', { name: 'Equipe B', studentIds: ['demo-student-2', 'demo-student-3'] }, 409);
+  await request(`${path}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true });
+  assert.deepEqual((await request(`${path}/groups`, a)).json.items.map((g: any) => g.id), [team.id]);
+  assert.deepEqual((await request(`${path}/groups`, c)).json.items, []);
+  const input = { versionId: created.draftVersion.id, content: 'Texto coletivo', completedStepIds: [], currentStepId: created.draftVersion.steps[0].id, status: 'draft', expectedRevision: 0 };
+  await request(`${path}/submissions`, c, 'POST', input, 409);
+  const first = (await request(`${path}/submissions`, a, 'POST', input)).json;
+  assert.equal(first.groupId, team.id);
+  assert.equal((await request(`${path}/submissions`, b)).json.items[0].id, first.id);
+  assert.equal((await request(`/v1/submissions/${first.id}`, b)).json.content, 'Texto coletivo');
+  await request(`/v1/submissions/${first.id}`, c, 'GET', undefined, 404);
+  await request(`/v1/submissions/${first.id}`, main, 'GET', undefined, 404);
+  await request(`${path}/groups/${team.id}`, main, 'DELETE', undefined, 409);
+  const submitted = (await request(`${path}/submissions`, b, 'POST', { ...input, content: 'Resposta conjunta', status: 'submitted', expectedRevision: first.revision })).json;
+  assert.equal(submitted.id, first.id);
+  assert.equal(submitted.userId, 'demo-student-1');
+  assert.equal((await request(`${path}/submissions`, main)).json.items.length, 1);
+  await request(`${path}/submissions`, a, 'POST', { ...input, expectedRevision: submitted.revision }, 409);
+});
 test('feedback com ajustes abre nova tentativa e preserva a entrega revisada', async () => {
   const mission = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   const versionId = mission.draftVersion.id;
@@ -235,6 +263,55 @@ test('feedback com ajustes abre nova tentativa e preserva a entrega revisada', a
   const prior = (await request(`/v1/submissions/${first.id}`, a)).json;
   assert.equal(prior.content, input.content);
   assert.equal(prior.feedback[0].content, 'Compare mais uma hipótese.');
+});
+test('prazo e nota por etapa: professor confirma pontos e total calculado para o aluno', async () => {
+  const dueAt = '2000-04-21T15:00:00.000Z';
+  const input = { ...fixture, steps: [
+    { ...fixture.steps[0], dueAt, maxPoints: 4 },
+    { title: 'Justificar', instructions: 'Justifique sua escolha.', example: 'Liste seus motivos.', dueAt: null, maxPoints: 6 },
+  ] };
+  const mission = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', input)).json;
+  const path = `/v1/missions/${mission.id}`;
+  await request(`${path}/publish`, main, 'POST', { versionId: mission.draftVersion.id, reviewed: true });
+  const version = (await request(path, a)).json.publishedVersion;
+  assert.equal(version.steps[0].dueAt, dueAt);
+  assert.equal(version.steps[0].deadlineExtended, false);
+  assert.deepEqual(version.steps.map((step: { maxPoints: number }) => step.maxPoints), [4, 6]);
+  const extendedUntil = '2099-04-22T15:00:00.000Z';
+  await request(`/v1/activities/${mission.id}/steps/${version.steps[0].id}/deadline-extension`, main, 'PATCH', { studentId: 'demo-student-1', dueAt: dueAt }, 400);
+  const extension = (await request(`/v1/activities/${mission.id}/steps/${version.steps[0].id}/deadline-extension`, main, 'PATCH', { studentId: 'demo-student-1', dueAt: extendedUntil })).json;
+  assert.equal(extension.dueAt, extendedUntil);
+  const studentVersion = (await request(path, a)).json.publishedVersion;
+  const otherStudentVersion = (await request(path, b)).json.publishedVersion;
+  assert.equal(studentVersion.steps[0].dueAt, extendedUntil); assert.equal(studentVersion.steps[0].deadlineExtended, true);
+  assert.equal(otherStudentVersion.steps[0].dueAt, dueAt); assert.equal(otherStudentVersion.steps[0].deadlineExtended, false);
+  await request(`/v1/activities/${mission.id}/steps/${version.steps[0].id}/deadline-extension`, a, 'PATCH', { studentId: 'demo-student-1', dueAt: extendedUntil }, 404);
+  const sent = (await request(`${path}/submissions`, a, 'POST', { versionId: version.id,
+    currentStepId: version.steps[0].id, completedStepIds: version.steps.map((step: { id: string }) => step.id),
+    content: 'Minha justificativa.', status: 'submitted', expectedRevision: 0 })).json;
+  const records = (await request(`/v1/submissions/${sent.id}`, main)).json.gradingSteps;
+  assert.equal(records[0].deadlineExtended, true); assert.equal(records[0].late, false); assert.ok(records[0].completedAt);
+  const draftAfterDeadline = (await request(`${path}/submissions`, b, 'POST', { versionId: version.id,
+    currentStepId: version.steps[1].id, completedStepIds: [], content: 'Rascunho após o prazo.', status: 'draft', expectedRevision: 0 })).json;
+  assert.equal(draftAfterDeadline.status, 'draft');
+  const late = (await request(`${path}/submissions`, b, 'POST', { versionId: version.id,
+    currentStepId: version.steps[0].id, completedStepIds: [version.steps[0].id], content: 'Entrega após o prazo.', status: 'submitted', expectedRevision: draftAfterDeadline.revision })).json;
+  assert.equal(late.gradingSteps[0].late, true); assert.ok(late.gradingSteps[0].completedAt);
+  const next = (await request(path, main, 'PATCH', { ...fixture, expectedDraftVersionId: null })).json;
+  await request(`${path}/publish`, main, 'POST', { versionId: next.draftVersion.id, reviewed: true });
+  assert.deepEqual((await request(`/v1/submissions/${sent.id}`, main)).json.gradingSteps.map((step: { maxPoints: number }) => step.maxPoints), [4, 6]);
+  const feedbackPath = `/v1/submissions/${sent.id}/feedback`;
+  const scores = [{ stepId: version.steps[0].id, points: 3, comment: 'Bom início.' },
+    { stepId: version.steps[1].id, points: 5, comment: '' }];
+  await request(feedbackPath, main, 'POST', { content: 'Confira os motivos.' }, 400);
+  await request(feedbackPath, main, 'POST', { content: 'Confira os motivos.', scores: [scores[0]] }, 400);
+  await request(feedbackPath, main, 'POST', { content: 'Confira os motivos.', scores: [{ ...scores[0], points: 5 }, scores[1]] }, 400);
+  await request(feedbackPath, b, 'POST', { content: 'Não autorizado.', scores }, 404);
+  const reviewed = (await request(feedbackPath, main, 'POST', { content: 'Confira os motivos.', scores })).json;
+  assert.equal(reviewed.feedback[0].totalPoints, 8);
+  assert.deepEqual(reviewed.feedback[0].scores, scores);
+  const studentView = (await request(`/v1/submissions/${sent.id}`, a)).json;
+  assert.equal(studentView.feedback[0].totalPoints, 8);
 });
 test('convite opaco: papel fixo, consumo atômico, expiração e revogação', async () => {
   const outsider1 = await provision('new-student-1'); const outsider2 = await provision('new-student-2');
@@ -720,6 +797,41 @@ test('IA indisponível clara; cota concorrente, deduplicação e revisão humana
   const unchanged = (await request(`/v1/missions/${mission.id}`, main)).json;
   assert.equal(unchanged.draftVersion.id, mission.draftVersion.id);
   config.aiEnabled = false;
+});
+test('IA prepara rascunho de correção somente a pedido do professor e não publica feedback', { timeout: 30000 }, async () => {
+  const gradedInput: MissionInput = { ...fixture, title: 'Atividade fictícia de avaliação', steps: [{ ...fixture.steps[0]!, maxPoints: 10 }] };
+  const created = (await request(`/v1/classrooms/${workshop}/activities`, main, 'POST', gradedInput)).json;
+  const activityPath = `/v1/activities/${created.id}`;
+  await request(`${activityPath}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true });
+  const sentAnswer = 'Resposta fictícia: comparei as duas alternativas pelo custo e pela clareza.';
+  const saved = (await request(`${activityPath}/submissions`, a, 'POST', { versionId: created.draftVersion.id, content: sentAnswer,
+    completedStepIds: [created.publishedVersion?.steps?.[0]?.id ?? created.draftVersion.steps[0].id], currentStepId: created.draftVersion.steps[0].id,
+    status: 'submitted', expectedRevision: 0 })).json;
+  const endpoint = `/v1/submissions/${saved.id}/ai-feedback-draft`;
+  const input = { approvedForProvider: true, idempotencyKey: randomUUID() };
+  await request(endpoint, main, 'POST', input, 503);
+  config.aiEnabled = true; config.model = 'fake-feedback-test';
+  let feedbackCalls = 0, sentFeedbackInput = '';
+  runtime.service.ai.feedbackProvider = async providerInput => {
+    feedbackCalls++; sentFeedbackInput = JSON.stringify(providerInput);
+    return { draft: { content: 'Você comparou os custos. Explique também como a clareza afeta a escolha.', scores: [{ stepRef: 'step-1', points: 8, comment: 'Justificativa coerente; desenvolva o segundo critério.' }] }, inputTokens: 33, outputTokens: 44 };
+  };
+  await request(endpoint, a, 'POST', input, 404);
+  await request(endpoint, main, 'POST', { idempotencyKey: randomUUID() }, 400);
+  const generated = (await request(endpoint, main, 'POST', input)).json;
+  assert.equal(generated.status, 'succeeded');
+  assert.equal(generated.draft.scores[0].stepId, created.draftVersion.steps[0].id);
+  assert.equal(generated.draft.scores[0].points, 8);
+  assert.deepEqual(Object.keys(JSON.parse(sentFeedbackInput)).sort(), ['answer', 'criteria', 'objectives', 'steps']);
+  assert.ok(sentFeedbackInput.includes(sentAnswer));
+  assert.ok(!sentFeedbackInput.includes('demo-student-1') && !sentFeedbackInput.includes('example.invalid') && !sentFeedbackInput.includes('disabilities'));
+  assert.equal((await request(`/v1/submissions/${saved.id}`, main)).json.feedback.length, 0);
+  const replay = (await request(endpoint, main, 'POST', input)).json;
+  assert.deepEqual(replay.draft, generated.draft); assert.equal(feedbackCalls, 1);
+  const finalized = (await request(`/v1/submissions/${saved.id}/feedback`, main, 'POST', { content: generated.draft.content,
+    scores: generated.draft.scores })).json;
+  assert.equal(finalized.status, 'reviewed'); assert.equal(finalized.feedback.length, 1);
+  runtime.service.ai.feedbackProvider = undefined; config.aiEnabled = false;
 });
 test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privados A/B', { timeout: 30000 }, async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;

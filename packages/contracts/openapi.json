@@ -8439,6 +8439,13 @@
                                       }
                                     ]
                                   },
+                                  "workMode": {
+                                    "type": "string",
+                                    "enum": [
+                                      "individual",
+                                      "group"
+                                    ]
+                                  },
                                   "steps": {
                                     "type": "array",
                                     "items": {
@@ -8468,6 +8475,33 @@
                                           "type": "string",
                                           "minLength": 1,
                                           "maxLength": 6000
+                                        },
+                                        "dueAt": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "format": "date-time",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "deadlineExtended": {
+                                          "type": "boolean"
+                                        },
+                                        "maxPoints": {
+                                          "anyOf": [
+                                            {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 100
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
                                         }
                                       },
                                       "required": [
@@ -8475,7 +8509,10 @@
                                         "position",
                                         "title",
                                         "instructions",
-                                        "example"
+                                        "example",
+                                        "dueAt",
+                                        "deadlineExtended",
+                                        "maxPoints"
                                       ],
                                       "additionalProperties": false
                                     }
@@ -8543,6 +8580,7 @@
                                   "objectives",
                                   "criteria",
                                   "dueAt",
+                                  "workMode",
                                   "steps",
                                   "materials",
                                   "id",
@@ -8604,6 +8642,13 @@
                                       }
                                     ]
                                   },
+                                  "workMode": {
+                                    "type": "string",
+                                    "enum": [
+                                      "individual",
+                                      "group"
+                                    ]
+                                  },
                                   "steps": {
                                     "type": "array",
                                     "items": {
@@ -8633,6 +8678,33 @@
                                           "type": "string",
                                           "minLength": 1,
                                           "maxLength": 6000
+                                        },
+                                        "dueAt": {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "format": "date-time",
+                                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
+                                        },
+                                        "deadlineExtended": {
+                                          "type": "boolean"
+                                        },
+                                        "maxPoints": {
+                                          "anyOf": [
+                                            {
+                                              "type": "integer",
+                                              "minimum": 0,
+                                              "maximum": 100
+                                            },
+                                            {
+                                              "type": "null"
+                                            }
+                                          ]
                                         }
                                       },
                                       "required": [
@@ -8640,7 +8712,10 @@
                                         "position",
                                         "title",
                                         "instructions",
-                                        "example"
+                                        "example",
+                                        "dueAt",
+                                        "deadlineExtended",
+                                        "maxPoints"
                                       ],
                                       "additionalProperties": false
                                     }
@@ -8708,6 +8783,7 @@
                                   "objectives",
                                   "criteria",
                                   "dueAt",
+                                  "workMode",
                                   "steps",
                                   "materials",
                                   "id",
@@ -8849,6 +8925,13 @@
                       }
                     ]
                   },
+                  "workMode": {
+                    "type": "string",
+                    "enum": [
+                      "individual",
+                      "group"
+                    ]
+                  },
                   "steps": {
                     "minItems": 1,
                     "maxItems": 10,
@@ -8870,6 +8953,30 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 6000
+                        },
+                        "dueAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "maxPoints": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -8992,6 +9099,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -9021,6 +9135,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -9028,7 +9169,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -9096,6 +9240,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -9157,6 +9302,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -9186,6 +9338,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -9193,7 +9372,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -9261,6 +9443,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -9414,6 +9597,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -9443,6 +9633,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -9450,7 +9667,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -9518,6 +9738,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -9579,6 +9800,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -9608,6 +9836,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -9615,7 +9870,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -9683,6 +9941,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -9810,6 +10069,13 @@
                       }
                     ]
                   },
+                  "workMode": {
+                    "type": "string",
+                    "enum": [
+                      "individual",
+                      "group"
+                    ]
+                  },
                   "steps": {
                     "minItems": 1,
                     "maxItems": 10,
@@ -9831,6 +10097,30 @@
                           "type": "string",
                           "minLength": 1,
                           "maxLength": 6000
+                        },
+                        "dueAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "maxPoints": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -9975,6 +10265,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10004,6 +10301,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -10011,7 +10335,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -10079,6 +10406,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -10140,6 +10468,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10169,6 +10504,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -10176,7 +10538,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -10244,6 +10609,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -10424,6 +10790,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10453,6 +10826,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -10460,7 +10860,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -10528,6 +10931,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -10589,6 +10993,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10618,6 +11029,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -10625,7 +11063,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -10693,6 +11134,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -10859,6 +11301,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10888,6 +11337,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -10895,7 +11371,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -10963,6 +11442,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -11024,6 +11504,13 @@
                                 }
                               ]
                             },
+                            "workMode": {
+                              "type": "string",
+                              "enum": [
+                                "individual",
+                                "group"
+                              ]
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -11053,6 +11540,33 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "dueAt": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "deadlineExtended": {
+                                    "type": "boolean"
+                                  },
+                                  "maxPoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 100
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -11060,7 +11574,10 @@
                                   "position",
                                   "title",
                                   "instructions",
-                                  "example"
+                                  "example",
+                                  "dueAt",
+                                  "deadlineExtended",
+                                  "maxPoints"
                                 ],
                                 "additionalProperties": false
                               }
@@ -11128,6 +11645,7 @@
                             "objectives",
                             "criteria",
                             "dueAt",
+                            "workMode",
                             "steps",
                             "materials",
                             "id",
@@ -11149,6 +11667,314 @@
                     "status",
                     "draftVersion",
                     "publishedVersion"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}/groups": {
+      "get": {
+        "operationId": "groups",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "studentIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "studentIds"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createGroup",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
+                  "studentIds": {
+                    "minItems": 2,
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "studentIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "studentIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "studentIds"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}/groups/{groupId}": {
+      "delete": {
+        "operationId": "removeGroup",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "removed"
                   ],
                   "additionalProperties": false
                 }
@@ -11320,6 +12146,18 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "attempt": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
@@ -11381,6 +12219,89 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                     },
+                    "gradingSteps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "baseDueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "deadlineExtended": {
+                            "type": "boolean"
+                          },
+                          "completedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          },
+                          "maxPoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "dueAt",
+                          "baseDueAt",
+                          "deadlineExtended",
+                          "completedAt",
+                          "late",
+                          "maxPoints"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "feedback": {
                       "type": "array",
                       "items": {
@@ -11400,12 +12321,61 @@
                             "type": "string",
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "scores": {
+                            "anyOf": [
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "stepId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 100
+                                    },
+                                    "points": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "comment": {
+                                      "type": "string",
+                                      "maxLength": 1000
+                                    }
+                                  },
+                                  "required": [
+                                    "stepId",
+                                    "points",
+                                    "comment"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "totalPoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
                           "id",
                           "content",
-                          "createdAt"
+                          "createdAt",
+                          "scores",
+                          "totalPoints"
                         ],
                         "additionalProperties": false
                       }
@@ -11415,6 +12385,7 @@
                     "id",
                     "versionId",
                     "userId",
+                    "groupId",
                     "status",
                     "content",
                     "completedStepIds",
@@ -11422,6 +12393,7 @@
                     "revision",
                     "submittedAt",
                     "updatedAt",
+                    "gradingSteps",
                     "feedback"
                   ],
                   "additionalProperties": false
@@ -11529,6 +12501,18 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "groupId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "attempt": {
                             "type": "integer",
                             "exclusiveMinimum": 0,
@@ -11590,6 +12574,89 @@
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                           },
+                          "gradingSteps": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 100
+                                },
+                                "title": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 200
+                                },
+                                "dueAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "baseDueAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "deadlineExtended": {
+                                  "type": "boolean"
+                                },
+                                "completedAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string",
+                                      "format": "date-time",
+                                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "late": {
+                                  "type": "boolean"
+                                },
+                                "maxPoints": {
+                                  "anyOf": [
+                                    {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "title",
+                                "dueAt",
+                                "baseDueAt",
+                                "deadlineExtended",
+                                "completedAt",
+                                "late",
+                                "maxPoints"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
                           "feedback": {
                             "type": "array",
                             "items": {
@@ -11609,12 +12676,61 @@
                                   "type": "string",
                                   "format": "date-time",
                                   "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                },
+                                "scores": {
+                                  "anyOf": [
+                                    {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "stepId": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 100
+                                          },
+                                          "points": {
+                                            "type": "integer",
+                                            "minimum": 0,
+                                            "maximum": 100
+                                          },
+                                          "comment": {
+                                            "type": "string",
+                                            "maxLength": 1000
+                                          }
+                                        },
+                                        "required": [
+                                          "stepId",
+                                          "points",
+                                          "comment"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "totalPoints": {
+                                  "anyOf": [
+                                    {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 9007199254740991
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
                                 }
                               },
                               "required": [
                                 "id",
                                 "content",
-                                "createdAt"
+                                "createdAt",
+                                "scores",
+                                "totalPoints"
                               ],
                               "additionalProperties": false
                             }
@@ -11624,6 +12740,7 @@
                           "id",
                           "versionId",
                           "userId",
+                          "groupId",
                           "status",
                           "content",
                           "completedStepIds",
@@ -11631,6 +12748,7 @@
                           "revision",
                           "submittedAt",
                           "updatedAt",
+                          "gradingSteps",
                           "feedback"
                         ],
                         "additionalProperties": false
@@ -11728,6 +12846,18 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "attempt": {
                       "type": "integer",
                       "exclusiveMinimum": 0,
@@ -11789,6 +12919,89 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                     },
+                    "gradingSteps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "baseDueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "deadlineExtended": {
+                            "type": "boolean"
+                          },
+                          "completedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          },
+                          "maxPoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "dueAt",
+                          "baseDueAt",
+                          "deadlineExtended",
+                          "completedAt",
+                          "late",
+                          "maxPoints"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "feedback": {
                       "type": "array",
                       "items": {
@@ -11808,12 +13021,61 @@
                             "type": "string",
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "scores": {
+                            "anyOf": [
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "stepId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 100
+                                    },
+                                    "points": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "comment": {
+                                      "type": "string",
+                                      "maxLength": 1000
+                                    }
+                                  },
+                                  "required": [
+                                    "stepId",
+                                    "points",
+                                    "comment"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "totalPoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
                           "id",
                           "content",
-                          "createdAt"
+                          "createdAt",
+                          "scores",
+                          "totalPoints"
                         ],
                         "additionalProperties": false
                       }
@@ -11823,6 +13085,7 @@
                     "id",
                     "versionId",
                     "userId",
+                    "groupId",
                     "status",
                     "content",
                     "completedStepIds",
@@ -11830,6 +13093,7 @@
                     "revision",
                     "submittedAt",
                     "updatedAt",
+                    "gradingSteps",
                     "feedback"
                   ],
                   "additionalProperties": false
@@ -11904,6 +13168,35 @@
                   },
                   "requestRevision": {
                     "type": "boolean"
+                  },
+                  "scores": {
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "stepId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "points": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "comment": {
+                          "type": "string",
+                          "maxLength": 1000
+                        }
+                      },
+                      "required": [
+                        "stepId",
+                        "points",
+                        "comment"
+                      ],
+                      "additionalProperties": false
+                    }
                   }
                 },
                 "required": [
@@ -11937,6 +13230,18 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 100
+                    },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "attempt": {
                       "type": "integer",
@@ -11999,6 +13304,89 @@
                       "format": "date-time",
                       "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                     },
+                    "gradingSteps": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "baseDueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "deadlineExtended": {
+                            "type": "boolean"
+                          },
+                          "completedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "late": {
+                            "type": "boolean"
+                          },
+                          "maxPoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "dueAt",
+                          "baseDueAt",
+                          "deadlineExtended",
+                          "completedAt",
+                          "late",
+                          "maxPoints"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "feedback": {
                       "type": "array",
                       "items": {
@@ -12018,12 +13406,61 @@
                             "type": "string",
                             "format": "date-time",
                             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "scores": {
+                            "anyOf": [
+                              {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "stepId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 100
+                                    },
+                                    "points": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100
+                                    },
+                                    "comment": {
+                                      "type": "string",
+                                      "maxLength": 1000
+                                    }
+                                  },
+                                  "required": [
+                                    "stepId",
+                                    "points",
+                                    "comment"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "totalPoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
                           "id",
                           "content",
-                          "createdAt"
+                          "createdAt",
+                          "scores",
+                          "totalPoints"
                         ],
                         "additionalProperties": false
                       }
@@ -12033,6 +13470,7 @@
                     "id",
                     "versionId",
                     "userId",
+                    "groupId",
                     "status",
                     "content",
                     "completedStepIds",
@@ -12040,7 +13478,311 @@
                     "revision",
                     "submittedAt",
                     "updatedAt",
+                    "gradingSteps",
                     "feedback"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/submissions/{id}/ai-feedback-draft": {
+      "post": {
+        "operationId": "generateFeedbackDraft",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "approvedForProvider": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "approvedForProvider",
+                  "idempotencyKey"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "succeeded",
+                        "failed"
+                      ]
+                    },
+                    "draft": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "content": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 6000
+                            },
+                            "scores": {
+                              "maxItems": 10,
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "stepId": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 100
+                                  },
+                                  "points": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  },
+                                  "comment": {
+                                    "type": "string",
+                                    "maxLength": 1000
+                                  }
+                                },
+                                "required": [
+                                  "stepId",
+                                  "points",
+                                  "comment"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "content",
+                            "scores"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "draft"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}/steps/{stepId}/deadline-extension": {
+      "patch": {
+        "operationId": "setStepDeadlineExtension",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "stepId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "studentId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "dueAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "studentId",
+                  "dueAt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "stepId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "studentId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "dueAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "stepId",
+                    "studentId",
+                    "dueAt"
                   ],
                   "additionalProperties": false
                 }

@@ -23,7 +23,10 @@ model User {
   teacherProfile TeacherProfile?
   preferences   ReadingPreferences?
   memberships   Membership[]
+  missionGroups MissionGroupMember[]
   submissions   Submission[]
+  studentDeadlineExtensions StepDeadlineExtension[] @relation("studentDeadlineExtensions")
+  teacherDeadlineExtensions StepDeadlineExtension[] @relation("teacherDeadlineExtensions")
   barriers      BarrierReport[]
   generations   AiGeneration[]
   learningNeeds LearningNeeds?
@@ -193,6 +196,7 @@ model Mission {
   createdAt DateTime @default(now())
   classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   versions MissionVersion[] @relation("versions")
+  groups MissionGroup[]
   draftVersion MissionVersion? @relation("draft", fields: [draftVersionId], references: [id])
   publishedVersion MissionVersion? @relation("published", fields: [publishedVersionId], references: [id])
   @@index([classroomId, status])
@@ -206,6 +210,7 @@ model MissionVersion {
   criteria Json
   source String @default("manual")
   dueAt DateTime?
+  workMode String @default("individual")
   createdAt DateTime @default(now())
   mission Mission @relation("versions", fields: [missionId], references: [id], onDelete: Cascade)
   draftOf Mission? @relation("draft")
@@ -226,10 +231,13 @@ model Step {
   title String
   instructions String
   example String
+  dueAt DateTime?
+  maxPoints Int?
   version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   barriers BarrierReport[]
   strategyPlans StrategyPlan[]
   activityAdaptations ActivityAdaptation[]
+  deadlineExtensions StepDeadlineExtension[]
   @@unique([versionId, position])
 }
 model Material {
@@ -248,6 +256,8 @@ model Submission {
   id String @id @default(uuid())
   versionId String
   userId String
+  groupId String?
+  group MissionGroup? @relation(fields: [groupId], references: [id])
   status SubmissionStatus @default(draft)
   content String
   audio Bytes?
@@ -255,6 +265,7 @@ model Submission {
   textFile String?
   hasTextFile Boolean @default(false)
   completedStepIds Json
+  stepCompletedAt Json @default("{}")
   currentStepId String
   revision Int @default(1)
   attempt Int @default(1)
@@ -266,16 +277,49 @@ model Submission {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   feedback Feedback[]
   @@unique([versionId, userId, attempt])
+  @@unique([versionId, groupId, attempt])
   @@index([userId, status])
+}
+model MissionGroup {
+  id String @id @default(uuid())
+  missionId String
+  name String @db.VarChar(150)
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  members MissionGroupMember[]
+  submissions Submission[]
+  @@unique([missionId, name])
+}
+model MissionGroupMember {
+  groupId String
+  userId String
+  group MissionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([groupId, userId])
+  @@index([userId])
 }
 model Feedback {
   id String @id @default(uuid())
   submissionId String
   teacherId String
   content String
+  scores Json?
+  totalPoints Int?
   createdAt DateTime @default(now())
   submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   @@index([submissionId])
+}
+model StepDeadlineExtension {
+  id String @id @default(uuid())
+  stepId String
+  studentId String
+  teacherId String
+  dueAt DateTime
+  updatedAt DateTime @updatedAt
+  step Step @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  student User @relation("studentDeadlineExtensions", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher User @relation("teacherDeadlineExtensions", fields: [teacherId], references: [id], onDelete: Cascade)
+  @@unique([stepId, studentId])
+  @@index([studentId])
 }
 model BarrierReport {
   id String @id @default(uuid())
@@ -303,6 +347,7 @@ model AiGeneration {
   model String
   outputVersionId String?
   supportDraft Json?
+  feedbackDraft Json?
   inputTokens Int?
   outputTokens Int?
   expiresAt DateTime
