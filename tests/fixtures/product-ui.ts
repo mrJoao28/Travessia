@@ -77,6 +77,7 @@ export async function fixture(page: Page, role: "student" | "teacher") {
     if (path === "/me") return respond(me);
     if (path === "/activities/test-mission/my-adaptations") return respond({ versionId: version.id, items: [], allowedFormats: ["text"] });
     if (path === "/activities/test-mission/supports") return respond({ versionId: version.id, items: [] });
+    if (path === "/activities/test-mission/groups") return respond({ items: [] });
     if (path === "/classrooms")
       return respond({
         items: [
