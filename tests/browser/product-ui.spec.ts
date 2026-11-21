@@ -4,6 +4,28 @@ import type { ApiBody, ApiResponse } from "../../apps/web/lib/api.generated";
 
 import {fixture,me,version,submission} from "../fixtures/product-ui";
 
+test("monitor vê as turmas vinculadas sem acessar entregas docentes", async ({ page }) => {
+  await fixture(page, "monitor");
+  const restrictedRequests: string[] = [];
+  page.on("request", request => {
+    const url = new URL(request.url());
+    if (/\/activities\/test-mission\/(submissions|groups)$/.test(url.pathname))
+      restrictedRequests.push(url.pathname);
+  });
+
+  await page.goto("/professor");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: version.title, exact: true })).toBeVisible();
+  await expect(page.getByText("Prepare rascunhos para o professor revisar e publicar.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Criar atividade", exact: true })).toBeVisible();
+  expect(restrictedRequests).toEqual([]);
+
+  await page.goto("/professor/turmas");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByText("Monitor · vínculo ativo", { exact: true })).toBeVisible();
+  await expect(page.getByText("Criar uma turma", { exact: true })).toHaveCount(0);
+});
+
 test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva texto no conflito", async ({
   page,
 }) => {

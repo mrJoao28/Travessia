@@ -81,8 +81,10 @@ function WorkspaceView({
       try {
         const me = await api("me");
         const rooms = await pages("classrooms");
-        const permitted = rooms.filter(
-          (room) => room.role === (role === "aluno" ? "student" : "teacher"),
+        const permitted = rooms.filter((room) =>
+          role === "aluno"
+            ? room.role === "student"
+            : room.role === "teacher" || room.role === "monitor",
         );
         const relevant = selected
           ? permitted.filter((room) => room.id === selected)
@@ -107,8 +109,8 @@ function WorkspaceView({
                 missions.map(async (mission) => ({
                   mission,
                   classroom,
-                  submissions: needsDeliveries ? await pages("submissions", mission.id) : [],
-                  groups: needsDeliveries && (mission.publishedVersion ?? mission.draftVersion)?.workMode === "group" ? (await api("groups", { params: { id: mission.id } })).items : [],
+                  submissions: needsDeliveries && classroom.role === "teacher" ? await pages("submissions", mission.id) : [],
+                  groups: needsDeliveries && classroom.role === "teacher" && (mission.publishedVersion ?? mission.draftVersion)?.workMode === "group" ? (await api("groups", { params: { id: mission.id } })).items : [],
                 })),
               );
             }),
@@ -130,8 +132,10 @@ function WorkspaceView({
       active = false;
     };
   }, [role, selected, reload, section, missionId]);
-  const permitted = classrooms.filter(
-    (room) => room.role === (role === "aluno" ? "student" : "teacher"),
+  const permitted = classrooms.filter((room) =>
+    role === "aluno"
+      ? room.role === "student"
+      : room.role === "teacher" || room.role === "monitor",
   );
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
@@ -184,7 +188,7 @@ function WorkspaceView({
               Ambiente de demonstração · dados fictícios
             </p>
           )}
-          {(section === "turmas" ||
+          {((section === "turmas" && (chosen?.role === "teacher" || !permitted.length)) ||
             (!permitted.length && role === "professor")) && (
             <ClassroomTools
               teacher={role === "professor"}
@@ -214,8 +218,11 @@ function WorkspaceView({
                     >
                       {!singleContext && (
                         <option value="">
-                          Todas as minhas turmas como{" "}
-                          {role === "aluno" ? "aluno" : "professor"}
+                          {role === "aluno"
+                            ? "Todas as minhas turmas como aluno"
+                            : permitted.some((room) => room.role === "monitor")
+                              ? "Todas as minhas turmas"
+                              : "Todas as minhas turmas como professor"}
                         </option>
                       )}
                       {permitted.map((room) => (
@@ -247,7 +254,7 @@ function WorkspaceView({
                       <div>
                         <h2>{room.name}</h2>
                         <p>
-                          {role === "aluno" ? "Aluno" : "Professor"} · vínculo
+                          {room.role === "student" ? "Aluno" : room.role === "monitor" ? "Monitor" : "Professor"} · vínculo
                           ativo
                         </p>
                       </div>
