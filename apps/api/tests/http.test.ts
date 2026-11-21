@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 26115)
-Total output lines: 1141
-
 import assert from 'node:assert/strict';
 import { after, before, test } from 'node:test';
 import { MaterialWorker, materialNarration } from '../src/material-worker.js';
@@ -535,7 +532,100 @@ test('áudio privado: validação de bytes, A/B, preservação, referências cru
   const audio = wavFixture();
   assert.equal(Buffer.from(verifySupportAudio(audio)).toString('base64'), audio);
   for (const invalid of [Buffer.from('<script>bad</script>').toString('base64'), audio + 'AAAA', audio.replace(/^U/, 'X')]) assert.throws(() => verifySupportAudio(invalid));
-  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixtur…2115 tokens truncated…main)).json.items.length, 0);
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const path = `/v1/missions/${created.id}`;
+  const versionId = created.draftVersion.id;
+  const input = { versionId, stepId: null, audience: 'students', studentIds: ['demo-student-1'], reviewed: true,
+    items: [{ strategyId: 'text-alternative', content: 'Transcrição completa da descrição da imagem.', audio: { base64: audio } }], requestKey: randomUUID() };
+  const plan = (await request(`${path}/strategy-plans`, main, 'POST', input)).json;
+  const audioPath = `${path}/support-audio/${plan.items[0].id}`;
+  assert.equal(plan.items[0].hasAudio, true); assert.ok(!JSON.stringify(plan).includes('base64'));
+  await request(audioPath, '', 'GET', undefined, 401);
+  await request(audioPath, a, 'GET', undefined, 404);
+  await request(`${path}/publish`, main, 'POST', { versionId, reviewed: true });
+  assert.equal((await request(audioPath, a)).json.base64, audio);
+  await request(audioPath, b, 'GET', undefined, 404);
+  await request(audioPath, otherTeacher, 'GET', undefined, 404);
+  assert.ok(!JSON.stringify((await request(`${path}/supports?versionId=${versionId}`, a)).json).includes('base64'));
+  await request(`${path}/strategy-plans`, main, 'POST', { ...input, requestKey: randomUUID(), items: [{ ...input.items[0], audio: { itemId: plan.items[0].id } }] }, 404);
+  await request(`${path}/strategy-plans`, main, 'POST', { ...input, requestKey: randomUUID(), items: [{ ...input.items[0], audio: { base64: Buffer.from('invalid-file').toString('base64') } }] }, 400);
+  const updated = (await request(`${path}/strategy-plans/${plan.id}`, main, 'PATCH', { versionId, stepId: null, audience: input.audience, studentIds: input.studentIds, reviewed: true,
+    expectedRevision: 1, items: [{ ...input.items[0], audio: { itemId: plan.items[0].id } }] })).json;
+  await request(audioPath, a, 'GET', undefined, 404);
+  const newPath = `${path}/support-audio/${updated.items[0].id}`;
+  assert.equal((await request(newPath, a)).json.base64, audio);
+  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { active: false } });
+  await request(newPath, a, 'GET', undefined, 404);
+  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { active: true } });
+  await request(`${path}/strategy-plans/${plan.id}/remove`, main, 'POST', { expectedRevision: 2 });
+  await request(newPath, a, 'GET', undefined, 404);
+});
+test('Gemini para apoios: envio mínimo, revisão, deduplicação, saída inválida e acesso revogado durante a geração', async () => {
+  const classroom = (await request('/v1/classrooms', main, 'POST', { name: 'Turma de testes da assistência' })).json;
+  const mission = (await request(`/v1/classrooms/${classroom.id}/missions`, main, 'POST', fixture)).json;
+  const path = `/v1/missions/${mission.id}/ai-supports`;
+  const input = { versionId: mission.draftVersion.id, stepId: mission.draftVersion.steps[0].id, materialIds: [mission.draftVersion.materials[0].id], strategyIds: ['step-checklist'], activityAdaptation: true, supportNeeds: ['short-steps'], approvedForProvider: true, idempotencyKey: randomUUID() };
+  await request(path, main, 'POST', input, 503);
+  config.aiEnabled = true; config.model = 'fake-test-only';
+  let calls = 0; let sent = ''; let invalid = false; let releaseSupport: (() => void) | undefined;
+  let held = false;
+  runtime.service.ai.supportProvider = async providerInput => {
+    calls++; sent = JSON.stringify(providerInput);
+    if (held) await new Promise<void>(resolve => { releaseSupport = resolve; });
+    return invalid ? { items: [{ strategyId: 'text-alternative', content: 'Imagem inventada.' }] } : { items: [{ strategyId: 'step-checklist', content: 'Compare os custos. Depois justifique a escolha.' }] };
+  };
+  await request(path, a, 'POST', input, 404);
+  await request(path, otherTeacher, 'POST', input, 404);
+  await request(path, main, 'POST', { ...input, approvedForProvider: false }, 400);
+  await request(path, main, 'POST', { ...input, strategyIds: ['text-alternative'] }, 400);
+  await request(path, main, 'POST', { ...input, materialIds: ['foreign-material'] }, 404);
+  const generated = (await request(path, main, 'POST', input)).json;
+  assert.equal(generated.status, 'succeeded'); assert.equal(generated.draft.items.length, 1);
+  assert.ok(sent.includes('Tarefa dividida em passos curtos'));
+  assert.ok(sent.includes('Compare duas soluções.') && sent.includes('Justificar a escolha.'));
+  assert.ok(!sent.includes('disabilities') && !sent.includes('visual'));
+  assert.ok(!sent.includes('example.invalid') && !sent.includes('Joao') && !sent.includes('studentIds'));
+  assert.equal((await request(path, main, 'POST', input)).json.id, generated.id); assert.equal(calls, 1);
+  assert.equal(await db.strategyPlan.count({ where: { versionId: input.versionId } }), 0);
+  assert.equal((await request(`/v1/missions/${mission.id}`, main)).json.publishedVersion, null);
+  invalid = true;
+  await request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 502);
+  invalid = false; held = true;
+  const generating = request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 404);
+  while (!releaseSupport) await new Promise(resolve => setTimeout(resolve, 10));
+  await request(path, main, 'POST', { ...input, idempotencyKey: randomUUID() }, 429);
+  await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: classroom.id } }, data: { active: false } });
+  try {
+    releaseSupport();
+    assert.equal((await generating).json.code, 'NOT_FOUND');
+  } finally {
+    config.aiEnabled = false;
+    await db.membership.update({ where: { userId_classroomId: { userId: mainId, classroomId: classroom.id } }, data: { active: true } });
+  }
+});
+test('necessidades autodeclaradas são privadas: compartilhamento separado, revogável e restrito à turma', async () => {
+  await request('/v1/me/learning-needs', '', 'GET', undefined, 401);
+  await request('/v1/me/learning-needs', a, 'PATCH', { disabilities: ['visual'], supports: ['image-description'], preferredFormats: ['audio'], expectedRevision: 0, userId: mainId }, 400);
+  const saved = (await request('/v1/me/learning-needs', a, 'PATCH', { disabilities: ['visual'], supports: ['image-description', 'short-steps'], preferredFormats: ['audio'], expectedRevision: 0 })).json;
+  assert.equal(saved.revision, 1);
+  assert.equal((await request('/v1/me/learning-needs', b)).json.disabilities.length, 0);
+  assert.equal((await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items.length, 0);
+  await request(`/v1/classrooms/${workshop}/learning-needs`, b, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/learning-needs`, otherTeacher, 'GET', undefined, 404);
+  await request(`/v1/classrooms/demo-class-calculo/needs-sharing`, a, 'PATCH', { shared: true, includeDisabilities: true, expectedRevision: 0 }, 404);
+  const shared = (await request(`/v1/classrooms/${workshop}/needs-sharing`, a, 'PATCH', { shared: true, includeDisabilities: false, expectedRevision: 0 })).json;
+  let received = (await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items;
+  assert.equal(received[0].disabilities, null); assert.deepEqual(received[0].supports, ['image-description', 'short-steps']);
+  await request(`/v1/classrooms/${workshop}/needs-sharing`, a, 'PATCH', { shared: true, includeDisabilities: true, expectedRevision: shared.revision });
+  received = (await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items;
+  assert.deepEqual(received[0].disabilities, ['visual']);
+  await request('/v1/me/learning-needs', a, 'PATCH', { disabilities: ['hearing'], supports: ['transcript'], preferredFormats: ['text'], expectedRevision: 1 });
+  assert.equal((await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items.length, 0);
+  const permission = (await request(`/v1/classrooms/${workshop}/needs-sharing`, a)).json;
+  assert.equal(permission.shared, false); assert.equal(permission.includeDisabilities, false);
+  await request(`/v1/classrooms/${workshop}/needs-sharing`, a, 'PATCH', { shared: true, includeDisabilities: false, expectedRevision: permission.revision });
+  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { active: false } });
+  assert.equal((await request(`/v1/classrooms/${workshop}/learning-needs`, main)).json.items.length, 0);
   await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { active: true } });
   const permission2 = (await request(`/v1/classrooms/${workshop}/needs-sharing`, a)).json;
   await request(`/v1/classrooms/${workshop}/needs-sharing`, a, 'PATCH', { shared: false, includeDisabilities: false, expectedRevision: permission2.revision });
