@@ -356,7 +356,7 @@ test('código curto da turma é privado, reutilizável, transacional e desativá
  // Failed attempts, including valid-shaped guesses, are bounded per authenticated account.
  for(let i=0;i<21;i++){const response=await fetch(base+'/v1/invitations/accept',{method:'POST',headers:{cookie:three.cookie,origin:config.origin,'Content-Type':'application/json'},body:JSON.stringify({token:'ZZZZZZZZ'})});assert.ok([400,429].includes(response.status));if(i===20)assert.equal(response.status,429);}
 });
-test('monitor entra por convite único e apenas prepara rascunhos da turma', async () => {
+test('monitor entra por convite único e administra sua turma como professor', async () => {
   const monitor = await provision('monitor-invite-test');
   const outsider = await provision('monitor-invite-outsider');
   const existingStudent = await provision('monitor-existing-student');
@@ -388,15 +388,18 @@ test('monitor entra por convite único e apenas prepara rascunhos da turma', asy
   assert.equal((await request(`/v1/missions/${draft.id}`, joined.person.cookie)).json.draftVersion.id, draft.draftVersion.id);
   const edited = (await request(`/v1/missions/${draft.id}`, joined.person.cookie, 'PATCH', { ...fixture, title: 'Rascunho preparado pelo monitor', expectedDraftVersionId: draft.draftVersion.id })).json;
   assert.equal(edited.draftVersion.title, 'Rascunho preparado pelo monitor');
-  await request(`/v1/missions/${draft.id}/publish`, joined.person.cookie, 'POST', { versionId: edited.draftVersion.id, reviewed: true }, 404);
-  await request(`/v1/missions/${draft.id}/archive`, joined.person.cookie, 'POST', {}, 404);
-  await request(`/v1/missions/${draft.id}/submissions`, joined.person.cookie, 'GET', undefined, 404);
-  await request(`/v1/classrooms/${workshop}/members`, joined.person.cookie, 'GET', undefined, 404);
-  await request(`/v1/classrooms/${workshop}/invitations`, joined.person.cookie, 'POST', { role: 'monitor' }, 404);
+  const published = (await request(`/v1/missions/${draft.id}/publish`, joined.person.cookie, 'POST', { versionId: edited.draftVersion.id, reviewed: true })).json;
+  assert.equal(published.status, 'published');
+  assert.ok((await request(`/v1/missions/${draft.id}/submissions`, joined.person.cookie)).json.items);
+  assert.ok((await request(`/v1/classrooms/${workshop}/members`, joined.person.cookie)).json.items);
+  const monitorInvite = (await request(`/v1/classrooms/${workshop}/invitations`, joined.person.cookie, 'POST', { role: 'monitor' })).json;
+  assert.equal(monitorInvite.role, 'monitor');
+  const secondDraft = (await request(`/v1/classrooms/${workshop}/missions`, joined.person.cookie, 'POST', fixture)).json;
+  await request(`/v1/missions/${secondDraft.id}/archive`, joined.person.cookie, 'POST', {});
   await request(`/v1/classrooms/demo-class-programacao/missions`, joined.person.cookie, 'GET', undefined, 404);
   await request(`/v1/missions/${draft.id}`, '', 'GET', undefined, 401);
   const ownerView = (await request(`/v1/missions/${draft.id}`, main)).json;
-  assert.equal(ownerView.draftVersion.id, edited.draftVersion.id);
+  assert.equal(ownerView.publishedVersion.id, edited.draftVersion.id);
   await request(`/v1/missions/${draft.id}`, a, 'PATCH', { ...fixture, expectedDraftVersionId: edited.draftVersion.id }, 404);
   const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: joined.person.user.id, classroomId: workshop } } });
   await request(`/v1/classrooms/${workshop}/members/${member.id}`, main, 'DELETE');

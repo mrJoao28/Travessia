@@ -92,7 +92,7 @@ export class MaterialWorker {
     readonly local = localProcess, readonly pdf = renderPdf) {}
   async permitted(versionId: string, creatorId: string, studentId?: string | null) {
     return !!await this.db.missionVersion.findFirst({ where: { id: versionId, mission: { status: { not: 'archived' },
-      OR: [{ draftVersionId: versionId }, { publishedVersionId: versionId }], classroom: { memberships: { some: { userId: creatorId, role: 'teacher', active: true } },
+      OR: [{ draftVersionId: versionId }, { publishedVersionId: versionId }], classroom: { memberships: { some: { userId: creatorId, role: { in: ['teacher', 'monitor'] }, active: true } },
         ...(studentId ? { AND: [{ memberships: { some: { userId: studentId, role: 'student', active: true } } }] } : {}) } } } });
   }
   async tick(progress: (budgetMs?: number) => Promise<void> = async () => {}) {

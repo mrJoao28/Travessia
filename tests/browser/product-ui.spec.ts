@@ -4,6 +4,23 @@ import type { ApiBody, ApiResponse } from "../../apps/web/lib/api.generated";
 
 import {fixture,me,version,submission} from "../fixtures/product-ui";
 
+test("monitor tem ferramentas docentes na turma e é identificado como monitor", async ({ page }) => {
+  await fixture(page, "monitor");
+  await page.goto("/professor");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: version.title, exact: true })).toBeVisible();
+  await expect(page.getByText("Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Criar atividade", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Consultar entregas", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Apoios e barreiras", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Gerenciar turmas e convites", exact: true })).toBeVisible();
+
+  await page.goto("/professor/turmas");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByText("Monitor · vínculo ativo", { exact: true })).toBeVisible();
+  await expect(page.getByText("Monitor · vínculo ativo", { exact: true })).toBeVisible();
+});
+
 test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva texto no conflito", async ({
   page,
 }) => {

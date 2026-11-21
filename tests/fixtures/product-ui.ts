@@ -62,12 +62,12 @@ export const submission: ApiResponse<"submission"> = {
   feedback: [],
 };
 
-export async function fixture(page: Page, role: "student" | "teacher") {
+export async function fixture(page: Page, role: "student" | "teacher" | "monitor") {
   let mission: ApiResponse<"mission"> = {
     id: "test-mission",
     classroomId: "test-classroom",
     status: role === "student" ? "published" : "draft",
-    draftVersion: role === "teacher" ? version : null,
+    draftVersion: role !== "student" ? version : null,
     publishedVersion: role === "student" ? version : null,
   };
   await page.route("**/api/v1/**", async (route) => {

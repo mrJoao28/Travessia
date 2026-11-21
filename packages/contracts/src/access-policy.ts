@@ -19,10 +19,10 @@ export function canAccess(
   switch (action) {
     case 'readPublishedMission': return true;
     case 'draftMission': return membership.role === 'teacher' || membership.role === 'monitor';
-    case 'manageMission': return membership.role === 'teacher';
-    case 'readSubmission': return membership.role === 'teacher' || resource.ownerId === actor.id;
+    case 'manageMission': return membership.role === 'teacher' || membership.role === 'monitor';
+    case 'readSubmission': return membership.role === 'teacher' || membership.role === 'monitor' || resource.ownerId === actor.id;
     case 'submitWork': return membership.role === 'student' && resource.ownerId === actor.id;
-    case 'readBarrier': return resource.ownerId === actor.id || (membership.role === 'teacher' && resource.sharedWithTeachers === true);
+    case 'readBarrier': return resource.ownerId === actor.id || ((membership.role === 'teacher' || membership.role === 'monitor') && resource.sharedWithTeachers === true);
     default: return false;
   }
 }
