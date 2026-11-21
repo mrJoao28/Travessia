@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { materialPdfFixture } from '../../scripts/material-fixture.mjs';
@@ -108,6 +108,15 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await expect(originalRegion.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toHaveCount(1);
   const originalLink=originalRegion.getByRole('link',{name:'Baixar PDF da atividade',exact:true});await expect(originalLink).toBeVisible();
   const originalResponse=await other.request.get((await originalLink.getAttribute('href'))!);expect(originalResponse.status()).toBe(200);expect(await originalResponse.body()).toEqual(materialPdfFixture());
+  const readOnlySource=await post(teacher,`/api/v1/activities/${missionId}/material-sources`,{versionId,title:'Leitura sem download.pdf',downloadAllowed:false,base64:materialPdfFixture().toString('base64'),requestKey:randomUUID()});
+  await expect.poll(async()=>{const response=await teacher.request.get(`/api/v1/activities/${missionId}/material-sources?versionId=${versionId}`);return (await response.json()).items.find((item:{id:string})=>item.id===readOnlySource.id)?.status;},{timeout:90000}).toBe('ready');
+  await student.goto(`/aluno/atividades/${missionId}`);
+  const readOnlyItem=student.getByRole('article').filter({has:student.getByRole('heading',{name:'Leitura sem download.pdf',exact:true})});
+  await expect(readOnlyItem.getByRole('img',{name:'Página 1 do documento Leitura sem download.pdf',exact:true})).toBeVisible();
+  await expect(readOnlyItem.getByRole('status').filter({hasText:'As páginas foram carregadas para leitura'})).toBeVisible();
+  await expect(readOnlyItem.getByRole('link',{name:'Baixar PDF da atividade',exact:true})).toHaveCount(0);
+  expect((await student.request.get(`/api/v1/activities/${missionId}/material-assets/${readOnlySource.id}/pdf`)).status()).toBe(404);
+  expect((await student.request.get(`/api/v1/activities/${missionId}/material-assets/${readOnlySource.id}/download`)).status()).toBe(404);
   await expect(originalRegion.locator('audio')).toHaveCount(0);
   const ownActivityMaterial=(await other.request.get(`/api/v1/activities/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items.find((item:{scope:string})=>item.scope==='activity');expect(ownActivityMaterial.mode).toBe('original');expect(ownActivityMaterial.document).toEqual([]);
   expect((await student.request.get(`/api/v1/activities/${missionId}/material-assets/${ownActivityMaterial.id}/pdf`)).status()).toBe(200);

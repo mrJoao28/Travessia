@@ -1679,6 +1679,7 @@ export interface operations {
                             /** @enum {string} */
                             status?: "processing" | "ready" | "failed";
                             downloadAllowed: boolean;
+                            previewPages: number[];
                             /** Format: date-time */
                             expiresAt?: string;
                             document: {
