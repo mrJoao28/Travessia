@@ -359,6 +359,13 @@ test('código curto da turma é privado, reutilizável, transacional e desativá
 test('monitor entra por convite único e apenas prepara rascunhos da turma', async () => {
   const monitor = await provision('monitor-invite-test');
   const outsider = await provision('monitor-invite-outsider');
+  const existingStudent = await provision('monitor-existing-student');
+  const studentInvite = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { reusable: true })).json;
+  assert.equal((await request('/v1/invitations/accept', existingStudent.cookie, 'POST', { token: studentInvite.code })).json.role, 'student');
+  const monitorPromotionInvite = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { role: 'monitor' })).json;
+  assert.equal((await request('/v1/invitations/accept', existingStudent.cookie, 'POST', { token: monitorPromotionInvite.code })).json.role, 'monitor');
+  assert.equal((await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: existingStudent.user.id, classroomId: workshop } } })).role, 'monitor');
+  await request('/v1/invitations/accept', existingStudent.cookie, 'POST', { token: studentInvite.code }, 409);
   await request(`/v1/classrooms/${workshop}/invitations`, a, 'POST', { role: 'monitor' }, 404);
   await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { role: 'monitor', reusable: true }, 400);
   const invitation = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { role: 'monitor' })).json;

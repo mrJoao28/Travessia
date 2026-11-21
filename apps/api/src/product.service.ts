@@ -118,11 +118,14 @@ export class ProductService {
         const invite = await tx.invitation.findUnique({ where: token.length===8 ? { codeHash: digest(token) } : { tokenHash: digest(token) } });
         if (!invite || invite.revokedAt || (!invite.reusable && invite.consumedAt) || invite.expiresAt <= new Date()) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
         const old = await tx.membership.findUnique({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } } });
-        // Revoked accounts cannot regain access by consuming another invitation.
-        if (old) return fail(409, 'MEMBERSHIP_EXISTS', 'Vínculo já existente. Consulte o docente.');
+        // A valid, teacher-issued monitor invitation may promote an active student in this classroom.
+        // Revoked memberships and other existing roles cannot regain or change access this way.
+        const promoteStudentToMonitor = !!old && old.active && old.role === 'student' && invite.role === 'monitor';
+        if (old && !promoteStudentToMonitor) return fail(409, 'MEMBERSHIP_EXISTS', 'Sua conta já possui um vínculo com essa turma.');
         const changed = await tx.invitation.updateMany({ where: { id: invite.id, consumedAt: null, revokedAt: null, expiresAt: { gt: new Date() } }, data: invite.reusable ? { expiresAt: invite.expiresAt } : { consumedAt: new Date(), consumedBy: userId } });
         if (!changed.count) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
-        await tx.membership.create({ data: { userId, classroomId: invite.classroomId, role: invite.role } });
+        if (promoteStudentToMonitor) await tx.membership.update({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } }, data: { role: 'monitor' } });
+        else await tx.membership.create({ data: { userId, classroomId: invite.classroomId, role: invite.role } });
         const c = await tx.classroom.findUniqueOrThrow({ where: { id: invite.classroomId } });
         return { id: c.id, name: c.name, role: invite.role };
       });
