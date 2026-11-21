@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 4969)
+Total output lines: 156
+
 import { randomBytes, randomUUID } from 'node:crypto';
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
@@ -70,36 +73,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await expect(teacher.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible({timeout:90000});
   await expect(teacher.getByRole('button',{name:'Disponibilizar para Marina do fluxo →',exact:true})).toBeVisible({timeout:90000});
   const documentTabs=teacher.getByRole('group',{name:'Versão do documento'});
-  await documentTabs.getByRole('button',{name:'Original',exact:true}).click();
-  await expect.poll(()=>teacher.locator('img.comparison-source-page').evaluate((image:HTMLImageElement)=>image.naturalWidth)).toBeGreaterThan(0);
-  await documentTabs.getByRole('button',{name:'Preparado',exact:true}).click();
-  await expect(teacher.getByRole('region',{name:'Documento preparado',exact:true})).toContainText('Compare duas rotas de 10 metros. Identifique os obstáculos');
-  await teacher.screenshot({path:'test-results/reference-coherent-comparison-desktop.png',fullPage:true});
-  await teacher.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();await teacher.getByRole('button',{name:'Disponibilizar para Marina do fluxo →',exact:true}).click();
-  await expect(teacher.getByRole('heading',{name:'Material disponibilizado',exact:true})).toBeVisible();
-  await teacher.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await teacher.getByRole('checkbox',{name:'Revisei objetivos, critérios, etapas e materiais.',exact:true}).check();
-  await teacher.getByRole('button',{name:'Publicar atividade',exact:true}).click();await expect(teacher.getByRole('heading',{name:'Pronto para sua turma!',exact:true})).toBeVisible();
-  mission=await teacher.request.get(`/api/v1/activities/${missionId}`).then(r=>r.json());expect(mission.publishedVersion.id).toBe(versionId);
-  for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/atividades/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Adaptar material',exact:true})).toBeVisible();}
-  // A receives the mission PDF plus the reviewed individual adaptation; B receives the same mission PDF without any per-student release.
-  const secondClassroom=await post(teacher,'/api/v1/classrooms',{name:'Outra turma da estudante'});
-  const secondInvitation=await post(teacher,`/api/v1/classrooms/${secondClassroom.id}/invitations`,{});
-  await post(student,'/api/v1/invitations/accept',{token:secondInvitation.token});
-  const materialsRequest=`**/api/v1/activities/${missionId}/my-materials?*`;
-  await student.route(materialsRequest,async route=>{await new Promise(resolve=>setTimeout(resolve,750));await route.continue();});
-  await student.goto(`/aluno/atividades/${missionId}`);await expect(student.locator('#etapas h2')).toHaveText('Comparar rotas');
-  const prepared=student.getByRole('region',{name:'PDFs da atividade e apoios para você',exact:true});
-  await expect(prepared.getByRole('status')).toHaveText('Consultando materiais da atividade…');
-  await expect(prepared.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toHaveCount(2);
-  await student.unroute(materialsRequest);
-  await expect(prepared.getByText('Compare duas rotas de 10 metros. Identifique os obstáculos e justifique uma escolha acessível.',{exact:true})).toBeVisible();
-  const privateMaterials=(await student.request.get(`/api/v1/activities/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items;
-  const privateAdaptation=privateMaterials.find((item:{scope:string})=>item.scope==='individual');expect(privateAdaptation?.mode).toBe('adapted');
-  const adaptedDownload=prepared.getByRole('link',{name:'Baixar PDF adaptado',exact:true});
-  expect(await adaptedDownload.getAttribute('href')).toContain(privateAdaptation.id);
-  expect((await student.request.get((await adaptedDownload.getAttribute('href'))!)).headers()['content-disposition']).toContain('material-adaptado.pdf');
-  const download=student.waitForEvent('download');await adaptedDownload.click();expect((await download).suggestedFilename()).toBe('material-adaptado.pdf');
-  const audio=await prepared.locator('audio').getAttribute('src');expect(audio).toBeTruthy();const playback=await student.request.get(audio!, {headers:{Range:'bytes=0-31'}});
+  …969 tokens truncated…audio).toBeTruthy();const playback=await student.request.get(audio!, {headers:{Range:'bytes=0-31'}});
   expect(playback.status()).toBe(206);expect(playback.headers()['content-type']).toBe('audio/mpeg');
   expect(playback.headers()['content-range']).toMatch(/^bytes 0-31\//);
   await student.getByText('Consultar enunciado adaptado',{exact:true}).click();await expect(student.getByText('Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.',{exact:true})).toBeVisible();
