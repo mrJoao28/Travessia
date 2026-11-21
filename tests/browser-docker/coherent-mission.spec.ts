@@ -104,8 +104,8 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   const originalLink=originalRegion.getByRole('link',{name:'Baixar PDF da atividade',exact:true});await expect(originalLink).toBeVisible();
   const originalResponse=await other.request.get((await originalLink.getAttribute('href'))!);expect(originalResponse.status()).toBe(200);expect(await originalResponse.body()).toEqual(materialPdfFixture());
   await expect(originalRegion.locator('audio')).toHaveCount(0);
-  const ownMissionMaterial=(await other.request.get(`/api/v1/activities/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items.find((item:{scope:string})=>item.scope==='mission');expect(ownMissionMaterial.mode).toBe('original');expect(ownMissionMaterial.document).toEqual([]);
-  expect((await student.request.get(`/api/v1/activities/${missionId}/material-assets/${ownMissionMaterial.id}/pdf`)).status()).toBe(200);
+  const ownActivityMaterial=(await other.request.get(`/api/v1/activities/${missionId}/my-materials?versionId=${versionId}`).then(r=>r.json())).items.find((item:{scope:string})=>item.scope==='activity');expect(ownActivityMaterial.mode).toBe('original');expect(ownActivityMaterial.document).toEqual([]);
+  expect((await student.request.get(`/api/v1/activities/${missionId}/material-assets/${ownActivityMaterial.id}/pdf`)).status()).toBe(200);
   const privateAdaptation=privateMaterials.find((item:{scope:string})=>item.scope==='individual');expect(privateAdaptation).toBeTruthy();
   expect((await other.request.get(`/api/v1/activities/${missionId}/material-assets/${privateAdaptation.id}/pdf`)).status()).toBe(404);
   await expect(other.getByLabel('Áudio da atividade (opcional)',{exact:true})).toHaveCount(0);
