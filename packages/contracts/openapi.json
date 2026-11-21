@@ -2682,6 +2682,21 @@
                               "original"
                             ]
                           },
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "mission",
+                              "individual"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "processing",
+                              "ready",
+                              "failed"
+                            ]
+                          },
                           "document": {
                             "maxItems": 40,
                             "type": "array",

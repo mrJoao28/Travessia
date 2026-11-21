@@ -436,7 +436,7 @@ export function LiveEditor({
                 Adicionar etapa
               </button>
               <section className="mission-file-entry form-stack" aria-label="Arquivos da missão">
-                <h3>Materiais da missão</h3><p>Acrescente um PDF. Ao continuar, o rascunho é salvo e você escolhe o aluno e prepara os apoios sem sair desta criação.</p>
+                <h3>Materiais da missão</h3><p>Acrescente o PDF que toda a turma verá ao abrir esta missão, depois que a versão for publicada. Apoios adaptados para alunos específicos são opcionais.</p>
                 <label htmlFor="editor-pdf-upload">Adicionar PDF à missão</label>
                 <input ref={pdfField} id="editor-pdf-upload" type="file" accept="application/pdf,.pdf" onChange={e=>{
                   const file=e.currentTarget.files?.[0];
@@ -447,8 +447,8 @@ export function LiveEditor({
                   }
                   setPendingPdf(file);
                 }}/>
-                {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas e continue para enviar e adaptar.</p>}
-                <p className="small">PDF de até {PDF_MAX_MB} MB e {PDF_MAX_PAGES} páginas, sem senha ou conteúdo ativo. O original fica privado para os professores. O aluno recebe a versão que você revisar e liberar.</p>
+                {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas para anexá-lo à missão; após a publicação e a verificação do arquivo, ele aparecerá para todos os alunos ativos da turma.</p>}
+                <p className="small">PDF de até {PDF_MAX_MB} MB e {PDF_MAX_PAGES} páginas, sem senha ou conteúdo ativo. A publicação da missão disponibiliza este arquivo para toda a turma. Apoios individuais continuam opcionais.</p>
               </section>
               <h3>Conteúdo em texto (opcional)</h3>
               {input.materials.map((material, index) => (
@@ -520,7 +520,7 @@ export function LiveEditor({
                 Adicionar material textual
               </button>
               <p className="small">
-                Textos e PDFs fazem parte da mesma preparação. Você confere os apoios antes de publicar.
+                O PDF anexado à missão ficará disponível para toda a turma depois da publicação. Você pode preparar versões adaptadas para alunos específicos, se desejar.
               </p>
             </div>
           </fieldset>

@@ -1593,6 +1593,10 @@ export interface operations {
                             title: string;
                             /** @enum {string} */
                             mode?: "adapted" | "original";
+                            /** @enum {string} */
+                            scope?: "mission" | "individual";
+                            /** @enum {string} */
+                            status?: "processing" | "ready" | "failed";
                             document: {
                                 page: number;
                                 title: string;

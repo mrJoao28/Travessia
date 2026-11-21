@@ -1,6 +1,6 @@
 # Materiais individuais na área do professor
 
-Em Estratégias, o docente escolhe um aluno ativo, confirma apoios concretos, envia um PDF, seleciona páginas, revisa o rascunho e gera os arquivos. Depois de conferir PDF/áudio/transcrição, libera explicitamente para esse aluno. O aluno vê somente os materiais liberados da versão publicada em “Materiais preparados para você”. Os apoios anteriores continuam na seção “Outros apoios”.
+O PDF anexado à missão aparece automaticamente na área de materiais de todos os alunos ativos da turma quando a versão da missão é publicada e o processamento do arquivo termina. Não é necessário selecionar cada aluno para compartilhar o original. PDFs em processamento mostram um estado temporário na missão e a área se atualiza automaticamente. Para oferecer uma versão adaptada, o docente pode escolher um aluno, confirmar apoios concretos, selecionar páginas, revisar o rascunho e liberar PDF/áudio/transcrição individualmente. Esses apoios opcionais aparecem junto ao PDF da missão. Os apoios anteriores continuam na seção “Outros apoios”.
 
 ## Perfis e revisão
 
@@ -28,7 +28,7 @@ Hash deduplica upload na mesma versão. Solicitações idempotentes reutilizam a
 
 ## Arquivos, retenção e permissões
 
-`material-data` é volume privado compartilhado somente entre API e worker; frontend não o monta. Caminhos são UUIDs internos, nomes de arquivo fixos, sem URLs fornecidas pelo usuário. Downloads passam pela sessão e vínculo ativo a cada acesso. Aluno só acessa seu material liberado da versão publicada; original completo fica só para professores ativos da turma. Páginas selecionadas de referência também exigem autorização da adaptação.
+`material-data` é volume privado compartilhado somente entre API e worker; frontend não o monta. Caminhos são UUIDs internos, nomes de arquivo fixos, sem URLs fornecidas pelo usuário. Downloads passam pela sessão e vínculo ativo a cada acesso. Alunos ativos acessam PDFs da versão atualmente publicada na própria turma; materiais adaptados continuam restritos ao destinatário e à versão publicada. Original completo em versões ainda não publicadas fica só para professores ativos da turma. Páginas selecionadas de referência também exigem autorização da adaptação.
 
 Alterar conteúdo preserva a revisão publicada para o estudante. Disponibilizar a revisão nova troca o texto, o PDF e o áudio em conjunto. Nova versão da missão não herda materiais automaticamente. Vínculo revogado bloqueia novas leituras e preparação em andamento. Remover fonte retira suas adaptações; remover adaptação retira acesso de imediato. O acesso expira imediatamente na data indicada. O coletor roda a cada hora em lotes de até 100 adaptações e 100 fontes; acúmulos podem exigir mais de um ciclo para remoção física. Órfãos de cascatas são elegíveis para limpeza após 24 horas. Retenção operacional: 90 dias desde upload, explicitada na interface; limite padrão 1024 MiB, sem remoção silenciosa de material válido quando cheio. Backups também devem incluir o volume e obedecer à política do piloto; não foi validado restore de produção por esta mudança.
 
