@@ -32,11 +32,11 @@ test('aluno não envia trabalho em nome de outro usuário', () => {
   assert.equal(canAccess({ id: 'alice' }, memberships, 'submitWork', submission), true);
   assert.equal(canAccess({ id: 'bob' }, memberships, 'submitWork', submission), false);
 });
-test('monitor prepara rascunhos apenas em sua turma sem publicar nem ler entregas', () => {
+test('monitor administra sua turma como professor sem atravessar vínculos', () => {
   assert.equal(canAccess({ id: 'monitor' }, memberships, 'draftMission', submission), true);
   assert.equal(canAccess({ id: 'monitor' }, memberships, 'draftMission', { ...submission, classroomId: 'matematica' }), false);
-  assert.equal(canAccess({ id: 'monitor' }, memberships, 'manageMission', submission), false);
-  assert.equal(canAccess({ id: 'monitor' }, memberships, 'readSubmission', submission), false);
+  assert.equal(canAccess({ id: 'monitor' }, memberships, 'manageMission', submission), true);
+  assert.equal(canAccess({ id: 'monitor' }, memberships, 'readSubmission', submission), true);
   assert.equal(canAccess({ id: 'monitor' }, memberships, 'submitWork', { ...submission, ownerId: 'monitor' }), false);
 });
 test('relato só é compartilhado com docente por escolha explícita', () => {
