@@ -3079,7 +3079,7 @@ export interface operations {
                             id: string;
                             name: string;
                             /** @enum {string} */
-                            role: "student" | "teacher";
+                            role: "student" | "teacher" | "monitor";
                         }[];
                         nextCursor: string | null;
                     };
@@ -3125,7 +3125,7 @@ export interface operations {
                         id: string;
                         name: string;
                         /** @enum {string} */
-                        role: "student" | "teacher";
+                        role: "student" | "teacher" | "monitor";
                     };
                 };
             };
@@ -3169,7 +3169,7 @@ export interface operations {
                             id: string;
                             name: string;
                             /** @enum {string} */
-                            role: "student" | "teacher";
+                            role: "student" | "teacher" | "monitor";
                             active: boolean;
                         }[];
                         nextCursor: string | null;
@@ -3253,6 +3253,8 @@ export interface operations {
                     "application/json": {
                         items: {
                             id: string;
+                            /** @enum {string} */
+                            role: "student" | "monitor";
                             reusable: boolean;
                             /** Format: date-time */
                             createdAt: string;
@@ -3291,6 +3293,8 @@ export interface operations {
             content: {
                 "application/json": {
                     reusable?: boolean;
+                    /** @enum {string} */
+                    role?: "student" | "monitor";
                 };
             };
         };
@@ -3305,6 +3309,8 @@ export interface operations {
                         id: string;
                         token: string;
                         code: string;
+                        /** @enum {string} */
+                        role: "student" | "monitor";
                         reusable: boolean;
                         /** Format: date-time */
                         createdAt: string;
@@ -3392,7 +3398,7 @@ export interface operations {
                         id: string;
                         name: string;
                         /** @enum {string} */
-                        role: "student" | "teacher";
+                        role: "student" | "teacher" | "monitor";
                     };
                 };
             };

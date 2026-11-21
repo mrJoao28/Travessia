@@ -35,14 +35,16 @@ export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof 
 export const barrierView = (b: {id: string; stepId: string; description: string; sharedWithTeacher: boolean; response: string | null; createdAt: Date}) =>
   ({ id: b.id, stepId: b.stepId, description: b.description, sharedWithTeacher: b.sharedWithTeacher, response: b.response, createdAt: b.createdAt });
 
-export async function membership(tx: Tx, userId: string, classroomId: string, teacher = false) {
-  const member = await tx.membership.findFirst({ where: { userId, classroomId, active: true, ...(teacher ? { role: 'teacher' } : {}) } });
+export async function membership(tx: Tx, userId: string, classroomId: string, teacher = false, allowMonitor = false) {
+  const member = await tx.membership.findFirst({ where: { userId, classroomId, active: true,
+    role: teacher ? 'teacher' : allowMonitor ? { in: ['student', 'teacher', 'monitor'] } : { in: ['student', 'teacher'] } } });
   return member ?? missing();
 }
-export async function scopedMission(tx: Tx, userId: string, id: string, teacher = false) {
-  const row = await tx.mission.findFirst({ where: { id, classroom: { memberships: { some: { userId, active: true, ...(teacher ? { role: 'teacher' } : {}) } } } }, include: missionInclude });
+export async function scopedMission(tx: Tx, userId: string, id: string, teacher = false, allowMonitor = false) {
+  const row = await tx.mission.findFirst({ where: { id, classroom: { memberships: { some: { userId, active: true,
+    role: teacher ? 'teacher' : allowMonitor ? { in: ['student', 'teacher', 'monitor'] } : { in: ['student', 'teacher'] } } } } }, include: missionInclude });
   if (!row) return missing();
-  const member = await membership(tx, userId, row.classroomId, teacher);
+  const member = await membership(tx, userId, row.classroomId, teacher, allowMonitor);
   if (member.role === 'student' && row.status !== 'published') return missing();
   return { row, member };
 }
@@ -105,9 +107,9 @@ export class ProductService {
         if (old) return fail(409, 'MEMBERSHIP_EXISTS', 'Vínculo já existente. Consulte o docente.');
         const changed = await tx.invitation.updateMany({ where: { id: invite.id, consumedAt: null, revokedAt: null, expiresAt: { gt: new Date() } }, data: invite.reusable ? { expiresAt: invite.expiresAt } : { consumedAt: new Date(), consumedBy: userId } });
         if (!changed.count) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
-        await tx.membership.create({ data: { userId, classroomId: invite.classroomId, role: 'student' } });
+        await tx.membership.create({ data: { userId, classroomId: invite.classroomId, role: invite.role } });
         const c = await tx.classroom.findUniqueOrThrow({ where: { id: invite.classroomId } });
-        return { id: c.id, name: c.name, role: 'student' };
+        return { id: c.id, name: c.name, role: invite.role };
       });
     }
     if (op === 'generateSupports') return this.ai.generateSupports(userId, id, body as Body<'generateSupports'>);
@@ -117,20 +119,20 @@ export class ProductService {
 
     return serial(this.db, async tx => {
       if (['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'missions', 'createMission', 'barriers', 'upload'].includes(op)) {
-        const member = await membership(tx, userId, id, ['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'createMission', 'upload'].includes(op));
+        const member = await membership(tx, userId, id, ['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'upload'].includes(op), ['missions', 'createMission'].includes(op));
         if (op === 'members') {
           const rows = await tx.membership.findMany({ ...pageArgs(paging), where: { ...after(paging), classroomId: id }, include: { user: { select: { name: true } } } });
           return pagination(rows.map(m => ({ id: m.id, name: m.user.name, role: m.role, active: m.active })), paging.limit);
         }
         if (op === 'revokeMember') {
-          const target = await tx.membership.findFirst({ where: { id: p.memberId, classroomId: id, role: 'student' } });
+          const target = await tx.membership.findFirst({ where: { id: p.memberId, classroomId: id, role: { in: ['student', 'monitor'] } } });
           if (!target) return missing();
           await tx.membership.update({ where: { id: target.id }, data: { active: false } });
           await tx.auditEvent.create({ data: { actorId: userId, resourceId: target.id, action: 'membership.revoke' } });
           return { revoked: true };
         }
         if (op === 'invitations') {
-          const rows = await tx.invitation.findMany({ ...pageArgs(paging), where: { ...after(paging), classroomId: id, revokedAt: null, consumedAt: null, expiresAt: { gt: new Date() } }, select: { id: true, reusable: true, createdAt: true, expiresAt: true } });
+          const rows = await tx.invitation.findMany({ ...pageArgs(paging), where: { ...after(paging), classroomId: id, revokedAt: null, consumedAt: null, expiresAt: { gt: new Date() } }, select: { id: true, role: true, reusable: true, createdAt: true, expiresAt: true } });
           return pagination(rows, paging.limit);
         }
         if (op === 'invite') {
@@ -139,9 +141,11 @@ export class ProductService {
           const token = randomBytes(32).toString('hex');
           const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
           const code=Array.from(randomBytes(8),byte=>alphabet[byte & 31]).join('');
-          const reusable=(body as Body<'invite'>).reusable??false;
-          const invite = await tx.invitation.create({ data: { classroomId: id, tokenHash: digest(token), codeHash: digest(code), reusable, expiresAt: new Date(Date.now() + 7 * 86400000) } });
-          return { id: invite.id, token, code, reusable, createdAt: invite.createdAt, expiresAt: invite.expiresAt };
+          const role=(body as Body<'invite'>).role??'student';
+          if (role === 'monitor' && (body as Body<'invite'>).reusable) return fail(400, 'INVALID_INVITATION', 'Convite de monitor deve ser de uso único.');
+          const reusable=role === 'student' && ((body as Body<'invite'>).reusable??false);
+          const invite = await tx.invitation.create({ data: { classroomId: id, tokenHash: digest(token), codeHash: digest(code), role, reusable, expiresAt: new Date(Date.now() + 7 * 86400000) } });
+          return { id: invite.id, token, code, role, reusable, createdAt: invite.createdAt, expiresAt: invite.expiresAt };
         }
         if (op === 'revokeInvite') {
           const result = await tx.invitation.updateMany({ where: { id: p.invitationId, classroomId: id }, data: { revokedAt: new Date() } });
@@ -150,9 +154,10 @@ export class ProductService {
         }
         if (op === 'missions') {
           const rows = await tx.mission.findMany({ ...pageArgs(paging), where: { ...after(paging), classroomId: id, ...(member.role === 'student' ? { status: 'published' } : {}) }, include: missionInclude });
-          return pagination(rows.map(m => missionView(m, member.role === 'teacher')), paging.limit);
+          return pagination(rows.map(m => missionView(m, member.role !== 'student')), paging.limit);
         }
         if (op === 'createMission') {
+          if (member.role === 'student') return missing();
           const m = await tx.mission.create({ data: { classroomId: id } });
           const version = await createVersion(tx, m.id, body as MissionInput);
           const row = await tx.mission.update({ where: { id: m.id }, data: { draftVersionId: version.id }, include: missionInclude });
@@ -166,9 +171,10 @@ export class ProductService {
         }
       }
       if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions'].includes(op)) {
-        const { row, member } = await scopedMission(tx, userId, id, ['editMission', 'publish', 'archive'].includes(op));
-        if (op === 'mission') return missionView(row, member.role === 'teacher');
+        const { row, member } = await scopedMission(tx, userId, id, ['publish', 'archive'].includes(op), ['mission', 'editMission'].includes(op));
+        if (op === 'mission') return missionView(row, member.role !== 'student');
         if (op === 'editMission') {
+          if (member.role === 'student') return missing();
           const input = body as Body<'editMission'>;
           if (row.status === 'archived' || row.draftVersionId !== input.expectedDraftVersionId) return fail(409, 'VERSION_CONFLICT', 'A missão mudou. Recarregue antes de salvar.');
           const version = await createVersion(tx, row.id, input);

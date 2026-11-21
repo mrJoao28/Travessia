@@ -7,7 +7,8 @@ const memberships: Membership[] = [
   { userId: 'bob', classroomId: 'programacao', role: 'student' },
   { userId: 'prof', classroomId: 'programacao', role: 'teacher' },
   { userId: 'prof', classroomId: 'matematica', role: 'student' },
-  { userId: 'outro-prof', classroomId: 'matematica', role: 'teacher' }
+  { userId: 'outro-prof', classroomId: 'matematica', role: 'teacher' },
+  { userId: 'monitor', classroomId: 'programacao', role: 'monitor' }
 ];
 const submission = { classroomId: 'programacao', ownerId: 'alice' };
 test('nega acesso anônimo e vínculo ausente ou revogado', () => {
@@ -30,6 +31,13 @@ test('papel de professor não se propaga para outra turma', () => {
 test('aluno não envia trabalho em nome de outro usuário', () => {
   assert.equal(canAccess({ id: 'alice' }, memberships, 'submitWork', submission), true);
   assert.equal(canAccess({ id: 'bob' }, memberships, 'submitWork', submission), false);
+});
+test('monitor prepara rascunhos apenas em sua turma sem publicar nem ler entregas', () => {
+  assert.equal(canAccess({ id: 'monitor' }, memberships, 'draftMission', submission), true);
+  assert.equal(canAccess({ id: 'monitor' }, memberships, 'draftMission', { ...submission, classroomId: 'matematica' }), false);
+  assert.equal(canAccess({ id: 'monitor' }, memberships, 'manageMission', submission), false);
+  assert.equal(canAccess({ id: 'monitor' }, memberships, 'readSubmission', submission), false);
+  assert.equal(canAccess({ id: 'monitor' }, memberships, 'submitWork', { ...submission, ownerId: 'monitor' }), false);
 });
 test('relato só é compartilhado com docente por escolha explícita', () => {
   assert.equal(canAccess({ id: 'alice' }, memberships, 'readBarrier', submission), true);
