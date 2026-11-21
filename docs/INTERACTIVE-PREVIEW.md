@@ -14,6 +14,11 @@ Oito pessoas fictícias participam de três turmas de exemplo. Marina Costa pref
 6. Use **Ver no espaço do aluno**. Consulte PDF, áudio e transcrição. Marque etapas, escreva, salve o rascunho, recarregue a página e envie a atividade. Anexos são amostras fictícias, sem gravação ou upload pessoal.
 7. Volte a **Entregas** no professor e publique feedback local. O aluno pode consultar a orientação em sua missão e na lista de feedback.
 8. Experimente relatos privados/compartilhados, resposta do professor, perfil e pedidos de apoio opcionais. **Ajustar leitura** mantém as preferências existentes do site.
+9. Em **Monitoria**, escolha um aluno e o nível parcial ou total. A prévia mostra o alerta de riscos da moderação total, mantém a nota sugerida pendente de avaliação do professor e permite aprovar/recusar propostas no fluxo parcial. Tudo permanece simulado no navegador.
+
+## Limite da simulação de monitoria
+
+O fluxo de monitoria existe somente em `/previa/professor/monitoria`. Ele não cria designação persistida e não concede permissões no espaço autenticado. A API atual autoriza gestão de missão apenas a docentes e ainda não implementa monitor, aprovação de alterações ou sugestão de nota com revisão docente. Para habilitar isso fora da prévia, é necessário acrescentar contrato, migração e autorização no servidor para concessões por turma/aluno, propostas versionadas, revogação e avaliação docente obrigatória. A interface da prévia não é evidência de segurança nem de persistência.
 
 Os exemplos cobrem comparação de rotas, um programa de empréstimos de livros e cálculo de energia (9,6 + 1,2 = 10,8 kWh). As observações do campus não certificam acessibilidade de um percurso real.
 

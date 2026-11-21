@@ -8,6 +8,7 @@ import { PreviewStudentMission } from './preview/student-mission';
 import { PreviewDeliveries,PreviewBarriers } from './preview/communications';
 import { PreviewFirstSteps } from './preview/first-steps';
 import { PreviewProfile } from './preview/profile';
+import { PreviewMonitoria } from './preview/monitoria';
 export function PreviewFlows({role,route}:{role:'aluno'|'professor';route:string}){
  const {ready,state,epoch}=usePreview();
  if(!ready)return <p role="status">Preparando cenário fictício…</p>;
@@ -18,6 +19,7 @@ export function PreviewFlows({role,route}:{role:'aluno'|'professor';route:string
  else if(route==='perfil'||route==='apoios')content=<PreviewProfile role={role} needsOnly={route==='apoios'} key={`${role}:${route}:${state.studentId}`}/>;
  else if(route==='entregas'||route==='feedback')content=<PreviewDeliveries role={role} feedbackOnly={route==='feedback'}/>;
  else if(route==='barreiras')content=<PreviewBarriers role={role} key={`${role}:${state.studentId}`}/>;
+ else if(role==='professor'&&route==='monitoria')content=<PreviewMonitoria/>;
  else if(role==='professor'&&route==='missoes/editor')content=<PreviewEditor key="new"/>;
  else if(role==='professor'&&parts[0]==='missoes'&&parts.length===3)content=parts[2]==='editor'?<PreviewEditor missionId={parts[1]} key={parts[1]}/>:<PreviewMaterials missionId={parts[1]} key={parts[1]}/>;
  else if(role==='aluno'&&parts[0]==='missoes'&&parts[1])content=<PreviewStudentMission missionId={parts[1]} key={`${parts[1]}:${state.studentId}`}/>;

@@ -16,7 +16,7 @@ export default async function PreviewPage({
   const route = path.join("/");
   const common = ["", "turmas", "entregas", "feedback", "barreiras", "primeiros-passos", "ajuda", "perfil", "apoios"];
   const dynamic = role === "aluno" ? /^missoes\/[a-zA-Z0-9-]{1,100}$/ : /^missoes\/[a-zA-Z0-9-]{1,100}\/(editor|adaptacoes|apoios|estrategias)$/;
-  if (!common.includes(route) && !(role === 'professor' && ['missoes','missoes/editor'].includes(route)) && !dynamic.test(route)) notFound();
+  if (!common.includes(route) && !(role === 'professor' && ['missoes','missoes/editor','monitoria'].includes(route)) && !dynamic.test(route)) notFound();
   return (
     <Workspace role={role} preview>
       <PreviewFlows role={role} route={route} />
