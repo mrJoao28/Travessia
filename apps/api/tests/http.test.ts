@@ -218,6 +218,34 @@ test('entregas: autoria, isolamento A/B, draft privado e controle de concorrênc
   const reviewed = (await request(`/v1/submissions/${sent.id}/feedback`, main, 'POST', { content: 'Compare também uma segunda alternativa.' })).json;
   assert.equal(reviewed.status, 'reviewed'); assert.equal(reviewed.feedback.length, 1);
 });
+test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega única', async () => {
+  const c = (await provision('demo-student-3')).cookie;
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', { ...fixture, workMode: 'group' })).json;
+  const path = `/v1/missions/${created.id}`;
+  assert.equal(created.draftVersion.workMode, 'group');
+  await request(`${path}/groups`, a, 'GET', undefined, 404);
+  await request(`${path}/groups`, a, 'POST', { name: 'Invasora', studentIds: ['demo-student-1', 'demo-student-2'] }, 404);
+  await request(`${path}/groups`, main, 'POST', { name: 'Inválida', studentIds: ['demo-student-1', mainId] }, 400);
+  const team = (await request(`${path}/groups`, main, 'POST', { name: 'Equipe A', studentIds: ['demo-student-1', 'demo-student-2'] })).json;
+  await request(`${path}/groups`, main, 'POST', { name: 'Equipe B', studentIds: ['demo-student-2', 'demo-student-3'] }, 409);
+  await request(`${path}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true });
+  assert.deepEqual((await request(`${path}/groups`, a)).json.items.map((g: any) => g.id), [team.id]);
+  assert.deepEqual((await request(`${path}/groups`, c)).json.items, []);
+  const input = { versionId: created.draftVersion.id, content: 'Texto coletivo', completedStepIds: [], currentStepId: created.draftVersion.steps[0].id, status: 'draft', expectedRevision: 0 };
+  await request(`${path}/submissions`, c, 'POST', input, 409);
+  const first = (await request(`${path}/submissions`, a, 'POST', input)).json;
+  assert.equal(first.groupId, team.id);
+  assert.equal((await request(`${path}/submissions`, b)).json.items[0].id, first.id);
+  assert.equal((await request(`/v1/submissions/${first.id}`, b)).json.content, 'Texto coletivo');
+  await request(`/v1/submissions/${first.id}`, c, 'GET', undefined, 404);
+  await request(`/v1/submissions/${first.id}`, main, 'GET', undefined, 404);
+  await request(`${path}/groups/${team.id}`, main, 'DELETE', undefined, 409);
+  const submitted = (await request(`${path}/submissions`, b, 'POST', { ...input, content: 'Resposta conjunta', status: 'submitted', expectedRevision: first.revision })).json;
+  assert.equal(submitted.id, first.id);
+  assert.equal(submitted.userId, 'demo-student-1');
+  assert.equal((await request(`${path}/submissions`, main)).json.items.length, 1);
+  await request(`${path}/submissions`, a, 'POST', { ...input, expectedRevision: submitted.revision }, 409);
+});
 test('feedback com ajustes abre nova tentativa e preserva a entrega revisada', async () => {
   const mission = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   const versionId = mission.draftVersion.id;
