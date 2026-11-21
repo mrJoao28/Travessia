@@ -127,7 +127,7 @@ export const routes = {
   missions: { method: 'get', path: '/v1/classrooms/{id}/activities', body: empty, query: page, response: list(mission) },
   createMission: { method: 'post', path: '/v1/classrooms/{id}/activities', body: missionInput, query: empty, response: mission },
   mission: { method: 'get', path: '/v1/activities/{id}', body: empty, query: empty, response: mission },
-  editMission: { method: 'patch', path: '/v1/activities/{id}', body: missionInput.extend({ expectedDraftVersionId: id.nullable() }), query: empty, response: mission },
+  editMission: { method: 'patch', path: '/v1/activities/{id}', body: missionInput.extend({ expectedDraftVersionId: id.nullable(), carryForwardMaterialIds: z.array(id).max(30).optional() }), query: empty, response: mission },
   publish: { method: 'post', path: '/v1/activities/{id}/publish', body: z.strictObject({ versionId: id, reviewed: z.literal(true) }), query: empty, response: mission },
   archive: { method: 'post', path: '/v1/activities/{id}/archive', body: empty, query: empty, response: mission },
   saveSubmission: { method: 'post', path: '/v1/activities/{id}/submissions',

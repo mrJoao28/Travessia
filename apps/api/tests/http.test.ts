@@ -651,9 +651,18 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
   await request(`${path}/material-assets/${source.id}/pdf`, b, 'GET', undefined, 404);
   await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } }, data: { active: true } });
 
-  const next = (await request(path, main, 'PATCH', { ...fixture, title: 'Nova versão sem PDF herdado', expectedDraftVersionId: null })).json;
+  const next = (await request(path, main, 'PATCH', { ...fixture, title: 'Nova versão com PDF selecionado', expectedDraftVersionId: null, carryForwardMaterialIds: [source.id] })).json;
+  const copied = (await request(`${path}/material-sources?versionId=${next.draftVersion.id}`, main)).json.items[0];
+  assert.notEqual(copied.id, source.id);
+  assert.equal(copied.status, 'ready');
   await request(`${path}/publish`, main, 'POST', { versionId: next.draftVersion.id, reviewed: true });
-  assert.deepEqual((await request(`${path}/my-materials?versionId=${next.draftVersion.id}`, a)).json.items, []);
+  const retained = (await request(`${path}/material-sources?versionId=${next.draftVersion.id}`, main)).json.items[0];
+  assert.ok(new Date(retained.expiresAt).getTime() > Date.now() + 300 * 86400000, 'published material follows the one year retention policy');
+  const carriedItems = (await request(`${path}/my-materials?versionId=${next.draftVersion.id}`, a)).json.items;
+  assert.equal(carriedItems[0].id, copied.id);
+  const carriedPdf = await fetch(`${base}${path}/material-assets/${copied.id}/pdf`, { headers: { cookie: a } });
+  assert.equal(carriedPdf.status, 200);
+  assert.deepEqual(Buffer.from(await carriedPdf.arrayBuffer()), bytes);
   await request(`${path}/material-assets/${source.id}/pdf`, a, 'GET', undefined, 404);
 });
 

@@ -1,6 +1,6 @@
 import { materialRoutes } from './material-contracts.js';
 import { MaterialService } from './materials.js';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { missionInput, type Body, type MissionInput, type Operation, type Paging } from './contracts.js';
 import type { Config } from './config.js';
@@ -12,6 +12,8 @@ import { getProfile, updateProfile } from './profiles.js';
 import { LearningService, learnerPlans, allowedFormats } from './learning.js';
 import { verifySupportAudio } from './support-audio.js';
 import { StrategyService } from './strategies.js';
+import { copyMaterialFiles } from './material-files.js';
+import { MATERIAL_DRAFT_RETENTION_MS, publishedMaterialExpiry } from './material-limits.js';
 
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
 const missionInclude = { draftVersion: { include: versionInclude }, publishedVersion: { include: versionInclude } };
@@ -177,7 +179,19 @@ export class ProductService {
           if (member.role === 'student') return missing();
           const input = body as Body<'editMission'>;
           if (row.status === 'archived' || row.draftVersionId !== input.expectedDraftVersionId) return fail(409, 'VERSION_CONFLICT', 'A missão mudou. Recarregue antes de salvar.');
-          const version = await createVersion(tx, row.id, input);
+          const carryIds = input.carryForwardMaterialIds ?? [];
+          if (new Set(carryIds).size !== carryIds.length || (carryIds.length && !row.publishedVersionId)) return fail(400, 'INVALID_MATERIALS', 'Escolha PDFs válidos da versão publicada.');
+          const carry = carryIds.length ? await tx.materialSource.findMany({ where: { id: { in: carryIds }, versionId: row.publishedVersionId!, status: 'ready', expiresAt: { gt: new Date() } } }) : [];
+          if (carry.length !== carryIds.length) return fail(400, 'INVALID_MATERIALS', 'Escolha somente PDFs verificados da atividade publicada.');
+          const { carryForwardMaterialIds: _carryForwardMaterialIds, ...versionInput } = input;
+          const version = await createVersion(tx, row.id, versionInput);
+          for (const source of carry) {
+            const sourceId = randomUUID();
+            await tx.materialSource.create({ data: { id: sourceId, versionId: version.id, creatorId: userId, title: source.title,
+              hash: source.hash, requestKey: randomUUID(), status: 'ready', pageCount: source.pageCount, pages: source.pages as Prisma.InputJsonValue,
+              warnings: source.warnings as Prisma.InputJsonValue, expiresAt: new Date(Date.now() + MATERIAL_DRAFT_RETENTION_MS) } });
+            await copyMaterialFiles(source.id, sourceId);
+          }
           const changed = await tx.mission.update({ where: { id }, data: { draftVersionId: version.id }, include: missionInclude });
           return missionView(changed, true);
         }
@@ -191,6 +205,9 @@ export class ProductService {
             steps: v.steps.map(s => ({ title: s.title, instructions: s.instructions, example: s.example })),
             materials: v.materials.map(m => ({ title: m.title, text: m.text })) });
           const changed = await tx.mission.update({ where: { id }, data: { status: 'published', publishedVersionId: input.versionId, draftVersionId: null }, include: missionInclude });
+          const keepUntil = publishedMaterialExpiry();
+          await tx.materialSource.updateMany({ where: { versionId: v.id, status: 'ready' }, data: { expiresAt: keepUntil } });
+          await tx.materialAdaptation.updateMany({ where: { versionId: v.id, status: 'released' }, data: { expiresAt: keepUntil } });
           await tx.auditEvent.create({ data: { actorId: userId, action: 'mission.publish', resourceId: id } });
           return missionView(changed, true);
         }

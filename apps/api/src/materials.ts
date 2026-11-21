@@ -8,7 +8,7 @@ import { scopedMission } from './product.service.js';
 import { budget, digest } from './rate-limit.js';
 import { documentPage, materialContentLength, materialDocument, materialReleaseSnapshot, storedMaterialSettings } from './material-contracts.js';
 import { checkDiskBudget, materialPath, removeMaterialFiles, storeOriginal } from './material-files.js';
-import { materialBatches, PDF_DOCUMENT_CHARACTERS, PDF_MAX_BYTES, PDF_MAX_MB, PDF_MAX_PAGES, PDF_TEXT_PER_PAGE } from './material-limits.js';
+import { materialBatches, PDF_DOCUMENT_CHARACTERS, PDF_MAX_BYTES, PDF_MAX_MB, PDF_MAX_PAGES, PDF_TEXT_PER_PAGE, publishedMaterialExpiry } from './material-limits.js';
 import type { Config } from './config.js';
 export const extractedPages = z.array(z.strictObject({ page: z.number().int().min(1).max(PDF_MAX_PAGES), text: z.string().max(PDF_TEXT_PER_PAGE), hasVisual: z.boolean(), ocr: z.boolean() })).max(PDF_MAX_PAGES);
 export const sourcePublic = (s: MaterialSource) => ({ id: s.id, versionId: s.versionId, title: s.title, status: s.status, pageCount: s.pageCount,
@@ -35,11 +35,11 @@ export class MaterialService {
         const rows = await tx.materialAdaptation.findMany({ where: { versionId, AND: [{ OR: [{ studentId: userId }, { studentId: null }] }, { OR: [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }] }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
         return { items: [
           ...originals.map(source => ({ id: source.id, title: source.title, mode: 'original' as const, scope: 'activity' as const,
-            status: source.status === 'ready' ? 'ready' as const : source.status === 'failed' ? 'failed' as const : 'processing' as const, document: [] as [], hasAudio: false })),
+            status: source.status === 'ready' ? 'ready' as const : source.status === 'failed' ? 'failed' as const : 'processing' as const, expiresAt: source.expiresAt, document: [] as [], hasAudio: false })),
           ...rows.filter(a => storedMaterialSettings.parse(a.settings).deliveryMode !== 'original').map(a => {
           const { deliveryMode = 'adapted', supports, fontSize, color } = storedMaterialSettings.parse(a.settings);
           const snapshot = a.releasedSnapshot ? materialReleaseSnapshot.parse(a.releasedSnapshot) : null;
-          return { id: a.id, title: a.source.title, mode: deliveryMode, scope: 'individual' as const, status: 'ready' as const, hasAudio: snapshot?.hasAudio ?? a.hasAudio,
+          return { id: a.id, title: a.source.title, mode: deliveryMode, scope: 'individual' as const, status: 'ready' as const, expiresAt: a.expiresAt, hasAudio: snapshot?.hasAudio ?? a.hasAudio,
             ...(deliveryMode === 'original'
               ? { document: [] }
               : { document: snapshot?.document ?? materialDocument.parse(a.document), reading: { supports, fontSize, color } }),
@@ -179,7 +179,9 @@ export class MaterialService {
         if (old.status === 'released') return adaptationPublic(old);
         if (old.status !== 'ready') return fail(409, 'REVIEW_REQUIRED', 'Gere e confira os arquivos desta revisão antes de liberar.');
         if (old.studentId && !await tx.membership.findFirst({ where: { userId: old.studentId, classroomId: row.classroomId, active: true, role: 'student' } })) return missing();
-        const saved = await tx.materialAdaptation.update({ where: { id: old.id }, data: { status: 'released', releasedSnapshot: { revision: old.revision, document: materialDocument.parse(old.document), hasAudio: old.hasAudio } } });
+        const keepUntil = row.publishedVersionId === old.versionId ? publishedMaterialExpiry() : old.expiresAt;
+        const saved = await tx.materialAdaptation.update({ where: { id: old.id }, data: { status: 'released', expiresAt: keepUntil, releasedSnapshot: { revision: old.revision, document: materialDocument.parse(old.document), hasAudio: old.hasAudio } } });
+        if (row.publishedVersionId === old.versionId) await tx.materialSource.update({ where: { id: old.sourceId }, data: { expiresAt: keepUntil } });
         await tx.auditEvent.create({ data: { actorId: userId, action: 'material.release', resourceId: old.id } }); return adaptationPublic(saved);
       }
       return missing();
