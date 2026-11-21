@@ -618,8 +618,9 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
   const versionId = created.draftVersion.id, path = `/v1/missions/${created.id}`;
   const bytes = Buffer.from('%PDF-1.4\nmaterial didático da turma');
   const source = (await request(`${path}/material-sources`, main, 'POST', {
-    versionId, title: 'Material da turma.pdf', base64: bytes.toString('base64'), requestKey: randomUUID(),
+    versionId, title: 'Material da turma.pdf', downloadAllowed: true, base64: bytes.toString('base64'), requestKey: randomUUID(),
   })).json;
+  assert.equal(source.downloadAllowed, true);
   await request(`${path}/my-materials?versionId=${versionId}`, a, 'GET', undefined, 404);
   await request(`${path}/publish`, main, 'POST', { versionId, reviewed: true });
   for (const cookie of [a, b]) {
@@ -640,6 +641,11 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
     assert.equal(pdf.status, 200);
     assert.equal(pdf.headers.get('content-type'), 'application/pdf');
     assert.deepEqual(Buffer.from(await pdf.arrayBuffer()), bytes);
+    const head = await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { method: 'HEAD', headers: { cookie } });
+    assert.equal(head.status, 200);
+    const download = await fetch(`${base}${path}/material-assets/${source.id}/download`, { headers: { cookie } });
+    assert.equal(download.status, 200);
+    assert.match(download.headers.get('content-disposition') ?? '', /^attachment;/i);
   }
   await request(`${path}/my-materials?versionId=${versionId}`, '', 'GET', undefined, 401);
   await request(`${path}/my-materials?versionId=${versionId}`, otherTeacher, 'GET', undefined, 404);
@@ -650,6 +656,12 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
   await request(`${path}/my-materials?versionId=${versionId}`, b, 'GET', undefined, 404);
   await request(`${path}/material-assets/${source.id}/pdf`, b, 'GET', undefined, 404);
   await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } }, data: { active: true } });
+  await db.materialSource.update({ where: { id: source.id }, data: { status: 'failed' } });
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`, a)).json.items[0].status, 'failed');
+  const fallback = await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { headers: { cookie: a } });
+  assert.equal(fallback.status, 200, 'the original PDF stays viewable when text extraction fails');
+  assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { method: 'HEAD', headers: { cookie: a } })).status, 200);
+  await db.materialSource.update({ where: { id: source.id }, data: { status: 'ready' } });
 
   const next = (await request(path, main, 'PATCH', { ...fixture, title: 'Nova versão com PDF selecionado', expectedDraftVersionId: null, carryForwardMaterialIds: [source.id] })).json;
   const copied = (await request(`${path}/material-sources?versionId=${next.draftVersion.id}`, main)).json.items[0];
@@ -664,6 +676,23 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
   assert.equal(carriedPdf.status, 200);
   assert.deepEqual(Buffer.from(await carriedPdf.arrayBuffer()), bytes);
   await request(`${path}/material-assets/${source.id}/pdf`, a, 'GET', undefined, 404);
+});
+
+test('PDF da turma sem permissão de download pode ser visualizado, mas não baixado', async () => {
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const versionId = created.draftVersion.id, path = `/v1/missions/${created.id}`;
+  const bytes = Buffer.from('%PDF-1.4\nmaterial somente para leitura');
+  const source = (await request(`${path}/material-sources`, main, 'POST', {
+    versionId, title: 'Leitura.pdf', downloadAllowed: false, base64: bytes.toString('base64'), requestKey: randomUUID(),
+  })).json;
+  await request(`${path}/publish`, main, 'POST', { versionId, reviewed: true });
+  await db.materialSource.update({ where: { id: source.id }, data: { status: 'ready', pageCount: 1 } });
+  await writeFile(materialPath(source.id, 'original.pdf'), bytes);
+  const items = (await request(`${path}/my-materials?versionId=${versionId}`, a)).json.items;
+  assert.equal(items[0].downloadAllowed, false);
+  assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { headers: { cookie: a } })).status, 200);
+  assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { method: 'HEAD', headers: { cookie: a } })).status, 200);
+  await request(`${path}/material-assets/${source.id}/download`, a, 'GET', undefined, 404);
 });
 
 test('IA indisponível clara; cota concorrente, deduplicação e revisão humana', { timeout: 30000 }, async () => {
@@ -696,7 +725,7 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   const versionId = created.draftVersion.id, path = `/v1/missions/${created.id}`;
   await request(`${path}/publish`, main, 'POST', { versionId, reviewed: true });
-  const upload = { versionId, title: 'Documento de teste', base64: Buffer.from('%PDF-1.4\nfixture').toString('base64'), requestKey: randomUUID() };
+  const upload = { versionId, title: 'Documento de teste', downloadAllowed: false, base64: Buffer.from('%PDF-1.4\nfixture').toString('base64'), requestKey: randomUUID() };
   await request(`${path}/material-sources`, '', 'POST', upload, 401);
   await request(`${path}/material-sources`, a, 'POST', upload, 404);
   await request(`${path}/material-sources`, otherTeacher, 'POST', upload, 404);
@@ -829,7 +858,7 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
  const created=(await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
  const versionId=created.draftVersion.id,path=`/v1/missions/${created.id}`;
  const bytes=Buffer.from('%PDF-1.4\noriginal privado completo');
- const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Original',base64:bytes.toString('base64'),requestKey:randomUUID()})).json;
+ const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Original',downloadAllowed:false,base64:bytes.toString('base64'),requestKey:randomUUID()})).json;
  const input={versionId,sourceId:source.id,studentId:'demo-student-1',requestKey:randomUUID(),reviewed:true};
  await request(`${path}/original-materials`,a,'POST',input,404);
  await request(`${path}/original-materials`,otherTeacher,'POST',input,404);
@@ -868,7 +897,7 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
 test('PDF adaptado para toda a turma: revisão, publicação e acesso apenas aos alunos ativos',async()=>{
  const mission=(await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
  const versionId=mission.draftVersion.id,path=`/v1/missions/${mission.id}`;
- const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Arquivo compartilhado',base64:Buffer.from('%PDF-1.4\nconteudo comum').toString('base64'),requestKey:randomUUID()})).json;
+ const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Arquivo compartilhado',downloadAllowed:false,base64:Buffer.from('%PDF-1.4\nconteudo comum').toString('base64'),requestKey:randomUUID()})).json;
  await db.materialSource.update({where:{id:source.id},data:{status:'ready',pageCount:1,pages:[{page:1,text:'Texto de referência.',hasVisual:false,ocr:false}]}});
  const input={versionId,sourceId:source.id,audience:'classroom',pages:[1],settings:{supports:['large-print'],fontSize:'22',color:'default',useAi:false,approvedForProvider:false},requestKey:randomUUID()};
  await request(`${path}/material-adaptations`,main,'POST',{...input,studentId:'demo-student-1'},400);
@@ -902,7 +931,7 @@ test('narração integral: quatro páginas preservadas, descrição IA separada 
   const mission = (await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
   const versionId=mission.draftVersion.id, path=`/v1/missions/${mission.id}`;
   await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
-  const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Quatro páginas fictícias',base64:Buffer.from('%PDF-1.4\nfixture').toString('base64'),requestKey:randomUUID()})).json;
+  const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Quatro páginas fictícias',downloadAllowed:false,base64:Buffer.from('%PDF-1.4\nfixture').toString('base64'),requestKey:randomUUID()})).json;
   const pages=[1,2,3,4].map(page=>({page,text:`Texto integral da página ${page}. Valor: ${page*10} metros. Última frase ${page}.`,hasVisual:true,ocr:false}));
   let aiCalls=0, audioCalls=0, spoken='', failRegeneration=false;
   const worker=new MaterialWorker(db,config,async input=>{

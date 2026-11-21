@@ -8,7 +8,7 @@ export function materialReadingStyle(settings: Reading, zoom = 1): CSSProperties
   return { fontSize: `${size * zoom / 12}rem`, lineHeight: settings?.supports.includes("wide-spacing") ? 1.8 : 1.5 };
 }
 
-export function materialAssetUrl(missionId: string, assetId: string, kind: "original" | "pdf" | "audio" | `page-${number}`) {
+export function materialAssetUrl(missionId: string, assetId: string, kind: "original" | "pdf" | "download" | "audio" | `page-${number}`) {
   return `/api/v1/activities/${encodeURIComponent(missionId)}/material-assets/${encodeURIComponent(assetId)}/${kind}`;
 }
 export function PreparedDocument({ document, missionId, adaptationId }: { document: Document; missionId?: string; adaptationId?: string }) {

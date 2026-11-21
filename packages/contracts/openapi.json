@@ -78,6 +78,9 @@
                               "failed"
                             ]
                           },
+                          "downloadAllowed": {
+                            "type": "boolean"
+                          },
                           "pageCount": {
                             "type": "integer",
                             "minimum": -9007199254740991,
@@ -129,6 +132,7 @@
                           "versionId",
                           "title",
                           "status",
+                          "downloadAllowed",
                           "pageCount",
                           "pages",
                           "warnings",
@@ -214,6 +218,9 @@
                     "minLength": 1,
                     "maxLength": 150
                   },
+                  "downloadAllowed": {
+                    "type": "boolean"
+                  },
                   "base64": {
                     "type": "string",
                     "minLength": 8,
@@ -228,6 +235,7 @@
                 "required": [
                   "versionId",
                   "title",
+                  "downloadAllowed",
                   "base64",
                   "requestKey"
                 ],
@@ -266,6 +274,9 @@
                         "ready",
                         "failed"
                       ]
+                    },
+                    "downloadAllowed": {
+                      "type": "boolean"
                     },
                     "pageCount": {
                       "type": "integer",
@@ -318,6 +329,7 @@
                     "versionId",
                     "title",
                     "status",
+                    "downloadAllowed",
                     "pageCount",
                     "pages",
                     "warnings",
@@ -2793,6 +2805,9 @@
                               "failed"
                             ]
                           },
+                          "downloadAllowed": {
+                            "type": "boolean"
+                          },
                           "expiresAt": {
                             "type": "string",
                             "format": "date-time",
@@ -2916,6 +2931,7 @@
                         "required": [
                           "id",
                           "title",
+                          "downloadAllowed",
                           "document",
                           "hasAudio"
                         ],

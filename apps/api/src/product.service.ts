@@ -187,7 +187,7 @@ export class ProductService {
           const version = await createVersion(tx, row.id, versionInput);
           for (const source of carry) {
             const sourceId = randomUUID();
-            await tx.materialSource.create({ data: { id: sourceId, versionId: version.id, creatorId: userId, title: source.title,
+            await tx.materialSource.create({ data: { id: sourceId, versionId: version.id, creatorId: userId, title: source.title, downloadAllowed: source.downloadAllowed,
               hash: source.hash, requestKey: randomUUID(), status: 'ready', pageCount: source.pageCount, pages: source.pages as Prisma.InputJsonValue,
               warnings: source.warnings as Prisma.InputJsonValue, expiresAt: new Date(Date.now() + MATERIAL_DRAFT_RETENTION_MS) } });
             await copyMaterialFiles(source.id, sourceId);

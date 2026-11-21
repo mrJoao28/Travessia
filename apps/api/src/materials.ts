@@ -11,7 +11,7 @@ import { checkDiskBudget, materialPath, removeMaterialFiles, storeOriginal } fro
 import { materialBatches, PDF_DOCUMENT_CHARACTERS, PDF_MAX_BYTES, PDF_MAX_MB, PDF_MAX_PAGES, PDF_TEXT_PER_PAGE, publishedMaterialExpiry } from './material-limits.js';
 import type { Config } from './config.js';
 export const extractedPages = z.array(z.strictObject({ page: z.number().int().min(1).max(PDF_MAX_PAGES), text: z.string().max(PDF_TEXT_PER_PAGE), hasVisual: z.boolean(), ocr: z.boolean() })).max(PDF_MAX_PAGES);
-export const sourcePublic = (s: MaterialSource) => ({ id: s.id, versionId: s.versionId, title: s.title, status: s.status, pageCount: s.pageCount,
+export const sourcePublic = (s: MaterialSource) => ({ id: s.id, versionId: s.versionId, title: s.title, status: s.status, downloadAllowed: s.downloadAllowed, pageCount: s.pageCount,
   pages: s.status === 'ready' ? extractedPages.parse(s.pages) : [], warnings: z.array(z.string()).parse(s.warnings), expiresAt: s.expiresAt });
 export const adaptationPublic = (s: MaterialAdaptation) => {
   const { regeneratePage: _queuedPage, autoRender: _autoRender, ...settings } = storedMaterialSettings.parse(s.settings);
@@ -32,14 +32,14 @@ export class MaterialService {
         const { versionId } = query as { versionId: string };
         if (row.publishedVersionId !== versionId) return missing();
         const originals = await tx.materialSource.findMany({ where: { versionId, expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 });
-        const rows = await tx.materialAdaptation.findMany({ where: { versionId, AND: [{ OR: [{ studentId: userId }, { studentId: null }] }, { OR: [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }] }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
+        const rows = await tx.materialAdaptation.findMany({ where: { versionId, AND: [{ OR: [{ studentId: userId }, { studentId: null }] }, { OR: [{ status: 'released' }, { releasedSnapshot: { not: Prisma.DbNull } }] }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } }, include: { source: { select: { title: true, downloadAllowed: true } } }, orderBy: { createdAt: 'asc' }, take: 100 });
         return { items: [
           ...originals.map(source => ({ id: source.id, title: source.title, mode: 'original' as const, scope: 'activity' as const,
-            status: source.status === 'ready' ? 'ready' as const : source.status === 'failed' ? 'failed' as const : 'processing' as const, expiresAt: source.expiresAt, document: [] as [], hasAudio: false })),
+            status: source.status === 'ready' ? 'ready' as const : source.status === 'failed' ? 'failed' as const : 'processing' as const, downloadAllowed: source.downloadAllowed, expiresAt: source.expiresAt, document: [] as [], hasAudio: false })),
           ...rows.filter(a => storedMaterialSettings.parse(a.settings).deliveryMode !== 'original').map(a => {
           const { deliveryMode = 'adapted', supports, fontSize, color } = storedMaterialSettings.parse(a.settings);
           const snapshot = a.releasedSnapshot ? materialReleaseSnapshot.parse(a.releasedSnapshot) : null;
-          return { id: a.id, title: a.source.title, mode: deliveryMode, scope: 'individual' as const, status: 'ready' as const, expiresAt: a.expiresAt, hasAudio: snapshot?.hasAudio ?? a.hasAudio,
+          return { id: a.id, title: a.source.title, mode: deliveryMode, scope: 'individual' as const, status: 'ready' as const, downloadAllowed: a.source.downloadAllowed, expiresAt: a.expiresAt, hasAudio: snapshot?.hasAudio ?? a.hasAudio,
             ...(deliveryMode === 'original'
               ? { document: [] }
               : { document: snapshot?.document ?? materialDocument.parse(a.document), reading: { supports, fontSize, color } }),
@@ -61,14 +61,14 @@ export class MaterialService {
         if (bytes.length > PDF_MAX_BYTES || bytes.length < 8 || bytes.subarray(0, 5).toString() !== '%PDF-') return fail(400, 'INVALID_PDF', `Envie um PDF de até ${PDF_MAX_MB} MB.`);
         const hash = digest(input.base64);
         const old = await tx.materialSource.findUnique({ where: { versionId_requestKey: { versionId: input.versionId, requestKey: input.requestKey } } });
-        if (old) { if (old.hash !== hash || old.title !== input.title) return fail(409, 'IDEMPOTENCY_CONFLICT', 'Solicitação já utilizada.'); return sourcePublic(old); }
-        const duplicate = await tx.materialSource.findFirst({ where: { versionId: input.versionId, hash, status: { not: 'failed' }, expiresAt: { gt: new Date() } } });
+        if (old) { if (old.hash !== hash || old.title !== input.title || old.downloadAllowed !== input.downloadAllowed) return fail(409, 'IDEMPOTENCY_CONFLICT', 'Solicitação já utilizada.'); return sourcePublic(old); }
+        const duplicate = await tx.materialSource.findFirst({ where: { versionId: input.versionId, hash, downloadAllowed: input.downloadAllowed, status: { not: 'failed' }, expiresAt: { gt: new Date() } } });
         if (duplicate) return sourcePublic(duplicate);
         if (await tx.materialSource.count({ where: { versionId: input.versionId } }) >= 30) return fail(409, 'MATERIAL_LIMIT', 'Até 30 arquivos por versão. Remova arquivos não usados.');
         await budget(tx, `material-upload:${userId}`, 20, 86400);
         try { await checkDiskBudget(bytes.length); } catch { return fail(503, 'MATERIAL_STORAGE_FULL', 'Armazenamento de materiais indisponível.'); }
         const id = randomUUID(); cleanupId = id; await storeOriginal(id, bytes);
-        const result = await tx.materialSource.create({ data: { id, versionId: input.versionId, creatorId: userId, title: input.title, hash, requestKey: input.requestKey, expiresAt: new Date(Date.now() + 90 * 86400000) } });
+        const result = await tx.materialSource.create({ data: { id, versionId: input.versionId, creatorId: userId, title: input.title, downloadAllowed: input.downloadAllowed, hash, requestKey: input.requestKey, expiresAt: new Date(Date.now() + 90 * 86400000) } });
         await tx.auditEvent.create({ data: { actorId: userId, action: 'material.upload', resourceId: id } });
         return sourcePublic(result);
       }
@@ -187,7 +187,7 @@ export class MaterialService {
       return missing();
     }); } catch (error) { if (cleanupId) await removeMaterialFiles(cleanupId); throw error; }
   }
-  async asset(userId: string, p: Record<string,string>) {
+  async asset(userId: string, p: Record<string,string>): Promise<{ path: string; mime: string; name: string; disposition?: 'inline' | 'attachment' }> {
     return serial(this.db, async tx => {
       const { row, member } = await scopedMission(tx, userId, p.id);
       if (p.kind === 'original') {
@@ -196,11 +196,11 @@ export class MaterialService {
         if (!source || ![row.draftVersionId, row.publishedVersionId].includes(source.versionId)) return missing();
         return { path: materialPath(source.id, 'original.pdf'), mime: 'application/pdf', name: 'original.pdf' };
       }
-      if (!['pdf','audio'].includes(p.kind) && !(/^page-[1-9][0-9]?$/.test(p.kind) && Number(p.kind.slice(5)) <= PDF_MAX_PAGES)) return missing();
-      if (p.kind === 'pdf' && member.role === 'student') {
+      if (!['pdf','download','audio'].includes(p.kind) && !(/^page-[1-9][0-9]?$/.test(p.kind) && Number(p.kind.slice(5)) <= PDF_MAX_PAGES)) return missing();
+      if ((p.kind === 'pdf' || p.kind === 'download') && member.role === 'student') {
         const original = await tx.materialSource.findFirst({ where: { id: p.assetId, versionId: row.publishedVersionId ?? undefined,
-          version: { missionId: row.id }, status: 'ready', expiresAt: { gt: new Date() } } });
-        if (original) return { path: materialPath(original.id, 'original.pdf'), mime: 'application/pdf', name: 'material-original.pdf' };
+          version: { missionId: row.id }, status: { in: ['ready', 'failed'] }, expiresAt: { gt: new Date() } } });
+        if (original && (p.kind === 'pdf' || original.downloadAllowed)) return { path: materialPath(original.id, 'original.pdf'), mime: 'application/pdf', name: 'material-original.pdf', disposition: p.kind === 'download' ? 'attachment' as const : 'inline' as const };
       }
       // A teacher may compare verified source pages before creating an adaptation.
       // Students still need a released, personally addressed adaptation below.
@@ -216,6 +216,13 @@ export class MaterialService {
         : [{ status: { in: ['ready', 'released'] } }], expiresAt: { gt: new Date() }, source: { status: 'ready', expiresAt: { gt: new Date() } } } });
       if (!a || ![row.draftVersionId, row.publishedVersionId].includes(a.versionId)) return missing();
       if (member.role === 'student' && (a.studentId !== null && a.studentId !== userId || a.versionId !== row.publishedVersionId)) return missing();
+      if (p.kind === 'download') {
+        if (member.role !== 'student') return missing();
+        const source = await tx.materialSource.findFirst({ where: { id: a.sourceId, status: 'ready', downloadAllowed: true, expiresAt: { gt: new Date() } } });
+        if (!source) return missing();
+        const snapshot = a.releasedSnapshot ? materialReleaseSnapshot.parse(a.releasedSnapshot) : null;
+        return { path: materialPath(a.id, `adapted-${snapshot?.revision ?? a.revision}.pdf`), mime: 'application/pdf', name: 'material-adaptado.pdf', disposition: 'attachment' as const };
+      }
       if(storedMaterialSettings.parse(a.settings).deliveryMode==='original'){if(p.kind!=='pdf')return missing();return {path:materialPath(a.sourceId,'original.pdf'),mime:'application/pdf',name:'material-original.pdf'};}
       if (p.kind.startsWith('page-')) {
         const page = Number(p.kind.slice(5)); if (!z.array(z.number()).parse(a.pages).includes(page)) return missing();
