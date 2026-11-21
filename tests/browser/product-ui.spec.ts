@@ -87,6 +87,20 @@ test("editor salva versão, exige revisão e publica somente a versão confirmad
     ),
   ).toBeVisible();
 });
+test("editor destaca pedidos de apoio autorizados antes de publicar a atividade", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.route("**/api/v1/classrooms/test-classroom/learning-needs**", route => route.fulfill({ json: {
+    items: [{ userId: "student-a", name: "Aluno A", supports: ["short-steps"], preferredFormats: ["text"], disabilities: null }],
+    nextCursor: null,
+  } }));
+  await page.goto("/professor/atividades/test-mission/editar");
+  await page.getByRole("button", { name: "Continuar para as etapas →", exact: true }).click();
+  await page.getByRole("button", { name: "Salvar e continuar →", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Pedidos de apoio compartilhados", exact: true })).toBeVisible();
+  await expect(page.getByText("1 aluno compartilhou preferências de apoio com os docentes desta turma.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Aluno A", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Consultar pedidos e preparar adaptações", exact: true })).toHaveAttribute("href", "/professor/atividades/test-mission/adaptacoes");
+});
 test("planejamento manual mantém o título e dispensa o painel de escrita com IA", async ({
   page,
 }) => {
