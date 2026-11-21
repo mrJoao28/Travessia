@@ -769,6 +769,41 @@ test('IA indisponível clara; cota concorrente, deduplicação e revisão humana
   assert.equal(unchanged.draftVersion.id, mission.draftVersion.id);
   config.aiEnabled = false;
 });
+test('IA prepara rascunho de correção somente a pedido do professor e não publica feedback', { timeout: 30000 }, async () => {
+  const gradedInput: MissionInput = { ...fixture, title: 'Atividade fictícia de avaliação', steps: [{ ...fixture.steps[0]!, maxPoints: 10 }] };
+  const created = (await request(`/v1/classrooms/${workshop}/activities`, main, 'POST', gradedInput)).json;
+  const activityPath = `/v1/activities/${created.id}`;
+  await request(`${activityPath}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true });
+  const sentAnswer = 'Resposta fictícia: comparei as duas alternativas pelo custo e pela clareza.';
+  const saved = (await request(`${activityPath}/submissions`, a, 'POST', { versionId: created.draftVersion.id, content: sentAnswer,
+    completedStepIds: [created.publishedVersion?.steps?.[0]?.id ?? created.draftVersion.steps[0].id], currentStepId: created.draftVersion.steps[0].id,
+    status: 'submitted', expectedRevision: 0 })).json;
+  const endpoint = `/v1/submissions/${saved.id}/ai-feedback-draft`;
+  const input = { approvedForProvider: true, idempotencyKey: randomUUID() };
+  await request(endpoint, main, 'POST', input, 503);
+  config.aiEnabled = true; config.model = 'fake-feedback-test';
+  let feedbackCalls = 0, sentFeedbackInput = '';
+  runtime.service.ai.feedbackProvider = async providerInput => {
+    feedbackCalls++; sentFeedbackInput = JSON.stringify(providerInput);
+    return { draft: { content: 'Você comparou os custos. Explique também como a clareza afeta a escolha.', scores: [{ stepRef: 'step-1', points: 8, comment: 'Justificativa coerente; desenvolva o segundo critério.' }] }, inputTokens: 33, outputTokens: 44 };
+  };
+  await request(endpoint, a, 'POST', input, 404);
+  await request(endpoint, main, 'POST', { idempotencyKey: randomUUID() }, 400);
+  const generated = (await request(endpoint, main, 'POST', input)).json;
+  assert.equal(generated.status, 'succeeded');
+  assert.equal(generated.draft.scores[0].stepId, created.draftVersion.steps[0].id);
+  assert.equal(generated.draft.scores[0].points, 8);
+  assert.deepEqual(Object.keys(JSON.parse(sentFeedbackInput)).sort(), ['answer', 'criteria', 'objectives', 'steps']);
+  assert.ok(sentFeedbackInput.includes(sentAnswer));
+  assert.ok(!sentFeedbackInput.includes('demo-student-1') && !sentFeedbackInput.includes('example.invalid') && !sentFeedbackInput.includes('disabilities'));
+  assert.equal((await request(`/v1/submissions/${saved.id}`, main)).json.feedback.length, 0);
+  const replay = (await request(endpoint, main, 'POST', input)).json;
+  assert.deepEqual(replay.draft, generated.draft); assert.equal(feedbackCalls, 1);
+  const finalized = (await request(`/v1/submissions/${saved.id}/feedback`, main, 'POST', { content: generated.draft.content,
+    scores: generated.draft.scores })).json;
+  assert.equal(finalized.status, 'reviewed'); assert.equal(finalized.feedback.length, 1);
+  runtime.service.ai.feedbackProvider = undefined; config.aiEnabled = false;
+});
 test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privados A/B', { timeout: 30000 }, async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   const versionId = created.draftVersion.id, path = `/v1/missions/${created.id}`;
