@@ -3,26 +3,45 @@ import { useEffect, useState } from "react";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
 import { materialAssetUrl, materialReadingStyle, PreparedDocument } from "./prepared-material";
 
-function LearnerPdfPreview({ missionId, assetId, title, downloadLabel }: { missionId:string; assetId:string; title:string; downloadLabel:string }) {
+function LearnerPdfPreview({ missionId, assetId, title, downloadAllowed, downloadLabel, previewPages }: { missionId:string; assetId:string; title:string; downloadAllowed:boolean; downloadLabel:string; previewPages:number[] }) {
   const [assetState,setAssetState]=useState<"checking"|"available"|"failed">("checking");
   const [frameLoaded,setFrameLoaded]=useState(false);
+  const [loadedPages,setLoadedPages]=useState<number[]>([]);
+  const [failedPages,setFailedPages]=useState<number[]>([]);
   const url=materialAssetUrl(missionId,assetId,"pdf");
   useEffect(()=>{
+    setAssetState(downloadAllowed ? "checking" : previewPages.length ? "available" : "failed");
+    setFrameLoaded(false);setLoadedPages([]);setFailedPages([]);
+    if(!downloadAllowed)return;
     const controller=new AbortController();
     void fetch(url,{method:"HEAD",signal:controller.signal}).then(response=>{
       if(!controller.signal.aborted)setAssetState(response.ok?"available":"failed");
     }).catch(()=>{if(!controller.signal.aborted)setAssetState("failed");});
     return ()=>controller.abort();
-  },[url]);
+  },[url,downloadAllowed,previewPages.length]);
   return <div className="form-stack">
-    {assetState !== "failed" && <iframe className="learner-material-pdf" title={`Prévia do PDF: ${title}`} src={url} loading="lazy" onLoad={()=>setFrameLoaded(true)} onError={()=>setAssetState("failed")} />}
-    {assetState === "checking" ? <p role="status">Verificando se o PDF pode ser aberto…</p>
-      : assetState === "failed" ? <p role="alert">Não foi possível carregar a prévia do PDF. Avise o professor da turma.</p>
-      : frameLoaded ? <p role="status">O PDF foi carregado no visualizador do navegador.</p>
-      : <p role="status">O arquivo está disponível e a prévia está sendo aberta…</p>}
+    {downloadAllowed ? <>
+      {assetState !== "failed" && <iframe className="learner-material-pdf" title={`Prévia do PDF: ${title}`} src={url} loading="lazy" onLoad={()=>setFrameLoaded(true)} onError={()=>setAssetState("failed")} />}
+      {assetState === "checking" ? <p role="status">Verificando se o PDF pode ser aberto…</p>
+        : assetState === "failed" ? <p role="alert">Não foi possível carregar a prévia do PDF. Avise o professor da turma.</p>
+        : frameLoaded ? <p role="status">O PDF foi carregado no visualizador do navegador.</p>
+        : <p role="status">O arquivo está disponível e a prévia está sendo aberta…</p>}
+    </> : <>
+      {previewPages.length > 0 && <div className="learner-page-preview" aria-label={`Prévia visual de ${title}`}>
+        {previewPages.map(page=><figure className="prepared-page" key={page}>
+          <figcaption>Página {page}</figcaption>
+          <img src={materialAssetUrl(missionId,assetId,`page-${page}`)} alt={`Página ${page} do documento ${title}`} onLoad={()=>setLoadedPages(pages=>pages.includes(page)?pages:[...pages,page])} onError={()=>setFailedPages(pages=>pages.includes(page)?pages:[...pages,page])}/>
+        </figure>)}
+      </div>}
+      {previewPages.length===0 ? <p role="status">Não foi possível preparar uma prévia visual deste PDF. O arquivo original não está disponível para download.</p>
+        : failedPages.length>0 ? <p role="alert">Não foi possível carregar todas as páginas da prévia. Avise o professor da turma.</p>
+        : loadedPages.length===previewPages.length ? <p role="status">As páginas foram carregadas para leitura. O arquivo PDF original não está disponível para download.</p>
+        : <p role="status">Carregando as páginas da prévia…</p>}
+    </>}
     <section className="paper form-stack" aria-label="Download do documento">
       <h5>Download do documento</h5>
-      <a className="button button-outline" href={materialAssetUrl(missionId,assetId,"download")}>{downloadLabel}</a>
+      {downloadAllowed ? <a className="button button-outline" href={materialAssetUrl(missionId,assetId,"download")}>{downloadLabel}</a>
+        : <p className="small">O professor não disponibilizou o botão de download. A prévia continua disponível no site.</p>}
     </section>
   </div>;
 }
@@ -67,11 +86,11 @@ export function LearnerMaterials({ missionId, versionId }: { missionId: string; 
               <PreparedDocument document={item.document} missionId={missionId} adaptationId={item.id} />
             </div>}
           {item.status !== "processing" && <>
-            <LearnerPdfPreview missionId={missionId} assetId={item.id} title={item.title}
+            <LearnerPdfPreview missionId={missionId} assetId={item.id} title={item.title} downloadAllowed={item.downloadAllowed} previewPages={item.previewPages}
               downloadLabel={item.scope === "activity" ? "Baixar PDF da atividade" : item.mode === "original" ? "Baixar PDF original" : "Baixar PDF adaptado"} />
-            <a className="text-link" href={materialAssetUrl(missionId, item.id, "pdf")} target="_blank" rel="noopener noreferrer">
+            {item.downloadAllowed && <a className="text-link" href={materialAssetUrl(missionId, item.id, "pdf")} target="_blank" rel="noopener noreferrer">
               Abrir PDF em nova aba
-            </a>
+            </a>}
             {item.hasAudio && <div className="form-stack">
               <p>Áudio do material. As descrições visuais estão no texto acima.</p>
               <audio controls preload="none" aria-label={`Ouvir ${item.title}`} src={materialAssetUrl(missionId, item.id, "audio")} />

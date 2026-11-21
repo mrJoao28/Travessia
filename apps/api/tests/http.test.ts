@@ -755,26 +755,25 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
   await request(`${path}/material-assets/${source.id}/pdf`, a, 'GET', undefined, 404);
 });
 
-test('PDF da turma continua visível e baixável mesmo com a antiga flag desativada', async () => {
+test('PDF da turma sem permissão de download só expõe prévias de página, nunca o PDF original', async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   const versionId = created.draftVersion.id, path = `/v1/missions/${created.id}`;
   const bytes = Buffer.from('%PDF-1.4\nmaterial somente para leitura');
   const source = (await request(`${path}/material-sources`, main, 'POST', {
     versionId, title: 'Leitura.pdf', downloadAllowed: false, base64: bytes.toString('base64'), requestKey: randomUUID(),
   })).json;
-  // Simulate an existing row created before download became unconditional.
-  await db.materialSource.update({ where: { id: source.id }, data: { downloadAllowed: false } });
   await request(`${path}/publish`, main, 'POST', { versionId, reviewed: true });
-  await db.materialSource.update({ where: { id: source.id }, data: { status: 'ready', pageCount: 1 } });
+  await db.materialSource.update({ where: { id: source.id }, data: { status: 'ready', pageCount: 1, pages: [{page:1,text:'Texto de leitura.',hasVisual:true,ocr:false}] } });
   await writeFile(materialPath(source.id, 'original.pdf'), bytes);
+  await writeFile(materialPath(source.id, 'page-1.png'), 'visual fixture');
   const items = (await request(`${path}/my-materials?versionId=${versionId}`, a)).json.items;
-  assert.equal(items[0].downloadAllowed, true);
-  assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { headers: { cookie: a } })).status, 200);
-  assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { method: 'HEAD', headers: { cookie: a } })).status, 200);
-  const download = await fetch(`${base}${path}/material-assets/${source.id}/download`, { headers: { cookie: a } });
-  assert.equal(download.status, 200);
-  assert.match(download.headers.get('content-disposition') ?? '', /attachment/);
-  assert.deepEqual(Buffer.from(await download.arrayBuffer()), bytes);
+  assert.equal(items[0].downloadAllowed, false);
+  assert.deepEqual(items[0].previewPages, [1]);
+  assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { headers: { cookie: a } })).status, 404);
+  assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { method: 'HEAD', headers: { cookie: a } })).status, 404);
+  await request(`${path}/material-assets/${source.id}/download`, a, 'GET', undefined, 404);
+  const page = await fetch(`${base}${path}/material-assets/${source.id}/page-1`, { headers: { cookie: a } });
+  assert.equal(page.status, 200); assert.equal(page.headers.get('content-type'), 'image/png');
 });
 
 test('IA indisponível clara; cota concorrente, deduplicação e revisão humana', { timeout: 30000 }, async () => {
@@ -865,7 +864,8 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   await worker.tick();
   const ready = (await request(`${path}/material-sources?versionId=${versionId}`, main)).json.items[0]; assert.equal(ready.status, 'ready');
   const sourceImage=await fetch(`${base}${path}/material-assets/${source.id}/page-1`,{headers:{cookie:main}});assert.equal(sourceImage.status,200);assert.equal(sourceImage.headers.get('content-type'),'image/png');
-  for(const cookie of [a,b,otherTeacher])await request(`${path}/material-assets/${source.id}/page-1`,cookie,'GET',undefined,404);
+  for(const cookie of [a,b]){const page=await fetch(`${base}${path}/material-assets/${source.id}/page-1`,{headers:{cookie}});assert.equal(page.status,200);assert.equal(page.headers.get('content-type'),'image/png');}
+  await request(`${path}/material-assets/${source.id}/page-1`,otherTeacher,'GET',undefined,404);
   await request(`${path}/material-assets/${source.id}/page-2`,main,'GET',undefined,404);
   const settings = { supports: ['large-print','narration'], fontSize:'22', color:'high', useAi:false, approvedForProvider:false };
   const input = { versionId, sourceId:source.id, studentId:'demo-student-1', pages:[1], settings, requestKey:randomUUID() };
@@ -892,7 +892,7 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   assert.equal(student.items.find((item: {id:string})=>item.id===plan.id).scope,'individual');
   assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,1);
   async function file(kind:string, cookie:string,status=200) { const r=await fetch(`${base}${path}/material-assets/${plan.id}/${kind}`,{headers:{cookie}});assert.equal(r.status,status);return r; }
-  assert.equal((await file('pdf',a)).headers.get('content-type'),'application/pdf');
+  await file('pdf',a,404);
   await file('audio',a);await file('page-1',a);await file('page-2',a,404);await file('pdf',b,404);await file('audio',otherTeacher,404);
   await request(`${path}/material-assets/${source.id}/original`,a,'GET',undefined,404);
   await db.membership.update({where:{userId_classroomId:{userId:'demo-student-1',classroomId:workshop}},data:{active:false}});await file('pdf',a,404);
@@ -902,7 +902,7 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
     expectedRevision:rendered.revision,document:replacement,
   })).json;
   assert.equal(pendingRevision.hasReleasedVersion, true);
-  await file('pdf',a); await file('audio',a); await file('pdf',b,404);
+  await file('pdf',a,404); await file('audio',a); await file('pdf',b,404);
   const deliveredText = async () => (await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.find((item:{id:string})=>item.id===plan.id).document[0].text;
   assert.equal(await deliveredText(), malicious[0].text);
   await request(`${path}/material-adaptations/${plan.id}/render`,main,'POST',{expectedRevision:pendingRevision.revision});
@@ -910,7 +910,7 @@ test('materiais individuais: fila, revisão, cache, IA mínima e arquivos privad
   assert.equal(await deliveredText(), malicious[0].text);
   await request(`${path}/material-adaptations/${plan.id}/release`,main,'POST',{expectedRevision:pendingRevision.revision,reviewed:true});
   assert.equal(await deliveredText(), replacement[0].text);
-  await file('pdf',a);
+  await file('pdf',a,404);
   config.aiEnabled=true;
   const aiInput={...input,settings:{...settings,supports:['image-description'],useAi:true,approvedForProvider:true},requestKey:randomUUID()};
   const aiPlan=(await request(`${path}/material-adaptations`,main,'POST',aiInput)).json;
@@ -976,6 +976,8 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
  const versionId=created.draftVersion.id,path=`/v1/missions/${created.id}`;
  const bytes=Buffer.from('%PDF-1.4\noriginal privado completo');
  const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Original',downloadAllowed:false,base64:bytes.toString('base64'),requestKey:randomUUID()})).json;
+ await db.materialSource.update({where:{id:source.id},data:{pages:[{page:1,text:'Texto do documento original.',hasVisual:true,ocr:false}]}});
+ await writeFile(materialPath(source.id,'page-1.png'),'visual fixture');
  const input={versionId,sourceId:source.id,studentId:'demo-student-1',requestKey:randomUUID(),reviewed:true};
  await request(`${path}/original-materials`,a,'POST',input,404);
  await request(`${path}/original-materials`,otherTeacher,'POST',input,404);
@@ -990,10 +992,11 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
  assert.equal((await request(`${path}/original-materials`,main,'POST',{...input,requestKey:randomUUID()})).json.id,original.id);
  async function file(cookie:string,status=200,kind='pdf'){const r=await fetch(`${base}${path}/material-assets/${original.id}/${kind}`,{headers:{cookie}});assert.equal(r.status,status);return r;}
  await file(a,404);await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
- assert.deepEqual(Buffer.from(await (await file(a)).arrayBuffer()),bytes);
- assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items[0].mode,'original');
+ await file(a,404);
+ const delivered=(await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items[0];assert.equal(delivered.mode,'original');assert.deepEqual(delivered.previewPages,[1]);
+ const page=await file(a,200,'page-1');assert.equal(page.headers.get('content-type'),'image/png');
  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,b)).json.items.length,1);
- await file(b,404);await file(otherTeacher,404);await file(a,404,'audio');await file(a,404,'page-1');
+ await file(b,404);await file(otherTeacher,404);await file(a,404,'audio');await file(a,200,'page-1');
  await request(`${path}/material-assets/${source.id}/original`,a,'GET',undefined,404);
  await request(`${path}/material-adaptations/${original.id}/render`,main,'POST',{expectedRevision:1},409);
  await request(`${path}/material-adaptations/${original.id}`,main,'PATCH',{expectedRevision:1,document:[{page:1,title:'Outro',text:'Texto.',description:''}]},409);
@@ -1016,6 +1019,7 @@ test('PDF adaptado para toda a turma: revisão, publicação e acesso apenas aos
  const versionId=mission.draftVersion.id,path=`/v1/missions/${mission.id}`;
  const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Arquivo compartilhado',downloadAllowed:false,base64:Buffer.from('%PDF-1.4\nconteudo comum').toString('base64'),requestKey:randomUUID()})).json;
  await db.materialSource.update({where:{id:source.id},data:{status:'ready',pageCount:1,pages:[{page:1,text:'Texto de referência.',hasVisual:false,ocr:false}]}});
+ await writeFile(materialPath(source.id,'page-1.png'),'visual fixture');
  const input={versionId,sourceId:source.id,audience:'classroom',pages:[1],settings:{supports:['large-print'],fontSize:'22',color:'default',useAi:false,approvedForProvider:false},requestKey:randomUUID()};
  await request(`${path}/material-adaptations`,main,'POST',{...input,studentId:'demo-student-1'},400);
  await request(`${path}/material-adaptations`,main,'POST',{...input,audience:'student'},400);
@@ -1035,7 +1039,9 @@ test('PDF adaptado para toda a turma: revisão, publicação e acesso apenas aos
   const items=(await request(`${path}/my-materials?versionId=${versionId}`,cookie)).json.items;
   assert.deepEqual(items.map((item:{mode:string})=>item.mode),['original','adapted']);
   const asset=await fetch(`${base}${path}/material-assets/${queued.id}/pdf`,{headers:{cookie}});
-  assert.equal(asset.status,200);assert.equal(await asset.text(),'%PDF-adaptado');
+  assert.equal(asset.status,404,'o PDF adaptado também não pode ser baixado pelo visualizador');
+  const page=await fetch(`${base}${path}/material-assets/${queued.id}/page-1`,{headers:{cookie}});
+  assert.equal(page.status,200);assert.equal(page.headers.get('content-type'),'image/png');
  }
  await request(`${path}/material-assets/${queued.id}/pdf`,otherTeacher,'GET',undefined,404);
  await db.membership.update({where:{userId_classroomId:{userId:'demo-student-2',classroomId:workshop}},data:{active:false}});
