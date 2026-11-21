@@ -43,7 +43,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await teacher.getByLabel('Título da etapa',{exact:true}).fill('Comparar rotas');await teacher.getByLabel('Instrução',{exact:true}).fill('Compare duas rotas de 10 metros e justifique sua escolha.');
   await teacher.getByLabel('Exemplo de apoio',{exact:true}).fill('Observe distância, obstáculos e acesso.');
   await expect(teacher.getByText(/Uploads permanecem desativados/)).toHaveCount(0);
-  await teacher.getByRole('checkbox',{name:'Ao adicionar um PDF, disponibilizar também o botão de download',exact:true}).check();
+  await teacher.getByRole('checkbox',{name:'Ao adicionar este PDF, disponibilizar também o botão de download',exact:true}).check();
   await teacher.getByLabel('Adicionar PDF à atividade',{exact:true}).setInputFiles({name:'rotas-campus.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
   await teacher.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();
   await expect(teacher.getByRole('heading',{name:'Quer oferecer alguma ajuda?',exact:true})).toBeVisible();

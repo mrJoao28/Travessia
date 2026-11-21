@@ -16,7 +16,7 @@ type Source = ApiResponse<"uploadMaterialSource">;
 type Adaptation = ApiResponse<"prepareMaterial">;
 type Document = ApiBody<"editMaterial">["document"];
 const classroomAudience = "__classroom__";
-export function IndividualMaterials({ missionId, versionId, classroomId, archived, version, initialFile, onFileReceived, onUnsavedChange }: { missionId: string; versionId: string; classroomId: string; archived: boolean; version?: NonNullable<ApiResponse<"mission">["draftVersion"]>; initialFile?: File | null; onFileReceived?: () => void; onUnsavedChange?: (dirty:boolean)=>void }) {
+export function IndividualMaterials({ missionId, versionId, classroomId, archived, version, initialFile, initialDownloadAllowed = false, onFileReceived, onUnsavedChange }: { missionId: string; versionId: string; classroomId: string; archived: boolean; version?: NonNullable<ApiResponse<"mission">["draftVersion"]>; initialFile?: File | null; initialDownloadAllowed?: boolean; onFileReceived?: () => void; onUnsavedChange?: (dirty:boolean)=>void }) {
   const [students, setStudents] = useState<ApiResponse<"strategyRecipients">["items"]>([]);
   const [shared, setShared] = useState<ApiResponse<"sharedLearningNeeds">["items"]>([]);
   const [sources, setSources] = useState<Source[]>([]);
@@ -29,7 +29,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const [activityDirty,setActivityDirty]=useState(false);
   const [step, setStep] = useState(1), [studentId, setStudentId] = useState("");
   const [delivery,setDelivery]=useState<"original"|"adapted">("original");
-  const [downloadAllowed,setDownloadAllowed]=useState(false);
+  const [downloadAllowed,setDownloadAllowed]=useState(initialDownloadAllowed);
   const [supports, setSupports] = useState<MaterialSupport[]>([]);
   const [editText,setEditText]=useState(false);
   const [readerView,setReaderView]=useState<'original'|'prepared'>('original');
