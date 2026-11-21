@@ -2,8 +2,8 @@ import {expect,type Page} from '@playwright/test';
 import type { ApiBody, ApiResponse } from '../../apps/web/lib/api.generated';
 import { materialPdfFixture } from '../../scripts/material-fixture.mjs';
 
-export async function fixture(page: Page, failActivity = false, disabilities: string[] = ['low-vision'], requests: string[] = ['short-steps'], backgroundWork=false) {
-  const version = { id:'v-material',missionId:'m-material',title:'Comparar rotas acessíveis',description:'Material fictício.',objectives:['Comparar rotas.'],criteria:['Justificar escolha.'],source:'manual',dueAt:null,createdAt:'2026-11-01T00:00:00.000Z',materials:[],steps:[{id:'s-material',position:1,title:'Comparar',instructions:'Compare duas rotas.',example:'Use distâncias.'}] };
+export async function fixture(page: Page, failActivity = false, disabilities: string[] = ['low-vision'], requests: string[] = ['short-steps'], backgroundWork=false, groupMode=false) {
+  const version = { id:'v-material',missionId:'m-material',title:'Comparar rotas acessíveis',description:'Material fictício.',objectives:['Comparar rotas.'],criteria:['Justificar escolha.'],source:'manual',dueAt:null,workMode:groupMode?'group' as const:'individual' as const,createdAt:'2026-11-01T00:00:00.000Z',materials:[],steps:[{id:'s-material',position:1,title:'Comparar',instructions:'Compare duas rotas.',example:'Use distâncias.'}] };
   const source: ApiResponse<'uploadMaterialSource'> = { id:'source-material',versionId:version.id,title:'rotas.pdf',status:'ready',downloadAllowed:false,pageCount:1,pages:[{page:1,text:'Compare duas rotas de 10 metros.',hasVisual:true,ocr:false}],warnings:['Confira a informação visual.'],expiresAt:'2027-01-30T00:00:00.000Z' };
   let sources: ApiResponse<'materialSources'>['items']=[], plans: ApiResponse<'prepareMaterial'>[]=[];
   let sent: ApiBody<'prepareMaterial'> | undefined;
@@ -19,12 +19,13 @@ export async function fixture(page: Page, failActivity = false, disabilities: st
     if(path.endsWith('/submissions'))return respond({items:[],nextCursor:null});
     if(path.endsWith('/learning-needs'))return respond({items:[{userId:'student-a',name:'Marina fictícia',supports:requests,preferredFormats:[],disabilities}],nextCursor:null});
     if(path.endsWith('/strategy-recipients'))return respond({items:[{id:'student-a',name:'Marina fictícia'},{id:'student-b',name:'Aluno B'}],nextCursor:null});
+    if(path.endsWith('/groups'))return respond({items:groupMode?[{id:'team-a',name:'Equipe Horizonte',studentIds:['student-a','student-b']}]:[]});
     if(path.endsWith('/adaptations')) { if(method==='POST'){activity=route.request().postDataJSON();return failActivity?route.fulfill({status:409,json:{code:'REVISION_CONFLICT'}}):respond({...activity,id:'activity-material',revision:1});}return respond({items:[]}); }
     if(path==='/strategies'||path.endsWith('/strategy-plans'))return respond({items:[]});
     if(path.endsWith('/material-sources')){if(method==='POST'){const body=route.request().postDataJSON();const file={...source,id:sources.length?'source-second':source.id,title:body.title,downloadAllowed:body.downloadAllowed};sources=[...sources,file];return respond(file);}return respond({items:backgroundWork?[...sources,{...source,id:'background-source',status:'queued',pageCount:0,pages:[]}]:sources});}
     if(path.endsWith('/original-materials')){original=route.request().postDataJSON();plans=[{id:'original-material',mode:'original',versionId:version.id,sourceId:source.id,studentId:original!.studentId,settings:{supports:[],fontSize:'18',color:'default',useAi:false,approvedForProvider:false,deliveryMode:'original'},pages:[],document:[],status:'released',revision:1,error:null,hasAudio:false,inputTokens:0,outputTokens:0,expiresAt:source.expiresAt}];return respond(plans[0]);}
     if(path.endsWith('/material-adaptations')){
-      if(method==='POST'){sent=route.request().postDataJSON();plans=[{id:'adaptation-material',versionId:version.id,sourceId:source.id,studentId:sent!.studentId,settings:sent!.settings,pages:[1],document:[{page:1,title:'Compare as rotas',text:'Compare as rotas de 10 metros.',description:'O diagrama compara duas rotas.',
+      if(method==='POST'){sent=route.request().postDataJSON();plans=[{id:'adaptation-material',versionId:version.id,sourceId:source.id,studentId:sent!.studentId??null,groupId:sent!.groupId??null,settings:sent!.settings,pages:[1],document:[{page:1,title:'Compare as rotas',text:'Compare as rotas de 10 metros.',description:'O diagrama compara duas rotas.',
         ...(sent!.settings.supports.includes('short-sections')?{steps:['Compare duas rotas.']}:{}),
         ...(sent!.settings.supports.includes('glossary')?{glossary:[{term:'Rota',definition:'Caminho entre dois pontos.'}]}:{}),
       }],status:sent!.settings.supports.includes('image-description')&&!sent!.settings.useAi?'draft':'ready',revision:1,error:null,

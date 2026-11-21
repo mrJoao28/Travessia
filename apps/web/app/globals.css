@@ -1927,7 +1927,9 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   gap: .75rem;
   align-items: start;
 }
-.material-reference-desk > * { grid-area: auto; min-width: 0; }
+.material-reference-desk > * { grid-area: auto; min-width: 0; max-width: 100%; }
+.material-reference-desk select, .material-reference-desk input, .material-reference-desk textarea { max-width: 100%; }
+.material-reference-desk .comparison-selected-file strong { overflow-wrap: anywhere; }
 .material-reference-settings {
   display: grid;
   gap: .75rem;
@@ -1991,7 +1993,7 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .workspace-file-control select { min-width: 0; width: auto; max-width: 100%; flex: 1 1 8rem; }
 .workspace-file-control .pdf-file-badge { padding: .35rem .4rem; }
 .material-reference-footer { display: flex; justify-content: flex-end; padding: .75rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--sage); }
-@container (max-width: 650px) {
+@container (max-width: 900px) {
   .material-reference-desk { grid-template-columns: minmax(0, 1fr); }
 }
 @media (forced-colors: active) {
