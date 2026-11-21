@@ -11,6 +11,7 @@ import { SubmissionMedia } from "./submission-media";
 import { LearnerMaterials } from "./learner-materials";
 import { readStudentDraft, storeStudentDraft } from "../lib/student-draft";
 import { MissionSupports } from "./mission-supports";
+import { GroupManager } from "./group-manager";
 
 export function LiveMission({
   id,
@@ -24,6 +25,7 @@ export function LiveMission({
   viewerId: string;
 }) {
   const [mission, setMission] = useState<Mission | null>(null);
+  const [team, setTeam] = useState<string | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [index, setIndex] = useState(0);
   const [formats, setFormats] = useState<("text" | "audio" | "text_file")[] | null>(null);
@@ -44,7 +46,9 @@ export function LiveMission({
   const [previousDrafts, setPreviousDrafts] = useState<Submission[]>([]);
   const [previousLocal, setPreviousLocal] = useState<ReturnType<typeof readStudentDraft>>(null);
   const [recovered, setRecovered] = useState(false);
+  const [timeZone, setTimeZone] = useState("UTC");
   const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
   const stepNavigation = useRef(false);
   useLayoutEffect(() => {
     if (!stepNavigation.current) return;
@@ -54,8 +58,8 @@ export function LiveMission({
   useEffect(() => {
     let active = true;
     setLoading(true);
-    Promise.all([api("mission", { params: { id } }), pages("submissions", id)])
-      .then(([value, deliveries]) => {
+    Promise.all([api("mission", { params: { id } }), pages("submissions", id), api("groups", { params: { id } })])
+      .then(([value, deliveries, groups]) => {
         if (!active) return;
         const attempts = deliveries.filter(s => s.versionId === value.publishedVersion?.id)
           .sort((a, b) => (b.attempt ?? 1) - (a.attempt ?? 1));
@@ -73,6 +77,7 @@ export function LiveMission({
         setRecovered(!!recover);
         setDirty(!!recover);
         setMission(value);
+        setTeam(groups.items.find(group => group.studentIds.includes(viewerId))?.name ?? null);
         setSubmission(current ?? null);
         setContent(recover ? local.content : current?.content ?? "");
         setCompleted(recover ? local.completed.filter(id => version.steps.some(step => step.id === id)) : current?.completedStepIds ?? []);
@@ -202,6 +207,7 @@ export function LiveMission({
         <p className="eyebrow accent">{classroom.name}</p>
         <h2>{version.title}</h2>
         <p>{version.description}</p>
+        {version.workMode === "group" && <p>{role === "aluno" ? team ? `Atividade em grupo · ${team}. Sua equipe compartilha esta entrega.` : "Atividade em grupo · você ainda não foi incluído em uma equipe. Solicite ao professor." : "Atividade em grupo · uma entrega por equipe."}</p>}
         {version.dueAt && (
           <p>
             Entrega prevista:{" "}
@@ -209,6 +215,7 @@ export function LiveMission({
           </p>
         )}
       </section>
+      {role === "professor" && version.workMode === "group" && <GroupManager missionId={id} />}
       <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
         <div className="form-stack">
           <section className="paper preview-student-stage form-stack" id="etapas">
@@ -234,13 +241,18 @@ export function LiveMission({
             <h2 ref={title} tabIndex={-1}>
               {step.title}
             </h2>
+            {step.dueAt && <p className="small">{step.deadlineExtended ? "Prazo individual prorrogado até" : "Prazo desta etapa"}: {formatDeadline(step.dueAt, timeZone)}</p>}
+            {submission?.gradingSteps.find(item => item.id === step.id)?.completedAt && <p className="small" role="status">
+              Etapa registrada {submission.gradingSteps.find(item => item.id === step.id)?.late ? "com atraso" : "no prazo"} em {formatDeadline(submission.gradingSteps.find(item => item.id === step.id)!.completedAt!, timeZone)}.
+            </p>}
+            {step.maxPoints !== null && <p className="small">Pontuação máxima: {step.maxPoints}</p>}
             <p className="submission-content">{step.instructions}</p>
             {step.example && <details className="example" key={step.id}>
               <summary>Ver um exemplo</summary>
               <p className="submission-content">{step.example}</p>
             </details>}
             {role === "aluno" && <a className="text-link" href="#learner-materials-title"
-              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais preparados</a>}
+              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais da atividade</a>}
             {role === "aluno" && <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
             {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
@@ -281,7 +293,7 @@ export function LiveMission({
           <section className="paper" aria-label="Materiais da atividade">
             <h3>Materiais da atividade</h3>
             {role === "professor" && !version.materials.length && <p className="small">Nenhum material na atividade.</p>}
-            {role === "aluno" && !version.materials.length && <p className="small">Não há materiais textuais anexados à atividade. Materiais preparados para você aparecem nesta área.</p>}
+            {role === "aluno" && !version.materials.length && <p className="small">Não há materiais textuais anexados à atividade. O PDF da turma e os apoios preparados pelo professor aparecem nesta área.</p>}
             {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
             {version.materials.map((material) => (
               <article className="material-library-item" key={material.id}>
@@ -385,7 +397,7 @@ export function LiveMission({
                   <p id="submission-help" className="small">
                     O envio torna esta entrega disponível aos docentes de{" "}
                     {classroom.name}. O texto e o progresso são salvos automaticamente. O rascunho
-                    permanece privado para você.
+                    {version.workMode === "group" ? "fica visível aos integrantes da sua equipe." : "permanece privado para você."}
                   </p>
                   {formats === null && <p role="status">Os formatos adicionais aparecem quando a consulta de adaptações da atividade for concluída.</p>}
                   {formats?.length === 1 && <p className="small">Formato disponível nesta atividade: texto no editor.</p>}
@@ -422,6 +434,7 @@ export function LiveMission({
                 </form>
               )}
               <OperationStatus message={message} error={saveError} />
+              {saveError && version.workMode === "group" && <button type="button" className="text-button" onClick={() => window.location.reload()}>Recarregar a entrega da equipe</button>}
             </section>
           )}
           <section
@@ -471,4 +484,8 @@ export function LiveMission({
       </div>
     </>
   );
+}
+
+function formatDeadline(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short", timeZone }).format(new Date(value));
 }

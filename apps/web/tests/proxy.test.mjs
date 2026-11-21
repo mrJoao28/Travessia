@@ -214,11 +214,12 @@ test("áudio usa orçamento ampliado somente em escritas de aplicações, manten
   t.mock.method(globalThis, "fetch", async () => { calls++; return Response.json({ ok: true }); });
   const medium = { audio: "a".repeat(100000) };
   assert.equal((await proxyBackend(request("/api/v1/missions/m/strategy-plans", medium), "v1", ["missions", "m", "strategy-plans"], settings)).status, 200);
+  assert.equal((await proxyBackend(request("/api/v1/activities/m/strategy-plans", medium), "v1", ["activities", "m", "strategy-plans"], settings)).status, 200);
   assert.equal((await proxyBackend(request("/api/auth/sign-in/email", medium), "auth", ["sign-in", "email"], settings)).status, 413);
   assert.equal((await proxyBackend(request("/api/v1/missions/m/ai-supports", medium), "v1", ["missions", "m", "ai-supports"], settings)).status, 413);
   assert.equal((await proxyBackend(request("/api/v1/missions/m/strategy-plans", medium, { origin: "https://attacker.invalid" }), "v1", ["missions", "m", "strategy-plans"], settings)).status, 403);
   assert.equal((await proxyBackend(request("/api/v1/missions/m/strategy-plans", { audio: "a".repeat(2 * 1024 * 1024) }), "v1", ["missions", "m", "strategy-plans"], settings)).status, 413);
-  assert.equal(calls, 1);
+  assert.equal(calls, 2);
 });
 
 test("proxy forwards playback ranges and partial-content headers for private material audio", async (t) => {
@@ -238,4 +239,11 @@ test("proxy forwards playback ranges and partial-content headers for private mat
   assert.equal(response.headers.get("accept-ranges"), "bytes");
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.deepEqual(new Uint8Array(await response.arrayBuffer()), Uint8Array.of(73, 68));
+});
+
+test("proxy reconhece o caminho canônico de arquivos da atividade", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => Response.json({ ok: true }));
+  const path = ["activities", "activity", "material-assets", "adaptation", "pdf"];
+  const response = await proxyBackend(request("/api/v1/" + path.join("/")), "v1", path, settings);
+  assert.equal(response.status, 200);
 });

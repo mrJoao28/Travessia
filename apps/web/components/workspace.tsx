@@ -68,7 +68,8 @@ export function Workspace({
       ]
     : [
         [`${base}/professor`, "Minhas turmas", "users"],
-        [`${base}/professor/missoes`, "Atividades", "book"],
+        [`${base}/professor/atividades`, "Atividades", "book"],
+        ...(preview ? [[`${base}/professor/monitoria`, "Monitoria", "users"] as [string,string,IconName]] : []),
         [`${base}/professor/entregas`, "Entregas", "document"],
         ...(preview ? [[`${base}/professor/barreiras`, "Apoios e barreiras", "message"] as [string,string,IconName]] : []),
       ];

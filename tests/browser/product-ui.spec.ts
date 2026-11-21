@@ -13,7 +13,7 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
     release = resolve;
   });
   await page.route(
-    "**/api/v1/missions/test-mission/submissions",
+    "**/api/v1/activities/test-mission/submissions",
     async (route) => {
       if (route.request().method() === "GET") return route.fallback();
       const body = route.request().postDataJSON() as ApiBody<"saveSubmission">;
@@ -27,7 +27,7 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
       });
     },
   );
-  await page.goto("/aluno/missoes/test-mission");
+  await page.goto("/aluno/atividades/test-mission");
   await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
   expect(
     (
@@ -59,7 +59,7 @@ test("editor salva versão, exige revisão e publica somente a versão confirmad
   page,
 }) => {
   await fixture(page, "teacher");
-  await page.goto("/professor/missoes/test-mission/editar");
+  await page.goto("/professor/atividades/test-mission/editar");
   await page
     .getByLabel("Título da atividade", { exact: true })
     .fill("Atividade revisada de teste");
@@ -87,11 +87,57 @@ test("editor salva versão, exige revisão e publica somente a versão confirmad
     ),
   ).toBeVisible();
 });
+test("rascunho de correção com IA exige autorização e validação docente antes de publicar", async ({ page }) => {
+  await fixture(page, "teacher");
+  const delivered = { ...submission, groupId: null, status: "submitted" as const, submittedAt: version.createdAt,
+    content: "Resposta fictícia para comparar as alternativas.", gradingSteps: [{ id: "step-one", title: "Compreender o problema", dueAt: null,
+      baseDueAt: null, deadlineExtended: false, completedAt: null, late: false, maxPoints: 10 }], feedback: [] };
+  let generatedBody: unknown, publishedBody: unknown;
+  await page.route("**/api/v1/activities/test-mission/submissions", route => route.fulfill({ json: { items: [delivered], nextCursor: null } }));
+  await page.route("**/api/v1/submissions/test-submission/ai-feedback-draft", async route => {
+    generatedBody = route.request().postDataJSON();
+    await route.fulfill({ json: { id: "generation-feedback", status: "succeeded", draft: { content: "Explique como o segundo critério influencia sua escolha.",
+      scores: [{ stepId: "step-one", points: 8, comment: "Justificativa coerente; desenvolva outro critério." }] } } });
+  });
+  await page.route("**/api/v1/submissions/test-submission/feedback", async route => {
+    publishedBody = route.request().postDataJSON();
+    await route.fulfill({ json: { ...delivered, status: "reviewed", feedback: [{ id: "feedback-one", content: "Explique como o segundo critério influencia sua escolha.", createdAt: version.createdAt, scores: [{ stepId: "step-one", points: 8, comment: "Justificativa coerente; desenvolva outro critério." }], totalPoints: 8 }] } });
+  });
+  await page.goto("/professor/entregas");
+  await page.getByText("Consultar entrega e escrever feedback", { exact: true }).click();
+  await page.getByText("Preparar correção e feedback com IA (opcional)", { exact: true }).click();
+  const generate = page.getByRole("button", { name: "Gerar sugestão de correção e feedback", exact: true });
+  await expect(generate).toBeDisabled();
+  await page.getByRole("checkbox", { name: /Revisei a resposta e autorizo enviar seu texto ao Gemini/ }).check();
+  await generate.click();
+  await expect(page.getByLabel("Orientação para o próximo passo")).toHaveValue("Explique como o segundo critério influencia sua escolha.");
+  await expect(page.getByLabel("Nota da etapa")).toHaveValue("8");
+  expect(generatedBody).toMatchObject({ approvedForProvider: true });
+  expect(publishedBody).toBeUndefined();
+  await page.getByRole("checkbox", { name: "Conferi as notas e confirmo a avaliação final." }).check();
+  await page.getByRole("button", { name: "Publicar feedback", exact: true }).click();
+  expect(publishedBody).toMatchObject({ content: "Explique como o segundo critério influencia sua escolha.", scores: [{ stepId: "step-one", points: 8 }] });
+  await expect(page.getByText("Feedback publicado pelo servidor.", { exact: true })).toBeVisible();
+});
+test("editor destaca pedidos de apoio autorizados antes de publicar a atividade", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.route("**/api/v1/classrooms/test-classroom/learning-needs**", route => route.fulfill({ json: {
+    items: [{ userId: "student-a", name: "Aluno A", supports: ["short-steps"], preferredFormats: ["text"], disabilities: null }],
+    nextCursor: null,
+  } }));
+  await page.goto("/professor/atividades/test-mission/editar");
+  await page.getByRole("button", { name: "Continuar para as etapas →", exact: true }).click();
+  await page.getByRole("button", { name: "Salvar e continuar →", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Pedidos de apoio compartilhados", exact: true })).toBeVisible();
+  await expect(page.getByText("1 aluno compartilhou preferências de apoio com os docentes desta turma.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Aluno A", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Consultar pedidos e preparar adaptações", exact: true })).toHaveAttribute("href", "/professor/atividades/test-mission/adaptacoes");
+});
 test("planejamento manual mantém o título e dispensa o painel de escrita com IA", async ({
   page,
 }) => {
   await fixture(page, "teacher");
-  await page.goto("/professor/missoes/test-mission/editar");
+  await page.goto("/professor/atividades/test-mission/editar");
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
   await expect(page.getByRole('button', { name: /Pedir ajuda à IA para escrever a atividade/ })).toHaveCount(0);
@@ -126,7 +172,7 @@ test("convite usa vínculo docente e revogação envia JSON ao proxy — transpo
 
 test('preparação guiada valida a etapa atual, volta por teclado e preserva conteúdo quando salvar falha', async ({ page }) => {
   await fixture(page, 'teacher');
-  await page.goto('/professor/missoes/test-mission/editar');
+  await page.goto('/professor/atividades/test-mission/editar');
   await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
   await page.getByLabel('Título da atividade', { exact: true }).fill('');
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
@@ -143,7 +189,7 @@ test('preparação guiada valida a etapa atual, volta por teclado e preserva con
   await expect(page.getByLabel('Título da atividade', { exact: true })).toHaveValue('Atividade que quero preservar');
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await expect(instruction).toHaveValue('Compare as alternativas antes de escolher.');
-  await page.route('**/api/v1/missions/test-mission', async route => route.request().method() === 'PATCH' ? route.fulfill({ status: 409, json: { code: 'VERSION_CONFLICT' } }) : route.fallback());
+  await page.route('**/api/v1/activities/test-mission', async route => route.request().method() === 'PATCH' ? route.fulfill({ status: 409, json: { code: 'VERSION_CONFLICT' } }) : route.fallback());
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
   await expect(page.getByText(/O conteúdo mudou no servidor/)).toBeVisible();
   await expect(instruction).toHaveValue('Compare as alternativas antes de escolher.');
@@ -156,7 +202,7 @@ test('preparação guiada valida a etapa atual, volta por teclado e preserva con
 
 
 test('PDF selecionado permanece no campo ao voltar e ao recusar outro arquivo',async({page})=>{
- await fixture(page,'teacher');await page.goto('/professor/missoes/test-mission/editar');
+ await fixture(page,'teacher');await page.goto('/professor/atividades/test-mission/editar');
  await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();
  const field=page.getByLabel('Adicionar PDF à atividade',{exact:true});
  const pdf={name:'material-escolhido.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\nfixture')};

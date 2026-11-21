@@ -33,7 +33,7 @@ test('teclado e dicas: Escape dispensa a dica, ponteiro pode alcançá-la e os a
 
 test('recolher o menu preserva rascunho, preferências de leitura e dados do cenário',async({page})=>{
  const requests:string[]=[];let dialogs=0;page.on('request',r=>{if(new URL(r.url()).pathname.startsWith('/api/'))requests.push(r.url());});page.on('dialog',async d=>{dialogs++;await d.dismiss();});
- await page.goto('/previa/professor/missoes/editor');await page.getByLabel('Título da atividade',{exact:true}).fill('Rascunho fictício preservado');
+ await page.goto('/previa/professor/atividades/editor');await page.getByLabel('Título da atividade',{exact:true}).fill('Rascunho fictício preservado');
  await page.getByRole('button',{name:'Recolher menu',exact:true}).click();await expect(page.getByLabel('Título da atividade',{exact:true})).toHaveValue('Rascunho fictício preservado');
  await page.getByText('Aa · Ajustar leitura',{exact:true}).click();await page.locator('#temas > summary').click();await page.getByLabel('Mais contraste',{exact:true}).check();await page.keyboard.press('Escape');
  await page.getByRole('button',{name:'Abrir menu',exact:true}).click();await expect(page.getByLabel('Título da atividade',{exact:true})).toHaveValue('Rascunho fictício preservado');
@@ -62,7 +62,7 @@ for(const role of ['aluno','professor'] as const){
 }
 
 test('menu no celular abre leitura sem encobrir controles nem perder o rascunho',async({page})=>{
- await page.setViewportSize({width:360,height:800});await page.goto('/previa/professor/missoes/editor');
+ await page.setViewportSize({width:360,height:800});await page.goto('/previa/professor/atividades/editor');
  await page.getByLabel('Título da atividade',{exact:true}).fill('Meu rascunho continua aqui');
  const open=page.getByRole('button',{name:'Abrir menu',exact:true});await open.click();
  const menu=page.getByRole('dialog',{name:'Menu',exact:true});

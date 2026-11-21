@@ -35,7 +35,7 @@ Os termos consultados da Gemini Developer API incluem restrição a API Clients 
 
 ## Retenção e direitos
 
-Definir prazos por categoria antes do piloto real; não escolher retenção indefinida por omissão. Projetar exportação/exclusão autorizadas, incluindo objetos no Storage, jobs, históricos e expiração de backups. Esclarecer tratamento de notas/entregas que precisem ser preservadas. Não registrar conteúdo bruto em auditoria; usar ação, ator, recurso e instante, com acesso e retenção limitados.
+Definir prazos por categoria antes do piloto real; não escolher retenção indefinida por oatividade. Projetar exportação/exclusão autorizadas, incluindo objetos no Storage, jobs, históricos e expiração de backups. Esclarecer tratamento de notas/entregas que precisem ser preservadas. Não registrar conteúdo bruto em auditoria; usar ação, ator, recurso e instante, com acesso e retenção limitados.
 
 ## Gate de dados reais
 

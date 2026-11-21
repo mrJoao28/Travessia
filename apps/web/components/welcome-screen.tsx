@@ -42,7 +42,7 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
           {error && !(expired&&invitation) && <div className="form-error" role="alert" ref={errorRef} tabIndex={-1}><p>{error}</p>
             {expired ? <Link className="text-link" href={invitationHref("/login",invitation)}>Entrar na minha conta</Link> : !authenticated && <button className="text-button" onClick={() => setRetry(retry + 1)}>Tentar novamente</button>}
           </div>}
-          {expired&&invitation&&<section className="form-stack"><h2>Você recebeu um convite de turma</h2><p>Entre na sua conta ou crie uma conta de aluno para continuar. Depois, você confirma sua entrada na turma.</p><Link className="button" href={invitationHref('/login',invitation)}>Entrar na minha conta</Link><Link className="text-link" href={invitationHref('/cadastro',invitation)}>Criar conta de aluno</Link></section>}
+          {expired&&invitation&&<section className="form-stack"><h2>Você recebeu um convite de turma</h2><p>Entre na sua conta ou crie uma conta para continuar. Depois, você confirma sua entrada na turma.</p><Link className="button" href={invitationHref('/login',invitation)}>Entrar na minha conta</Link><Link className="text-link" href={invitationHref('/cadastro',invitation)}>Criar conta</Link></section>}
           {authenticated && <>
             {invitation&&<p className="notice">Você recebeu um convite. Confirme sua entrada na turma abaixo.</p>}
             <p>Bem-vindo ao Travessia, {name}. {initialSpace ? "Sua conta está pronta para começar." : "Escolha seu próximo passo."}</p>
@@ -57,7 +57,7 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
               try {
                 const room = space === "professor" ? await api("createClassroom", { body: { name: value } }) : await api("acceptInvite", { body: { token: token! } });
                 if(space==="aluno")clearInvitation();
-                router.replace(`/${space}?turma=${encodeURIComponent(room.id)}`); router.refresh();
+                router.replace(`/${room.role === 'monitor' ? 'professor' : space}?turma=${encodeURIComponent(room.id)}`); router.refresh();
               } catch (reason) {
                 setError(reason instanceof ApiError && reason.code === "INVALID_INVITATION"
                   ? "Este convite está indisponível ou expirou. Peça um novo código ao professor."

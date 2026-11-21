@@ -2,7 +2,7 @@
 
 > **Diferentes caminhos para aprender e avançar.**
 
-Plataforma web de aprendizagem por missões acessíveis para o ensino superior. O Travessia permite que professores organizem objetivos, etapas, materiais e critérios, enquanto estudantes acompanham atividades, escolhem apoios, entregam trabalhos e comunicam barreiras.
+Plataforma web de aprendizagem por atividades acessíveis para o ensino superior. O Travessia permite que professores organizem objetivos, etapas, materiais e critérios, enquanto estudantes acompanham atividades, escolhem apoios, entregam trabalhos e comunicam barreiras.
 
 **ODS principal:** 4 — Educação de Qualidade  
 **Contribuição complementar:** 10 — Redução das Desigualdades
@@ -37,7 +37,7 @@ Plataforma web de aprendizagem por missões acessíveis para o ensino superior. 
 O Travessia é um **MVP de uma plataforma educacional acessível**, com espaços para:
 
 - 👨‍🎓 **Aluno**
-  - visualizar turmas e missões;
+  - visualizar turmas e atividades;
   - acompanhar progresso;
   - realizar atividades;
   - enviar entregas;
@@ -47,7 +47,7 @@ O Travessia é um **MVP de uma plataforma educacional acessível**, com espaços
 
 - 👨‍🏫 **Professor**
   - organizar turmas;
-  - criar e revisar missões;
+  - criar e revisar atividades;
   - definir etapas, materiais e critérios;
   - acompanhar entregas;
   - fornecer feedback;
@@ -69,7 +69,7 @@ Atualmente, o projeto possui:
 - banco PostgreSQL;
 - Prisma;
 - autorização por turma;
-- missões versionadas;
+- atividades versionadas;
 - progresso e entregas;
 - feedback;
 - registro de barreiras;

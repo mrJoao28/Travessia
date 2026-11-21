@@ -14,9 +14,10 @@ async function fixture(page: Page, role: 'student' | 'teacher') {
     if (path.endsWith("/material-sources") || path.endsWith("/material-adaptations") || path.endsWith("/my-materials")) return respond({items:[]});
     if (path === '/me') return respond({ id: role, name: 'Pessoa fictícia', email: 'test@example.invalid', course: null, preferences: {}, demo: true });
     if (path === '/classrooms') return respond({ items: [{ id: 'c-inclusive', name: 'Turma inclusiva', role }], nextCursor: null });
-    if (path === '/classrooms/c-inclusive/missions') return respond({ items: [mission], nextCursor: null });
-    if (path === '/missions/m-inclusive') return respond(mission);
-    if (path === '/missions/m-inclusive/submissions') {
+    if (path === '/classrooms/c-inclusive/activities') return respond({ items: [mission], nextCursor: null });
+    if (path === '/activities/m-inclusive') return respond(mission);
+    if (path === '/activities/m-inclusive/groups') return respond({ items: [] });
+    if (path === '/activities/m-inclusive/submissions') {
       if (route.request().method() === 'POST') { captured.submission = route.request().postDataJSON(); return route.fulfill({ status: 409, json: { code: 'REVISION_CONFLICT' } }); }
       return respond({ items: [], nextCursor: null });
     }
@@ -87,7 +88,7 @@ test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro pre
   expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze()).violations).toEqual([]);
 });
 test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e preserva arquivo em erro', async ({ page }) => {
-  const captured = await fixture(page, 'student'); await page.goto('/aluno/missoes/m-inclusive');
+  const captured = await fixture(page, 'student'); await page.goto('/aluno/atividades/m-inclusive');
   await page.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)', { exact: true }).setInputFiles({ name: 'resposta.txt', mimeType: 'text/plain', buffer: Buffer.from('Minha resposta em arquivo.') });
   await expect(page.getByText('Arquivo de texto preparado para salvar.', { exact: true })).toBeVisible();
   page.once('dialog', dialog => dialog.accept());
@@ -99,8 +100,8 @@ test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e prese
 
 test('apoios partem da atividade e exigem destinatários e nova revisão após voltar para editar', async ({ page }) => {
   await fixture(page, 'teacher');
-  await page.goto('/professor/missoes/m-inclusive/apoios');
-  await expect(page.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();
+  await page.goto('/professor/atividades/m-inclusive/apoios');
+  await expect(page.getByRole('heading',{name:'Material da turma e adaptações',exact:true})).toBeVisible();
   if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
   await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
   await expect(page.getByLabel('Atividade para adaptar', { exact: true })).toHaveCount(0);

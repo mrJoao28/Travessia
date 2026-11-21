@@ -58,12 +58,12 @@ export function PreviewMaterials({missionId='campus',embedded=false}:{missionId?
  const file=previewFiles[source];
  const sourceView:ApiResponse<'uploadMaterialSource'>={
   id:`preview-source-${source}`,versionId:`preview-version-${mission.revision}`,title:file.filename,
-  status:'ready',pageCount:originals.length,pages:originals.map(p=>({page:p.page,text:p.text,hasVisual:p.page===2,ocr:false})),
+  status:'ready',downloadAllowed:true,pageCount:originals.length,pages:originals.map(p=>({page:p.page,text:p.text,hasVisual:p.page===2,ocr:false})),
   warnings:[],expiresAt:'2099-01-01T00:00:00.000Z',
  };
  const document=current&&!pending?previewDocument(source,current.preset):[];
  const adaptation:ApiResponse<'prepareMaterial'>|undefined=current?{
-  id:current.id,versionId:sourceView.versionId,sourceId:sourceView.id,studentId:current.studentId,
+  id:current.id,versionId:sourceView.versionId,sourceId:sourceView.id,studentId:current.studentId,audience:'student',
   mode:current.preset==='original'?'original':'adapted',settings:{
    supports:[...presetSupports[current.preset],...(current.audio&&current.preset!=='description'?['narration' as const]:[])],
    fontSize:current.preset==='expanded'?'22':'18',color:current.preset==='expanded'?'high':'default',useAi:false,approvedForProvider:false,
@@ -140,7 +140,7 @@ export function PreviewMaterials({missionId='campus',embedded=false}:{missionId?
        <a className="text-link" href={pdfUrl(source,preset)} download>{preset==='original'?'Baixar PDF original':'Baixar PDF preparado'}</a>
        {current.audio&&<details><summary>Transcrição do áudio fictício</summary><p className="submission-content">{audioTranscript(source,preset)}</p><a href={audioUrl(preset,source).replace('.mp3','.txt')} download>Baixar transcrição</a></details>}
        {!current.released&&<><label className="check"><input type="checkbox" checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>Conferi o material e o destinatário.</label><button type="button" className="button" disabled={!reviewed||archived} onClick={release}>Disponibilizar para {student?.name}</button></>}
-       {current.released&&<Link className="text-link" href={`/previa/aluno/missoes/${mission.id}`} onClick={()=>update(s=>({...s,studentId}))}>Ver como {student?.name}</Link>}
+       {current.released&&<Link className="text-link" href={`/previa/aluno/atividades/${mission.id}`} onClick={()=>update(s=>({...s,studentId}))}>Ver como {student?.name}</Link>}
       </>}
      </>}
     </div>}

@@ -8,7 +8,7 @@ export default async function Page({
   return (
     <LiveWorkspace
       role="aluno"
-      section="missao"
+      section="atividade"
       missionId={(await params).id}
     />
   );

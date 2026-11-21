@@ -30,6 +30,7 @@ export type MissionEntry = {
   mission: Mission;
   classroom: Classroom;
   submissions: Submission[];
+  groups?: ApiResponse<"groups">["items"];
 };
 
 export function LiveWorkspace({
@@ -87,7 +88,7 @@ function WorkspaceView({
           ? permitted.filter((room) => room.id === selected)
           : permitted;
         const preparingEditor = role === "professor" && ["editor", "nova", "turmas", "ajuda", "barreiras"].includes(section);
-        const needsDeliveries = role === "aluno" || ["", "missoes", "entregas", "feedback"].includes(section);
+        const needsDeliveries = role === "aluno" || ["", "atividades", "entregas", "feedback"].includes(section);
         // Fetch a directly requested mission once. A student can belong to
         // several classrooms, and the API correctly rejects that mission ID
         // when it is queried in a classroom that does not own it.
@@ -107,6 +108,7 @@ function WorkspaceView({
                   mission,
                   classroom,
                   submissions: needsDeliveries ? await pages("submissions", mission.id) : [],
+                  groups: needsDeliveries && (mission.publishedVersion ?? mission.draftVersion)?.workMode === "group" ? (await api("groups", { params: { id: mission.id } })).items : [],
                 })),
               );
             }),
@@ -133,7 +135,7 @@ function WorkspaceView({
   );
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
-  const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : ({ adaptacoes: "Adaptar material", estrategias: "Adaptar material", apoios: "Adaptar material", missoes: "Suas atividades", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
+  const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : ({ adaptacoes: "Adaptar material", estrategias: "Adaptar material", apoios: "Adaptar material", atividades: "Suas atividades", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
   const materialWorkspace=role==="professor"&&["adaptacoes","estrategias","apoios"].includes(section);
   const guidedEditor = role === "professor" && ["editor", "nova"].includes(section);
   return (
@@ -198,7 +200,7 @@ function WorkspaceView({
             </section>
           ) : (
             <>
-              {!["missao", "editor", "nova"].includes(section) && !missionId && !(role === "professor" && ["adaptacoes", "estrategias", "apoios"].includes(section)) &&
+              {!["atividade", "editor", "nova"].includes(section) && !missionId && !(role === "professor" && ["adaptacoes", "estrategias", "apoios"].includes(section)) &&
                 (role === "professor" || !!section || !!selected) && (
                   <label
                     className="classroom-selector"
@@ -224,7 +226,7 @@ function WorkspaceView({
                     </select>
                   </label>
                 )}
-              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "missao" && missionId && profile ? (
+              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "atividade" && missionId && profile ? (
                 <LiveMission
                   key={`${profile.id}:${missionId}`}
                   viewerId={profile.id}
@@ -233,9 +235,9 @@ function WorkspaceView({
                   classrooms={permitted}
                 />
               ) : section === "editor" && missionId ? (
-                <LiveEditor id={missionId} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
+                <LiveEditor id={missionId} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} classroomRoles={Object.fromEntries(permitted.map(room => [room.id, room.role]))} />
               ) : section === "nova" && chosen ? (
-                <LiveEditor classroomId={chosen.id} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} />
+                <LiveEditor classroomId={chosen.id} classroomNames={Object.fromEntries(permitted.map(room => [room.id, room.name]))} classroomRoles={Object.fromEntries(permitted.map(room => [room.id, room.role]))} />
               ) : section === "barreiras" && chosen ? (
                 <LiveBarriers classroom={chosen} />
               ) : section === "turmas" ? (
@@ -331,7 +333,7 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
           <h2 id="mission-title">{version.title}</h2>
           <p>{version.description}</p>
           <p className="small">Etapa {index + 1} de {version.steps.length} · {current?.title}</p>
-          <Link className="button" href={`/aluno/missoes/${entry.mission.id}`}>
+          <Link className="button" href={`/aluno/atividades/${entry.mission.id}`}>
             {firstMission ? "Começar minha primeira atividade" : "Continuar atividade"}
             <Icon name="arrow" />
           </Link>
@@ -358,7 +360,7 @@ function TeacherDashboard({
   const invitationsRef=useRef<HTMLDetailsElement>(null);
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
-  if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para criar atividades, preparar apoios e acompanhar as entregas.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul><Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link></section>;
+  if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para preparar atividades.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><p>{room.role === 'monitor' ? 'Monitor' : 'Professor'}</p><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul></section>;
   return (
     <>
       <section className="paper teacher-overview">
@@ -366,30 +368,31 @@ function TeacherDashboard({
           <p className="eyebrow accent">Planejar, acompanhar e incluir</p>
           <h2>{classroom?.name ?? "Minhas atividades"}</h2>
           <p>
-            {hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira atividade seguindo os passos abaixo."}
+            {classroom.role === 'monitor' ? 'Prepare rascunhos para o professor revisar e publicar.' : hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira atividade seguindo os passos abaixo."}
           </p>
           <div className="actions">
-            {classroom && hasPublished && (
+            {classroom && (hasPublished || classroom.role === 'monitor') && (
               <Link
                 className="button"
-                href={`/professor/missoes/nova?turma=${encodeURIComponent(classroom.id)}`}
+                href={`/professor/atividades/nova?turma=${encodeURIComponent(classroom.id)}`}
               >
                 Criar atividade
               </Link>
             )}
-            <Link className="text-link" href="/professor/entregas">
+            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/entregas">
               Consultar entregas
-            </Link>
-            <Link className="text-link" href="/professor/barreiras">
+            </Link>}
+            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/barreiras">
               Apoios e barreiras
-            </Link>
-            <Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link>
+            </Link>}
+            {classroom.role === 'teacher' && <Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link>}
           </div>
         </div>
         <PathIllustration variant="teacher" />
       </section>
-      {!hasPublished&&<TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id} onInvite={()=>{if(invitationsRef.current){invitationsRef.current.open=true;invitationsRef.current.querySelector('summary')?.focus();invitationsRef.current.scrollIntoView({block:'start'});}}}/>}
-      {classroom && <details ref={invitationsRef} className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
+      {!hasPublished && classroom.role === 'teacher' && <TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id} onInvite={()=>{if(invitationsRef.current){invitationsRef.current.open=true;invitationsRef.current.querySelector('summary')?.focus();invitationsRef.current.scrollIntoView({block:'start'});}}}/>}
+      {classroom.role === 'monitor' && <p className="notice">Você pode criar e editar rascunhos nesta turma. O professor revisa, publica e acompanha as entregas.</p>}
+      {classroom.role === 'teacher' && <details ref={invitationsRef} className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
           <li className="paper" key={mission.id}>
@@ -417,12 +420,12 @@ function TeacherDashboard({
             {mission.status !== "archived" && (
               <Link
                 className="button"
-                href={`/professor/missoes/${mission.id}/editar`}
+                href={`/professor/atividades/${mission.id}/editar`}
               >
                 Editar e revisar
               </Link>
             )}
-            <Link className="text-link" href={`/professor/missoes/${mission.id}/apoios`}>Preparar apoios</Link>
+            {room.role === 'teacher' && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Preparar apoios</Link>}
           </li>
         ))}
       </ul>
@@ -462,6 +465,7 @@ function SubmissionList({
                     ?.title
                 }
               </h2>
+              {submission.groupId && <p>Equipe: {entry.groups?.find(group => group.id === submission.groupId)?.name ?? "Equipe da atividade"}</p>}
               <p className="badge">
                 {submission.status === "draft"
                   ? "Rascunho"
@@ -473,6 +477,13 @@ function SubmissionList({
               {submission.feedback.map((feedback) => (
                 <blockquote key={feedback.id}>
                   <p>{feedback.content}</p>
+                  {feedback.scores && <div>
+                    <p><strong>Nota final: {feedback.totalPoints} de {submission.gradingSteps.reduce((sum, step) => sum + (step.maxPoints ?? 0), 0)} pontos</strong></p>
+                    <ul>{feedback.scores.map(score => {
+                      const step = submission.gradingSteps.find(item => item.id === score.stepId);
+                      return <li key={score.stepId}>{step?.title ?? "Etapa"}: {score.points} de {step?.maxPoints ?? 0} pontos{score.comment ? ` · ${score.comment}` : ""}</li>;
+                    })}</ul>
+                  </div>}
                   <footer>
                     Feedback docente ·{" "}
                     {new Date(feedback.createdAt).toLocaleDateString("pt-BR")}
@@ -481,12 +492,12 @@ function SubmissionList({
               ))}
               <Link
                 className="text-link"
-                href={`/${role}/missoes/${entry.mission.id}`}
+                href={`/${role}/atividades/${entry.mission.id}`}
               >
                 Consultar atividade
               </Link>
               {role === "professor" && (
-                <TeacherFeedback submission={submission} />
+                <TeacherFeedback missionId={entry.mission.id} submission={submission} steps={submission.gradingSteps} />
               )}
             </div>
           </li>
@@ -496,12 +507,26 @@ function SubmissionList({
   );
 }
 
-function TeacherFeedback({ submission }: { submission: Submission }) {
+type ScoredStep = Submission["gradingSteps"][number];
+function TeacherFeedback({ missionId, submission, steps }: { missionId: string; submission: Submission; steps: ScoredStep[] }) {
   const [content, setContent] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
   const [requestRevision, setRequestRevision] = useState(false);
+  const [scores, setScores] = useState<Record<string, { points: string; comment: string }>>({});
+  const [confirmedScores, setConfirmedScores] = useState(false);
+  const [deadlineMessage, setDeadlineMessage] = useState("");
+  const [timeZone, setTimeZone] = useState("UTC");
+  const [deadlinePending, setDeadlinePending] = useState<string | null>(null);
+  const [aiPending, setAiPending] = useState(false);
+  const [aiConsent, setAiConsent] = useState(false);
+  const [aiMessage, setAiMessage] = useState("");
+  const aiRequest = useRef<{ revision: number; key: string } | null>(null);
+  const [deadlineValues, setDeadlineValues] = useState<Record<string, string>>(() => Object.fromEntries(steps.map(step => [step.id, toLocalDateTime(step.dueAt)])));
+  useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
+  const gradedSteps = steps.filter(step => step.maxPoints !== null);
+  const totalPoints = gradedSteps.reduce((sum, step) => sum + Number(scores[step.id]?.points || 0), 0);
   if (submission.status === "reviewed" || done)
     return (
       <div><SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} /><p role="status">
@@ -515,17 +540,42 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
       <summary>Consultar entrega e escrever feedback</summary>
       <p className="submission-content">{submission.content}</p>
       <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
+      {steps.some(step => step.completedAt) && <section aria-label="Registro de prazo das etapas">
+        <h3>Entrega por etapa</h3>
+        <ul>{steps.filter(step => step.completedAt).map(step => <li key={step.id}>{step.title}: entregue {step.late ? "com atraso" : "no prazo"} em {formatTeacherDeadline(step.completedAt!, timeZone)}</li>)}</ul>
+      </section>}
+      {steps.some(step => step.baseDueAt) && <details className="paper">
+        <summary>Prorrogar prazo de etapa para este estudante</summary>
+        <p className="small">O prazo individual vale somente para este estudante e não bloqueia o acesso nem apaga rascunhos.</p>
+        {steps.filter(step => step.baseDueAt).map(step => <fieldset className="editor-step" key={step.id}>
+          <legend>{step.title}</legend>
+          <p className="small">Prazo original: {formatTeacherDeadline(step.baseDueAt!, timeZone)}</p>
+          <label>Prazo individual (horário local · {timeZone})
+            <input type="datetime-local" value={deadlineValues[step.id] ?? ""} disabled={deadlinePending !== null}
+              onChange={event => setDeadlineValues(all => ({ ...all, [step.id]: event.target.value }))} />
+          </label>
+          <div className="actions">
+            <button type="button" className="button button-outline" disabled={deadlinePending !== null || !deadlineValues[step.id]}
+              onClick={() => void saveDeadline(step.id)}>{deadlinePending === step.id ? "Salvando…" : "Salvar prorrogação"}</button>
+            {step.deadlineExtended && <button type="button" className="text-button" disabled={deadlinePending !== null}
+              onClick={() => void saveDeadline(step.id, true)}>Restaurar prazo original</button>}
+          </div>
+        </fieldset>)}
+        <OperationStatus message={deadlineMessage} />
+      </details>}
       <form
         className="form-stack"
         onSubmit={async (e) => {
           e.preventDefault();
           if (pending) return;
+          if (gradedSteps.length && !requestRevision && !confirmedScores) { setMessage("Confirme a pontuação antes de publicar."); return; }
           setPending(true);
           setMessage("");
           try {
             await api("feedback", {
               params: { id: submission.id },
-              body: { content, ...(requestRevision ? { requestRevision } : {}) },
+              body: { content, ...(requestRevision ? { requestRevision } : {}),
+                ...(!requestRevision && gradedSteps.length ? { scores: gradedSteps.map(step => ({ stepId: step.id, points: Number(scores[step.id]?.points), comment: scores[step.id]?.comment ?? "" })) } : {}) },
             });
             setDone(true);
           } catch (reason) {
@@ -535,6 +585,16 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
           }
         }}
       >
+        <details className="teacher-ai">
+          <summary>Preparar correção e feedback com IA (opcional)</summary>
+          <p>A IA recebe somente o texto da resposta, os objetivos, critérios e etapas desta atividade. Áudio, arquivos, identidade e perfil do aluno não são enviados. Confira se o texto não contém dados pessoais antes de autorizar. A sugestão pode errar; você revisa e decide o que publicar.</p>
+          <label className="check"><input type="checkbox" checked={aiConsent} disabled={aiPending || pending}
+            onChange={event => setAiConsent(event.target.checked)} />Revisei a resposta e autorizo enviar seu texto ao Gemini para preparar um rascunho privado para mim.</label>
+          <button type="button" className="button button-outline" disabled={!aiConsent || aiPending || pending || requestRevision}
+            onClick={() => void prepareFeedbackDraft()}>{aiPending ? "Preparando rascunho…" : "Gerar sugestão de correção e feedback"}</button>
+          {requestRevision && <p className="small">Desative “Solicitar ajustes” para pedir uma sugestão de pontuação. Você ainda pode preparar o feedback manualmente.</p>}
+          <OperationStatus message={aiMessage} />
+        </details>
         <label htmlFor={`feedback-${submission.id}`}>
           Orientação para o próximo passo
           <textarea
@@ -546,9 +606,25 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
             onChange={(e) => setContent(e.target.value)}
           />
         </label>
+        {!requestRevision && gradedSteps.map(step => <fieldset className="editor-step" key={step.id}>
+          <legend>{step.title} · até {step.maxPoints} pontos</legend>
+          <label>Nota da etapa
+            <input type="number" min="0" max={step.maxPoints ?? 0} step="1" required disabled={pending}
+              value={scores[step.id]?.points ?? ""}
+              onChange={e => { setConfirmedScores(false); setScores(all => ({ ...all, [step.id]: { points: e.target.value, comment: all[step.id]?.comment ?? "" } })); }} />
+          </label>
+          <label>Comentário da etapa (opcional)
+            <textarea maxLength={1000} disabled={pending} value={scores[step.id]?.comment ?? ""}
+              onChange={e => setScores(all => ({ ...all, [step.id]: { points: all[step.id]?.points ?? "", comment: e.target.value } }))} />
+          </label>
+        </fieldset>)}
+        {!requestRevision && gradedSteps.length > 0 && <>
+          <p><strong>Total: {totalPoints} de {gradedSteps.reduce((sum, step) => sum + (step.maxPoints ?? 0), 0)} pontos</strong></p>
+          <label className="check"><input type="checkbox" required checked={confirmedScores} disabled={pending}
+            onChange={e => setConfirmedScores(e.target.checked)} /> Conferi as notas e confirmo a avaliação final.</label>
+        </>}
         <p className="small">
-          Destinatário: estudante autor da entrega. O feedback é docente, sem
-          avaliação final automática.
+          Destinatário: {submission.groupId ? "integrantes da equipe" : "estudante autor da entrega"}. O feedback e a avaliação ficam pendentes de validação docente; nada é publicado automaticamente pela IA.
         </p>
         <label className="check"><input type="checkbox" checked={requestRevision} disabled={pending} onChange={e => setRequestRevision(e.target.checked)} /> Solicitar ajustes e permitir nova tentativa</label>
         <button className="button" disabled={pending}>
@@ -558,4 +634,45 @@ function TeacherFeedback({ submission }: { submission: Submission }) {
       </form>
     </details>
   );
+
+  async function saveDeadline(stepId: string, restore = false) {
+    setDeadlinePending(stepId); setDeadlineMessage("");
+    try {
+      const step = steps.find(item => item.id === stepId)!;
+      const dueAt = restore ? null : new Date(deadlineValues[stepId]).toISOString();
+      await api("setStepDeadlineExtension", { params: { id: missionId, stepId }, body: { studentId: submission.userId, dueAt } });
+      setDeadlineValues(all => ({ ...all, [stepId]: toLocalDateTime(restore ? step.baseDueAt : dueAt) }));
+      setDeadlineMessage(restore ? "Prazo individual removido. O prazo original voltou a valer." : "Prorrogação salva para este estudante.");
+    } catch (reason) { setDeadlineMessage(errorMessage(reason)); }
+    finally { setDeadlinePending(null); }
+  }
+
+  async function prepareFeedbackDraft() {
+    if (!aiConsent || aiPending || pending || requestRevision) return;
+    if ((content.trim() || Object.keys(scores).length) && !window.confirm("Substituir o feedback ou as notas que você já digitou pelo novo rascunho da IA?")) return;
+    setAiPending(true); setAiMessage("");
+    const key = aiRequest.current?.revision === submission.revision ? aiRequest.current.key : crypto.randomUUID();
+    aiRequest.current = { revision: submission.revision, key };
+    try {
+      const result = await api("generateFeedbackDraft", { params: { id: submission.id },
+        body: { approvedForProvider: true, idempotencyKey: key } });
+      if (result.status !== "succeeded" || !result.draft) {
+        if (result.status === "failed") aiRequest.current = null;
+        throw new Error("A sugestão não foi concluída. Escreva o feedback manualmente ou tente novamente.");
+      }
+      setContent(result.draft.content);
+      setScores(Object.fromEntries(result.draft.scores.map(score => [score.stepId, { points: String(score.points), comment: score.comment }])));
+      setConfirmedScores(false);
+      setAiMessage("Rascunho preenchido. Revise o texto e cada pontuação antes de publicar.");
+    } catch (reason) { setAiMessage(errorMessage(reason)); }
+    finally { setAiPending(false); }
+  }
+}
+
+function toLocalDateTime(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value); date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); return date.toISOString().slice(0, 16);
+}
+function formatTeacherDeadline(value: string, timeZone: string) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short", timeZone }).format(new Date(value));
 }

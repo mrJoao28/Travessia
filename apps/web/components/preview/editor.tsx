@@ -19,10 +19,10 @@ export function PreviewEditor({missionId}:{missionId?:string}){
   const previous=state.missions.find(m=>m.id===input.id),revision=previous&&dirty?previous.revision+1:previous?.revision??1;
   const value={...input,status:'draft' as const,revision,publishedVersion:previous?.publishedVersion??(previous?.status==='published'?missionVersion(previous):undefined)};update(s=>({...s,missions:[...s.missions.filter(m=>m.id!==value.id),value]}));setInput(value);setSavedId(value.id);setDirty(false);setMessage(simulatedSave);return true;
  }
- if(published)return <section className="paper teacher-success"><PreviewHeading title="Publicação simulada concluída" description="Nenhuma atividade foi publicada no servidor. O cenário local foi atualizado."/><p>{input.title} está disponível para os alunos fictícios da turma.</p><a className="button" href={`/previa/aluno/missoes/${input.id}`}>Ver no espaço do aluno</a></section>;
+ if(published)return <section className="paper teacher-success"><PreviewHeading title="Publicação simulada concluída" description="Nenhuma atividade foi publicada no servidor. O cenário local foi atualizado."/><p>{input.title} está disponível para os alunos fictícios da turma.</p><a className="button" href={`/previa/aluno/atividades/${input.id}`}>Ver no espaço do aluno</a></section>;
  return <div className="teacher-guide"><header className="teacher-guide-heading">
  <p className="eyebrow">{state.classrooms.find(c=>c.id===input.classroomId)?.name??'Preparar atividade'}</p>
- <Link className="text-link" href="/previa/professor/missoes">← Minhas atividades</Link>
+ <Link className="text-link" href="/previa/professor/atividades">← Minhas atividades</Link>
  <h1>Vamos preparar sua atividade</h1><p>Siga os quatro passos do editor. Os materiais e a publicação ficam neste cenário fictício.</p>
  </header><TeacherSteps labels={['Sobre a atividade','Etapas e materiais','Apoios','Revisão']} current={stage} onBack={go}/>
  <div className={`teacher-guide-grid${stage===2?" teacher-support-stage":""}`}><section className="paper form-stack preview-editor teacher-editor-panel" data-preview-dirty={dirty}><h2 ref={title} tabIndex={-1}>{['O que a turma vai aprender?','Como o aluno vai realizar a atividade?','Prepare os materiais para sua turma','Revisão antes de publicar'][stage]}</h2>

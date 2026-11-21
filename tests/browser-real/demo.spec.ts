@@ -190,7 +190,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       (mission: { status: string }) => mission.status === "draft",
     ).id as string;
   });
-  await page.goto(`/professor/missoes/${encodeURIComponent(missionId)}/editar`);
+  await page.goto(`/professor/atividades/${encodeURIComponent(missionId)}/editar`);
   await expect(
     page.getByLabel("Título da atividade", { exact: true }),
   ).toBeVisible();
@@ -241,7 +241,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByLabel('Senha', { exact: true }).fill(process.env.DEMO_USER_PASSWORD!);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
-  await page.goto('/professor/missoes/demo-class-oficina-mission/estrategias');
+  await page.goto('/professor/atividades/demo-class-oficina-mission/estrategias');
   if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
   await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Escolha os apoios da atividade', exact: true })).toBeVisible();
@@ -297,7 +297,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('textbox', { name: 'Texto do material', exact: true }).fill('Compare custo e clareza.');
   await page.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
   await expect(page.getByText('Rascunho salvo no servidor. Ainda não publicado.', { exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/\/professor\/missoes\/[^/]+\/editar$/);
+  await expect(page).toHaveURL(/\/professor\/atividades\/[^/]+\/editar$/);
   const createdMissionId = new URL(page.url()).pathname.split('/')[3];
   const savedDraft = await (await page.request.get(`/api/v1/missions/${createdMissionId}`)).json();
   expect(savedDraft.draftVersion.materials).toMatchObject([{ title: 'Texto didático público fictício', text: 'Compare custo e clareza.' }]);
@@ -350,7 +350,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByLabel('Senha', { exact: true }).fill(process.env[`SUPPORT_STUDENT_${suffix}_PASSWORD`]!);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
-    await page.goto('/aluno/missoes/demo-class-oficina-mission');
+    await page.goto('/aluno/atividades/demo-class-oficina-mission');
     const pagination = page.getByRole('navigation', { name: 'Paginação das etapas' });
     const previous = pagination.getByRole('button', { name: 'Etapa anterior', exact: true });
     await expect(previous).toBeVisible();
@@ -389,7 +389,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await expect(page.getByText('Compartilhamento salvo para os docentes desta turma.', { exact: true })).toBeVisible();
       await page.screenshot({ path: 'test-results/reference-learning-needs.png', fullPage: true });
     }
-    await page.goto(`/aluno/missoes/${inclusiveMission.id}`);
+    await page.goto(`/aluno/atividades/${inclusiveMission.id}`);
     await page.getByText('Objetivos e critérios da atividade', { exact: true }).click();
     await expect(page.getByText('Justificar uma escolha.', { exact: true })).toBeVisible();
     await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
@@ -467,7 +467,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByLabel('Senha', { exact: true }).fill(process.env.SUPPORT_STUDENT_A_PASSWORD!);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
-  await page.goto(`/aluno/missoes/${inclusiveMission.id}`);
+  await page.goto(`/aluno/atividades/${inclusiveMission.id}`);
   await expect(page.getByText(feedback, { exact: true })).toBeVisible();
   await expect(page.getByText('Revisada', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Planejamento e atividade', { exact: true })).toHaveCount(0);

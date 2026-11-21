@@ -50,12 +50,12 @@ export function StudentHomePreview() {
             ))}
           </ol>
           <div className="actions">
-            <Link className="button" href="/previa/aluno/missoes/biblioteca">
+            <Link className="button" href="/previa/aluno/atividades/biblioteca">
               Continuar atividade <Icon name="arrow" />
             </Link>
             <Link
               className="text-link"
-              href="/previa/aluno/missoes/biblioteca#etapas"
+              href="/previa/aluno/atividades/biblioteca#etapas"
             >
               Ver todas as etapas
             </Link>
@@ -92,7 +92,7 @@ export function StudentHomePreview() {
               <div className="lesson-body">
                 <p className="eyebrow accent">Programação I</p>
                 <h3>
-                  <Link href="/previa/aluno/missoes/biblioteca">
+                  <Link href="/previa/aluno/atividades/biblioteca">
                     Planejar a solução
                   </Link>
                 </h3>
@@ -114,7 +114,7 @@ export function StudentHomePreview() {
           <p>Ajuste a experiência de estudo para suas necessidades.</p>
           <a
             className="support-option"
-            href="/previa/aluno/missoes/biblioteca#etapas"
+            href="/previa/aluno/atividades/biblioteca#etapas"
           >
             <Icon name="list" />
             Dividir em passos<span aria-hidden="true">›</span>

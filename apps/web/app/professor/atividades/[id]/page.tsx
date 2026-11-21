@@ -15,7 +15,7 @@ export default async function Page({
   return (
     <LiveWorkspace
       role="professor"
-      section={id === "nova" ? "nova" : "missao"}
+      section={id === "nova" ? "nova" : "atividade"}
       missionId={id === "nova" ? undefined : id}
       classroomId={await requestedClassroom(searchParams)}
     />

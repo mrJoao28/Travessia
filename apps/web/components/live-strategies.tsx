@@ -17,9 +17,9 @@ export function LiveStrategies({ entries, initialMissionId, initialVersionId }: 
   const [unsaved,setUnsaved]=useState(false);
   const [missionId, setMissionId] = useState(initialMissionId ?? entries[0]?.mission.id ?? "");
   const entry = entries.find(e => e.mission.id === missionId);
-  if (!entry) return <section className="paper"><h2>Escolha uma atividade da sua turma</h2><p>Crie e salve uma atividade para preparar seus apoios.</p><Link className="text-link" href="/professor/missoes">Consultar minhas atividades</Link></section>;
+  if (!entry) return <section className="paper"><h2>Escolha uma atividade da sua turma</h2><p>Crie e salve uma atividade para preparar seus apoios.</p><Link className="text-link" href="/professor/atividades">Consultar minhas atividades</Link></section>;
   return <div className="material-mission-workspace">
-    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/missoes/${entry.mission.id}/editar`}>← Voltar à atividade</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector material-mission-selector"><label htmlFor="strategy-mission">Atividade</label>
+    {initialMissionId ? <div className="teacher-mission-context"><Link className="text-link" href={`/professor/atividades/${entry.mission.id}/editar`}>← Voltar à atividade</Link><p>{entry.classroom.name}</p></div> : <div className="classroom-selector material-mission-selector"><label htmlFor="strategy-mission">Atividade</label>
       <select id="strategy-mission" value={missionId} onChange={e => {if(!unsaved||window.confirm("Descartar os apoios ainda não salvos?")){setUnsaved(false);setMissionId(e.target.value);}}}>
         {entries.map(({ mission, classroom }) => <option key={mission.id} value={mission.id}>{classroom.name} · {(mission.publishedVersion ?? mission.draftVersion)?.title}</option>)}
       </select>
@@ -44,11 +44,11 @@ function StrategyMission({ entry, initialVersionId, unsaved, onUnsavedChange }: 
   </>;
 }
 
-export function MissionSupportsEditor({ entry, version, initialFile, onFileReceived, onUnsavedChange }: { entry: MissionEntry; version: NonNullable<MissionEntry["mission"]["draftVersion"]>; initialFile?: File | null; onFileReceived?: () => void; onUnsavedChange?:(value:boolean)=>void }) {
+export function MissionSupportsEditor({ entry, version, initialFile, initialDownloadAllowed, onFileReceived, onUnsavedChange }: { entry: MissionEntry; version: NonNullable<MissionEntry["mission"]["draftVersion"]>; initialFile?: File | null; initialDownloadAllowed?: boolean; onFileReceived?: () => void; onUnsavedChange?:(value:boolean)=>void }) {
  const [showTools,setShowTools]=useState(false),[showStrategies,setShowStrategies]=useState(false),[showCollective,setShowCollective]=useState(false);
  const [openedStrategies,setOpenedStrategies]=useState(false),[openedCollective,setOpenedCollective]=useState(false);
  return <div className="mission-support-editor">
-    <IndividualMaterials key={`materials-${version.id}`} missionId={entry.mission.id} versionId={version.id} classroomId={entry.classroom.id} archived={entry.mission.status === "archived"} version={version} initialFile={initialFile} onFileReceived={onFileReceived} onUnsavedChange={onUnsavedChange} />
+    <IndividualMaterials key={`materials-${version.id}`} missionId={entry.mission.id} versionId={version.id} classroomId={entry.classroom.id} archived={entry.mission.status === "archived"} version={version} initialFile={initialFile} initialDownloadAllowed={initialDownloadAllowed} onFileReceived={onFileReceived} onUnsavedChange={onUnsavedChange} />
     <section className="paper material-extra-tools form-stack" aria-label="Orientações e apoios da turma">
       <button type="button" className="button button-outline" aria-expanded={showTools} aria-controls="mission-support-tools" onClick={()=>setShowTools(value=>!value)}>Outros apoios da atividade</button>
       <div id="mission-support-tools" className="form-stack" hidden={!showTools}>
