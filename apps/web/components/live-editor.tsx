@@ -83,16 +83,22 @@ export function LiveEditor({
   const [dirty, setDirty] = useState(false);
   const [carrySources, setCarrySources] = useState<CarriedSource[]>([]);
   const [carryForwardMaterialIds, setCarryForwardMaterialIds] = useState<string[]>([]);
+  const [carrySourcesLoading, setCarrySourcesLoading] = useState(false);
+  const [carrySourcesError, setCarrySourcesError] = useState(false);
+  const [carrySourceRetry, setCarrySourceRetry] = useState(0);
+  const monitor = classroomRoles?.[mission?.classroomId ?? classroomId ?? ''] === 'monitor';
   const [review, setReview] = useState<string | null>(null);
   useEffect(() => {
     const published = mission?.publishedVersion;
-    if (!mission || !published) { setCarrySources([]); return; }
+    if (!mission || !published || monitor) { setCarrySources([]); setCarrySourcesLoading(false); setCarrySourcesError(false); return; }
     let active = true;
+    setCarrySourcesLoading(true); setCarrySourcesError(false);
     void api("materialSources", { params: { id: mission.id }, query: { versionId: published.id } })
       .then(value => { if (active) setCarrySources(value.items.filter(source => source.status === "ready")); })
-      .catch(() => { if (active) setCarrySources([]); });
+      .catch(() => { if (active) { setCarrySources([]); setCarrySourcesError(true); } })
+      .finally(() => { if (active) setCarrySourcesLoading(false); });
     return () => { active = false; };
-  }, [mission?.id, mission?.publishedVersion?.id]);
+  }, [mission?.id, mission?.publishedVersion?.id, monitor, carrySourceRetry]);
   useEffect(() => {
     if (review) document.getElementById("publish-review")?.focus();
   }, [review]);
@@ -155,6 +161,8 @@ export function LiveEditor({
   }
   async function save(forReview = false, nextStage?: number) {
     if (!validate() || pending) return;
+    if (!monitor && mission?.publishedVersion && carrySourcesLoading) { setMessage("Aguarde a lista de PDFs da versão publicada carregar antes de salvar."); return; }
+    if (!monitor && mission?.publishedVersion && carrySourcesError) { setMessage("Não foi possível consultar os PDFs publicados. Recarregue a lista antes de salvar."); return; }
     if (!dirty && mission?.draftVersion) {
       if (forReview) setReview(mission.draftVersion.id);
       if (nextStage !== undefined) setStage(nextStage);
@@ -199,7 +207,6 @@ export function LiveEditor({
   if (loadError) return <section className="paper"><h1>Não foi possível abrir esta atividade</h1><p role="alert">{loadError}</p><Link className="text-link" href="/professor/atividades">Voltar às minhas atividades</Link></section>;
   if (published && mission) return <section className="paper teacher-success"><p className="eyebrow">Atividade publicada</p><h1>Pronto para sua turma!</h1><p role="status">Atividade publicada pelo servidor e disponível para a turma.</p><p>Os apoios liberados para esta versão acompanham a atividade. Você pode revisá-los ou acompanhar as entregas.</p><div className="actions"><Link className="button" href={`/professor/atividades/${mission.id}/apoios`}>Preparar apoios desta atividade</Link><Link className="text-link" href="/professor/entregas">Acompanhar entregas</Link></div></section>;
   const storedVersion = mission?.draftVersion ?? mission?.publishedVersion;
-  const monitor = classroomRoles?.[mission?.classroomId ?? classroomId ?? ''] === 'monitor';
   return (
     <div className="teacher-guide">
       <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar atividade"}</p><Link className="text-link" href="/professor/atividades">← Minhas atividades</Link><h1>Vamos preparar sua atividade</h1><p>{monitor ? 'Prepare e salve o rascunho. O professor fará a revisão e a publicação.' : 'Um passo de cada vez. Você revisa antes de publicar.'}</p></header>
@@ -467,7 +474,10 @@ export function LiveEditor({
                 {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas para anexá-lo à atividade; após a publicação e a verificação do arquivo, ele aparecerá para todos os alunos ativos da turma.</p>}
                 <p className="small">PDF de até {PDF_MAX_MB} MB e {PDF_MAX_PAGES} páginas, sem senha ou conteúdo ativo. A publicação da atividade disponibiliza este arquivo para toda a turma. Apoios individuais continuam opcionais.</p>
               </section>}
-              {mission?.publishedVersion && carrySources.length > 0 && <fieldset className="mission-file-entry form-stack"><legend>PDFs que acompanham a nova versão</legend>
+              {!monitor && mission?.publishedVersion && carrySourcesLoading && <p role="status">Consultando os PDFs publicados para escolher quais acompanham a nova versão…</p>}
+              {!monitor && mission?.publishedVersion && carrySourcesError && <p role="alert">Não foi possível consultar os PDFs publicados. <button type="button" className="text-button" onClick={() => setCarrySourceRetry(value => value + 1)}>Tentar novamente</button></p>}
+              {!monitor && mission?.publishedVersion && !carrySourcesLoading && !carrySourcesError && carrySources.length === 0 && <p className="small">A versão publicada não tem PDFs verificados para acompanhar este rascunho.</p>}
+              {!monitor && mission?.publishedVersion && carrySources.length > 0 && <fieldset className="mission-file-entry form-stack"><legend>PDFs que acompanham a nova versão</legend>
                 <p className="small">Selecione os PDFs originais verificados que devem ser copiados para este rascunho. Apoios adaptados precisam ser preparados e revisados novamente.</p>
                 {carrySources.map(source => <label className="check" key={source.id}><input type="checkbox" checked={carryForwardMaterialIds.includes(source.id)} onChange={event => {
                   setCarryForwardMaterialIds(previous => event.target.checked ? [...previous, source.id] : previous.filter(id => id !== source.id));
