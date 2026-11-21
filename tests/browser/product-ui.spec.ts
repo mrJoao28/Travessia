@@ -8,6 +8,10 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
   page,
 }) => {
   await fixture(page, "student");
+  const activityApiResponses: string[] = [];
+  page.on("response", response => {
+    if (response.url().includes("/api/v1/")) activityApiResponses.push(`${response.status()} ${response.url()}`);
+  });
   let release: () => void = () => {};
   const held = new Promise<void>((resolve) => {
     release = resolve;
@@ -28,7 +32,12 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
     },
   );
   await page.goto("/aluno/atividades/test-mission");
-  await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
+  try {
+    await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
+  } catch (error) {
+    console.log("ACTIVITY PAGE DEBUG", await page.locator("main").innerText(), activityApiResponses);
+    throw error;
+  }
   expect(
     (
       await new AxeBuilder({ page })
