@@ -240,7 +240,7 @@ export function LiveMission({
               <p className="submission-content">{step.example}</p>
             </details>}
             {role === "aluno" && <a className="text-link" href="#learner-materials-title"
-              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais preparados</a>}
+              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais da missão</a>}
             {role === "aluno" && <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
             {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
@@ -281,7 +281,7 @@ export function LiveMission({
           <section className="paper" aria-label="Materiais da missão">
             <h3>Materiais da missão</h3>
             {role === "professor" && !version.materials.length && <p className="small">Nenhum material na missão.</p>}
-            {role === "aluno" && !version.materials.length && <p className="small">Não há materiais textuais anexados à missão. Materiais preparados para você aparecem nesta área.</p>}
+            {role === "aluno" && !version.materials.length && <p className="small">Os PDFs anexados à missão e os apoios preparados pelo professor aparecem nesta área.</p>}
             {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
             {version.materials.map((material) => (
               <article className="material-library-item" key={material.id}>

@@ -172,11 +172,10 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     </label>;
   }
   const labels:Record<string,string>={queued:'Na fila',extracting:'Verificando PDF',ready:'Pronto para conferir',failed:'Não foi possível preparar',generating:'Preparando conteúdo',draft:'Rascunho salvo',rendering:'Preparando PDF e áudio',released:'Disponibilizado'};
-  async function sendOriginal(){await operation(async()=>{if(!source||source.status!=='ready'||!reviewed)return;const a=await api('releaseOriginalMaterial',{params:{id:missionId},body:{versionId,sourceId,studentId,requestKey:key.current??=crypto.randomUUID(),reviewed:true}});update(a);setMessage(`PDF original disponibilizado para ${student?.name}. Na versão em rascunho, ficará visível após a publicação.`);});}
   const locked=busy||!!pending||dirty||activityDirty;
   function chooseSource(id:string){setSourceId(id);setReaderView('original');setSelectedId('');setDocument([]);setEditText(false);setStep(1);setApproved(false);change();}
   function activityChanged(value:boolean){setActivityDirty(value);if(value)setReviewed(false);}
-  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo adicionado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'}`:labels[source.status]}</p></div></div>:null;
+  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`PDF da missão · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · aparece para toda a turma após publicar`:labels[source.status]}</p></div></div>:null;
   if(loading)return <p role="status">Carregando alunos e materiais…</p>;
   const released=!!current&&current.status==='released'&&current.studentId===studentId;
   const fileControl=<div className="workspace-file-control">
@@ -185,7 +184,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       <option value="" disabled>Escolher arquivo</option>
       {sources.map(file=><option key={file.id} value={file.id}>{file.title}</option>)}
     </select>}
-    {!archived&&<div className="material-upload-control"><label htmlFor="material-upload">Adicionar arquivo PDF</label><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
+    {!archived&&<div className="material-upload-control"><label htmlFor="material-upload">Adicionar PDF à missão</label><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
   </div>;
   const comparison=<MaterialComparison missionId={missionId} source={source} adaptation={current} studentName={student?.name} originalOnly={delivery==='original'} document={document} dirty={dirty} view={readerView} onViewChange={setReaderView} singleView fileControl={fileControl}/>;
   const canRelease=!archived&&step===3&&!released&&!!student&&(delivery==='original'||current?.status==='ready');
@@ -204,14 +203,13 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         </fieldset>;
   function releaseMaterial(){
     if(!canRelease||!reviewed||locked)return;
-    if(delivery==='original'){void sendOriginal();return;}
     void operation(async()=>{
       update(await api('releaseMaterial',{params:{id:missionId,adaptationId:current!.id},body:{expectedRevision:current!.revision,reviewed:true}}));
       setMessage(`Material disponibilizado para ${student!.name}. No rascunho, ficará disponível após publicar esta versão.`);
     });
   }
   return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material individual">
-    <header><h2>{student?`Apoios para ${student.name}`:'Preparar material para um aluno'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o aluno.'):'Selecione o arquivo e prepare uma versão para o aluno, sem sair desta tela.'}</p></header>
+    <header><h2>{student?`Apoios para ${student.name}`:'PDF da missão e apoios opcionais'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o aluno.'):'O PDF da missão aparece para toda a turma após a publicação. Selecione um aluno somente se quiser preparar apoios individuais.'}</p></header>
     {(error||message)&&<OperationStatus message={error||message} error={!!error}/>}
     {error&&<button className="text-button" type="button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo</button>}
     <div className="material-reference-desk">
@@ -235,13 +233,13 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           {archived?<p className="notice">Missão arquivada. Consulte os materiais salvos abaixo.</p>:<>
           {(step===1||step===3)&&supportOptions}
           {fileRow}
-          {!source&&student&&<p className="small">Escolha ou adicione um PDF para gerar a prévia.</p>}
+          {!source&&<p className="small">Adicione um PDF para incluí-lo nos materiais desta missão. Para gerar uma versão adaptada, escolha um aluno e um apoio.</p>}
           {source?.status==='failed'&&source.warnings.map(w=><p role="alert" key={w}>{w}</p>)}
           {source?.status==='ready'&&source.warnings.length>0&&<details>
             <summary>Pontos para conferir no PDF</summary>
             <ul>{source.warnings.map(w=><li key={w}>{w}</li>)}</ul>
           </details>}
-          {step===1&&student&&source?.status==='ready'&&<section className="paper form-stack">
+          {step===1&&source?.status==='ready'&&(delivery==='original'||!!student)&&<section className="paper form-stack">
         {delivery==='adapted'&&<>
           {supports.includes('large-print')&&<><label htmlFor="material-font">Tamanho do texto</label><select id="material-font" value={fontSize==='18'?'22':fontSize} onChange={e=>{setFontSize(e.target.value as typeof fontSize);change();}}><option value="22">Grande · 22 pontos</option><option value="26">Muito grande · 26 pontos</option></select></>}
           {supports.includes('high-contrast')&&<><label htmlFor="material-color">Cores de leitura</label><select id="material-color" value={color==='default'?'high':color} onChange={e=>{setColor(e.target.value as typeof color);change();}}><option value="high">Preto sobre branco</option><option value="dark">Claro sobre escuro</option></select></>}
@@ -254,7 +252,9 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           {ai&&<label className="check"><input type="checkbox" checked={approved} onChange={e=>setApproved(e.target.checked)}/>Conferi as páginas e os objetivos e autorizo enviar esse conteúdo didático, sem dados pessoais, ao Gemini para preparar o rascunho.</label>}
           <p className="small">Confirme as preferências com o aluno. Você confere a prévia antes de enviar.</p>
         </>}
-        <div className="simple-material-actions"><button className="button" type="button" disabled={busy||delivery==='adapted'&&(!supports.length||!pageNumbers.length||ai&&!approved)} onClick={()=>{if(delivery==='original'){setSelectedId('');setReaderView('original');setStep(3);}else void prepare();}}>{delivery==='original'?'Usar PDF original':'Gerar prévia'}</button></div>
+        <div className="simple-material-actions">{delivery==='original'
+          ? <p className="small">O PDF original anexado à missão será mostrado a todos os alunos depois que você publicar. Não é necessário liberá-lo aluno por aluno.</p>
+          : <button className="button" type="button" disabled={busy||!supports.length||!pageNumbers.length||ai&&!approved} onClick={()=>void prepare()}>Gerar prévia</button>}</div>
       </section>}
       {step===2&&<section className="paper form-stack">{pending||busy||!current?<PreparationProgress title={current?labels[current.status]:'Consultando a preparação'} detail={current?.status==='rendering'?'Gerando o PDF e a audiodescrição, quando escolhida.':current?.status==='generating'?'Preparando o conteúdo das páginas escolhidas.':'Aguardando o início do processamento.'}/>:<h3>{labels[current.status]}</h3>}{current?.error&&<p role="alert">{current.error}</p>}{(current?.status==='draft'||(current?.status==='failed'&&document.length>0))&&!pending&&<button type="button" className="button" disabled={busy} onClick={()=>void saveAndRender()}>Preparar prévia deste rascunho</button>}{(current?.status==='failed'||current?.error)&&<button className="button button-outline" onClick={()=>{setSelectedId('');setStep(1);change();}}>Voltar aos apoios</button>}</section>}
       {step===3&&student&&<section className="paper form-stack">

@@ -100,7 +100,7 @@ test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e prese
 test('apoios partem da missão e exigem destinatários e nova revisão após voltar para editar', async ({ page }) => {
   await fixture(page, 'teacher');
   await page.goto('/professor/missoes/m-inclusive/apoios');
-  await expect(page.getByRole('heading',{name:'Preparar material para um aluno',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'PDF da missão e apoios opcionais',exact:true})).toBeVisible();
   if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
   await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
   await expect(page.getByLabel('Missão para adaptar', { exact: true })).toHaveCount(0);
