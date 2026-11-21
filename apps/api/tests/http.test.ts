@@ -755,21 +755,26 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
   await request(`${path}/material-assets/${source.id}/pdf`, a, 'GET', undefined, 404);
 });
 
-test('PDF da turma sem permissão de download pode ser visualizado, mas não baixado', async () => {
+test('PDF da turma continua visível e baixável mesmo com a antiga flag desativada', async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   const versionId = created.draftVersion.id, path = `/v1/missions/${created.id}`;
   const bytes = Buffer.from('%PDF-1.4\nmaterial somente para leitura');
   const source = (await request(`${path}/material-sources`, main, 'POST', {
     versionId, title: 'Leitura.pdf', downloadAllowed: false, base64: bytes.toString('base64'), requestKey: randomUUID(),
   })).json;
+  // Simulate an existing row created before download became unconditional.
+  await db.materialSource.update({ where: { id: source.id }, data: { downloadAllowed: false } });
   await request(`${path}/publish`, main, 'POST', { versionId, reviewed: true });
   await db.materialSource.update({ where: { id: source.id }, data: { status: 'ready', pageCount: 1 } });
   await writeFile(materialPath(source.id, 'original.pdf'), bytes);
   const items = (await request(`${path}/my-materials?versionId=${versionId}`, a)).json.items;
-  assert.equal(items[0].downloadAllowed, false);
+  assert.equal(items[0].downloadAllowed, true);
   assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { headers: { cookie: a } })).status, 200);
   assert.equal((await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { method: 'HEAD', headers: { cookie: a } })).status, 200);
-  await request(`${path}/material-assets/${source.id}/download`, a, 'GET', undefined, 404);
+  const download = await fetch(`${base}${path}/material-assets/${source.id}/download`, { headers: { cookie: a } });
+  assert.equal(download.status, 200);
+  assert.match(download.headers.get('content-disposition') ?? '', /attachment/);
+  assert.deepEqual(Buffer.from(await download.arrayBuffer()), bytes);
 });
 
 test('IA indisponível clara; cota concorrente, deduplicação e revisão humana', { timeout: 30000 }, async () => {
