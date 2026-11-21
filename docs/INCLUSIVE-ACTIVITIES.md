@@ -6,17 +6,17 @@ Aluno → Meus apoios (`/aluno/apoios`): escolhe voluntariamente apoios e format
 
 As escolhas são privadas. Para cada turma em que participa como aluno, há autorização de compartilhamento com docentes ativos. Compartilhar apoios/preferências e compartilhar a deficiência são controles distintos. Compartilhar a deficiência começa desmarcado. Alterar e salvar as escolhas suspende todos os compartilhamentos anteriores e incrementa suas revisões; o aluno precisa autorizar novamente. Edições ainda não salvas impedem novas autorizações, mas não impedem revogar uma autorização já existente. A revogação bloqueia novas consultas, sem prometer apagar cópias já recebidas pelos docentes. Papéis são resolvidos no banco por turma. Outros alunos não consultam essas informações.
 
-Professor → Adaptações (`/professor/adaptacoes`): seleciona missão e versão, consulta somente pedidos compartilhados e pode usar os apoios genéricos indicados como ponto de partida. Pode preparar uma adaptação sem qualquer declaração de deficiência. Define enunciado, exemplo opcional, apoios, etapa ou missão inteira e destinatários (turma ou alunos ativos selecionados). Os objetivos e critérios originais continuam visíveis e não são alterados. Precisa confirmar revisão antes de salvar. Em uma versão publicada, a adaptação revisada fica disponível aos destinatários; em rascunho, aguarda a publicação. Há edição com revisão otimista e remoção. Uma versão nova não herda automaticamente adaptações. Missão arquivada é somente consulta para docentes.
+Professor → Adaptações (`/professor/adaptacoes`): seleciona atividade e versão, consulta somente pedidos compartilhados e pode usar os apoios genéricos indicados como ponto de partida. Pode preparar uma adaptação sem qualquer declaração de deficiência. Define enunciado, exemplo opcional, apoios, etapa ou atividade inteira e destinatários (turma ou alunos ativos selecionados). Os objetivos e critérios originais continuam visíveis e não são alterados. Precisa confirmar revisão antes de salvar. Em uma versão publicada, a adaptação revisada fica disponível aos destinatários; em rascunho, aguarda a publicação. Há edição com revisão otimista e remoção. Uma versão nova não herda automaticamente adaptações. Atividade arquivada é somente consulta para docentes.
 
 ## Gemini
 
-A geração reutiliza a integração Gemini de apoios, com dois rascunhos estruturados: instruções claras e exemplo comentado. O docente seleciona até três materiais e confirma a prévia do conteúdo. São enviados objetivos, enunciado original da missão ou etapa, critérios de avaliação, materiais textuais escolhidos e rótulos genéricos de apoios selecionados. Identidade, deficiência autodeclarada, respostas dos alunos, preferências privadas e registros de compartilhamento não são consultados para montar o prompt. IDs dos destinatários não são enviados. Materiais didáticos devem ser conferidos para não conter dados pessoais ou confidenciais.
+A geração reutiliza a integração Gemini de apoios, com dois rascunhos estruturados: instruções claras e exemplo comentado. O docente seleciona até três materiais e confirma a prévia do conteúdo. São enviados objetivos, enunciado original da atividade ou etapa, critérios de avaliação, materiais textuais escolhidos e rótulos genéricos de apoios selecionados. Identidade, deficiência autodeclarada, respostas dos alunos, preferências privadas e registros de compartilhamento não são consultados para montar o prompt. IDs dos destinatários não são enviados. Materiais didáticos devem ser conferidos para não conter dados pessoais ou confidenciais.
 
 Retorno validado em JSON, separado do editor até o professor escolher usar o rascunho. Usar desmarca a revisão. Nenhuma adaptação é salva ou publicada pela geração. Não há interpretação de imagem, transcrição de gravação nem geração de voz. Cotas, timeout, idempotência e autorização são os mesmos da assistência existente. A geração real depende de `AI_ENABLED`, `GEMINI_API_KEY` e `GEMINI_MODEL` configurados no backend; o fluxo manual funciona com IA desativada. Não foi realizada chamada ao provedor real sem credencial.
 
 ## Formatos de entrega
 
-O professor pode liberar áudio e arquivo de texto, mantendo o editor de texto disponível. As permissões das adaptações destinadas ao aluno na versão publicada se somam e valem para a entrega da missão inteira, mesmo quando um enunciado é exibido em apenas uma etapa. O servidor verifica essa permissão em cada salvamento. Um aluno não consegue obter um formato ou enunciado destinado somente a outro. A preferência do aluno, sozinha, não libera formatos.
+O professor pode liberar áudio e arquivo de texto, mantendo o editor de texto disponível. As permissões das adaptações destinadas ao aluno na versão publicada se somam e valem para a entrega da atividade inteira, mesmo quando um enunciado é exibido em apenas uma etapa. O servidor verifica essa permissão em cada salvamento. Um aluno não consegue obter um formato ou enunciado destinado somente a outro. A preferência do aluno, sozinha, não libera formatos.
 
 - Texto no editor: até 12 mil caracteres, como antes.
 - Áudio: até 30 segundos, seleção até 10 MB, convertido no navegador para WAV PCM mono de 16 kHz e 16 bits. O backend verifica e reconstrói o formato canônico antes de persistir. Resumo textual é opcional para não exigir a duplicação da resposta em áudio. A adequação e a acessibilidade dessa alternativa para os envolvidos precisam ser combinadas com o docente.
@@ -40,11 +40,11 @@ Limites: 20 adaptações por versão; 50 destinatários por adaptação; enuncia
 | Escolhas próprias | GET/PATCH /v1/me/learning-needs |
 | Autorização por turma | GET/PATCH /v1/classrooms/{id}/needs-sharing |
 | Pedidos compartilhados para docentes | GET /v1/classrooms/{id}/learning-needs |
-| Adaptações para docentes | GET/POST /v1/missions/{id}/adaptations |
-| Editar adaptação | PATCH /v1/missions/{id}/adaptations/{planId} |
-| Remover adaptação | POST /v1/missions/{id}/adaptations/{planId}/remove |
-| Enunciados e formatos do próprio aluno | GET /v1/missions/{id}/my-adaptations |
-| Salvar entrega com formatos opcionais | POST /v1/missions/{id}/submissions |
+| Adaptações para docentes | GET/POST /v1/activities/{id}/adaptations |
+| Editar adaptação | PATCH /v1/activities/{id}/adaptations/{planId} |
+| Remover adaptação | POST /v1/activities/{id}/adaptations/{planId}/remove |
+| Enunciados e formatos do próprio aluno | GET /v1/activities/{id}/my-adaptations |
+| Salvar entrega com formatos opcionais | POST /v1/activities/{id}/submissions |
 | Ler áudio autorizado | GET /v1/submissions/{id}/audio |
 | Ler arquivo de texto autorizado | GET /v1/submissions/{id}/text-file |
 

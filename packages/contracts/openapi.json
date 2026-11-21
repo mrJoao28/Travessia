@@ -11,7 +11,7 @@
     }
   ],
   "paths": {
-    "/v1/missions/{id}/material-sources": {
+    "/v1/activities/{id}/material-sources": {
       "get": {
         "operationId": "materialSources",
         "security": [
@@ -359,7 +359,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-sources/{sourceId}": {
+    "/v1/activities/{id}/material-sources/{sourceId}": {
       "delete": {
         "operationId": "deleteMaterialSource",
         "security": [
@@ -444,7 +444,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-adaptations": {
+    "/v1/activities/{id}/material-adaptations": {
       "get": {
         "operationId": "materialAdaptations",
         "security": [
@@ -512,9 +512,23 @@
                             "maxLength": 100
                           },
                           "studentId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "audience": {
                             "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
+                            "enum": [
+                              "student",
+                              "classroom"
+                            ]
                           },
                           "status": {
                             "type": "string",
@@ -701,6 +715,7 @@
                           "versionId",
                           "sourceId",
                           "studentId",
+                          "audience",
                           "status",
                           "settings",
                           "pages",
@@ -797,6 +812,13 @@
                     "minLength": 1,
                     "maxLength": 100
                   },
+                  "audience": {
+                    "type": "string",
+                    "enum": [
+                      "student",
+                      "classroom"
+                    ]
+                  },
                   "pages": {
                     "minItems": 1,
                     "maxItems": 40,
@@ -878,7 +900,6 @@
                 "required": [
                   "versionId",
                   "sourceId",
-                  "studentId",
                   "pages",
                   "settings",
                   "requestKey"
@@ -920,9 +941,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -1109,6 +1144,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -1156,7 +1192,7 @@
         }
       }
     },
-    "/v1/missions/{id}/original-materials": {
+    "/v1/activities/{id}/original-materials": {
       "post": {
         "operationId": "releaseOriginalMaterial",
         "security": [
@@ -1254,9 +1290,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -1443,6 +1493,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -1490,7 +1541,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-adaptations/{adaptationId}": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}": {
       "patch": {
         "operationId": "editMaterial",
         "security": [
@@ -1654,9 +1705,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -1843,6 +1908,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -1973,7 +2039,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-adaptations/{adaptationId}/render": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}/render": {
       "post": {
         "operationId": "renderMaterial",
         "security": [
@@ -2059,9 +2125,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -2248,6 +2328,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -2295,7 +2376,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-adaptations/{adaptationId}/release": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}/release": {
       "post": {
         "operationId": "releaseMaterial",
         "security": [
@@ -2386,9 +2467,23 @@
                       "maxLength": 100
                     },
                     "studentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "audience": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
+                      "enum": [
+                        "student",
+                        "classroom"
+                      ]
                     },
                     "status": {
                       "type": "string",
@@ -2575,6 +2670,7 @@
                     "versionId",
                     "sourceId",
                     "studentId",
+                    "audience",
                     "status",
                     "settings",
                     "pages",
@@ -2622,7 +2718,7 @@
         }
       }
     },
-    "/v1/missions/{id}/my-materials": {
+    "/v1/activities/{id}/my-materials": {
       "get": {
         "operationId": "learnerMaterials",
         "security": [
@@ -2685,7 +2781,7 @@
                           "scope": {
                             "type": "string",
                             "enum": [
-                              "mission",
+                              "activity",
                               "individual"
                             ]
                           },
@@ -2696,6 +2792,11 @@
                               "ready",
                               "failed"
                             ]
+                          },
+                          "expiresAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                           },
                           "document": {
                             "maxItems": 40,
@@ -2861,7 +2962,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-assets/{assetId}/{kind}": {
+    "/v1/activities/{id}/material-assets/{assetId}/{kind}": {
       "get": {
         "operationId": "materialAsset",
         "security": [
@@ -4485,7 +4586,7 @@
         }
       }
     },
-    "/v1/missions/{id}/adaptations": {
+    "/v1/activities/{id}/adaptations": {
       "get": {
         "operationId": "adaptationPlans",
         "security": [
@@ -4919,7 +5020,7 @@
         }
       }
     },
-    "/v1/missions/{id}/adaptations/{planId}": {
+    "/v1/activities/{id}/adaptations/{planId}": {
       "patch": {
         "operationId": "updateAdaptation",
         "security": [
@@ -5190,7 +5291,7 @@
         }
       }
     },
-    "/v1/missions/{id}/adaptations/{planId}/remove": {
+    "/v1/activities/{id}/adaptations/{planId}/remove": {
       "post": {
         "operationId": "removeAdaptation",
         "security": [
@@ -5297,7 +5398,7 @@
         }
       }
     },
-    "/v1/missions/{id}/my-adaptations": {
+    "/v1/activities/{id}/my-adaptations": {
       "get": {
         "operationId": "learnerAdaptations",
         "security": [
@@ -5696,7 +5797,7 @@
         }
       }
     },
-    "/v1/missions/{id}/strategy-recipients": {
+    "/v1/activities/{id}/strategy-recipients": {
       "get": {
         "operationId": "strategyRecipients",
         "security": [
@@ -5815,7 +5916,7 @@
         }
       }
     },
-    "/v1/missions/{id}/strategy-plans": {
+    "/v1/activities/{id}/strategy-plans": {
       "get": {
         "operationId": "strategyPlans",
         "security": [
@@ -6322,7 +6423,7 @@
         }
       }
     },
-    "/v1/missions/{id}/strategy-plans/{planId}": {
+    "/v1/activities/{id}/strategy-plans/{planId}": {
       "patch": {
         "operationId": "updateStrategyPlan",
         "security": [
@@ -6645,7 +6746,7 @@
         }
       }
     },
-    "/v1/missions/{id}/strategy-plans/{planId}/remove": {
+    "/v1/activities/{id}/strategy-plans/{planId}/remove": {
       "post": {
         "operationId": "removeStrategyPlan",
         "security": [
@@ -6752,7 +6853,7 @@
         }
       }
     },
-    "/v1/missions/{id}/supports": {
+    "/v1/activities/{id}/supports": {
       "get": {
         "operationId": "missionSupports",
         "security": [
@@ -6881,7 +6982,7 @@
         }
       }
     },
-    "/v1/missions/{id}/support-audio/{itemId}": {
+    "/v1/activities/{id}/support-audio/{itemId}": {
       "get": {
         "operationId": "supportAudio",
         "security": [
@@ -6970,7 +7071,7 @@
         }
       }
     },
-    "/v1/missions/{id}/ai-supports": {
+    "/v1/activities/{id}/ai-supports": {
       "post": {
         "operationId": "generateSupports",
         "security": [
@@ -7373,7 +7474,8 @@
                             "type": "string",
                             "enum": [
                               "student",
-                              "teacher"
+                              "teacher",
+                              "monitor"
                             ]
                           }
                         },
@@ -7484,7 +7586,8 @@
                       "type": "string",
                       "enum": [
                         "student",
-                        "teacher"
+                        "teacher",
+                        "monitor"
                       ]
                     }
                   },
@@ -7597,7 +7700,8 @@
                             "type": "string",
                             "enum": [
                               "student",
-                              "teacher"
+                              "teacher",
+                              "monitor"
                             ]
                           },
                           "active": {
@@ -7806,6 +7910,13 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "student",
+                              "monitor"
+                            ]
+                          },
                           "reusable": {
                             "type": "boolean"
                           },
@@ -7822,6 +7933,7 @@
                         },
                         "required": [
                           "id",
+                          "role",
                           "reusable",
                           "createdAt",
                           "expiresAt"
@@ -7905,6 +8017,13 @@
                 "properties": {
                   "reusable": {
                     "type": "boolean"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "student",
+                      "monitor"
+                    ]
                   }
                 },
                 "additionalProperties": false
@@ -7933,6 +8052,13 @@
                       "type": "string",
                       "pattern": "^[A-HJ-NP-Z2-9]{8}$"
                     },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "student",
+                        "monitor"
+                      ]
+                    },
                     "reusable": {
                       "type": "boolean"
                     },
@@ -7951,6 +8077,7 @@
                     "id",
                     "token",
                     "code",
+                    "role",
                     "reusable",
                     "createdAt",
                     "expiresAt"
@@ -8129,7 +8256,8 @@
                       "type": "string",
                       "enum": [
                         "student",
-                        "teacher"
+                        "teacher",
+                        "monitor"
                       ]
                     }
                   },
@@ -8174,7 +8302,7 @@
         }
       }
     },
-    "/v1/classrooms/{id}/missions": {
+    "/v1/classrooms/{id}/activities": {
       "get": {
         "operationId": "missions",
         "security": [
@@ -9175,7 +9303,7 @@
         }
       }
     },
-    "/v1/missions/{id}": {
+    "/v1/activities/{id}": {
       "get": {
         "operationId": "mission",
         "security": [
@@ -9732,6 +9860,15 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "carryForwardMaterialIds": {
+                    "maxItems": 30,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
                   }
                 },
                 "required": [
@@ -10149,7 +10286,7 @@
         }
       }
     },
-    "/v1/missions/{id}/publish": {
+    "/v1/activities/{id}/publish": {
       "post": {
         "operationId": "publish",
         "security": [
@@ -10598,7 +10735,7 @@
         }
       }
     },
-    "/v1/missions/{id}/archive": {
+    "/v1/activities/{id}/archive": {
       "post": {
         "operationId": "archive",
         "security": [
@@ -11033,7 +11170,7 @@
         }
       }
     },
-    "/v1/missions/{id}/submissions": {
+    "/v1/activities/{id}/submissions": {
       "post": {
         "operationId": "saveSubmission",
         "security": [
@@ -12611,7 +12748,7 @@
         }
       }
     },
-    "/v1/missions/{id}/ai-drafts": {
+    "/v1/activities/{id}/ai-drafts": {
       "post": {
         "operationId": "generate",
         "security": [

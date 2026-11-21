@@ -36,12 +36,12 @@ export async function fixture(page: Page, failActivity = false, disabilities: st
     return route.fulfill({status:404,json:{}});
   });
   await page.goto('/professor/estrategias');
-  await expect(page.getByRole('heading',{name:'PDF da missão e apoios opcionais',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'PDF da atividade e apoios opcionais',exact:true})).toBeVisible();
   return Object.assign(()=>sent,{activity:()=>activity,original:()=>original});
 }
 
 export async function addPdf(page:Page,student='student-a'){
  if(student)await page.getByLabel('Aluno da turma',{exact:true}).selectOption(student);
- await page.getByLabel('Adicionar PDF à missão',{exact:true}).setInputFiles({name:'rotas.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
- await expect(page.getByText(/PDF da missão · 1 página · aparece para toda a turma após publicar/)).toBeVisible();
+ await page.getByLabel('Adicionar PDF à atividade',{exact:true}).setInputFiles({name:'rotas.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
+ await expect(page.getByText(/PDF da atividade · 1 página · aparece para toda a turma após publicar/)).toBeVisible();
 }

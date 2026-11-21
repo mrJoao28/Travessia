@@ -25,7 +25,7 @@ export async function proxyBackend(
     allowInternalHttp: process.env.API_INTERNAL_ALLOW_HTTP,
   },
 ) {
-  const maxBodyBytes = group === "v1" && /^missions\/[^/]+\/material-sources$/.test(path.join("/")) && request.method === "POST" ? PDF_UPLOAD_BODY_BYTES : group === "v1" && /^missions\/[^/]+\/material-adaptations\/[^/]+$/.test(path.join("/")) && request.method === "PATCH" ? PDF_EDIT_BODY_BYTES : group === "v1" && /^missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)$/.test(path.join("/")) && ["POST", "PATCH"].includes(request.method) ? 2 * 1024 * 1024 : 64 * 1024;
+  const maxBodyBytes = group === "v1" && /^(?:missions|activities)\/[^/]+\/material-sources$/.test(path.join("/")) && request.method === "POST" ? PDF_UPLOAD_BODY_BYTES : group === "v1" && /^(?:missions|activities)\/[^/]+\/material-adaptations\/[^/]+$/.test(path.join("/")) && request.method === "PATCH" ? PDF_EDIT_BODY_BYTES : group === "v1" && /^(?:missions|activities)\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)$/.test(path.join("/")) && ["POST", "PATCH"].includes(request.method) ? 2 * 1024 * 1024 : 64 * 1024;
   if (!path.length || path.some((segment) => !/^[a-zA-Z0-9_-]+$/.test(segment)))
     return failure(400, "INVALID_PATH", "Caminho inválido.");
   if (group === "auth" && !authPaths.has(path.join("/")))
@@ -126,7 +126,7 @@ export async function proxyBackend(
     if (value) headers.set(key, value);
   }
   const media = group === "v1" && request.method === "GET" &&
-    path.length === 5 && path[0] === "missions" && path[2] === "material-assets";
+    path.length === 5 && ["activities", "missions"].includes(path[0]) && path[2] === "material-assets";
   const range = request.headers.get("range");
   if (media && range && /^bytes=\d*-\d*$/.test(range)) headers.set("range", range);
   // The API must explicitly trust the public frontend origin, never the internal hostname.

@@ -56,7 +56,7 @@ export function SupportGenerator({ missionId, version, stepId, selected, onApply
         setApproved(false); setDraft(null); request.current = null;
         setMaterialIds(old => e.target.checked ? [...old, m.id] : old.filter(id => id !== m.id));
       }} />{m.title}</label>)}
-      {!version.materials.length && <p>Adicione material textual à missão para usar a assistência.</p>}
+      {!version.materials.length && <p>Adicione material textual à atividade para usar a assistência.</p>}
       <details><summary>Conferir o conteúdo que será enviado</summary><p>Objetivos: {version.objectives.join("; ")}</p>
         {stepId && <p>Etapa: {version.steps.find(s => s.id === stepId)?.title} — {version.steps.find(s => s.id === stepId)?.instructions}</p>}
         {version.materials.filter(m => materialIds.includes(m.id)).map(m => <div key={m.id}><h4>{m.title}</h4><p className="submission-content">{m.text}</p></div>)}

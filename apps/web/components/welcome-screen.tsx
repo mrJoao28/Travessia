@@ -42,7 +42,7 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
           {error && !(expired&&invitation) && <div className="form-error" role="alert" ref={errorRef} tabIndex={-1}><p>{error}</p>
             {expired ? <Link className="text-link" href={invitationHref("/login",invitation)}>Entrar na minha conta</Link> : !authenticated && <button className="text-button" onClick={() => setRetry(retry + 1)}>Tentar novamente</button>}
           </div>}
-          {expired&&invitation&&<section className="form-stack"><h2>Você recebeu um convite de turma</h2><p>Entre na sua conta ou crie uma conta de aluno para continuar. Depois, você confirma sua entrada na turma.</p><Link className="button" href={invitationHref('/login',invitation)}>Entrar na minha conta</Link><Link className="text-link" href={invitationHref('/cadastro',invitation)}>Criar conta de aluno</Link></section>}
+          {expired&&invitation&&<section className="form-stack"><h2>Você recebeu um convite de turma</h2><p>Entre na sua conta ou crie uma conta para continuar. Depois, você confirma sua entrada na turma.</p><Link className="button" href={invitationHref('/login',invitation)}>Entrar na minha conta</Link><Link className="text-link" href={invitationHref('/cadastro',invitation)}>Criar conta</Link></section>}
           {authenticated && <>
             {invitation&&<p className="notice">Você recebeu um convite. Confirme sua entrada na turma abaixo.</p>}
             <p>Bem-vindo ao Travessia, {name}. {initialSpace ? "Sua conta está pronta para começar." : "Escolha seu próximo passo."}</p>
@@ -57,7 +57,7 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
               try {
                 const room = space === "professor" ? await api("createClassroom", { body: { name: value } }) : await api("acceptInvite", { body: { token: token! } });
                 if(space==="aluno")clearInvitation();
-                router.replace(`/${space}?turma=${encodeURIComponent(room.id)}`); router.refresh();
+                router.replace(`/${room.role === 'monitor' ? 'professor' : space}?turma=${encodeURIComponent(room.id)}`); router.refresh();
               } catch (reason) {
                 setError(reason instanceof ApiError && reason.code === "INVALID_INVITATION"
                   ? "Este convite está indisponível ou expirou. Peça um novo código ao professor."
@@ -68,7 +68,7 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
               }
             }}>
               <h2>{space === "professor" ? "Crie sua primeira turma" : "Entre na sua turma"}</h2>
-              <p>{space === "professor" ? "Dê um nome à turma. Depois você poderá convidar os alunos e preparar a primeira missão." : "Cole o link do convite ou digite o código curto que o professor compartilhou. Ainda não recebeu? Você pode entrar depois."}</p>
+              <p>{space === "professor" ? "Dê um nome à turma. Depois você poderá convidar os alunos e preparar a primeira atividade." : "Cole o link do convite ou digite o código curto que o professor compartilhou. Ainda não recebeu? Você pode entrar depois."}</p>
               <label htmlFor="welcome-value">{space === "professor" ? "Nome da turma" : "Código de convite"}
                 <input id="welcome-value" name="value" required maxLength={space === "professor" ? 200 : 2048} minLength={1}
                   value={value} onChange={e=>setValue(e.target.value)} autoComplete="off" disabled={pending} />
@@ -81,12 +81,12 @@ export function WelcomeScreen({ initialSpace }: { initialSpace?: StartingSpace }
               <ol>
                 {space==="professor"?<>
                   <li>Convide os alunos com um link ou código curto.</li>
-                  <li>Crie uma missão, adicione um PDF e revise os apoios antes de publicar.</li>
+                  <li>Crie uma atividade, adicione um PDF e revise os apoios antes de publicar.</li>
                   <li>Acompanhe as entregas e escreva feedback.</li>
                 </>:<>
-                  <li>Abra a primeira missão publicada pela turma.</li>
+                  <li>Abra a primeira atividade publicada pela turma.</li>
                   <li>Consulte os materiais e apoios, faça uma etapa por vez e salve seu rascunho.</li>
-                  <li>Envie a atividade e volte à missão para consultar o feedback.</li>
+                  <li>Envie sua resposta e volte à atividade para consultar o feedback.</li>
                 </>}
               </ol>
               <Link className="text-link" href={`/previa/${space}/primeiros-passos`}>Ver um exemplo na prévia</Link>

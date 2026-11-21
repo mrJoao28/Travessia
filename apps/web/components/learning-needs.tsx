@@ -36,7 +36,7 @@ export function LearningNeeds({ classrooms }: { classrooms: Classroom[] }) {
           {options.supports.map(o => <label className="check" key={o.id}><input type="checkbox" checked={needs.supports.includes(o.id)} onChange={e => select("supports", o.id, e.target.checked)} />{o.label}</label>)}
         </fieldset>
         <fieldset disabled={busy} className="strategy-fields form-stack"><legend>Como você prefere responder às atividades?</legend>
-          <p className="small">Estas são preferências. O professor confirma os formatos adequados a cada missão.</p>
+          <p className="small">Estas são preferências. O professor confirma os formatos adequados a cada atividade.</p>
           {options.formats.map(o => <label className="check" key={o.id}><input type="checkbox" checked={needs.preferredFormats.includes(o.id)} onChange={e => select("preferredFormats", o.id, e.target.checked)} />{o.label}</label>)}
         </fieldset>
         <details><summary>Informar deficiência autodeclarada (opcional)</summary><p>Essa informação não determina suas adaptações. Por padrão, permanece privada.</p>

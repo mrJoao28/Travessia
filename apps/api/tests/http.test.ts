@@ -181,6 +181,10 @@ test('perfil rejeita promoção, troca de dono, campos excluídos e disciplinas 
 });
 test('rascunho privado, publicação com revisão explícita e versões imutáveis', async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  const canonical = (await request(`/v1/activities/${created.id}`, main)).json;
+  const legacy = (await request(`/v1/missions/${created.id}`, main)).json;
+  assert.equal(canonical.id, created.id); assert.equal(legacy.id, created.id);
+  assert.equal(canonical.draftVersion.title, fixture.title);
   await request(`/v1/missions/${created.id}`, a, 'GET', undefined, 404);
   await request(`/v1/missions/${created.id}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: false }, 400);
   const published = (await request(`/v1/missions/${created.id}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true })).json;
@@ -274,6 +278,46 @@ test('código curto da turma é privado, reutilizável, transacional e desativá
  await request('/v1/invitations/accept',three.cookie,'POST',{token:expired.code},400);
  // Failed attempts, including valid-shaped guesses, are bounded per authenticated account.
  for(let i=0;i<21;i++){const response=await fetch(base+'/v1/invitations/accept',{method:'POST',headers:{cookie:three.cookie,origin:config.origin,'Content-Type':'application/json'},body:JSON.stringify({token:'ZZZZZZZZ'})});assert.ok([400,429].includes(response.status));if(i===20)assert.equal(response.status,429);}
+});
+test('monitor entra por convite único e apenas prepara rascunhos da turma', async () => {
+  const monitor = await provision('monitor-invite-test');
+  const outsider = await provision('monitor-invite-outsider');
+  await request(`/v1/classrooms/${workshop}/invitations`, a, 'POST', { role: 'monitor' }, 404);
+  await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { role: 'monitor', reusable: true }, 400);
+  const invitation = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { role: 'monitor' })).json;
+  assert.equal(invitation.reusable, false);
+  assert.equal(invitation.role, 'monitor');
+  assert.ok((await request(`/v1/classrooms/${workshop}/invitations`, main)).json.items.some((item: {id: string; role: string}) => item.id === invitation.id && item.role === 'monitor'));
+  const consumed = await Promise.all([monitor, outsider].map(async person => {
+    const response = await fetch(base + '/v1/invitations/accept', { method: 'POST', headers: { cookie: person.cookie, origin: config.origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: invitation.code }) });
+    return { status: response.status, body: await response.json(), person };
+  }));
+  assert.deepEqual(consumed.map(item => item.status).sort(), [200, 400]);
+  const joined = consumed.find(item => item.status === 200)!;
+  assert.equal(joined.body.role, 'monitor');
+  await request('/v1/invitations/accept', consumed.find(item => item.status === 400)!.person.cookie, 'POST', { token: invitation.token }, 400);
+  const rooms = (await request('/v1/classrooms', joined.person.cookie)).json.items;
+  assert.ok(rooms.some((room: {id: string; role: string}) => room.id === workshop && room.role === 'monitor'));
+  const draft = (await request(`/v1/classrooms/${workshop}/missions`, joined.person.cookie, 'POST', fixture)).json;
+  assert.equal(draft.status, 'draft');
+  await request(`/v1/classrooms/${workshop}/missions`, a, 'POST', fixture, 404);
+  assert.equal((await request(`/v1/missions/${draft.id}`, joined.person.cookie)).json.draftVersion.id, draft.draftVersion.id);
+  const edited = (await request(`/v1/missions/${draft.id}`, joined.person.cookie, 'PATCH', { ...fixture, title: 'Rascunho preparado pelo monitor', expectedDraftVersionId: draft.draftVersion.id })).json;
+  assert.equal(edited.draftVersion.title, 'Rascunho preparado pelo monitor');
+  await request(`/v1/missions/${draft.id}/publish`, joined.person.cookie, 'POST', { versionId: edited.draftVersion.id, reviewed: true }, 404);
+  await request(`/v1/missions/${draft.id}/archive`, joined.person.cookie, 'POST', {}, 404);
+  await request(`/v1/missions/${draft.id}/submissions`, joined.person.cookie, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/members`, joined.person.cookie, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/invitations`, joined.person.cookie, 'POST', { role: 'monitor' }, 404);
+  await request(`/v1/classrooms/demo-class-programacao/missions`, joined.person.cookie, 'GET', undefined, 404);
+  await request(`/v1/missions/${draft.id}`, '', 'GET', undefined, 401);
+  const ownerView = (await request(`/v1/missions/${draft.id}`, main)).json;
+  assert.equal(ownerView.draftVersion.id, edited.draftVersion.id);
+  await request(`/v1/missions/${draft.id}`, a, 'PATCH', { ...fixture, expectedDraftVersionId: edited.draftVersion.id }, 404);
+  const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: joined.person.user.id, classroomId: workshop } } });
+  await request(`/v1/classrooms/${workshop}/members/${member.id}`, main, 'DELETE');
+  await request(`/v1/missions/${draft.id}`, joined.person.cookie, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/missions`, joined.person.cookie, 'POST', fixture, 404);
 });
 test('barreiras só chegam ao professor com compartilhamento explícito', async () => {
   await request('/v1/barriers/demo-barrier-private', main, 'GET', undefined, 404);
@@ -590,7 +634,7 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
     const items = (await request(`${path}/my-materials?versionId=${versionId}`, cookie)).json.items;
     assert.equal(items.length, 1);
     assert.deepEqual({ id: items[0].id, title: items[0].title, mode: items[0].mode, scope: items[0].scope, status: items[0].status },
-      { id: source.id, title: 'Material da turma.pdf', mode: 'original', scope: 'mission', status: 'ready' });
+      { id: source.id, title: 'Material da turma.pdf', mode: 'original', scope: 'activity', status: 'ready' });
     assert.deepEqual(items[0].document, []);
     const pdf = await fetch(`${base}${path}/material-assets/${source.id}/pdf`, { headers: { cookie } });
     assert.equal(pdf.status, 200);
@@ -607,9 +651,18 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
   await request(`${path}/material-assets/${source.id}/pdf`, b, 'GET', undefined, 404);
   await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } }, data: { active: true } });
 
-  const next = (await request(path, main, 'PATCH', { ...fixture, title: 'Nova versão sem PDF herdado', expectedDraftVersionId: null })).json;
+  const next = (await request(path, main, 'PATCH', { ...fixture, title: 'Nova versão com PDF selecionado', expectedDraftVersionId: null, carryForwardMaterialIds: [source.id] })).json;
+  const copied = (await request(`${path}/material-sources?versionId=${next.draftVersion.id}`, main)).json.items[0];
+  assert.notEqual(copied.id, source.id);
+  assert.equal(copied.status, 'ready');
   await request(`${path}/publish`, main, 'POST', { versionId: next.draftVersion.id, reviewed: true });
-  assert.deepEqual((await request(`${path}/my-materials?versionId=${next.draftVersion.id}`, a)).json.items, []);
+  const retained = (await request(`${path}/material-sources?versionId=${next.draftVersion.id}`, main)).json.items[0];
+  assert.ok(new Date(retained.expiresAt).getTime() > Date.now() + 300 * 86400000, 'published material follows the one year retention policy');
+  const carriedItems = (await request(`${path}/my-materials?versionId=${next.draftVersion.id}`, a)).json.items;
+  assert.equal(carriedItems[0].id, copied.id);
+  const carriedPdf = await fetch(`${base}${path}/material-assets/${copied.id}/pdf`, { headers: { cookie: a } });
+  assert.equal(carriedPdf.status, 200);
+  assert.deepEqual(Buffer.from(await carriedPdf.arrayBuffer()), bytes);
   await request(`${path}/material-assets/${source.id}/pdf`, a, 'GET', undefined, 404);
 });
 
@@ -811,6 +864,39 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
  assert.equal((await request(`${path}/my-materials?versionId=${next.draftVersion.id}`,a)).json.items.length,0);
  assert.equal(providerCalls,before,'Disponibilizar original não chama IA');
  assert.equal(await db.materialAdaptation.count({where:{sourceId:source.id,status:{in:['queued','generating','rendering']}}}),0);
+});
+test('PDF adaptado para toda a turma: revisão, publicação e acesso apenas aos alunos ativos',async()=>{
+ const mission=(await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
+ const versionId=mission.draftVersion.id,path=`/v1/missions/${mission.id}`;
+ const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Arquivo compartilhado',base64:Buffer.from('%PDF-1.4\nconteudo comum').toString('base64'),requestKey:randomUUID()})).json;
+ await db.materialSource.update({where:{id:source.id},data:{status:'ready',pageCount:1,pages:[{page:1,text:'Texto de referência.',hasVisual:false,ocr:false}]}});
+ const input={versionId,sourceId:source.id,audience:'classroom',pages:[1],settings:{supports:['large-print'],fontSize:'22',color:'default',useAi:false,approvedForProvider:false},requestKey:randomUUID()};
+ await request(`${path}/material-adaptations`,main,'POST',{...input,studentId:'demo-student-1'},400);
+ await request(`${path}/material-adaptations`,main,'POST',{...input,audience:'student'},400);
+ const queued=(await request(`${path}/material-adaptations`,main,'POST',input)).json;
+ assert.equal(queued.studentId,null);assert.equal(queued.audience,'classroom');
+ assert.equal((await request(`${path}/material-adaptations`,main,'POST',input)).json.id,queued.id);
+ const worker=new MaterialWorker(db,config,async()=>{throw new Error('IA não solicitada');},async()=>{throw new Error('Extração não solicitada');},async filename=>{await writeFile(filename,'%PDF-adaptado');});
+ await worker.tick();
+ const draft=(await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items.find((item:{id:string})=>item.id===queued.id);
+ assert.equal(draft.status,'draft');
+ await request(`${path}/material-adaptations/${queued.id}/render`,main,'POST',{expectedRevision:draft.revision});
+ await worker.tick();
+ await request(`${path}/material-adaptations/${queued.id}/release`,main,'POST',{expectedRevision:draft.revision,reviewed:true});
+ await request(`${path}/material-assets/${queued.id}/pdf`,a,'GET',undefined,404);
+ await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
+ for(const cookie of [a,b]){
+  const items=(await request(`${path}/my-materials?versionId=${versionId}`,cookie)).json.items;
+  assert.deepEqual(items.map((item:{mode:string})=>item.mode),['original','adapted']);
+  const asset=await fetch(`${base}${path}/material-assets/${queued.id}/pdf`,{headers:{cookie}});
+  assert.equal(asset.status,200);assert.equal(await asset.text(),'%PDF-adaptado');
+ }
+ await request(`${path}/material-assets/${queued.id}/pdf`,otherTeacher,'GET',undefined,404);
+ await db.membership.update({where:{userId_classroomId:{userId:'demo-student-2',classroomId:workshop}},data:{active:false}});
+ await request(`${path}/material-assets/${queued.id}/pdf`,b,'GET',undefined,404);
+ await db.membership.update({where:{userId_classroomId:{userId:'demo-student-2',classroomId:workshop}},data:{active:true}});
+ await request(`${path}/material-adaptations/${queued.id}`,main,'DELETE');
+ assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,1);
 });
 test('narração integral: quatro páginas preservadas, descrição IA separada e voz exclusivamente local', { timeout: 30000 }, async () => {
   const mission = (await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;

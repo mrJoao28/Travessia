@@ -15,7 +15,7 @@ export function NavLink({
   compact?: boolean;
 }) {
   const pathname = usePathname();
-  const active = pathname === href || (href.endsWith("/professor/missoes") && pathname.startsWith(`${href}/`));
+  const active = pathname === href || (href.endsWith("/professor/atividades") && pathname.startsWith(`${href}/`));
   return (
     <NavigationHint label={label} enabled={compact}><Link
       href={href}

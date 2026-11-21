@@ -4,12 +4,12 @@ import type { ApiBody, ApiResponse } from '../../apps/web/lib/api.generated';
 
 async function fixture(page: Page, failSave = false) {
   const version: NonNullable<ApiResponse<'mission'>['publishedVersion']> = { id: 'version-support', missionId: 'mission-support',
-    title: 'Missão fictícia', description: 'Conteúdo de teste.', objectives: ['Comparar propostas.'], criteria: ['Justificar a escolha.'],
+    title: 'Atividade fictícia', description: 'Conteúdo de teste.', objectives: ['Comparar propostas.'], criteria: ['Justificar a escolha.'],
     source: 'manual', dueAt: null, createdAt: '2026-10-30T00:00:00.000Z', materials: [{ id: "material-support", title: "Material fictício", text: "Compare custo e clareza.", hasFile: false }],
     steps: [{ id: 'step-support', position: 1, title: 'Comparar', instructions: 'Compare propostas.', example: 'Compare duas propostas.' }] };
   const mission: ApiResponse<'mission'> = { id: version.missionId, classroomId: 'class-support', status: 'published', draftVersion: null, publishedVersion: version };
   const catalog: ApiResponse<'strategyCatalog'>['items'] = [
-    { id: 'step-checklist', title: 'Checklist do próximo passo', category: 'Planejamento', description: 'Organize as ações.', guidance: 'Revise para sua missão.', example: 'Liste os dados e confira os requisitos.' },
+    { id: 'step-checklist', title: 'Checklist do próximo passo', category: 'Planejamento', description: 'Organize as ações.', guidance: 'Revise para sua atividade.', example: 'Liste os dados e confira os requisitos.' },
     { id: 'context-glossary', title: 'Glossário contextual', category: 'Compreensão', description: 'Explique os termos.', guidance: 'Escolha termos da atividade.', example: 'Acervo: conjunto de livros.' },
   ];
   let submitted: ApiBody<'createStrategyPlan'> | undefined;
@@ -35,9 +35,9 @@ async function fixture(page: Page, failSave = false) {
     return route.fulfill({ status: 404, json: {} });
   });
   await page.goto('/professor/estrategias');
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da missão',{exact:true}).click();
+  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
   await page.getByText('Outros apoios: checklists, exemplos e orientações para a turma', { exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Escolha os apoios da missão', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Escolha os apoios da atividade', exact: true })).toBeVisible();
   return () => submitted;
 }
 

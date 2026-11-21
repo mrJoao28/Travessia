@@ -11,11 +11,11 @@ Frontend: login/recuperação acessíveis, lista/criação de turmas e fluxo de 
 
 Aceite: professor cria turma, aluno entra por convite, não há acesso de terceiros nem autopromoção de papel.
 
-## 2. Missões manuais
+## 2. Atividades manuais
 
 Backend: rascunho/publicação/versionamento, etapas e critérios. Frontend: editor acessível e leitor com navegação livre/apoios. Materiais textuais inicialmente; não habilitar upload real antes dos controles de segurança.
 
-Aceite: professor publica missão revisada e aluno vinculado acessa somente a versão permitida.
+Aceite: professor publica atividade revisada e aluno vinculado acessa somente a versão permitida.
 
 ## 3. Entregas, feedback e barreiras
 
@@ -31,4 +31,4 @@ Aceite: professor gera, revisa e publica; falha/cota esgotada é tratada e conte
 
 ## 5. Piloto e validação
 
-Uma turma e três missões. Revisão da fonte pedagógica quando recebida; testes de teclado, leitor de tela, zoom/contraste e pessoas com diferentes necessidades. Registrar resultado e limitações; revisar retenção, recuperação e custo. Só depois ampliar tutor, integrações e monetização automática.
+Uma turma e três atividades. Revisão da fonte pedagógica quando recebida; testes de teclado, leitor de tela, zoom/contraste e pessoas com diferentes necessidades. Registrar resultado e limitações; revisar retenção, recuperação e custo. Só depois ampliar tutor, integrações e monetização automática.

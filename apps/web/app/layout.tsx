@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Travessia · Aprender e avançar",
-  description: "Aprendizagem por missões, um passo de cada vez.",
+  description: "Aprendizagem por atividades, um passo de cada vez.",
 };
 
 export default function RootLayout({
