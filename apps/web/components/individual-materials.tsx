@@ -178,7 +178,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const locked=busy||!!pending||dirty||activityDirty;
   function chooseSource(id:string){setSourceId(id);setReaderView('original');setSelectedId('');setDocument([]);setEditText(false);setStep(1);setApproved(false);change();}
   function activityChanged(value:boolean){setActivityDirty(value);if(value)setReviewed(false);}
-  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo verificado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · ${source.downloadAllowed?'download permitido':'sem botão de download'} · disponível até ${new Date(source.expiresAt).toLocaleDateString('pt-BR')}`:labels[source.status]}</p></div></div>:null;
+  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo verificado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · disponível até ${new Date(source.expiresAt).toLocaleDateString('pt-BR')}`:labels[source.status]}</p></div></div>:null;
   if(loading)return <p role="status">Carregando alunos e materiais…</p>;
   const released=!!current&&current.status==='released'&&(forClassroom?current.studentId===null:current.studentId===studentId);
   const fileControl=<div className="workspace-file-control">
@@ -187,7 +187,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       <option value="" disabled>Escolher arquivo</option>
       {sources.map(file=><option key={file.id} value={file.id}>{file.title}</option>)}
     </select>}
-    {!archived&&<div className="material-upload-control form-stack"><label htmlFor="material-upload">Adicionar arquivo PDF</label><label className="check"><input type="checkbox" checked={downloadAllowed} disabled={locked} onChange={e=>setDownloadAllowed(e.target.checked)}/>Ao adicionar um PDF, disponibilizar também o botão de download</label><p className="small">Sem marcar, o aluno verá a prévia no site, sem um botão para baixar.</p><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
+    {!archived&&<div className="material-upload-control form-stack"><label htmlFor="material-upload">Adicionar arquivo PDF</label><label className="check"><input type="checkbox" checked={downloadAllowed} disabled={locked} onChange={e=>setDownloadAllowed(e.target.checked)}/>Ao adicionar um PDF, disponibilizar também o botão de download</label><p className="small">Sem marcar, o aluno verá as páginas da prévia no site, sem acesso ao PDF original.</p><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
   </div>;
   const comparison=<MaterialComparison missionId={missionId} source={source} adaptation={current} studentName={recipient} originalOnly={delivery==='original'} document={document} dirty={dirty} view={readerView} onViewChange={setReaderView} singleView fileControl={fileControl}/>;
   const canRelease=!archived&&step===3&&!released&&recipientChosen&&delivery==='adapted'&&current?.status==='ready';

@@ -488,7 +488,7 @@ export function LiveEditor({
                 <h3>Materiais da atividade</h3><p>Acrescente o PDF que toda a turma verá ao abrir esta atividade, depois que a versão for publicada. Apoios adaptados para alunos específicos são opcionais.</p>
                 <label htmlFor="editor-pdf-upload">Adicionar PDF à atividade</label>
                 <label className="check"><input type="checkbox" checked={pendingPdfDownloadAllowed} onChange={event=>setPendingPdfDownloadAllowed(event.target.checked)}/>Ao adicionar este PDF, disponibilizar também o botão de download</label>
-                <p className="small">Sem marcar, o aluno verá a prévia no site, sem um botão para baixar.</p>
+                <p className="small">Sem marcar, o aluno verá as páginas da prévia no site, sem acesso ao PDF original.</p>
                 <input ref={pdfField} id="editor-pdf-upload" type="file" accept="application/pdf,.pdf" onChange={e=>{
                   const file=e.currentTarget.files?.[0];
                   if(!file){restorePdfSelection(e.currentTarget,pendingPdf);return;}
