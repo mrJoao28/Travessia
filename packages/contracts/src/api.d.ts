@@ -938,6 +938,7 @@ export interface operations {
                             title: string;
                             /** @enum {string} */
                             status: "queued" | "extracting" | "ready" | "failed";
+                            downloadAllowed: boolean;
                             pageCount: number;
                             pages: {
                                 page: number;
@@ -981,6 +982,7 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     title: string;
+                    downloadAllowed: boolean;
                     base64: string;
                     /** Format: uuid */
                     requestKey: string;
@@ -1000,6 +1002,7 @@ export interface operations {
                         title: string;
                         /** @enum {string} */
                         status: "queued" | "extracting" | "ready" | "failed";
+                        downloadAllowed: boolean;
                         pageCount: number;
                         pages: {
                             page: number;
@@ -1675,6 +1678,7 @@ export interface operations {
                             scope?: "activity" | "individual";
                             /** @enum {string} */
                             status?: "processing" | "ready" | "failed";
+                            downloadAllowed: boolean;
                             /** Format: date-time */
                             expiresAt?: string;
                             document: {

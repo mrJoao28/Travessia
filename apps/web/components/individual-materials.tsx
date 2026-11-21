@@ -16,7 +16,7 @@ type Source = ApiResponse<"uploadMaterialSource">;
 type Adaptation = ApiResponse<"prepareMaterial">;
 type Document = ApiBody<"editMaterial">["document"];
 const classroomAudience = "__classroom__";
-export function IndividualMaterials({ missionId, versionId, classroomId, archived, version, initialFile, onFileReceived, onUnsavedChange }: { missionId: string; versionId: string; classroomId: string; archived: boolean; version?: NonNullable<ApiResponse<"mission">["draftVersion"]>; initialFile?: File | null; onFileReceived?: () => void; onUnsavedChange?: (dirty:boolean)=>void }) {
+export function IndividualMaterials({ missionId, versionId, classroomId, archived, version, initialFile, initialDownloadAllowed = false, onFileReceived, onUnsavedChange }: { missionId: string; versionId: string; classroomId: string; archived: boolean; version?: NonNullable<ApiResponse<"mission">["draftVersion"]>; initialFile?: File | null; initialDownloadAllowed?: boolean; onFileReceived?: () => void; onUnsavedChange?: (dirty:boolean)=>void }) {
   const [students, setStudents] = useState<ApiResponse<"strategyRecipients">["items"]>([]);
   const [shared, setShared] = useState<ApiResponse<"sharedLearningNeeds">["items"]>([]);
   const [sources, setSources] = useState<Source[]>([]);
@@ -29,6 +29,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const [activityDirty,setActivityDirty]=useState(false);
   const [step, setStep] = useState(1), [studentId, setStudentId] = useState("");
   const [delivery,setDelivery]=useState<"original"|"adapted">("original");
+  const [downloadAllowed,setDownloadAllowed]=useState(initialDownloadAllowed);
   const [supports, setSupports] = useState<MaterialSupport[]>([]);
   const [editText,setEditText]=useState(false);
   const [readerView,setReaderView]=useState<'original'|'prepared'>('original');
@@ -93,7 +94,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       if(!/\.pdf$/i.test(file.name) || file.size>PDF_MAX_BYTES || file.size<8)throw new Error(`Escolha um PDF de até ${PDF_MAX_MB} MB e ${PDF_MAX_PAGES} páginas, sem senha.`);
       const bytes=new Uint8Array(await file.arrayBuffer()); if(new TextDecoder().decode(bytes.slice(0,5))!=="%PDF-")throw new Error("Esse arquivo não é um PDF válido.");
       let binary="";for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
-      const result=await api("uploadMaterialSource",{params:{id:missionId},body:{versionId,title:file.name.slice(0,150),base64:btoa(binary),requestKey:uploadKey.current!}});
+      const result=await api("uploadMaterialSource",{params:{id:missionId},body:{versionId,title:file.name.slice(0,150),downloadAllowed,base64:btoa(binary),requestKey:uploadKey.current!}});
       setSources(old=>[...old.filter(s=>s.id!==result.id),result]);setSelectedId('');setDocument([]);setSourceId(result.id);setStep(1);setReaderView('original');setApproved(false);onFileReceived?.();setPageNumbers([]);change();setMessage("Arquivo recebido. Aguarde a verificação e extração das páginas.");
     });
   }
@@ -177,7 +178,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const locked=busy||!!pending||dirty||activityDirty;
   function chooseSource(id:string){setSourceId(id);setReaderView('original');setSelectedId('');setDocument([]);setEditText(false);setStep(1);setApproved(false);change();}
   function activityChanged(value:boolean){setActivityDirty(value);if(value)setReviewed(false);}
-  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo verificado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · disponível até ${new Date(source.expiresAt).toLocaleDateString('pt-BR')}`:labels[source.status]}</p></div></div>:null;
+  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo verificado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · ${source.downloadAllowed?'download permitido':'sem botão de download'} · disponível até ${new Date(source.expiresAt).toLocaleDateString('pt-BR')}`:labels[source.status]}</p></div></div>:null;
   if(loading)return <p role="status">Carregando alunos e materiais…</p>;
   const released=!!current&&current.status==='released'&&(forClassroom?current.studentId===null:current.studentId===studentId);
   const fileControl=<div className="workspace-file-control">
@@ -186,7 +187,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       <option value="" disabled>Escolher arquivo</option>
       {sources.map(file=><option key={file.id} value={file.id}>{file.title}</option>)}
     </select>}
-    {!archived&&<div className="material-upload-control"><label htmlFor="material-upload">Adicionar arquivo PDF</label><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
+    {!archived&&<div className="material-upload-control form-stack"><label htmlFor="material-upload">Adicionar arquivo PDF</label><label className="check"><input type="checkbox" checked={downloadAllowed} disabled={locked} onChange={e=>setDownloadAllowed(e.target.checked)}/>Ao adicionar um PDF, disponibilizar também o botão de download</label><p className="small">Sem marcar, o aluno verá a prévia no site, sem um botão para baixar.</p><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
   </div>;
   const comparison=<MaterialComparison missionId={missionId} source={source} adaptation={current} studentName={recipient} originalOnly={delivery==='original'} document={document} dirty={dirty} view={readerView} onViewChange={setReaderView} singleView fileControl={fileControl}/>;
   const canRelease=!archived&&step===3&&!released&&recipientChosen&&delivery==='adapted'&&current?.status==='ready';

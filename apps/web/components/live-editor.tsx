@@ -69,6 +69,7 @@ export function LiveEditor({
   const [stage, setStage] = useState(0);
   const [supportsDirty,setSupportsDirty]=useState(false);
   const [pendingPdf, setPendingPdf] = useState<File | null>(null);
+  const [pendingPdfDownloadAllowed, setPendingPdfDownloadAllowed] = useState(false);
   const pdfField = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (pdfField.current) restorePdfSelection(pdfField.current, pendingPdf);
@@ -486,6 +487,8 @@ export function LiveEditor({
               {!monitor && <section className="mission-file-entry form-stack" aria-label="Arquivos da atividade">
                 <h3>Materiais da atividade</h3><p>Acrescente o PDF que toda a turma verá ao abrir esta atividade, depois que a versão for publicada. Apoios adaptados para alunos específicos são opcionais.</p>
                 <label htmlFor="editor-pdf-upload">Adicionar PDF à atividade</label>
+                <label className="check"><input type="checkbox" checked={pendingPdfDownloadAllowed} onChange={event=>setPendingPdfDownloadAllowed(event.target.checked)}/>Ao adicionar este PDF, disponibilizar também o botão de download</label>
+                <p className="small">Sem marcar, o aluno verá a prévia no site, sem um botão para baixar.</p>
                 <input ref={pdfField} id="editor-pdf-upload" type="file" accept="application/pdf,.pdf" onChange={e=>{
                   const file=e.currentTarget.files?.[0];
                   if(!file){restorePdfSelection(e.currentTarget,pendingPdf);return;}
@@ -657,7 +660,7 @@ export function LiveEditor({
         {!monitor && stage === 2 && <div className="form-stack">
           {mission && storedVersion?.workMode === "group" && <GroupManager missionId={mission.id} />}
           {mission && <TeacherNeedsNotice classroomId={mission.classroomId} activityId={mission.id} />}
-          {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da atividade",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
+          {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da atividade",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} initialDownloadAllowed={pendingPdfDownloadAllowed} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
           <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da atividade, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
           {mission && storedVersion && !dirty && storedVersion.materials.length > 0 && (
             <details className="teacher-ai">

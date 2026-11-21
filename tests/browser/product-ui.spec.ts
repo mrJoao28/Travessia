@@ -105,6 +105,7 @@ test("rascunho de correção com IA exige autorização e validação docente an
   });
   await page.goto("/professor/entregas");
   await page.getByText("Consultar entrega e escrever feedback", { exact: true }).click();
+  await page.getByText("Preparar correção e feedback com IA (opcional)", { exact: true }).click();
   const generate = page.getByRole("button", { name: "Gerar sugestão de correção e feedback", exact: true });
   await expect(generate).toBeDisabled();
   await page.getByRole("checkbox", { name: /Revisei a resposta e autorizo enviar seu texto ao Gemini/ }).check();
