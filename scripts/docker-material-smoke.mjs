@@ -16,7 +16,7 @@ export async function materialSmoke(request, check, verifyPersistence) {
     studentCookie=signup.response.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');check(studentCookie,'Cadastro de teste não iniciou sessão.');
     const studentId=signup.json.user.id;
     await request('/api/v1/invitations/accept',{method:'POST',body:{token:invitation.token},sessionCookie:studentCookie});
-    const source=(await request(`${base}/material-sources`,{method:'POST',body:{versionId,title:'PDF Docker',downloadAllowed:false,base64:materialPdfFixture(false,4).toString('base64'),requestKey:crypto.randomUUID()}})).json;
+    const source=(await request(`${base}/material-sources`,{method:'POST',body:{versionId,title:'PDF Docker',downloadAllowed:true,base64:materialPdfFixture(false,4).toString('base64'),requestKey:crypto.randomUUID()}})).json;
     await waitFor(async()=> (await request(`${base}/material-sources?versionId=${versionId}`)).json.items.find(s=>s.id===source.id),s=>s.status==='ready');
     adaptation=(await request(`${base}/material-adaptations`,{method:'POST',body:{versionId,sourceId:source.id,studentId,pages:[1,2,3,4],settings:{supports:['large-print','narration'],fontSize:'22',color:'high',useAi:false,approvedForProvider:false},requestKey:crypto.randomUUID()}})).json;
     adaptation=await waitFor(async()=> (await list()).find(a=>a.id===adaptation.id),a=>a.status==='draft');
