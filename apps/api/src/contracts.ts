@@ -123,6 +123,7 @@ export const routes = {
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short }), query: empty, response: classroom },
   members: { method: 'get', path: '/v1/classrooms/{id}/members', body: empty, query: page,
     response: list(z.strictObject({ id, name: z.string(), role: z.enum(['student', 'teacher', 'monitor']), active: z.boolean() })) },
+  leaveClassroom: { method: 'post', path: '/v1/classrooms/{id}/leave', body: empty, query: empty, response: z.strictObject({ left: z.literal(true) }) },
   revokeMember: { method: 'delete', path: '/v1/classrooms/{id}/members/{memberId}', body: empty, query: empty, response: z.strictObject({ revoked: z.literal(true) }) },
   invitations: { method: 'get', path: '/v1/classrooms/{id}/invitations', body: empty, query: page, response: list(z.strictObject({ id, role: z.enum(['student', 'monitor']), reusable: z.boolean(), createdAt: date, expiresAt: date })) },
   invite: { method: 'post', path: '/v1/classrooms/{id}/invitations', body: z.strictObject({ reusable: z.boolean().optional(), role: z.enum(['student', 'monitor']).optional() }), query: empty,

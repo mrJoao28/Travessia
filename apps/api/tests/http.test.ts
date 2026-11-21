@@ -406,6 +406,27 @@ test('monitor entra por convite único e administra sua turma como professor', a
   await request(`/v1/missions/${draft.id}`, joined.person.cookie, 'GET', undefined, 404);
   await request(`/v1/classrooms/${workshop}/missions`, joined.person.cookie, 'POST', fixture, 404);
 });
+test('aluno e monitor podem sair da própria turma; docente e terceiros não podem', async () => {
+  const student = await provision('leave-classroom-student');
+  const studentInvite = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', {})).json;
+  assert.equal((await request('/v1/invitations/accept', student.cookie, 'POST', { token: studentInvite.code })).json.role, 'student');
+  assert.ok((await request('/v1/classrooms', student.cookie)).json.items.some((room: any) => room.id === workshop));
+  assert.deepEqual((await request(`/v1/classrooms/${workshop}/leave`, student.cookie, 'POST')).json, { left: true });
+  assert.ok(!(await request('/v1/classrooms', student.cookie)).json.items.some((room: any) => room.id === workshop));
+  await request(`/v1/classrooms/${workshop}/missions`, student.cookie, 'GET', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/leave`, student.cookie, 'POST', undefined, 404);
+
+  const monitor = await provision('leave-classroom-monitor');
+  const monitorInvite = (await request(`/v1/classrooms/${workshop}/invitations`, main, 'POST', { role: 'monitor' })).json;
+  assert.equal((await request('/v1/invitations/accept', monitor.cookie, 'POST', { token: monitorInvite.code })).json.role, 'monitor');
+  assert.deepEqual((await request(`/v1/classrooms/${workshop}/leave`, monitor.cookie, 'POST')).json, { left: true });
+  assert.ok(!(await request('/v1/classrooms', monitor.cookie)).json.items.some((room: any) => room.id === workshop));
+  await request(`/v1/classrooms/${workshop}/missions`, monitor.cookie, 'GET', undefined, 404);
+
+  const outsider = await provision('leave-classroom-outsider');
+  await request(`/v1/classrooms/${workshop}/leave`, outsider.cookie, 'POST', undefined, 404);
+  await request(`/v1/classrooms/${workshop}/leave`, main, 'POST', undefined, 404);
+});
 test('barreiras só chegam ao professor com compartilhamento explícito', async () => {
   await request('/v1/barriers/demo-barrier-private', main, 'GET', undefined, 404);
   await request('/v1/barriers/demo-barrier-private', a);

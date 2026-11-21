@@ -152,5 +152,19 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await student.setViewportSize({width:320,height:850});expect(await student.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect((await new AxeBuilder({page:student}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
   await student.screenshot({path:'test-results/reference-coherent-student-feedback.png',fullPage:true});
+  await student.goto('/aluno/turmas');
+  student.once('dialog', dialog => dialog.accept());
+  await student.getByRole('button',{name:'Sair da turma Turma do fluxo completo',exact:true}).click();
+  await expect(student.getByRole('heading',{name:'Turma do fluxo completo',exact:true})).toHaveCount(0);
+  expect((await student.request.get('/api/v1/classrooms').then(r=>r.json())).items.some((room:{id:string})=>room.id===classroom.id)).toBe(false);
+  const monitorInvitation=await post(teacher,`/api/v1/classrooms/${classroom.id}/invitations`,{role:'monitor'});
+  await post(other,'/api/v1/invitations/accept',{token:monitorInvitation.code});
+  await other.goto(`/professor/turmas?turma=${classroom.id}`);
+  await expect(other.getByRole('heading',{name:'Turma do fluxo completo',exact:true})).toBeVisible();
+  await expect(other.getByText('Monitor · vínculo ativo',{exact:true})).toBeVisible();
+  other.once('dialog', dialog => dialog.accept());
+  await other.getByRole('button',{name:'Sair da turma Turma do fluxo completo',exact:true}).click();
+  await expect(other.getByRole('heading',{name:'Turma do fluxo completo',exact:true})).toHaveCount(0);
+  expect((await other.request.get('/api/v1/classrooms').then(r=>r.json())).items.some((room:{id:string})=>room.id===classroom.id)).toBe(false);
  }finally{await Promise.allSettled(contexts.map(c=>c.close()));}
 });

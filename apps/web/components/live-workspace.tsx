@@ -270,6 +270,15 @@ function WorkspaceView({
                       >
                         Abrir turma
                       </button>
+                      {(room.role === "student" || room.role === "monitor") && (
+                        <LeaveClassroom
+                          classroom={room}
+                          onLeft={() => {
+                            if (selected === room.id) setSelected("");
+                            setReload((n) => n + 1);
+                          }}
+                        />
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -303,6 +312,30 @@ function WorkspaceView({
       )}
     </Workspace>
   );
+}
+
+function LeaveClassroom({ classroom, onLeft }: { classroom: Classroom; onLeft: () => void }) {
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
+  async function leave() {
+    if (pending || !window.confirm(`Sair da turma ${classroom.name}? Você perderá o acesso às atividades e entregas dessa turma.`)) return;
+    setPending(true);
+    setMessage("");
+    try {
+      await api("leaveClassroom", { params: { id: classroom.id }, body: {} });
+      onLeft();
+    } catch (reason) {
+      setMessage(errorMessage(reason));
+    } finally {
+      setPending(false);
+    }
+  }
+  return <div className="form-stack">
+    <button className="button button-outline" type="button" aria-label={`Sair da turma ${classroom.name}`} disabled={pending} onClick={() => void leave()}>
+      {pending ? "Saindo…" : "Sair da turma"}
+    </button>
+    {message && <p role="alert">{message}</p>}
+  </div>;
 }
 
 function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];classrooms:Classroom[] }) {
