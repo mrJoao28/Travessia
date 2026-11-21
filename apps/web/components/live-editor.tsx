@@ -167,7 +167,7 @@ export function LiveEditor({
         window.history.replaceState(
           null,
           "",
-          `/professor/missoes/${value.id}/editar`,
+          `/professor/atividades/${value.id}/editar`,
         );
       if (nextStage !== undefined) setStage(nextStage);
       if (forReview && value.draftVersion) {
@@ -180,16 +180,16 @@ export function LiveEditor({
     }
   }
   if (loading) return <p role="status">Abrindo rascunho…</p>;
-  if (loadError) return <section className="paper"><h1>Não foi possível abrir esta missão</h1><p role="alert">{loadError}</p><Link className="text-link" href="/professor/missoes">Voltar às minhas missões</Link></section>;
-  if (published && mission) return <section className="paper teacher-success"><p className="eyebrow">Missão publicada</p><h1>Pronto para sua turma!</h1><p role="status">Missão publicada pelo servidor e disponível para a turma.</p><p>Os apoios liberados para esta versão acompanham a missão. Você pode revisá-los ou acompanhar as entregas.</p><div className="actions"><Link className="button" href={`/professor/missoes/${mission.id}/apoios`}>Preparar apoios desta missão</Link><Link className="text-link" href="/professor/entregas">Acompanhar entregas</Link></div></section>;
+  if (loadError) return <section className="paper"><h1>Não foi possível abrir esta atividade</h1><p role="alert">{loadError}</p><Link className="text-link" href="/professor/atividades">Voltar às minhas atividades</Link></section>;
+  if (published && mission) return <section className="paper teacher-success"><p className="eyebrow">Atividade publicada</p><h1>Pronto para sua turma!</h1><p role="status">Atividade publicada pelo servidor e disponível para a turma.</p><p>Os apoios liberados para esta versão acompanham a atividade. Você pode revisá-los ou acompanhar as entregas.</p><div className="actions"><Link className="button" href={`/professor/atividades/${mission.id}/apoios`}>Preparar apoios desta atividade</Link><Link className="text-link" href="/professor/entregas">Acompanhar entregas</Link></div></section>;
   const storedVersion = mission?.draftVersion ?? mission?.publishedVersion;
   return (
     <div className="teacher-guide">
-      <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar missão"}</p><Link className="text-link" href="/professor/missoes">← Minhas missões</Link><h1>Vamos preparar sua missão</h1><p>Um passo de cada vez. Você revisa antes de publicar.</p></header>
-      <TeacherSteps labels={["Sobre a missão", "Etapas e materiais", "Apoios", "Revisão"]} current={stage} disabled={pending||supportsDirty} onBack={value => { setConfirmed(false); setReview(null); setStage(value); }} />
+      <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar atividade"}</p><Link className="text-link" href="/professor/atividades">← Minhas atividades</Link><h1>Vamos preparar sua atividade</h1><p>Um passo de cada vez. Você revisa antes de publicar.</p></header>
+      <TeacherSteps labels={["Sobre a atividade", "Etapas e materiais", "Apoios", "Revisão"]} current={stage} disabled={pending||supportsDirty} onBack={value => { setConfirmed(false); setReview(null); setStage(value); }} />
       <div className={`teacher-guide-grid${stage===2?" teacher-support-stage":""}`}><section className="paper teacher-editor-panel">
         <h2 ref={stageTitle} tabIndex={-1} id="editor-stage-title">{["O que a turma vai aprender?", "Como o aluno vai realizar a atividade?", "Quer oferecer alguma ajuda?", "Confira antes de publicar"][stage]}</h2>
-        <p className="muted">{["Dê um nome à missão e explique o que será aprendido e avaliado.", "Divida o trabalho em ações claras. Acrescente os materiais que o aluno vai consultar.", "Os apoios são opcionais. Você pode prepará-los agora ou depois da publicação.", "Confira o conteúdo completo. Só você pode autorizar a publicação."][stage]}</p>
+        <p className="muted">{["Dê um nome à atividade e explique o que será aprendido e avaliado.", "Divida o trabalho em ações claras. Acrescente os materiais que o aluno vai consultar.", "Os apoios são opcionais. Você pode prepará-los agora ou depois da publicação.", "Confira o conteúdo completo. Só você pode autorizar a publicação."][stage]}</p>
         {storedVersion?.source === "demo_fixture" && (
           <p className="notice">
             Rascunho fictício pré-criado para a demonstração, sem geração
@@ -222,7 +222,7 @@ export function LiveEditor({
           <fieldset className="editor-fields" disabled={pending || mission?.status === "archived"}>
             <div className="form-stack" data-editor-stage="0" hidden={stage !== 0}>
               <label htmlFor="editor-title">
-                Título da missão
+                Título da atividade
                 <input
                   placeholder="Ex.: Comparar soluções de acesso à informação"
                   id="editor-title"
@@ -435,9 +435,9 @@ export function LiveEditor({
               >
                 Adicionar etapa
               </button>
-              <section className="mission-file-entry form-stack" aria-label="Arquivos da missão">
-                <h3>Materiais da missão</h3><p>Acrescente o PDF que toda a turma verá ao abrir esta missão, depois que a versão for publicada. Apoios adaptados para alunos específicos são opcionais.</p>
-                <label htmlFor="editor-pdf-upload">Adicionar PDF à missão</label>
+              <section className="mission-file-entry form-stack" aria-label="Arquivos da atividade">
+                <h3>Materiais da atividade</h3><p>Acrescente o PDF que toda a turma verá ao abrir esta atividade, depois que a versão for publicada. Apoios adaptados para alunos específicos são opcionais.</p>
+                <label htmlFor="editor-pdf-upload">Adicionar PDF à atividade</label>
                 <input ref={pdfField} id="editor-pdf-upload" type="file" accept="application/pdf,.pdf" onChange={e=>{
                   const file=e.currentTarget.files?.[0];
                   if(!file){restorePdfSelection(e.currentTarget,pendingPdf);return;}
@@ -447,8 +447,8 @@ export function LiveEditor({
                   }
                   setPendingPdf(file);
                 }}/>
-                {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas para anexá-lo à missão; após a publicação e a verificação do arquivo, ele aparecerá para todos os alunos ativos da turma.</p>}
-                <p className="small">PDF de até {PDF_MAX_MB} MB e {PDF_MAX_PAGES} páginas, sem senha ou conteúdo ativo. A publicação da missão disponibiliza este arquivo para toda a turma. Apoios individuais continuam opcionais.</p>
+                {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas para anexá-lo à atividade; após a publicação e a verificação do arquivo, ele aparecerá para todos os alunos ativos da turma.</p>}
+                <p className="small">PDF de até {PDF_MAX_MB} MB e {PDF_MAX_PAGES} páginas, sem senha ou conteúdo ativo. A publicação da atividade disponibiliza este arquivo para toda a turma. Apoios individuais continuam opcionais.</p>
               </section>
               <h3>Conteúdo em texto (opcional)</h3>
               {input.materials.map((material, index) => (
@@ -520,7 +520,7 @@ export function LiveEditor({
                 Adicionar material textual
               </button>
               <p className="small">
-                O PDF anexado à missão ficará disponível para toda a turma depois da publicação. Você pode preparar versões adaptadas para alunos específicos, se desejar.
+                O PDF anexado à atividade ficará disponível para toda a turma depois da publicação. Você pode preparar versões adaptadas para alunos específicos, se desejar.
               </p>
             </div>
           </fieldset>
@@ -581,7 +581,7 @@ export function LiveEditor({
                   adopt(value);
                   setPublished(true);
                   setMessage(
-                    "Missão publicada pelo servidor e disponível para a turma.",
+                    "Atividade publicada pelo servidor e disponível para a turma.",
                   );
                 } catch (reason) {
                   setMessage(errorMessage(reason));
@@ -590,13 +590,13 @@ export function LiveEditor({
                 }
               }}
             >
-              Publicar missão
+              Publicar atividade
             </button>
           </section>
         )}
         {stage === 2 && <div className="form-stack">
-          {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da missão",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
-          <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da missão, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
+          {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da atividade",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
+          <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da atividade, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
           {mission && storedVersion && !dirty && storedVersion.materials.length > 0 && (
             <details className="teacher-ai">
               <summary>Refazer instruções de uma etapa com Gemini</summary>
@@ -633,8 +633,8 @@ export function LiveEditor({
               : "Este rascunho ainda não foi criado no servidor."}
         </p>
       </section>
-      <aside className="teacher-guidance paper"><h2>{stage === 0 ? "Uma boa missão tem" : "Você está no controle"}</h2><ul><li>Um objetivo claro</li><li>Uma ação possível</li><li>Critérios compreensíveis</li></ul><p>O aluno verá as instruções e os critérios antes de começar.</p><p className="small">{mission ? "Rascunho salvo no servidor. Alterações precisam ser salvas novamente." : "Seu texto permanece nesta tela. O primeiro salvamento acontece depois de preencher as etapas."}</p></aside></div>
-      {supportsDirty&&<p className="notice" role="status">Salve ou descarte os ajustes abertos nos apoios antes de avançar para a revisão da missão.</p>}
+      <aside className="teacher-guidance paper"><h2>{stage === 0 ? "Uma boa atividade tem" : "Você está no controle"}</h2><ul><li>Um objetivo claro</li><li>Uma ação possível</li><li>Critérios compreensíveis</li></ul><p>O aluno verá as instruções e os critérios antes de começar.</p><p className="small">{mission ? "Rascunho salvo no servidor. Alterações precisam ser salvas novamente." : "Seu texto permanece nesta tela. O primeiro salvamento acontece depois de preencher as etapas."}</p></aside></div>
+      {supportsDirty&&<p className="notice" role="status">Salve ou descarte os ajustes abertos nos apoios antes de avançar para a revisão da atividade.</p>}
       <footer className="teacher-guide-footer"><div>{stage > 0 && <button type="button" className="text-button" disabled={pending||supportsDirty} onClick={() => { setConfirmed(false); setStage(stage - 1); }}>← Voltar</button>}<span className="small">Etapa {stage + 1} de 4</span></div><div className="actions">{stage > 0 && stage < 3 && <button type="button" className="text-button" disabled={pending||supportsDirty} onClick={() => void save()}>Salvar rascunho</button>}{stage < 3 && <button type="button" className="button" disabled={pending || supportsDirty || mission?.status === "archived"} onClick={() => { if (stage === 0) { if (validate(0)) setStage(1); } else void save(stage === 2, stage + 1); }}>{pending ? "Salvando…" : ["Continuar para as etapas →", "Salvar e continuar →", "Salvar e revisar"][stage]}</button>}</div></footer>
     </div>
   );

@@ -6,6 +6,13 @@ const config: NextConfig = {
   devIndicators: false,
   output: process.env.NEXT_STANDALONE === "true" ? "standalone" : undefined,
   outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
+  async redirects() {
+    return [
+      { source: "/aluno/missoes/:path*", destination: "/aluno/atividades/:path*", permanent: true },
+      { source: "/professor/missoes/:path*", destination: "/professor/atividades/:path*", permanent: true },
+      { source: "/previa/:role/missoes/:path*", destination: "/previa/:role/atividades/:path*", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
@@ -22,6 +29,10 @@ const config: NextConfig = {
       },
       {
         source: "/api/v1/missions/:id/material-assets/:assetId/pdf",
+        headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
+      {
+        source: "/api/v1/activities/:id/material-assets/:assetId/pdf",
         headers: [{ key: "X-Frame-Options", value: "SAMEORIGIN" }],
       },
     ];

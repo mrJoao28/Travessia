@@ -15,7 +15,7 @@ export function StudentHomePreview() {
     <>
       <div className="page-heading">
         <h1>Um passo de cada vez.</h1>
-        <p>Retome sua missão de onde parou.</p>
+        <p>Retome sua atividade de onde parou.</p>
       </div>
       <section className="mission-hero" aria-labelledby="mission-title">
         <div className="hero-copy">
@@ -29,7 +29,7 @@ export function StudentHomePreview() {
           </p>
           <ol
             className="stepper"
-            aria-label="Etapas da missão — exemplo fictício"
+            aria-label="Etapas da atividade — exemplo fictício"
           >
             {librarySteps.map((step, index) => (
               <li
@@ -50,12 +50,12 @@ export function StudentHomePreview() {
             ))}
           </ol>
           <div className="actions">
-            <Link className="button" href="/previa/aluno/missoes/biblioteca">
-              Continuar missão <Icon name="arrow" />
+            <Link className="button" href="/previa/aluno/atividades/biblioteca">
+              Continuar atividade <Icon name="arrow" />
             </Link>
             <Link
               className="text-link"
-              href="/previa/aluno/missoes/biblioteca#etapas"
+              href="/previa/aluno/atividades/biblioteca#etapas"
             >
               Ver todas as etapas
             </Link>
@@ -92,7 +92,7 @@ export function StudentHomePreview() {
               <div className="lesson-body">
                 <p className="eyebrow accent">Programação I</p>
                 <h3>
-                  <Link href="/previa/aluno/missoes/biblioteca">
+                  <Link href="/previa/aluno/atividades/biblioteca">
                     Planejar a solução
                   </Link>
                 </h3>
@@ -114,7 +114,7 @@ export function StudentHomePreview() {
           <p>Ajuste a experiência de estudo para suas necessidades.</p>
           <a
             className="support-option"
-            href="/previa/aluno/missoes/biblioteca#etapas"
+            href="/previa/aluno/atividades/biblioteca#etapas"
           >
             <Icon name="list" />
             Dividir em passos<span aria-hidden="true">›</span>

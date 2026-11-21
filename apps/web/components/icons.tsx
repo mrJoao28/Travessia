@@ -59,7 +59,7 @@ export function Brand() {
         />
       </svg>
       <strong>travessia</strong>
-      <small>APRENDIZAGEM POR MISSÕES</small>
+      <small>APRENDIZAGEM POR ATIVIDADES</small>
     </span>
   );
 }

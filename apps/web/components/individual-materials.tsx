@@ -175,7 +175,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const locked=busy||!!pending||dirty||activityDirty;
   function chooseSource(id:string){setSourceId(id);setReaderView('original');setSelectedId('');setDocument([]);setEditText(false);setStep(1);setApproved(false);change();}
   function activityChanged(value:boolean){setActivityDirty(value);if(value)setReviewed(false);}
-  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`PDF da missão · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · aparece para toda a turma após publicar`:labels[source.status]}</p></div></div>:null;
+  const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`PDF da atividade · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · aparece para toda a turma após publicar`:labels[source.status]}</p></div></div>:null;
   if(loading)return <p role="status">Carregando alunos e materiais…</p>;
   const released=!!current&&current.status==='released'&&current.studentId===studentId;
   const fileControl=<div className="workspace-file-control">
@@ -184,7 +184,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       <option value="" disabled>Escolher arquivo</option>
       {sources.map(file=><option key={file.id} value={file.id}>{file.title}</option>)}
     </select>}
-    {!archived&&<div className="material-upload-control"><label htmlFor="material-upload">Adicionar PDF à missão</label><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
+    {!archived&&<div className="material-upload-control"><label htmlFor="material-upload">Adicionar PDF à atividade</label><input id="material-upload" className="sr-only" type="file" accept="application/pdf,.pdf" disabled={locked} onChange={e=>{void upload(e.target.files?.[0]);e.target.value='';}}/></div>}
   </div>;
   const comparison=<MaterialComparison missionId={missionId} source={source} adaptation={current} studentName={student?.name} originalOnly={delivery==='original'} document={document} dirty={dirty} view={readerView} onViewChange={setReaderView} singleView fileControl={fileControl}/>;
   const canRelease=!archived&&step===3&&!released&&!!student&&(delivery==='original'||current?.status==='ready');
@@ -209,7 +209,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     });
   }
   return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material individual">
-    <header><h2>{student?`Apoios para ${student.name}`:'PDF da missão e apoios opcionais'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o aluno.'):'O PDF da missão aparece para toda a turma após a publicação. Selecione um aluno somente se quiser preparar apoios individuais.'}</p></header>
+    <header><h2>{student?`Apoios para ${student.name}`:'PDF da atividade e apoios opcionais'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o aluno.'):'O PDF da atividade aparece para toda a turma após a publicação. Selecione um aluno somente se quiser preparar apoios individuais.'}</p></header>
     {(error||message)&&<OperationStatus message={error||message} error={!!error}/>}
     {error&&<button className="text-button" type="button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo</button>}
     <div className="material-reference-desk">
@@ -230,10 +230,10 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
         </div>}
         {showActivity&&version&&student&&<StudentActivitySupport key={`${versionId}:${studentId}`} missionId={missionId} version={version} studentId={studentId} studentName={student.name} disabled={busy||!!pending} onDirty={activityChanged}/>}
         <div className="material-workspace-settings-content form-stack" hidden={showActivity&&!!student}>
-          {archived?<p className="notice">Missão arquivada. Consulte os materiais salvos abaixo.</p>:<>
+          {archived?<p className="notice">Atividade arquivada. Consulte os materiais salvos abaixo.</p>:<>
           {(step===1||step===3)&&supportOptions}
           {fileRow}
-          {!source&&<p className="small">Adicione um PDF para incluí-lo nos materiais desta missão. Para gerar uma versão adaptada, escolha um aluno e um apoio.</p>}
+          {!source&&<p className="small">Adicione um PDF para incluí-lo nos materiais desta atividade. Para gerar uma versão adaptada, escolha um aluno e um apoio.</p>}
           {source?.status==='failed'&&source.warnings.map(w=><p role="alert" key={w}>{w}</p>)}
           {source?.status==='ready'&&source.warnings.length>0&&<details>
             <summary>Pontos para conferir no PDF</summary>
@@ -253,7 +253,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <p className="small">Confirme as preferências com o aluno. Você confere a prévia antes de enviar.</p>
         </>}
         <div className="simple-material-actions">{delivery==='original'
-          ? <p className="small">O PDF original anexado à missão será mostrado a todos os alunos depois que você publicar. Não é necessário liberá-lo aluno por aluno.</p>
+          ? <p className="small">O PDF original anexado à atividade será mostrado a todos os alunos depois que você publicar. Não é necessário liberá-lo aluno por aluno.</p>
           : <button className="button" type="button" disabled={busy||!supports.length||!pageNumbers.length||ai&&!approved} onClick={()=>void prepare()}>Gerar prévia</button>}</div>
       </section>}
       {step===2&&<section className="paper form-stack">{pending||busy||!current?<PreparationProgress title={current?labels[current.status]:'Consultando a preparação'} detail={current?.status==='rendering'?'Gerando o PDF e a audiodescrição, quando escolhida.':current?.status==='generating'?'Preparando o conteúdo das páginas escolhidas.':'Aguardando o início do processamento.'}/>:<h3>{labels[current.status]}</h3>}{current?.error&&<p role="alert">{current.error}</p>}{(current?.status==='draft'||(current?.status==='failed'&&document.length>0))&&!pending&&<button type="button" className="button" disabled={busy} onClick={()=>void saveAndRender()}>Preparar prévia deste rascunho</button>}{(current?.status==='failed'||current?.error)&&<button className="button button-outline" onClick={()=>{setSelectedId('');setStep(1);change();}}>Voltar aos apoios</button>}</section>}

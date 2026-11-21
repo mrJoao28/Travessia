@@ -68,7 +68,7 @@ export function Workspace({
       ]
     : [
         [`${base}/professor`, "Minhas turmas", "users"],
-        [`${base}/professor/missoes`, "Missões", "book"],
+        [`${base}/professor/atividades`, "Atividades", "book"],
         [`${base}/professor/entregas`, "Entregas", "document"],
         ...(preview ? [[`${base}/professor/barreiras`, "Apoios e barreiras", "message"] as [string,string,IconName]] : []),
       ];
@@ -141,7 +141,7 @@ export function Workspace({
           <footer className="footer">
             {preview
               ? "Prévia de interface · dados fictícios · alterações não são salvas no banco"
-              : "Travessia · Aprendizagem por missões"}
+              : "Travessia · Aprendizagem por atividades"}
           </footer>
         </div>
       </div>

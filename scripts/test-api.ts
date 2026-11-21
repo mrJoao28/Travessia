@@ -27,7 +27,7 @@ const databaseDir = join(directory, 'data');
 writeFileSync(passwordFile, password, { mode: 0o600 });
 async function run(file: string, args: string[]) {
   await new Promise<void>((resolveRun, reject) => {
-    const child = spawn(process.execPath, [file, ...args], { stdio: 'inherit', env: process.env });
+    const child = spawn(file === process.execPath ? file : process.execPath, file === process.execPath ? args : [file, ...args], { stdio: 'inherit', env: process.env });
     child.on('error', reject); child.on('exit', code => code === 0 ? resolveRun() : reject(new Error('Verificação falhou.')));
   });
 }
@@ -38,7 +38,7 @@ try {
   phase = 'inicializar PostgreSQL';
   await execute(native.initdb, ['-D', databaseDir, '-U', 'postgres', '--pwfile', passwordFile, '-A', 'scram-sha-256', '--locale=C', '--encoding=UTF8'], { windowsHide: true });
   phase = 'iniciar PostgreSQL';
-  await execute(native.pg_ctl, ['-D', databaseDir, '-l', join(directory, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port}`, '-w', '-t', '30', 'start'], { windowsHide: true });
+  await execute(native.pg_ctl, ['-D', databaseDir, '-l', join(directory, 'postgres.log'), '-o', `-h 127.0.0.1 -p ${port} -c unix_socket_directories=''`, '-w', '-t', '30', 'start'], { windowsHide: true });
   started = true;
   phase = 'criar banco isolado';
   const admin = new PrismaClient({ datasourceUrl: `postgresql://postgres:${password}@127.0.0.1:${port}/postgres`, log: [] });
@@ -52,13 +52,14 @@ try {
   process.env.BETTER_AUTH_URL = 'http://localhost:3000'; process.env.TRUSTED_WEB_ORIGIN = 'http://localhost:3000';
   process.env.DEMO_USER_EMAIL = 'principal@example.invalid'; process.env.DEMO_USER_PASSWORD = randomBytes(3).toString('hex').slice(0, 5);
   process.env.AI_ENABLED = 'false';
+  process.env.TSX_TSCONFIG_PATH = resolve('apps/api/tsconfig.json');
   phase = 'verificar atualização do schema anterior sem perda de dados';
   const { verifyProfileMigration } = await import('./test-profile-migration.js');
   await verifyProfileMigration(directory, run);
   phase = 'aplicar migrations';
   await run('node_modules/prisma/build/index.js', ['migrate', 'deploy', '--schema', 'apps/api/prisma/schema.prisma']);
   phase = 'executar testes HTTP';
-  await run('node_modules/tsx/dist/cli.mjs', ['--tsconfig', 'apps/api/tsconfig.json', '--test', 'apps/api/tests/http.test.ts', 'apps/api/tests/entrypoint.test.ts']);
+  await run(process.execPath, ['--import', 'tsx', '--test', 'apps/api/tests/http.test.ts', 'apps/api/tests/entrypoint.test.ts']);
 } catch {
   console.error(`Testes API falharam na etapa: ${phase}. Confira a saída anterior.`); process.exitCode = 1;
 } finally {

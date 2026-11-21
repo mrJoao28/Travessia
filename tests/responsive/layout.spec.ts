@@ -59,19 +59,19 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   }
  }
  try{
-  for(const route of ['/','/login','/cadastro','/previa/professor','/previa/professor/missoes','/previa/professor/entregas','/previa/professor/barreiras','/previa/professor/perfil','/previa/aluno','/previa/aluno/turmas','/previa/aluno/entregas','/previa/aluno/feedback','/previa/aluno/apoios','/previa/aluno/barreiras','/previa/aluno/ajuda','/previa/aluno/primeiros-passos','/previa/professor/primeiros-passos']){
+  for(const route of ['/','/login','/cadastro','/previa/professor','/previa/professor/atividades','/previa/professor/entregas','/previa/professor/barreiras','/previa/professor/perfil','/previa/aluno','/previa/aluno/turmas','/previa/aluno/entregas','/previa/aluno/feedback','/previa/aluno/apoios','/previa/aluno/barreiras','/previa/aluno/ajuda','/previa/aluno/primeiros-passos','/previa/professor/primeiros-passos']){
    await page.goto(route);await expect(page.locator('h1').first()).toBeVisible();
    if(route.startsWith('/previa'))await expect(page.getByText('Preparando cenário fictício…',{exact:true})).toHaveCount(0);
    await capture(route.replaceAll('/','-')||'landing');
   }
-  await page.goto('/previa/professor/missoes/editor');await expect(page.getByLabel('Título da missão')).toBeVisible();
+  await page.goto('/previa/professor/atividades/editor');await expect(page.getByLabel('Título da atividade')).toBeVisible();
   await capture('editor-about');await page.getByRole('button',{name:'Continuar para as etapas →'}).click();await capture('editor-steps');
   await page.getByRole('button',{name:'Adicionar PDF de exemplo'}).click();
   await page.getByRole('button',{name:'Salvar e continuar →'}).click();await expect(page.getByLabel('Aluno da turma')).toBeVisible();await capture('editor-materials');
-  await page.getByRole('button',{name:'Revisar missão',exact:true}).click();await capture('editor-review');
-  await page.goto('/previa/professor/missoes/campus/adaptacoes');await expect(page.getByLabel('Aluno da turma')).toBeVisible();
+  await page.getByRole('button',{name:'Revisar atividade',exact:true}).click();await capture('editor-review');
+  await page.goto('/previa/professor/atividades/campus/adaptacoes');await expect(page.getByLabel('Aluno da turma')).toBeVisible();
   await page.getByRole('button',{name:'Atividade e entrega',exact:true}).click();await capture('materials-expanded');
-  await page.goto('/previa/aluno/missoes/campus');await expect(page.getByLabel('Planejamento e atividade')).toBeVisible();
+  await page.goto('/previa/aluno/atividades/campus');await expect(page.getByLabel('Planejamento e atividade')).toBeVisible();
   await page.getByRole('region',{name:'Materiais preparados para você'}).getByText('rotas-do-campus.pdf · Texto ampliado e espaçado',{exact:true}).click();
   await page.getByText('Transcrição do áudio',{exact:true}).click();await capture('student-material-audio');
   const mobile=profile.width<=1024;
@@ -85,12 +85,12 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await page.locator('#preferencias > summary').click();await capture('reading-panel');await page.keyboard.press('Escape');
   if(mobile)await expect(page.getByRole('dialog',{name:'Menu',exact:true})).toBeHidden();
   await page.locator('.account > summary').click();await capture('account-panel');await page.keyboard.press('Escape');
-  await productFixture(page,'teacher');await page.goto('/professor/missoes/test-mission/editar');
-  await expect(page.getByLabel('Título da missão',{exact:true})).toBeVisible();await capture('real-editor-about');
+  await productFixture(page,'teacher');await page.goto('/professor/atividades/test-mission/editar');
+  await expect(page.getByLabel('Título da atividade',{exact:true})).toBeVisible();await capture('real-editor-about');
   await page.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();await expect(page.getByRole('heading',{name:'Como o aluno vai realizar a atividade?',exact:true})).toBeVisible();await capture('real-editor-steps');
   await page.getByRole('button',{name:'Salvar e continuar →',exact:true}).click();await expect(page.getByRole('heading',{name:'Quer oferecer alguma ajuda?',exact:true})).toBeVisible();await capture('real-editor-supports');
   await page.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await expect(page.getByRole('heading',{name:'Revisão antes de publicar'})).toBeVisible();await capture('real-editor-review');
-  await productFixture(page,'student');await page.goto('/aluno/missoes/test-mission');await expect(page.getByRole('textbox',{name:'Planejamento e atividade',exact:true})).toBeVisible();await capture('real-student-mission');
+  await productFixture(page,'student');await page.goto('/aluno/atividades/test-mission');await expect(page.getByRole('textbox',{name:'Planejamento e atividade',exact:true})).toBeVisible();await capture('real-student-mission');
   await profileFixture(page);await page.getByRole('button',{name:'Adicionar disciplina e curso',exact:true}).click();await capture('real-profile-expanded');
   await fixture(page);await addPdf(page);await capture('real-material-options');
   await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();await capture('real-material-review');

@@ -17,7 +17,7 @@ test('todas as combinações públicas de PDF, áudio e transcrição têm arqui
   }
  }
 });
-test('rascunho não substitui a versão publicada e arquivamento retira a missão do percurso',()=>{
+test('rascunho não substitui a versão publicada e arquivamento retira a atividade do percurso',()=>{
  const m=initialPreview().missions[0];
  const draft={...m,title:'Texto ainda não publicado',revision:2,status:'draft' as const,publishedVersion:missionVersion(m)};
  assert.equal(publishedMission(draft)?.title,m.title);assert.equal(publishedMission(draft)?.revision,1);

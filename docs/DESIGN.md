@@ -2,7 +2,7 @@
 
 ## Direção
 
-Identidade próxima ao Mais Acesso Conecta, conforme nova solicitação do usuário e assets do arquivo `public.zip`. Interface universitária clara, superfícies brancas, azul institucional, azul suave e amarelo pontual. Manter a marca Travessia e a organização por missões. Preservar o logo original Mais Acesso Conecta; usar uma variante separada com azul clareado sobre superfícies escuras.
+Identidade próxima ao Mais Acesso Conecta, conforme nova solicitação do usuário e assets do arquivo `public.zip`. Interface universitária clara, superfícies brancas, azul institucional, azul suave e amarelo pontual. Manter a marca Travessia e a organização por atividades. Preservar o logo original Mais Acesso Conecta; usar uma variante separada com azul clareado sobre superfícies escuras.
 
 ## Tokens
 
@@ -41,7 +41,7 @@ Pares de contraste do tema escuro: texto/fundo 16,16:1; texto/superfície 13,48:
 
 ## Composição
 
-No tema claro, a sidebar é branca com marca Travessia, navegação azul e assinatura Mais Acesso Conecta. No tema escuro, superfícies, controles e artes usam as variantes escuras. O cabeçalho separa contexto, leitura, aparência e conta. Missão principal usa texto e etapas reais à esquerda e arte decorativa à direita. Área docente usa arte própria de planejamento. Login combina apresentação azul suave, ilustração fornecida e formulário branco no tema claro. Botões principais arredondados, ícones de linha e tipografia do sistema sem download externo.
+No tema claro, a sidebar é branca com marca Travessia, navegação azul e assinatura Mais Acesso Conecta. No tema escuro, superfícies, controles e artes usam as variantes escuras. O cabeçalho separa contexto, leitura, aparência e conta. Atividade principal usa texto e etapas reais à esquerda e arte decorativa à direita. Área docente usa arte própria de planejamento. Login combina apresentação azul suave, ilustração fornecida e formulário branco no tema claro. Botões principais arredondados, ícones de linha e tipografia do sistema sem download externo.
 
 No celular e tablet, um cabeçalho compacto reúne marca, botão Menu e conta. Os destinos e ajustes de leitura ficam em um painel modal aberto sob demanda; colunas viram uma e artes laterais são ocultadas. Conteúdo e controles permanecem disponíveis. As preferências de tema, contraste, tamanho e espaçamento são independentes; reduzir decoração remove as ilustrações. Testar também reflow a 320px, texto 200%, cores do sistema e movimento reduzido. As artes não contêm dados reais nem métricas.
 
@@ -51,7 +51,7 @@ Login, aluno, professor, leitor, editor, entregas e barreiras compartilham os me
 
 ## Preparação guiada docente
 
-Em 30/10/2026 o usuário aprovou aplicar as propostas de criação de missão em passos e adaptação com prévia. O professor vê três destinos principais, uma ação dominante por etapa e ajuda da IA opcional/recolhida. Os apoios ficam no contexto da missão, com versão e destinatários explícitos. Detalhes de persistência, revisão e validação: [TEACHER-INTERFACE.md](TEACHER-INTERFACE.md).
+Em 30/10/2026 o usuário aprovou aplicar as propostas de criação de atividade em passos e adaptação com prévia. O professor vê três destinos principais, uma ação dominante por etapa e ajuda da IA opcional/recolhida. Os apoios ficam no contexto da atividade, com versão e destinatários explícitos. Detalhes de persistência, revisão e validação: [TEACHER-INTERFACE.md](TEACHER-INTERFACE.md).
 
 ## Menu lateral recolhível
 

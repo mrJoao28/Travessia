@@ -1,5 +1,5 @@
 import { LiveWorkspace } from "../../../../../components/live-workspace";
-export const metadata = { title: "Editar missão · Travessia" };
+export const metadata = { title: "Editar atividade · Travessia" };
 export default async function Page({
   params,
 }: {

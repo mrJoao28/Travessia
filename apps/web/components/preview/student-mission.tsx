@@ -20,7 +20,7 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
   stepNavigation.current=false;
   heading.current?.focus({preventScroll:true});
  },[index]);
- if(!mission||!accessible)return <><PreviewHeading title="Esta missão ainda não está disponível" description="Rascunhos, versões não publicadas e turmas sem vínculo não aparecem para o aluno neste cenário."/><Link className="button" href="/previa/aluno">Voltar ao meu percurso</Link></>;
+ if(!mission||!accessible)return <><PreviewHeading title="Esta atividade ainda não está disponível" description="Rascunhos, versões não publicadas e turmas sem vínculo não aparecem para o aluno neste cenário."/><Link className="button" href="/previa/aluno">Voltar ao meu percurso</Link></>;
  const materials=state.materials.filter(m=>m.missionId===mission.id&&m.revision===mission.revision&&m.studentId===student.id&&m.released);
  const strategies=state.strategies.filter(s=>s.missionId===mission.id&&s.revision===mission.revision&&(!s.studentId||s.studentId===student.id)&&(s.step===null||s.step===index));
  const activity=state.activitySupports?.find(a=>a.missionId===mission.id&&a.revision===mission.revision&&a.studentId===student.id);
@@ -55,7 +55,7 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
   </div>
  </section>
  <details className="paper preview-student-context">
-  <summary>Objetivos e critérios da missão</summary>
+  <summary>Objetivos e critérios da atividade</summary>
   <h2>O que você vai aprender</h2><p className="submission-content">{mission.objectives}</p>
   <h3>Como sua atividade será avaliada</h3><p className="submission-content">{mission.criteria}</p>
  </details>
@@ -66,7 +66,7 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
  <section className="paper form-stack" data-preview-dirty={dirty}><h2>Sua atividade</h2><label htmlFor="preview-answer">{missionId==='biblioteca'?'Planejamento da solução':'Planejamento e atividade'}</label><textarea id="preview-answer" rows={5} maxLength={20000} value={content} onChange={e=>{setContent(e.target.value);setDirty(true);}}/>
  {formats.includes('audio')&&<div className="form-stack"><label className="check"><input type="checkbox" checked={audio} onChange={e=>{setAudio(e.target.checked);setDirty(true);}}/>Anexar resposta fictícia em áudio</label>{audio&&<><audio controls preload="none" aria-label="Resposta fictícia da atividade" src="/preview/resposta-marina.mp3"/><p className="small">Voz sintética, identificada como resposta fictícia. Nenhum microfone ou arquivo pessoal é enviado.</p></>}</div>}
  {formats.includes('text_file')&&<><label className="check"><input type="checkbox" checked={textFile} onChange={e=>{setTextFile(e.target.checked);setDirty(true);}}/>Anexar arquivo de texto fictício (.txt)</label>{textFile&&<a href="/preview/resposta-exemplo.txt" download>Conferir anexo fictício</a>}</>}
- <div className="actions"><button className="button button-outline" onClick={()=>save('draft')}>Salvar rascunho</button><button className="button" onClick={()=>save('submitted')}>Enviar atividade</button></div>{message&&<p role="status">{message}</p>}<p className="small">Rascunho e envio são simulados neste navegador, sem envio ao servidor.</p><Link className="text-link" href={`/previa/aluno/barreiras?missao=${mission.id}`}>Encontrou uma barreira nesta etapa?</Link></section>
+ <div className="actions"><button className="button button-outline" onClick={()=>save('draft')}>Salvar rascunho</button><button className="button" onClick={()=>save('submitted')}>Enviar atividade</button></div>{message&&<p role="status">{message}</p>}<p className="small">Rascunho e envio são simulados neste navegador, sem envio ao servidor.</p><Link className="text-link" href={`/previa/aluno/barreiras?atividade=${mission.id}`}>Encontrou uma barreira nesta etapa?</Link></section>
  {saved?.feedback&&<section className="paper"><h2>Feedback da professora</h2><p>{saved.feedback}</p><p className="small">Exemplo de orientação docente, sem nota automática.</p></section>}
  </div>
  </>;

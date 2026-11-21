@@ -87,7 +87,7 @@ function WorkspaceView({
           ? permitted.filter((room) => room.id === selected)
           : permitted;
         const preparingEditor = role === "professor" && ["editor", "nova", "turmas", "ajuda", "barreiras"].includes(section);
-        const needsDeliveries = role === "aluno" || ["", "missoes", "entregas", "feedback"].includes(section);
+        const needsDeliveries = role === "aluno" || ["", "atividades", "entregas", "feedback"].includes(section);
         // Fetch a directly requested mission once. A student can belong to
         // several classrooms, and the API correctly rejects that mission ID
         // when it is queried in a classroom that does not own it.
@@ -133,7 +133,7 @@ function WorkspaceView({
   );
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
-  const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : ({ adaptacoes: "Adaptar material", estrategias: "Adaptar material", apoios: "Adaptar material", missoes: "Suas missões", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
+  const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : ({ adaptacoes: "Adaptar material", estrategias: "Adaptar material", apoios: "Adaptar material", atividades: "Suas atividades", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
   const materialWorkspace=role==="professor"&&["adaptacoes","estrategias","apoios"].includes(section);
   const guidedEditor = role === "professor" && ["editor", "nova"].includes(section);
   return (
@@ -155,7 +155,7 @@ function WorkspaceView({
         <h1>{title}</h1>
         <p>
           {materialWorkspace ? "Prepare, compare e confira antes de disponibilizar ao aluno." : role === "aluno"
-            ? (entries.some(entry=>entry.mission.publishedVersion)?"Retome sua missão de onde parou.":"Suas atividades serão mostradas aqui.")
+            ? (entries.some(entry=>entry.mission.publishedVersion)?"Retome sua atividade de onde parou.":"Suas atividades serão mostradas aqui.")
             : "Organize objetivos, etapas e devolutivas para sua turma."}
         </p>
       </div>}
@@ -192,13 +192,13 @@ function WorkspaceView({
           {!permitted.length ? (
             <section className="paper">
               <h2>Nenhuma turma neste espaço</h2>
-              <p>{role === "aluno" ? "Peça um convite ao professor para começar sua primeira missão." : "Crie sua primeira turma para preparar missões e convidar os alunos."}</p>
+              <p>{role === "aluno" ? "Peça um convite ao professor para começar sua primeira atividade." : "Crie sua primeira turma para preparar atividades e convidar os alunos."}</p>
               {role === "aluno" && section !== "turmas" && <Link className="button" href="/aluno/turmas">Entrar na minha turma</Link>}
               <p><Link className="text-link" href={`/boas-vindas?espaco=${role === "aluno" ? "professor" : "aluno"}`}>{role === "aluno" ? "Quero preparar uma turma como professor" : "Quero participar como aluno"}</Link></p>
             </section>
           ) : (
             <>
-              {!["missao", "editor", "nova"].includes(section) && !missionId && !(role === "professor" && ["adaptacoes", "estrategias", "apoios"].includes(section)) &&
+              {!["atividade", "editor", "nova"].includes(section) && !missionId && !(role === "professor" && ["adaptacoes", "estrategias", "apoios"].includes(section)) &&
                 (role === "professor" || !!section || !!selected) && (
                   <label
                     className="classroom-selector"
@@ -224,7 +224,7 @@ function WorkspaceView({
                     </select>
                   </label>
                 )}
-              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "missao" && missionId && profile ? (
+              {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "atividade" && missionId && profile ? (
                 <LiveMission
                   key={`${profile.id}:${missionId}`}
                   viewerId={profile.id}
@@ -270,7 +270,7 @@ function WorkspaceView({
               ) : section === "ajuda" ? (
                 <section className="paper">
                   <h2>Um apoio no caminho</h2>
-                  {role === "professor" ? <><ol><li>Abra uma turma e escolha Criar missão.</li><li>Preencha o objetivo e os critérios, depois organize as etapas.</li><li>Salve o rascunho. Prepare apoios se necessário.</li><li>Confira a revisão e confirme a publicação.</li><li>Consulte as entregas para escrever o feedback.</li></ol><p>A IA é opcional. O professor sempre revisa antes de publicar.</p><Link className="text-link" href="/professor">Voltar às minhas turmas</Link></> : <p>
+                  {role === "professor" ? <><ol><li>Abra uma turma e escolha Criar atividade.</li><li>Preencha o objetivo e os critérios, depois organize as etapas.</li><li>Salve o rascunho. Prepare apoios se necessário.</li><li>Confira a revisão e confirme a publicação.</li><li>Consulte as entregas para escrever o feedback.</li></ol><p>A IA é opcional. O professor sempre revisa antes de publicar.</p><Link className="text-link" href="/professor">Voltar às minhas turmas</Link></> : <p>
                     Consulte os objetivos e critérios, escolha uma etapa e use
                     “Ver um exemplo” quando precisar. As preferências ficam em
                     “Ajustar leitura”. Para comunicar uma barreira, use o
@@ -312,7 +312,7 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
     return (
       <section className="paper">
         <h2>{classrooms.length===1?`Você entrou na turma ${classrooms[0].name}.`:"Você já está nas suas turmas."}</h2>
-        <p>A primeira missão ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Enquanto isso, ajuste a leitura no início da página ou consulte Meus apoios para registrar o que ajuda você a aprender.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
+        <p>A primeira atividade ainda será publicada. Quando o professor disponibilizar uma atividade, ela aparecerá aqui.</p><p>Enquanto isso, ajuste a leitura no início da página ou consulte Meus apoios para registrar o que ajuda você a aprender.</p><Link className="text-link" href="/aluno/turmas">Consultar minhas turmas</Link>
       </section>
     );
   const version = entry.mission.publishedVersion;
@@ -331,8 +331,8 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
           <h2 id="mission-title">{version.title}</h2>
           <p>{version.description}</p>
           <p className="small">Etapa {index + 1} de {version.steps.length} · {current?.title}</p>
-          <Link className="button" href={`/aluno/missoes/${entry.mission.id}`}>
-            {firstMission ? "Começar minha primeira missão" : "Continuar missão"}
+          <Link className="button" href={`/aluno/atividades/${entry.mission.id}`}>
+            {firstMission ? "Começar minha primeira atividade" : "Continuar atividade"}
             <Icon name="arrow" />
           </Link>
         </div>
@@ -358,23 +358,23 @@ function TeacherDashboard({
   const invitationsRef=useRef<HTMLDetailsElement>(null);
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
-  if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para criar missões, preparar apoios e acompanhar as entregas.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul><Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link></section>;
+  if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para criar atividades, preparar apoios e acompanhar as entregas.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul><Link className="text-link" href="/professor/turmas">Gerenciar turmas e convites</Link></section>;
   return (
     <>
       <section className="paper teacher-overview">
         <div>
           <p className="eyebrow accent">Planejar, acompanhar e incluir</p>
-          <h2>{classroom?.name ?? "Minhas missões"}</h2>
+          <h2>{classroom?.name ?? "Minhas atividades"}</h2>
           <p>
-            {hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira missão seguindo os passos abaixo."}
+            {hasPublished?"Consulte as entregas e os relatos compartilhados. Rascunhos permanecem privados até a publicação.":"Sua turma está pronta. Convide os alunos e prepare a primeira atividade seguindo os passos abaixo."}
           </p>
           <div className="actions">
             {classroom && hasPublished && (
               <Link
                 className="button"
-                href={`/professor/missoes/nova?turma=${encodeURIComponent(classroom.id)}`}
+                href={`/professor/atividades/nova?turma=${encodeURIComponent(classroom.id)}`}
               >
-                Criar missão
+                Criar atividade
               </Link>
             )}
             <Link className="text-link" href="/professor/entregas">
@@ -417,12 +417,12 @@ function TeacherDashboard({
             {mission.status !== "archived" && (
               <Link
                 className="button"
-                href={`/professor/missoes/${mission.id}/editar`}
+                href={`/professor/atividades/${mission.id}/editar`}
               >
                 Editar e revisar
               </Link>
             )}
-            <Link className="text-link" href={`/professor/missoes/${mission.id}/apoios`}>Preparar apoios</Link>
+            <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Preparar apoios</Link>
           </li>
         ))}
       </ul>
@@ -481,7 +481,7 @@ function SubmissionList({
               ))}
               <Link
                 className="text-link"
-                href={`/${role}/missoes/${entry.mission.id}`}
+                href={`/${role}/atividades/${entry.mission.id}`}
               >
                 Consultar atividade
               </Link>

@@ -121,14 +121,14 @@ export function LiveMission({
     window.addEventListener("online", retry);
     return () => window.removeEventListener("online", retry);
   }, []);
-  if (loading) return <p role="status">Consultando missão e atividade…</p>;
+  if (loading) return <p role="status">Consultando atividade e materiais…</p>;
   if (error)
     return (
       <section className="paper">
-        <h2>Não foi possível abrir a missão</h2>
+        <h2>Não foi possível abrir a atividade</h2>
         <p role="alert">{error}</p>
         <p>
-          Seu vínculo ou a versão da missão pode ter mudado. Volte ao percurso
+          Seu vínculo ou a versão da atividade pode ter mudado. Volte ao percurso
           para consultar o contexto atual.
         </p>
       </section>
@@ -137,7 +137,7 @@ export function LiveMission({
   if (!mission || !version)
     return (
       <p className="paper">
-        Esta missão não possui uma versão publicada disponível.
+        Esta atividade não possui uma versão publicada disponível.
       </p>
     );
   const classroom = classrooms.find((room) => room.id === mission.classroomId);
@@ -240,7 +240,7 @@ export function LiveMission({
               <p className="submission-content">{step.example}</p>
             </details>}
             {role === "aluno" && <a className="text-link" href="#learner-materials-title"
-              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais da missão</a>}
+              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais da atividade</a>}
             {role === "aluno" && <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
             {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
             {role === "aluno" && !locked && (
@@ -264,7 +264,7 @@ export function LiveMission({
             )}
           </section>
           <details className="paper preview-student-context">
-            <summary>Objetivos e critérios da missão</summary>
+            <summary>Objetivos e critérios da atividade</summary>
             <h3>Objetivos de aprendizagem</h3>
             <ul>
               {version.objectives.map((objective, i) => (
@@ -278,10 +278,10 @@ export function LiveMission({
               ))}
             </ul>
           </details>
-          <section className="paper" aria-label="Materiais da missão">
-            <h3>Materiais da missão</h3>
-            {role === "professor" && !version.materials.length && <p className="small">Nenhum material na missão.</p>}
-            {role === "aluno" && !version.materials.length && <p className="small">Os PDFs anexados à missão e os apoios preparados pelo professor aparecem nesta área.</p>}
+          <section className="paper" aria-label="Materiais da atividade">
+            <h3>Materiais da atividade</h3>
+            {role === "professor" && !version.materials.length && <p className="small">Nenhum material na atividade.</p>}
+            {role === "aluno" && !version.materials.length && <p className="small">Não há materiais textuais anexados à atividade. O PDF da turma e os apoios preparados pelo professor aparecem nesta área.</p>}
             {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
             {version.materials.map((material) => (
               <article className="material-library-item" key={material.id}>
@@ -387,8 +387,8 @@ export function LiveMission({
                     {classroom.name}. O texto e o progresso são salvos automaticamente. O rascunho
                     permanece privado para você.
                   </p>
-                  {formats === null && <p role="status">Os formatos adicionais aparecem quando a consulta de adaptações da missão for concluída.</p>}
-                  {formats?.length === 1 && <p className="small">Formato disponível nesta missão: texto no editor.</p>}
+                  {formats === null && <p role="status">Os formatos adicionais aparecem quando a consulta de adaptações da atividade for concluída.</p>}
+                  {formats?.length === 1 && <p className="small">Formato disponível nesta atividade: texto no editor.</p>}
                   <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao Gemini.</p>
                   {formats?.includes("audio") && <AudioAttachment label="Áudio da atividade (opcional)" disabled={pending || mediaBusy} id="submission" missionId={id} help="Resposta em áudio de até 30 segundos; arquivo de até 10 MB na seleção. O navegador converte localmente para WAV. Um resumo no editor é opcional." value={audio ? { base64: audio } : null} onBusy={setMediaBusy} onChange={value => { setAudio(value && "base64" in value ? value.base64 : null); setDirty(true); }} />}
                   {submission?.hasAudio && !submission.revisionRequested && audio === undefined && <><SubmissionMedia id={submission.id} hasAudio /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setAudio(null); setDirty(true); }}>Remover áudio salvo da atividade</button></>}

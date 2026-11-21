@@ -11,7 +11,7 @@
     }
   ],
   "paths": {
-    "/v1/missions/{id}/material-sources": {
+    "/v1/activities/{id}/material-sources": {
       "get": {
         "operationId": "materialSources",
         "security": [
@@ -359,7 +359,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-sources/{sourceId}": {
+    "/v1/activities/{id}/material-sources/{sourceId}": {
       "delete": {
         "operationId": "deleteMaterialSource",
         "security": [
@@ -444,7 +444,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-adaptations": {
+    "/v1/activities/{id}/material-adaptations": {
       "get": {
         "operationId": "materialAdaptations",
         "security": [
@@ -1156,7 +1156,7 @@
         }
       }
     },
-    "/v1/missions/{id}/original-materials": {
+    "/v1/activities/{id}/original-materials": {
       "post": {
         "operationId": "releaseOriginalMaterial",
         "security": [
@@ -1490,7 +1490,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-adaptations/{adaptationId}": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}": {
       "patch": {
         "operationId": "editMaterial",
         "security": [
@@ -1973,7 +1973,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-adaptations/{adaptationId}/render": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}/render": {
       "post": {
         "operationId": "renderMaterial",
         "security": [
@@ -2295,7 +2295,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-adaptations/{adaptationId}/release": {
+    "/v1/activities/{id}/material-adaptations/{adaptationId}/release": {
       "post": {
         "operationId": "releaseMaterial",
         "security": [
@@ -2622,7 +2622,7 @@
         }
       }
     },
-    "/v1/missions/{id}/my-materials": {
+    "/v1/activities/{id}/my-materials": {
       "get": {
         "operationId": "learnerMaterials",
         "security": [
@@ -2685,7 +2685,7 @@
                           "scope": {
                             "type": "string",
                             "enum": [
-                              "mission",
+                              "activity",
                               "individual"
                             ]
                           },
@@ -2861,7 +2861,7 @@
         }
       }
     },
-    "/v1/missions/{id}/material-assets/{assetId}/{kind}": {
+    "/v1/activities/{id}/material-assets/{assetId}/{kind}": {
       "get": {
         "operationId": "materialAsset",
         "security": [
@@ -4485,7 +4485,7 @@
         }
       }
     },
-    "/v1/missions/{id}/adaptations": {
+    "/v1/activities/{id}/adaptations": {
       "get": {
         "operationId": "adaptationPlans",
         "security": [
@@ -4919,7 +4919,7 @@
         }
       }
     },
-    "/v1/missions/{id}/adaptations/{planId}": {
+    "/v1/activities/{id}/adaptations/{planId}": {
       "patch": {
         "operationId": "updateAdaptation",
         "security": [
@@ -5190,7 +5190,7 @@
         }
       }
     },
-    "/v1/missions/{id}/adaptations/{planId}/remove": {
+    "/v1/activities/{id}/adaptations/{planId}/remove": {
       "post": {
         "operationId": "removeAdaptation",
         "security": [
@@ -5297,7 +5297,7 @@
         }
       }
     },
-    "/v1/missions/{id}/my-adaptations": {
+    "/v1/activities/{id}/my-adaptations": {
       "get": {
         "operationId": "learnerAdaptations",
         "security": [
@@ -5696,7 +5696,7 @@
         }
       }
     },
-    "/v1/missions/{id}/strategy-recipients": {
+    "/v1/activities/{id}/strategy-recipients": {
       "get": {
         "operationId": "strategyRecipients",
         "security": [
@@ -5815,7 +5815,7 @@
         }
       }
     },
-    "/v1/missions/{id}/strategy-plans": {
+    "/v1/activities/{id}/strategy-plans": {
       "get": {
         "operationId": "strategyPlans",
         "security": [
@@ -6322,7 +6322,7 @@
         }
       }
     },
-    "/v1/missions/{id}/strategy-plans/{planId}": {
+    "/v1/activities/{id}/strategy-plans/{planId}": {
       "patch": {
         "operationId": "updateStrategyPlan",
         "security": [
@@ -6645,7 +6645,7 @@
         }
       }
     },
-    "/v1/missions/{id}/strategy-plans/{planId}/remove": {
+    "/v1/activities/{id}/strategy-plans/{planId}/remove": {
       "post": {
         "operationId": "removeStrategyPlan",
         "security": [
@@ -6752,7 +6752,7 @@
         }
       }
     },
-    "/v1/missions/{id}/supports": {
+    "/v1/activities/{id}/supports": {
       "get": {
         "operationId": "missionSupports",
         "security": [
@@ -6881,7 +6881,7 @@
         }
       }
     },
-    "/v1/missions/{id}/support-audio/{itemId}": {
+    "/v1/activities/{id}/support-audio/{itemId}": {
       "get": {
         "operationId": "supportAudio",
         "security": [
@@ -6970,7 +6970,7 @@
         }
       }
     },
-    "/v1/missions/{id}/ai-supports": {
+    "/v1/activities/{id}/ai-supports": {
       "post": {
         "operationId": "generateSupports",
         "security": [
@@ -8174,7 +8174,7 @@
         }
       }
     },
-    "/v1/classrooms/{id}/missions": {
+    "/v1/classrooms/{id}/activities": {
       "get": {
         "operationId": "missions",
         "security": [
@@ -9175,7 +9175,7 @@
         }
       }
     },
-    "/v1/missions/{id}": {
+    "/v1/activities/{id}": {
       "get": {
         "operationId": "mission",
         "security": [
@@ -10149,7 +10149,7 @@
         }
       }
     },
-    "/v1/missions/{id}/publish": {
+    "/v1/activities/{id}/publish": {
       "post": {
         "operationId": "publish",
         "security": [
@@ -10598,7 +10598,7 @@
         }
       }
     },
-    "/v1/missions/{id}/archive": {
+    "/v1/activities/{id}/archive": {
       "post": {
         "operationId": "archive",
         "security": [
@@ -11033,7 +11033,7 @@
         }
       }
     },
-    "/v1/missions/{id}/submissions": {
+    "/v1/activities/{id}/submissions": {
       "post": {
         "operationId": "saveSubmission",
         "security": [
@@ -12611,7 +12611,7 @@
         }
       }
     },
-    "/v1/missions/{id}/ai-drafts": {
+    "/v1/activities/{id}/ai-drafts": {
       "post": {
         "operationId": "generate",
         "security": [

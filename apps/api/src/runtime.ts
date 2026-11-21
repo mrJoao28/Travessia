@@ -21,9 +21,9 @@ import { budget, digest } from './rate-limit.js';
 import type { DraftProvider } from './ai.js';
 
 function requestBodyLimit({ path, method }: Request) {
-  if (method === 'POST' && /^\/v1\/missions\/[^/]+\/material-sources\/?$/.test(path)) return PDF_UPLOAD_BODY_BYTES;
-  if (method === 'PATCH' && /^\/v1\/missions\/[^/]+\/material-adaptations\/[^/]+\/?$/.test(path)) return PDF_EDIT_BODY_BYTES;
-  if (['POST', 'PATCH'].includes(method) && /^\/v1\/missions\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)\/?$/.test(path)) return 2 * 1024 * 1024;
+  if (method === 'POST' && /^\/v1\/(?:missions|activities)\/[^/]+\/material-sources\/?$/.test(path)) return PDF_UPLOAD_BODY_BYTES;
+  if (method === 'PATCH' && /^\/v1\/(?:missions|activities)\/[^/]+\/material-adaptations\/[^/]+\/?$/.test(path)) return PDF_EDIT_BODY_BYTES;
+  if (['POST', 'PATCH'].includes(method) && /^\/v1\/(?:missions|activities)\/[^/]+\/(?:strategy-plans(?:\/[^/]+)?|submissions)\/?$/.test(path)) return 2 * 1024 * 1024;
   return 64 * 1024;
 }
 
@@ -34,7 +34,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
   const auth = createAuth(db, config);
   const service = new ProductService(db, config, provider);
   const mapped = Object.entries(routes).map(([name, route]) => ({ name: name as Operation, route,
-    names: Array.from(route.path.matchAll(/\{(\w+)\}/g), m => m[1]), regex: new RegExp('^' + route.path.replace(/\{\w+\}/g, '([^/]+)') + '/?$') }));
+    names: Array.from(route.path.matchAll(/\{(\w+)\}/g), m => m[1]), regexes: [route.path, route.path.replaceAll('/activities', '/missions')].map(path => new RegExp('^' + path.replace(/\{\w+\}/g, '([^/]+)') + '/?$')) }));
   function respondError(error: unknown, _req: Request, res: Response) {
     const status = error instanceof HttpException ? error.getStatus() : error instanceof ZodError ? 400 : 500;
     const payload = error instanceof HttpException ? error.getResponse() : null;
@@ -73,9 +73,9 @@ export async function createApplication(db: PrismaClient, config: Config, provid
   });
   runtime.handle = async (req, res) => {
     try {
-      const match = mapped.find(m => m.route.method.toUpperCase() === req.method && m.regex.test(req.path));
+      const match = mapped.find(m => m.route.method.toUpperCase() === req.method && m.regexes.some(regex => regex.test(req.path)));
       if (!match) return missing();
-      const values = match.regex.exec(req.path)!;
+      const values = match.regexes.find(regex => regex.test(req.path))!.exec(req.path)!;
       const params = Object.fromEntries(match.names.map((name, i) => [name, decodeURIComponent(values[i + 1])]));
       if (Object.values(params).some(value => value.length > 100)) return missing();
       let userId = '';
