@@ -77,7 +77,7 @@ export function PreviewMonitoria() {
       <label htmlFor="monitor-grade">Nota sugerida (0 a 10)</label>
       <input id="monitor-grade" type="number" min="0" max="10" step="0.1" value={grade} onChange={(event) => setGrade(event.target.value)} />
       <button className="button button-outline" disabled={!grade || Number(grade) < 0 || Number(grade) > 10} onClick={() => setGradePending(true)}>Enviar sugestão ao professor</button>
-      {gradePending && <div><p role="status">Sugestão de nota {grade} enviada para avaliação do professor. Ainda não é uma nota registrada.</p><button className="button" onClick={() => { setGradePending(false); setNotice(`Professor revisou a sugestão de nota ${grade} na simulação.`); }}>Professor: revisar e confirmar nota</button></div>}
+      {gradePending && <div><p role="status">Sugestão de nota {grade} enviada para avaliação do professor. Ainda não é uma nota registrada.</p><details className="teacher-disclosure"><summary>Simular revisão do professor</summary><p>Esta etapa representa a ação docente; a sugestão do monitor não registra uma nota automaticamente.</p><button className="button" onClick={() => { setGradePending(false); setNotice(`Professor revisou a sugestão de nota ${grade} na simulação.`); }}>Confirmar revisão simulada</button></details></div>}
     </section>}
     <p className="small">Prévia interativa: designação, alterações e avaliações são simulações locais. Não concedem acesso nem salvam dados na API.</p>
   </div>;
