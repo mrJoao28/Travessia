@@ -465,7 +465,7 @@ model MaterialSource {
   versionId String
   creatorId String
   title String
-  downloadAllowed Boolean @default(false)
+  downloadAllowed Boolean @default(true)
   hash String
   requestKey String
   status String @default("queued")
