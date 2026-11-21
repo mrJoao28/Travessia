@@ -36,7 +36,7 @@ export async function fixture(page: Page, failActivity = false, disabilities: st
     return route.fulfill({status:404,json:{}});
   });
   await page.goto('/professor/estrategias');
-  await expect(page.getByRole('heading',{name:'Adaptar material',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Estratégias de apoio',exact:true})).toBeVisible();
   return Object.assign(()=>sent,{activity:()=>activity,original:()=>original});
 }
 
