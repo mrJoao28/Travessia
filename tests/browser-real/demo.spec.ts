@@ -134,6 +134,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page
     .getByRole("link", { name: "Ir para o espaço do professor" })
     .click();
+  await expect(page.getByText("Área do professor", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Entregas", exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Entregas", exact: true }).click();
   await page
