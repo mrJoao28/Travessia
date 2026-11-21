@@ -8,10 +8,10 @@ async function classroomFixture(page:Page,role:'teacher'|'student'){
   const json=(value:unknown)=>route.fulfill({json:value});
   if(path==='/me')return json(profile);
   if(path==='/classrooms')return json({items:[{id:'first-class',name:'Laboratório de projetos',role}],nextCursor:null});
-  if(path==='/classrooms/first-class/missions')return json({items:[],nextCursor:null});
+  if(path==='/classrooms/first-class/activities')return json({items:[],nextCursor:null});
   if(path==='/classrooms/first-class/members')return json({items:[{id:'teacher-member',name:'Docente fictício',role:'teacher',active:true}],nextCursor:null});
   if(path==='/classrooms/first-class/invitations'&&method==='GET')return json({items:[],nextCursor:null});
-  if(path==='/classrooms/first-class/invitations'&&method==='POST'){expect(route.request().postDataJSON()).toEqual({reusable:true});return json({id:'first-invite',token:'a'.repeat(64),code,reusable:true,createdAt:'2026-11-01T12:00:00.000Z',expiresAt:'2026-11-08T12:00:00.000Z'});}
+  if(path==='/classrooms/first-class/invitations'&&method==='POST'){expect(route.request().postDataJSON()).toEqual({reusable:true,role:'student'});return json({id:'first-invite',token:'a'.repeat(64),code,reusable:true,createdAt:'2026-11-01T12:00:00.000Z',expiresAt:'2026-11-08T12:00:00.000Z'});}
   return route.fulfill({status:404,json:{code:'NOT_FOUND'}});
  });
 }
@@ -24,7 +24,7 @@ test('primeira turma mostra três passos, convite curto, link e mensagem por e-m
  await page.getByRole('button',{name:'Gerar convite de aluno',exact:true}).click();
  await expect(page.getByLabel('Código de convite',{exact:true})).toHaveValue(code);await expect(page.getByLabel('Código de convite',{exact:true})).toBeFocused();
  const link=await page.getByLabel('Link de convite',{exact:true}).inputValue();expect(link).toMatch(/\/boas-vindas\?espaco=aluno#convite=ABCD2345$/);
- await page.getByLabel('E-mail do aluno',{exact:true}).fill('aluno-ficticio@example.invalid');
+ await page.getByLabel('E-mail da pessoa convidada',{exact:true}).fill('aluno-ficticio@example.invalid');
  const mail=new URL((await page.getByRole('link',{name:'Convidar por e-mail',exact:true}).getAttribute('href'))!);expect(decodeURIComponent(mail.pathname)).toBe('aluno-ficticio@example.invalid');expect(mail.searchParams.get('body')).toContain(link);expect(mail.searchParams.get('body')).toContain(code);
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  await page.screenshot({path:'test-results/reference-first-steps-teacher-desktop.png',fullPage:true});
@@ -48,7 +48,7 @@ test('convite antes do login mantém o código sem aceitar automaticamente a tur
  await page.route('**/api/v1/invitations/accept',route=>{accepts++;expect(route.request().postDataJSON()).toEqual({token:code});return route.fulfill({status:400,json:{code:'INVALID_INVITATION'}});});
  await page.goto('/boas-vindas?espaco=aluno#convite='+code);
  await expect(page.getByRole('heading',{name:'Você recebeu um convite de turma',exact:true})).toBeVisible();
- await expect(page.getByRole('link',{name:'Criar conta de aluno',exact:true})).toHaveAttribute('href','/cadastro#convite='+code);
+ await expect(page.getByRole('link',{name:'Criar conta',exact:true})).toHaveAttribute('href','/cadastro#convite='+code);
  await page.getByRole('link',{name:'Entrar na minha conta',exact:true}).click();
  await page.getByLabel('Email',{exact:true}).fill(profile.email);await page.getByLabel('Senha',{exact:true}).fill('Fictional123');await page.getByRole('button',{name:'Entrar',exact:true}).click();
  await expect(page.getByLabel('Código de convite',{exact:true})).toHaveValue(code);expect(accepts).toBe(0);

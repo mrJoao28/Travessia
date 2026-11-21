@@ -13,7 +13,7 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
     release = resolve;
   });
   await page.route(
-    "**/api/v1/missions/test-mission/submissions",
+    "**/api/v1/activities/test-mission/submissions",
     async (route) => {
       if (route.request().method() === "GET") return route.fallback();
       const body = route.request().postDataJSON() as ApiBody<"saveSubmission">;
@@ -143,7 +143,7 @@ test('preparação guiada valida a etapa atual, volta por teclado e preserva con
   await expect(page.getByLabel('Título da atividade', { exact: true })).toHaveValue('Atividade que quero preservar');
   await page.getByRole('button', { name: 'Continuar para as etapas →', exact: true }).click();
   await expect(instruction).toHaveValue('Compare as alternativas antes de escolher.');
-  await page.route('**/api/v1/missions/test-mission', async route => route.request().method() === 'PATCH' ? route.fulfill({ status: 409, json: { code: 'VERSION_CONFLICT' } }) : route.fallback());
+  await page.route('**/api/v1/activities/test-mission', async route => route.request().method() === 'PATCH' ? route.fulfill({ status: 409, json: { code: 'VERSION_CONFLICT' } }) : route.fallback());
   await page.getByRole('button', { name: 'Salvar e continuar →', exact: true }).click();
   await expect(page.getByText(/O conteúdo mudou no servidor/)).toBeVisible();
   await expect(instruction).toHaveValue('Compare as alternativas antes de escolher.');

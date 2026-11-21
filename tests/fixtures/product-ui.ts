@@ -75,8 +75,8 @@ export async function fixture(page: Page, role: "student" | "teacher") {
     if (path.endsWith("/material-sources") || path.endsWith("/material-adaptations") || path.endsWith("/my-materials")) return respond({items:[]});
     if(path.endsWith("/strategy-recipients") || path.endsWith("/learning-needs")) return respond({items:[],nextCursor:null});
     if (path === "/me") return respond(me);
-    if (path === "/missions/test-mission/my-adaptations") return respond({ versionId: version.id, items: [], allowedFormats: ["text"] });
-    if (path === "/missions/test-mission/supports") return respond({ versionId: version.id, items: [] });
+    if (path === "/activities/test-mission/my-adaptations") return respond({ versionId: version.id, items: [], allowedFormats: ["text"] });
+    if (path === "/activities/test-mission/supports") return respond({ versionId: version.id, items: [] });
     if (path === "/classrooms")
       return respond({
         items: [
@@ -91,7 +91,7 @@ export async function fixture(page: Page, role: "student" | "teacher") {
         ],
         nextCursor: null,
       });
-    if (path === "/classrooms/test-classroom/missions")
+    if (path === "/classrooms/test-classroom/activities")
       return respond({ items: [mission], nextCursor: null });
     if (path === "/classrooms/test-classroom/members")
       return respond({
@@ -125,15 +125,15 @@ export async function fixture(page: Page, role: "student" | "teacher") {
       );
       return respond({ revoked: true });
     }
-    if (path === "/missions/test-mission/submissions")
+    if (path === "/activities/test-mission/submissions")
       return respond({
         items: role === "student" ? [submission] : [],
         nextCursor: null,
       });
-    if (path === "/missions/test-mission" && route.request().method() === "GET")
+    if (path === "/activities/test-mission" && route.request().method() === "GET")
       return respond(mission);
     if (
-      path === "/missions/test-mission" &&
+      path === "/activities/test-mission" &&
       route.request().method() === "PATCH"
     ) {
       const body = route.request().postDataJSON() as ApiBody<"editMission">;
@@ -163,7 +163,7 @@ export async function fixture(page: Page, role: "student" | "teacher") {
       };
       return respond(mission);
     }
-    if (path === "/missions/test-mission/publish") {
+    if (path === "/activities/test-mission/publish") {
       const body = route.request().postDataJSON() as ApiBody<"publish">;
       expect(body).toEqual({ versionId: "saved-version", reviewed: true });
       mission = {

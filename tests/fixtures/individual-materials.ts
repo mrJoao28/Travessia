@@ -15,7 +15,7 @@ export async function fixture(page: Page, failActivity = false, disabilities: st
     if(path.endsWith('/material-assets/source-material/page-1'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="840"><rect width="600" height="840" fill="white"/><text x="50" y="90" fill="#173651" font-size="28">Compare as rotas</text><text x="50" y="145" font-size="18">Compare duas rotas de 10 metros.</text></svg>'});
     if(path==='/me')return respond({id:'teacher-material',name:'Professora fictícia',email:'teacher@example.invalid',demo:true,course:null,preferences:{}});
     if(path==='/classrooms')return respond({items:[{id:'c-material',name:'Turma fictícia',role:'teacher'}],nextCursor:null});
-    if(path==='/classrooms/c-material/missions')return respond({items:[{id:version.missionId,classroomId:'c-material',status:'published',publishedVersion:version,draftVersion:null}],nextCursor:null});
+    if(path==='/classrooms/c-material/activities')return respond({items:[{id:version.missionId,classroomId:'c-material',status:'published',publishedVersion:version,draftVersion:null}],nextCursor:null});
     if(path.endsWith('/submissions'))return respond({items:[],nextCursor:null});
     if(path.endsWith('/learning-needs'))return respond({items:[{userId:'student-a',name:'Marina fictícia',supports:requests,preferredFormats:[],disabilities}],nextCursor:null});
     if(path.endsWith('/strategy-recipients'))return respond({items:[{id:'student-a',name:'Marina fictícia'},{id:'student-b',name:'Aluno B'}],nextCursor:null});
@@ -36,12 +36,12 @@ export async function fixture(page: Page, failActivity = false, disabilities: st
     return route.fulfill({status:404,json:{}});
   });
   await page.goto('/professor/estrategias');
-  await expect(page.getByRole('heading',{name:'PDF da atividade e apoios opcionais',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Adaptar material',exact:true})).toBeVisible();
   return Object.assign(()=>sent,{activity:()=>activity,original:()=>original});
 }
 
 export async function addPdf(page:Page,student='student-a'){
- if(student)await page.getByLabel('Aluno da turma',{exact:true}).selectOption(student);
- await page.getByLabel('Adicionar PDF à atividade',{exact:true}).setInputFiles({name:'rotas.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
- await expect(page.getByText(/PDF da atividade · 1 página · aparece para toda a turma após publicar/)).toBeVisible();
+ if(student)await page.getByLabel('Destinatário da adaptação',{exact:true}).selectOption(student);
+ await page.getByLabel('Adicionar arquivo PDF',{exact:true}).setInputFiles({name:'rotas.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
+ await expect(page.getByText(/Arquivo verificado · 1 página/)).toBeVisible();
 }

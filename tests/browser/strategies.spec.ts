@@ -18,8 +18,8 @@ async function fixture(page: Page, failSave = false) {
     const respond = (json: unknown) => route.fulfill({ json });
     if (path === '/me') return respond({ id: 'teacher-support', name: 'Professor fictício', email: 'teacher@example.invalid', course: null, demo: true, preferences: {} });
     if (path === '/classrooms') return respond({ items: [{ id: 'class-support', name: 'Turma fictícia', role: 'teacher' }], nextCursor: null });
-    if (path === '/classrooms/class-support/missions') return respond({ items: [mission], nextCursor: null });
-    if (path === '/missions/mission-support/submissions') return respond({ items: [], nextCursor: null });
+    if (path === '/classrooms/class-support/activities') return respond({ items: [mission], nextCursor: null });
+    if (path === '/activities/mission-support/submissions') return respond({ items: [], nextCursor: null });
     if (path.endsWith('/material-sources') || path.endsWith('/material-adaptations')) return respond({ items: [] });
     if (path.endsWith('/learning-needs')) return respond({ items: [], nextCursor: null });
     if (path === '/strategies') return respond({ items: catalog });
@@ -77,7 +77,7 @@ test('busca mantém estratégias selecionadas e a prévia é acessível por tecl
 test('Gemini exige seleção e consentimento e retorna rascunho sem publicar nem substituir o texto', async ({ page }) => {
   const submitted = await fixture(page);
   let providerBody: ApiBody<'generateSupports'> | undefined;
-  await page.route('**/api/v1/missions/mission-support/ai-supports', async route => {
+  await page.route('**/api/v1/activities/mission-support/ai-supports', async route => {
     providerBody = route.request().postDataJSON();
     return route.fulfill({ json: { id: 'support-generation', status: 'succeeded', draft: { items: [{ strategyId: 'step-checklist', content: 'Confira os custos. Compare a clareza.' }] } } });
   });
@@ -104,7 +104,7 @@ test('Gemini exige seleção e consentimento e retorna rascunho sem publicar nem
 });
 test('Gemini indisponível preserva a edição manual e não anuncia geração concluída', async ({ page }) => {
   await fixture(page);
-  await page.route('**/api/v1/missions/mission-support/ai-supports', route => route.fulfill({ status: 503, json: { code: 'AI_UNAVAILABLE' } }));
+  await page.route('**/api/v1/activities/mission-support/ai-supports', route => route.fulfill({ status: 503, json: { code: 'AI_UNAVAILABLE' } }));
   await page.getByRole('checkbox', { name: 'Checklist do próximo passo', exact: true }).check();
   const text = page.getByLabel('Texto do apoio: Checklist do próximo passo', { exact: true });
   await text.fill('Planejamento preservado.');

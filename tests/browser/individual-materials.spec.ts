@@ -7,8 +7,8 @@ import {fixture,addPdf} from '../fixtures/individual-materials';
 
 test('PDF da atividade é anexado para toda a turma sem selecionar aluno',async({page})=>{
  const captured=await fixture(page,false,[],[]);await addPdf(page,'');
- await expect(page.getByLabel('Aluno da turma',{exact:true})).toHaveValue('');
- await expect(page.getByText('O PDF original anexado à atividade será mostrado a todos os alunos depois que você publicar. Não é necessário liberá-lo aluno por aluno.',{exact:true})).toBeVisible();
+ await expect(page.getByLabel('Destinatário da adaptação',{exact:true})).toHaveValue('');
+ await expect(page.getByText('O PDF original vai para toda a turma ao publicar. Escolha a turma ou um aluno para preparar uma versão adaptada.',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Usar PDF original',exact:true})).toHaveCount(0);
  await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
  await page.screenshot({path:'test-results/reference-material-no-disclosure.png',fullPage:true});
@@ -24,7 +24,7 @@ test('TEA compartilhado: somente sugestões pertinentes, prévia automática e r
  await expect(page.getByRole('checkbox',{name:/Explicar termos do material/})).not.toBeChecked();
  await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
  await page.screenshot({path:'test-results/reference-material-tea.png',fullPage:true});
- await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
+ await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();await page.getByRole('button',{name:'Gerar prévia adaptada',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  const viewer = page.getByRole('region', { name: 'Comparação do material', exact: true });
  const settings = page.getByRole('complementary', { name: 'Preparação e revisão do material' });
@@ -58,7 +58,7 @@ test('contraste tem efeito imediato e os passos e o glossário são editáveis n
  await page.getByRole('checkbox',{name:/Organizar em passos curtos/}).check();
  await page.getByRole('checkbox',{name:/Explicar termos do material/}).check();
  await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();
- await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
+ await page.getByRole('button',{name:'Gerar prévia adaptada',exact:true}).click();
  const prepared = page.getByRole('region',{name:'Documento preparado',exact:true});
  await expect(prepared.getByRole('listitem')).toHaveText('Compare duas rotas.');
  await expect(prepared.locator('dt')).toHaveText('Rota');
@@ -89,7 +89,7 @@ test('pedido de apoio sem compartilhar diagnóstico também orienta a preparaç�
  await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
 });
 test('adaptação sem PDF mantém aluno e versão, salva formatos e exige revisão',async({page})=>{
- const captured=await fixture(page);await page.getByLabel('Aluno da turma',{exact:true}).selectOption('student-a');
+ const captured=await fixture(page);await page.getByLabel('Destinatário da adaptação',{exact:true}).selectOption('student-a');
  await page.getByRole('button',{name:'Atividade e entrega',exact:true}).click();
  await page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true}).fill('Compare uma rota por vez e explique sua escolha.');
  await page.getByRole('checkbox',{name:'Áudio de até 30 segundos',exact:true}).check();
@@ -97,10 +97,10 @@ test('adaptação sem PDF mantém aluno e versão, salva formatos e exige revis�
  await page.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/}).check();await save.click();
  await expect(page.getByRole('status').filter({hasText:'Atividade e formas de entrega salvas'})).toBeVisible();
  expect(captured.activity()?.studentIds).toEqual(['student-a']);expect(captured.activity()?.versionId).toBe('v-material');expect(captured.activity()?.allowedFormats).toEqual(['text','audio']);
- await expect(page.getByLabel('Aluno da turma')).toHaveValue('student-a');
+ await expect(page.getByLabel('Destinatário da adaptação')).toHaveValue('student-a');
 });
 test('falha ao salvar ajuste individual preserva enunciado e permite corrigir',async({page})=>{
- await fixture(page,true);await page.getByLabel('Aluno da turma',{exact:true}).selectOption('student-a');
+ await fixture(page,true);await page.getByLabel('Destinatário da adaptação',{exact:true}).selectOption('student-a');
  await page.getByRole('button',{name:'Atividade e entrega',exact:true}).click();
  const field=page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true});await field.fill('Texto que precisa ser preservado.');
  await page.getByRole('checkbox',{name:/Conferi as instruções e as formas de entrega/}).check();await page.getByRole('button',{name:'Salvar ajustes da atividade deste aluno',exact:true}).click();
@@ -112,7 +112,7 @@ test('falha ao salvar ajuste individual preserva enunciado e permite corrigir',a
 
 test('comparação no celular alterna documentos, mantém leitura ampliável e invalida revisão ao editar',async({page})=>{
  await fixture(page,false,['low-vision'],[]);await addPdf(page);
- await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
+ await page.getByRole('button',{name:'Gerar prévia adaptada',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
  await page.getByText('Ajustar o texto da prévia',{exact:true}).click();
@@ -138,10 +138,10 @@ test('comparação no celular alterna documentos, mantém leitura ampliável e i
 
 test('trocar o arquivo retira a prévia anterior e sua confirmação de revisão',async({page})=>{
  await fixture(page,false,['low-vision'],[]);await addPdf(page);
- await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
+ await page.getByRole('button',{name:'Gerar prévia adaptada',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  await page.getByRole('checkbox',{name:/Conferi o material e o destinatário/}).check();
- await page.getByLabel('Adicionar PDF à atividade',{exact:true}).setInputFiles({name:'outro-material.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
+ await page.getByLabel('Adicionar arquivo PDF',{exact:true}).setInputFiles({name:'outro-material.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Disponibilizar para Marina fictícia →',exact:true})).toHaveCount(0);
  await expect(page.getByRole('region',{name:'Documento original',exact:true})).toBeVisible();
@@ -151,17 +151,17 @@ test('trocar o arquivo retira a prévia anterior e sua confirmação de revisão
 
 test('consulta de processamento em segundo plano não abandona a escolha do aluno nem a atividade sem PDF',async({page})=>{
  await fixture(page,false,['low-vision'],[],true);await addPdf(page);
- await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
+ await page.getByRole('button',{name:'Gerar prévia adaptada',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  const isPoll=(r:import('@playwright/test').Response)=>new URL(r.url()).pathname.endsWith('/material-adaptations')&&r.request().method()==='GET';
  const poll=page.waitForResponse(isPoll);
- await page.getByLabel('Aluno da turma').selectOption('student-b');await poll;
+ await page.getByLabel('Destinatário da adaptação').selectOption('student-b');await poll;
  await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
  await expect(page.getByRole('checkbox',{name:/Audiodescrição/})).toBeEnabled();
  await expect(page.getByRole('combobox',{name:'Arquivo PDF'}).locator('option:checked')).toHaveText('rotas.pdf');
- await page.getByLabel('Aluno da turma').selectOption('student-a');
+ await page.getByLabel('Destinatário da adaptação').selectOption('student-a');
  await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).toBeChecked();
- await expect(page.getByLabel('Aluno da turma',{exact:true})).toBeVisible();
+ await expect(page.getByLabel('Destinatário da adaptação',{exact:true})).toBeVisible();
  const nextPoll=page.waitForResponse(isPoll);
  await page.getByRole('button',{name:'Atividade e entrega',exact:true}).click();await nextPoll;
  await expect(page.getByLabel('Instruções preparadas para Marina fictícia',{exact:true})).toBeVisible();
@@ -174,7 +174,7 @@ test('cegueira: audiodescrição sugerida, sem reorganização automática',asyn
  await expect(page.getByRole('checkbox',{name:/Leitura em áudio/})).toHaveCount(0);
  await expect(page.getByRole('checkbox',{name:/Organizar em passos curtos/})).toHaveCount(0);
  await page.getByRole('checkbox',{name:/Conferi as páginas e os objetivos/}).check();
- await page.getByRole('button',{name:'Gerar prévia',exact:true}).click();
+ await page.getByRole('button',{name:'Gerar prévia adaptada',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
  expect(captured()?.settings.supports).toEqual(['image-description']);
  await expect(page.locator('#material-audio audio')).toHaveAttribute('src',/material-assets\/adaptation-material\/audio$/);
@@ -197,7 +197,7 @@ test('audiodescrição manual pode ser preparada com a IA desligada', async ({ p
  await addPdf(page);
  await page.getByRole('checkbox', { name: 'Escrever a descrição manualmente' }).check();
  await expect(page.getByRole('checkbox', { name: /Conferi as páginas e os objetivos/ })).toHaveCount(0);
- await page.getByRole('button', { name: 'Gerar prévia', exact: true }).click();
+ await page.getByRole('button', { name: 'Gerar prévia adaptada', exact: true }).click();
  await page.getByLabel('Descrição das informações visuais da página 1').fill('O diagrama mostra dois caminhos.');
  await page.getByRole('button', { name: 'Atualizar prévia →', exact: true }).click();
  await expect(page.locator('#material-audio audio')).toBeVisible();
@@ -212,7 +212,7 @@ test('audiodescrição pode ser escolhida sem perfil e sem narração integral',
  await description.check();
  await expect(page.getByRole('checkbox', { name: /^Leitura em áudio/ })).toHaveCount(0);
  await page.getByRole('checkbox', { name: /Conferi as páginas e os objetivos/ }).check();
- await page.getByRole('button', { name: 'Gerar prévia', exact: true }).click();
+ await page.getByRole('button', { name: 'Gerar prévia adaptada', exact: true }).click();
  const audio = page.locator('audio[aria-label="Ouvir audiodescrição"]');
  await expect(audio).toHaveAttribute('src', /adaptation-material\/audio$/);
  const reader = page.getByRole('region', { name: 'Leitura do documento preparado' });
