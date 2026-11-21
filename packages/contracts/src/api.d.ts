@@ -1029,7 +1029,9 @@ export interface operations {
                             id: string;
                             versionId: string;
                             sourceId: string;
-                            studentId: string;
+                            studentId: string | null;
+                            /** @enum {string} */
+                            audience: "student" | "classroom";
                             /** @enum {string} */
                             status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                             hasReleasedVersion?: boolean;
@@ -1096,7 +1098,9 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     sourceId: string;
-                    studentId: string;
+                    studentId?: string;
+                    /** @enum {string} */
+                    audience?: "student" | "classroom";
                     pages: number[];
                     settings: {
                         supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
@@ -1128,7 +1132,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1215,7 +1221,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1350,7 +1358,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1432,7 +1442,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1516,7 +1528,9 @@ export interface operations {
                         id: string;
                         versionId: string;
                         sourceId: string;
-                        studentId: string;
+                        studentId: string | null;
+                        /** @enum {string} */
+                        audience: "student" | "classroom";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;

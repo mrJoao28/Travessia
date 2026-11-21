@@ -90,7 +90,7 @@ class MaterialGeminiError extends Error {}
 export class MaterialWorker {
   constructor(readonly db: PrismaClient, readonly config: Config, readonly provider: MaterialProvider = materialProvider(config),
     readonly local = localProcess, readonly pdf = renderPdf) {}
-  async permitted(versionId: string, creatorId: string, studentId?: string) {
+  async permitted(versionId: string, creatorId: string, studentId?: string | null) {
     return !!await this.db.missionVersion.findFirst({ where: { id: versionId, mission: { status: { not: 'archived' },
       OR: [{ draftVersionId: versionId }, { publishedVersionId: versionId }], classroom: { memberships: { some: { userId: creatorId, role: 'teacher', active: true } },
         ...(studentId ? { AND: [{ memberships: { some: { userId: studentId, role: 'student', active: true } } }] } : {}) } } } });

@@ -856,6 +856,39 @@ test('PDF original individual: revisão, isolamento A/B, quarentena, revogação
  assert.equal(providerCalls,before,'Disponibilizar original não chama IA');
  assert.equal(await db.materialAdaptation.count({where:{sourceId:source.id,status:{in:['queued','generating','rendering']}}}),0);
 });
+test('PDF adaptado para toda a turma: revisão, publicação e acesso apenas aos alunos ativos',async()=>{
+ const mission=(await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
+ const versionId=mission.draftVersion.id,path=`/v1/missions/${mission.id}`;
+ const source=(await request(`${path}/material-sources`,main,'POST',{versionId,title:'Arquivo compartilhado',base64:Buffer.from('%PDF-1.4\nconteudo comum').toString('base64'),requestKey:randomUUID()})).json;
+ await db.materialSource.update({where:{id:source.id},data:{status:'ready',pageCount:1,pages:[{page:1,text:'Texto de referência.',hasVisual:false,ocr:false}]}});
+ const input={versionId,sourceId:source.id,audience:'classroom',pages:[1],settings:{supports:['large-print'],fontSize:'22',color:'default',useAi:false,approvedForProvider:false},requestKey:randomUUID()};
+ await request(`${path}/material-adaptations`,main,'POST',{...input,studentId:'demo-student-1'},400);
+ await request(`${path}/material-adaptations`,main,'POST',{...input,audience:'student'},400);
+ const queued=(await request(`${path}/material-adaptations`,main,'POST',input)).json;
+ assert.equal(queued.studentId,null);assert.equal(queued.audience,'classroom');
+ assert.equal((await request(`${path}/material-adaptations`,main,'POST',input)).json.id,queued.id);
+ const worker=new MaterialWorker(db,config,async()=>{throw new Error('IA não solicitada');},async()=>{throw new Error('Extração não solicitada');},async filename=>{await writeFile(filename,'%PDF-adaptado');});
+ await worker.tick();
+ const draft=(await request(`${path}/material-adaptations?versionId=${versionId}`,main)).json.items.find((item:{id:string})=>item.id===queued.id);
+ assert.equal(draft.status,'draft');
+ await request(`${path}/material-adaptations/${queued.id}/render`,main,'POST',{expectedRevision:draft.revision});
+ await worker.tick();
+ await request(`${path}/material-adaptations/${queued.id}/release`,main,'POST',{expectedRevision:draft.revision,reviewed:true});
+ await request(`${path}/material-assets/${queued.id}/pdf`,a,'GET',undefined,404);
+ await request(`${path}/publish`,main,'POST',{versionId,reviewed:true});
+ for(const cookie of [a,b]){
+  const items=(await request(`${path}/my-materials?versionId=${versionId}`,cookie)).json.items;
+  assert.deepEqual(items.map((item:{mode:string})=>item.mode),['original','adapted']);
+  const asset=await fetch(`${base}${path}/material-assets/${queued.id}/pdf`,{headers:{cookie}});
+  assert.equal(asset.status,200);assert.equal(await asset.text(),'%PDF-adaptado');
+ }
+ await request(`${path}/material-assets/${queued.id}/pdf`,otherTeacher,'GET',undefined,404);
+ await db.membership.update({where:{userId_classroomId:{userId:'demo-student-2',classroomId:workshop}},data:{active:false}});
+ await request(`${path}/material-assets/${queued.id}/pdf`,b,'GET',undefined,404);
+ await db.membership.update({where:{userId_classroomId:{userId:'demo-student-2',classroomId:workshop}},data:{active:true}});
+ await request(`${path}/material-adaptations/${queued.id}`,main,'DELETE');
+ assert.equal((await request(`${path}/my-materials?versionId=${versionId}`,a)).json.items.length,1);
+});
 test('narração integral: quatro páginas preservadas, descrição IA separada e voz exclusivamente local', { timeout: 30000 }, async () => {
   const mission = (await request(`/v1/classrooms/${workshop}/missions`,main,'POST',fixture)).json;
   const versionId=mission.draftVersion.id, path=`/v1/missions/${mission.id}`;
