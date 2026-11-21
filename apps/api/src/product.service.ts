@@ -128,6 +128,7 @@ export class ProductService {
       });
     }
     if (op === 'generateSupports') return this.ai.generateSupports(userId, id, body as Body<'generateSupports'>);
+    if (op === 'generateFeedbackDraft') return this.ai.generateFeedbackDraft(userId, id, body as Body<'generateFeedbackDraft'>);
     if (op === 'generate') return this.ai.generate(userId, id, body as Body<'generate'>);
     if (op === 'generation') return this.ai.get(userId, id);
     if (op === 'download') return this.download(userId, id);

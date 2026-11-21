@@ -27,6 +27,7 @@ const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', '
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
 const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher', 'monitor']) });
 const stepScore = z.strictObject({ stepId: id, points: z.number().int().min(0).max(100), comment: z.string().trim().max(1000) });
+const feedbackDraft = z.strictObject({ content: z.string().trim().min(1).max(6000), scores: z.array(stepScore).max(10) });
 const feedback = z.strictObject({ id, content: text, createdAt: date,
   scores: z.array(stepScore).nullable(), totalPoints: z.number().int().min(0).nullable() });
 const submission = z.strictObject({ id, versionId: id, userId: id, groupId: id.nullable(), attempt: z.number().int().positive().optional(), revisionRequested: z.boolean().optional(), status: z.enum(['draft', 'submitted', 'reviewed']),
@@ -143,6 +144,8 @@ export const routes = {
   submissions: { method: 'get', path: '/v1/activities/{id}/submissions', body: empty, query: page, response: list(submission) },
   submission: { method: 'get', path: '/v1/submissions/{id}', body: empty, query: empty, response: submission },
   feedback: { method: 'post', path: '/v1/submissions/{id}/feedback', body: z.strictObject({ content: text, requestRevision: z.boolean().optional(), scores: z.array(stepScore).max(10).optional() }), query: empty, response: submission },
+  generateFeedbackDraft: { method: 'post', path: '/v1/submissions/{id}/ai-feedback-draft', body: z.strictObject({ approvedForProvider: z.literal(true), idempotencyKey: z.uuid() }), query: empty,
+    response: z.strictObject({ id, status: z.enum(['running', 'succeeded', 'failed']), draft: feedbackDraft.nullable() }) },
   setStepDeadlineExtension: { method: 'patch', path: '/v1/activities/{id}/steps/{stepId}/deadline-extension', body: z.strictObject({ studentId: id, dueAt: date.nullable() }), query: empty,
     response: z.strictObject({ stepId: id, studentId: id, dueAt: date.nullable() }) },
   createBarrier: { method: 'post', path: '/v1/steps/{id}/barriers', body: z.strictObject({ description: text, sharedWithTeacher: z.boolean() }), query: empty, response: barrier },

@@ -242,6 +242,10 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/submissions/{id}/feedback"
   },
+  "generateFeedbackDraft": {
+    "method": "POST",
+    "path": "/submissions/{id}/ai-feedback-draft"
+  },
   "setStepDeadlineExtension": {
     "method": "PATCH",
     "path": "/activities/{id}/steps/{stepId}/deadline-extension"
