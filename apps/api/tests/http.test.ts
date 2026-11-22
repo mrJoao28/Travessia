@@ -345,7 +345,9 @@ test('código curto da turma é privado, reutilizável, transacional e desativá
  await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code},409);
  const member=await db.membership.findUniqueOrThrow({where:{userId_classroomId:{userId:one.user.id,classroomId:workshop}}});
  await request(`/v1/classrooms/${workshop}/members/${member.id}`,main,'DELETE');
- await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code},409);
+ const rejoined = await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code});
+ assert.equal(rejoined.json.role, 'student');
+ assert.equal((await db.membership.findUniqueOrThrow({where:{userId_classroomId:{userId:one.user.id,classroomId:workshop}}})).active, true);
  await request(`/v1/classrooms/${workshop}/invitations/${invite.id}`,main,'DELETE');
  await request('/v1/invitations/accept',three.cookie,'POST',{token:invite.code},400);
  await request('/v1/invitations/accept',three.cookie,'POST',{token:invite.token},400);
