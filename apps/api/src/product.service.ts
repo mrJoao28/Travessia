@@ -225,13 +225,15 @@ export class ProductService {
         const invite = await tx.invitation.findUnique({ where: token.length===8 ? { codeHash: digest(token) } : { tokenHash: digest(token) }, include: { classroom: true } });
         if (!invite || invite.classroom.archivedAt || invite.revokedAt || (!invite.reusable && invite.consumedAt) || invite.expiresAt <= new Date()) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
         const old = await tx.membership.findUnique({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } } });
-        // A valid, teacher-issued monitor invitation may promote an active student in this classroom.
-        // Revoked memberships and other existing roles cannot regain or change access this way.
+        // An inactive historical membership is invisible in the student's active classroom list,
+        // but it must be reactivated when the student accepts a new valid invitation.
+        // An active student may also be promoted by a teacher-issued monitor invitation.
+        const reactivate = !!old && !old.active;
         const promoteStudentToMonitor = !!old && old.active && old.role === 'student' && invite.role === 'monitor';
-        if (old && !promoteStudentToMonitor) return fail(409, 'MEMBERSHIP_EXISTS', 'Sua conta já possui um vínculo com essa turma.');
+        if (old && !reactivate && !promoteStudentToMonitor) return fail(409, 'MEMBERSHIP_EXISTS', 'Sua conta já possui um vínculo com essa turma.');
         const changed = await tx.invitation.updateMany({ where: { id: invite.id, consumedAt: null, revokedAt: null, expiresAt: { gt: new Date() } }, data: invite.reusable ? { expiresAt: invite.expiresAt } : { consumedAt: new Date(), consumedBy: userId } });
         if (!changed.count) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
-        if (promoteStudentToMonitor) await tx.membership.update({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } }, data: { role: 'monitor' } });
+        if (reactivate || promoteStudentToMonitor) await tx.membership.update({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } }, data: { role: invite.role, active: true } });
         else await tx.membership.create({ data: { userId, classroomId: invite.classroomId, role: invite.role } });
         const c = await tx.classroom.findUniqueOrThrow({ where: { id: invite.classroomId } });
         return { id: c.id, name: c.name, role: invite.role, archivedAt: c.archivedAt };
