@@ -159,6 +159,15 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   expect((await student.request.get('/api/v1/classrooms').then(r=>r.json())).items.some((room:{id:string})=>room.id===classroom.id)).toBe(false);
   const monitorInvitation=await post(teacher,`/api/v1/classrooms/${classroom.id}/invitations`,{role:'monitor'});
   await post(other,'/api/v1/invitations/accept',{token:monitorInvitation.code});
+  await other.goto(`/professor?turma=${classroom.id}`);
+  const monitorPanel = other.getByRole('region', {name: classroom.name, exact: true});
+  await expect(monitorPanel.getByRole('heading', {name:'Rotas acessíveis no campus', exact:true})).toBeVisible();
+  await other.setViewportSize({width:320,height:850});
+  expect(await other.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await monitorPanel.getByRole('link', {name:/Acompanhar entregas/}).click();
+  await expect(other).toHaveURL(url => url.pathname === '/professor/entregas' && url.searchParams.get('turma') === classroom.id);
+  await expect(other.getByRole('heading', {name:'Entregas para acompanhar', exact:true})).toBeVisible();
+  await expect(other.getByLabel('Contexto de turma')).toHaveValue(classroom.id);
   await other.goto(`/professor/turmas?turma=${classroom.id}`);
   await expect(other.getByRole('heading',{name:'Turma do fluxo completo',exact:true})).toBeVisible();
   await expect(other.getByText('Monitor · vínculo ativo',{exact:true})).toBeVisible();
