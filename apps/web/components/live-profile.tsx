@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { api, errorMessage, type ApiBody, type ApiResponse } from "../lib/product-client";
+import { api, pages, errorMessage, type ApiBody, type ApiResponse } from "../lib/product-client";
 import { Workspace } from "./workspace";
 import { OperationStatus } from "./operation-status";
+import { ClassroomTeamManager } from "./classroom-team-manager";
 
 type Profile = ApiResponse<"profile">;
 type Saved = (value: Profile) => void;
@@ -14,11 +15,12 @@ export function LiveProfile({ role }: { role: "aluno" | "professor" }) {
   const [me, setMe] = useState<ApiResponse<"me"> | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [classrooms, setClassrooms] = useState<ApiResponse<"classrooms">["items"]>([]);
   useEffect(() => {
     const controller = new AbortController();
     setError("");
-    void Promise.all([api("profile", { signal: controller.signal }), api("me", { signal: controller.signal })])
-      .then(([profile, account]) => { if (!controller.signal.aborted) { setData(profile); setMe(account); } })
+    void Promise.all([api("profile", { signal: controller.signal }), api("me", { signal: controller.signal }), pages("classrooms")])
+      .then(([profile, account, rooms]) => { if (!controller.signal.aborted) { setData(profile); setMe(account); setClassrooms(rooms.filter(room => room.role === "student")); } })
       .catch(reason => { if (!controller.signal.aborted) setError(errorMessage(reason)); });
     return () => controller.abort();
   }, [attempt]);
@@ -35,6 +37,7 @@ export function LiveProfile({ role }: { role: "aluno" | "professor" }) {
       <ContactForm initial={data} onSaved={setData} />
       <p>Você pode preencher os dois perfis. Seus dados acadêmicos ficam na sua conta; o acesso a cada turma depende do vínculo com ela.</p>
       <StudentForm initial={data} onSaved={setData} />
+      {role === "aluno" && data.id && classrooms.map(room => <ClassroomTeamManager key={room.id} classroomId={room.id} classroomName={room.name} viewerId={data.id} />)}
       <TeacherForm initial={data} onSaved={setData} />
     </div>}
   </Workspace>;
@@ -100,13 +103,18 @@ const studentFields = [
   ["unit", "Unidade / campus", 150], ["course", "Curso do aluno", 150], ["period", "Período", 50],
 ] as const;
 function StudentForm({ initial, onSaved }: { initial: Profile; onSaved: Saved }) {
-  const [values, setValues] = useState(() => Object.fromEntries(studentFields.map(([key]) => [key, initial.student?.[key] ?? ""])) as Record<typeof studentFields[number][0], string>);
+  const [values, setValues] = useState(() => ({ ...Object.fromEntries(studentFields.map(([key]) => [key, initial.student?.[key] ?? ""])), preferredWorkMode: initial.student?.preferredWorkMode ?? "individual" }) as Record<typeof studentFields[number][0], string> & { preferredWorkMode: string });
   const { pending, save, status } = useSave(onSaved, "Perfil de aluno salvo.");
   return <section aria-label="Perfil de aluno">
-    <ProfileForm title="Perfil de aluno" description="Preencha os dados acadêmicos que deseja manter na sua conta. Todos os campos são opcionais."
-      pending={pending} button="Salvar perfil de aluno" onSubmit={e => { e.preventDefault(); void save({ student: Object.fromEntries(studentFields.map(([key]) => [key, nullable(values[key])])) }); }}>
+      <ProfileForm title="Perfil de aluno" description="Preencha os dados acadêmicos que deseja manter na sua conta. Todos os campos são opcionais."
+      pending={pending} button="Salvar perfil de aluno" onSubmit={e => { e.preventDefault(); void save({ student: { ...Object.fromEntries(studentFields.map(([key]) => [key, nullable(values[key])])), preferredWorkMode: values.preferredWorkMode as "individual" | "group" | "mixed" } }); }}>
       <div className="profile-grid">{studentFields.map(([key, label, maxLength]) => <Field key={key} id={`student-${key}`}
         label={label} value={values[key]} onChange={value => setValues(old => ({ ...old, [key]: value }))} maxLength={maxLength} />)}</div>
+      <label htmlFor="student-preferred-work-mode">Preferência de realização das atividades
+        <select id="student-preferred-work-mode" value={values.preferredWorkMode} onChange={e => setValues(old => ({ ...old, preferredWorkMode: e.target.value }))}>
+          <option value="individual">Individual</option><option value="group">Em grupo</option><option value="mixed">Individual ou grupo</option>
+        </select>
+      </label>
     </ProfileForm>{status}
   </section>;
 }

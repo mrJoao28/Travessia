@@ -25,6 +25,16 @@ export function GradebookManager({ classroomId, entries }: { classroomId: string
     catch (reason) { setMessage(errorMessage(reason)); } finally { setPending(false); }
   }
   async function open(period: Period) { setPending(true); setMessage(""); try { setActive(await api("gradebook", { params: { id: period.id } })); } catch (reason) { setMessage(errorMessage(reason)); } finally { setPending(false); } }
+  function exportCsv() {
+    if (!active) return;
+    const rows = [
+      ["Aluno", ...active.period.assessments.map(item => item.title), "Média"],
+      ...active.students.map(student => [student.name, ...student.assessments.map(item => item.value === null ? "" : item.value.toFixed(2)), student.average === null ? "" : student.average.toFixed(2)]),
+    ];
+    const csv = "\\uFEFF" + rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(";")).join("\\r\\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = `${active.period.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "notas"}.csv`; link.click(); URL.revokeObjectURL(url);
+  }
   return <details className="paper teacher-disclosure">
     <summary>Bimestres e notas</summary>
     <div className="form-stack">
@@ -35,7 +45,7 @@ export function GradebookManager({ classroomId, entries }: { classroomId: string
         <p>{period.assessments.length ? period.assessments.map(item => `${item.title} (peso ${item.weight})`).join(" · ") : "Nenhuma avaliação associada."}</p>
         <div className="button-row"><label htmlFor={`grade-assessment-${period.id}`}>Adicionar avaliação<select id={`grade-assessment-${period.id}`} value={selected} onChange={e => setSelected(e.target.value)}><option value="">Escolher atividade</option>{entries.filter(entry => !period.assessments.some(item => item.missionId === entry.mission.id)).map(entry => <option key={entry.mission.id} value={entry.mission.id}>{(entry.mission.draftVersion ?? entry.mission.publishedVersion)?.title ?? "Atividade"}</option>)}</select></label><label htmlFor={`grade-weight-${period.id}`}>Peso<input id={`grade-weight-${period.id}`} type="number" min="1" max="100" value={weight} onChange={e => setWeight(e.target.value)} /></label><button className="button button-outline" type="button" disabled={pending || !selected} onClick={() => void addAssessment(period)}>Adicionar</button><button className="text-button" type="button" disabled={pending} onClick={() => void open(period)}>Visualizar notas</button></div>
       </section>)}
-      {active && <section aria-live="polite"><h3>{active.period.name}</h3><div className="table-scroll"><table><caption>Notas por aluno</caption><thead><tr><th scope="col">Aluno</th>{active.period.assessments.map(item => <th scope="col" key={item.id}>{item.title}</th>)}<th scope="col">Média</th></tr></thead><tbody>{active.students.map(student => <tr key={student.studentId}><th scope="row">{student.name}</th>{student.assessments.map(item => <td key={item.assessmentId}>{item.value === null ? "—" : item.value.toFixed(2)}</td>)}<td>{student.average === null ? "—" : student.average.toFixed(2)}</td></tr>)}</tbody></table></div></section>}
+      {active && <section aria-live="polite"><div className="button-row"><h3>{active.period.name}</h3><button type="button" className="button button-outline" onClick={exportCsv}>Baixar notas para Excel</button></div><div className="table-scroll"><table><caption>Notas por aluno</caption><thead><tr><th scope="col">Aluno</th>{active.period.assessments.map(item => <th scope="col" key={item.id}>{item.title}</th>)}<th scope="col">Média</th></tr></thead><tbody>{active.students.map(student => <tr key={student.studentId}><th scope="row">{student.name}</th>{student.assessments.map(item => <td key={item.assessmentId}>{item.value === null ? "—" : item.value.toFixed(2)}</td>)}<td>{student.average === null ? "—" : student.average.toFixed(2)}</td></tr>)}</tbody></table></div><p className="small">O arquivo CSV é compatível com Excel e preserva todas as avaliações e médias do bimestre.</p></section>}
       {message && <p role="status">{message}</p>}
     </div>
   </details>;

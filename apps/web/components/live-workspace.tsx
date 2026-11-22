@@ -604,14 +604,14 @@ function SubmissionList({
         {submitted.map(({ entry, submission }) => (
           <li className="paper" key={submission.id}>
             <div>
-              <p className="eyebrow accent">{entry.classroom.name}</p>
+              <p className="eyebrow accent">{entry.classroom.name}{entry.classroom.shift ? ` · ${entry.classroom.shift}` : ""}</p>
               <h2>
                 {
                   (entry.mission.publishedVersion ?? entry.mission.draftVersion)
                     ?.title
                 }
               </h2>
-              {submission.groupId && <p>Equipe: {entry.groups?.find(group => group.id === submission.groupId)?.name ?? "Equipe da atividade"}</p>}
+              {submission.groupId && <p>Equipe: {entry.groups?.find(group => group.id === submission.groupId)?.name ?? "Equipe da atividade"}{submission.groupMembers?.length ? ` · Integrantes: ${submission.groupMembers.map(member => member.name).join(", ")}` : ""}</p>}
               <p className="badge">
                 {submission.status === "draft"
                   ? "Rascunho"

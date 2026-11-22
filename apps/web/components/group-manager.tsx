@@ -68,7 +68,7 @@ export function GroupManager({ missionId }: { missionId: string }) {
   }
   return <section className="paper form-stack" aria-label="Equipes da atividade">
     <h3>Equipes da atividade</h3>
-    <p>Organize os alunos da turma em equipes de pelo menos duas pessoas. Todos os membros podem editar a mesma entrega. O líder é apenas uma referência de organização e não concentra permissões.</p>
+    <p>Organize os alunos da turma em equipes de pelo menos duas pessoas. Todos os membros podem editar a mesma entrega. A equipe permanente da turma é reaproveitada quando uma atividade em grupo é criada.</p>
     {groups.map(group => <div key={group.id} className="example">
       <strong>{group.name}</strong> · Líder: {students.find(student => student.id === group.leaderId)?.name ?? "não definido"}<br />
       <span>{group.studentIds.map(id => students.find(student => student.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ")}</span>
