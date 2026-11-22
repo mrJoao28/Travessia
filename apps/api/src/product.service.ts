@@ -18,6 +18,7 @@ import { MATERIAL_DRAFT_RETENTION_MS, publishedMaterialExpiry } from './material
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
 const missionInclude = { draftVersion: { include: versionInclude }, publishedVersion: { include: versionInclude } };
 const submissionInclude = { feedback: { orderBy: { createdAt: 'asc' as const } },
+  group: { include: { members: { include: { user: { select: { id: true, name: true } } } } } },
   version: { include: { steps: { orderBy: { position: 'asc' as const }, include: { deadlineExtensions: true } } } } };
 type MissionRow = Prisma.MissionGetPayload<{ include: typeof missionInclude }>;
 
@@ -33,7 +34,7 @@ export function missionView(row: MissionRow, teacher: boolean) {
 export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof submissionInclude }>) {
   const completions = s.stepCompletedAt && typeof s.stepCompletedAt === 'object' && !Array.isArray(s.stepCompletedAt)
     ? s.stepCompletedAt as Record<string, string> : {};
-  return { id: s.id, versionId: s.versionId, userId: s.userId, groupId: s.groupId, status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
+  return { id: s.id, versionId: s.versionId, userId: s.userId, groupId: s.groupId, groupMembers: s.group?.members.map(m => ({ id: m.user.id, name: m.user.name })) ?? [], status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
     submittedAt: s.submittedAt, updatedAt: s.updatedAt, attempt: s.attempt, revisionRequested: s.revisionRequested,
     gradingSteps: s.version.steps.map(step => {
@@ -93,9 +94,12 @@ function pagination<T extends {id: string}>(rows: T[], limit: number) {
 }
 const pageArgs = (p: Paging) => ({ take: p.limit + 1, orderBy: { id: 'asc' as const }, ...(p.cursor ? { where: { id: { gt: p.cursor } } } : {}) });
 const after = (p: Paging) => p.cursor ? { id: { gt: p.cursor } } : {};
-function gradePeriodView(period: { id: string; classroomId: string; name: string; startsAt: Date | null; endsAt: Date | null; assessments: { id: string; missionId: string; weight: number; mission: { draftVersion: { title: string } | null; publishedVersion: { title: string } | null } }[] }) {
-  return { id: period.id, classroomId: period.classroomId, name: period.name, startsAt: period.startsAt, endsAt: period.endsAt,
+function gradePeriodView(period: { id: string; classroomId: string; name: string; formula: string; startsAt: Date | null; endsAt: Date | null; assessments: { id: string; missionId: string; weight: number; mission: { draftVersion: { title: string } | null; publishedVersion: { title: string } | null } }[] }) {
+  return { id: period.id, classroomId: period.classroomId, name: period.name, formula: period.formula as 'weighted_average' | 'simple_average' | 'sum', startsAt: period.startsAt, endsAt: period.endsAt,
     assessments: period.assessments.map(a => ({ id: a.id, missionId: a.missionId, title: a.mission.publishedVersion?.title ?? a.mission.draftVersion?.title ?? 'Atividade', weight: a.weight })) };
+}
+function classroomTeamView(team: { id: string; classroomId: string; name: string; leaderId: string; members: { user: { id: string; name: string } }[] }) {
+  return { id: team.id, classroomId: team.classroomId, name: team.name, leaderId: team.leaderId, members: team.members.map(member => ({ id: member.user.id, name: member.user.name })) };
 }
 
 export class ProductService {
@@ -129,14 +133,35 @@ export class ProductService {
           ...(history ? { ownerId: userId } : {}),
           memberships: { some: { userId, active: true, ...(history ? { role: 'teacher' } : {}) } } },
         include: { memberships: { where: { userId, active: true }, select: { role: true } } } });
-      return pagination(rows.map(c => ({ id: c.id, name: c.name, role: c.memberships[0].role, archivedAt: c.archivedAt,
+      return pagination(rows.map(c => ({ id: c.id, name: c.name, shift: c.shift, role: c.memberships[0].role, archivedAt: c.archivedAt,
         ownerId: c.ownerId, isOwner: c.ownerId === userId })), classroomsQuery.limit);
     }
     if (op === 'createClassroom') {
       await budget(this.db, `create-classroom:${userId}`, 10, 3600);
       const data = body as Body<'createClassroom'>;
-      const c = await this.db.classroom.create({ data: { name: data.name, ownerId: userId, memberships: { create: { userId, role: 'teacher' } } } });
-      return { id: c.id, name: c.name, role: 'teacher', archivedAt: null };
+      const c = await this.db.classroom.create({ data: { name: data.name, shift: data.shift ?? null, ownerId: userId, memberships: { create: { userId, role: 'teacher' } } } });
+      return { id: c.id, name: c.name, shift: c.shift, role: 'teacher', archivedAt: null };
+    }
+    if (['classroomTeams', 'createClassroomTeam', 'updateClassroomTeam', 'deleteClassroomTeam'].includes(op)) {
+      const member = await membership(this.db, userId, id, false);
+      const teamInclude = { members: { include: { user: { select: { id: true, name: true } } } } } as const;
+      if (op === 'classroomTeams') {
+        const rows = await this.db.classroomTeam.findMany({ where: { classroomId: id, ...(member.role === 'student' ? { members: { some: { userId } } } : {}) }, include: teamInclude, orderBy: { name: 'asc' } });
+        return { items: rows.map(classroomTeamView) };
+      }
+      const data = body as Body<'createClassroomTeam'> | Body<'updateClassroomTeam'>;
+      const current = op === 'updateClassroomTeam' || op === 'deleteClassroomTeam' ? await this.db.classroomTeam.findFirst({ where: { id: p.teamId, classroomId: id }, include: teamInclude }) : null;
+      if (!current && op !== 'createClassroomTeam') return missing();
+      const canManage = isInstructorRole(member.role) || current?.leaderId === userId || (op === 'createClassroomTeam' && data.leaderId === userId);
+      if (!canManage) return missing();
+      const students = await this.db.membership.count({ where: { classroomId: id, role: 'student', active: true, userId: { in: data.studentIds } } });
+      if (students !== data.studentIds.length || !data.studentIds.includes(data.leaderId)) return fail(400, 'INVALID_TEAM_MEMBERS', 'Escolha alunos ativos da turma e mantenha o líder na equipe.');
+      if (op === 'deleteClassroomTeam') { await this.db.classroomTeam.delete({ where: { id: current!.id } }); return { removed: true }; }
+      const saved = op === 'createClassroomTeam'
+        ? await this.db.classroomTeam.create({ data: { classroomId: id, name: data.name, leaderId: data.leaderId, members: { create: data.studentIds.map(userId => ({ userId })) } }, include: teamInclude })
+        : await this.db.classroomTeam.update({ where: { id: current!.id }, data: { name: data.name, leaderId: data.leaderId, members: { deleteMany: {}, create: data.studentIds.map(userId => ({ userId })) } }, include: teamInclude });
+      await this.db.auditEvent.create({ data: { actorId: userId, action: `classroom-team.${op === 'createClassroomTeam' ? 'create' : 'update'}`, resourceId: saved.id } });
+      return classroomTeamView(saved);
     }
     if (op === 'gradePeriods' || op === 'createGradePeriod') {
       const member = await membership(this.db, userId, id, true);
@@ -150,7 +175,7 @@ export class ProductService {
         return { items: rows.map(gradePeriodView) };
       }
       const data = body as Body<'createGradePeriod'>;
-      const period = await this.db.gradePeriod.create({ data: { classroomId: id, name: data.name, startsAt: data.startsAt ? new Date(data.startsAt) : null, endsAt: data.endsAt ? new Date(data.endsAt) : null }, include: { assessments: { include: { mission: { include: { draftVersion: { select: { title: true } }, publishedVersion: { select: { title: true } } } } } } } });
+      const period = await this.db.gradePeriod.create({ data: { classroomId: id, name: data.name, formula: data.formula ?? 'weighted_average', startsAt: data.startsAt ? new Date(data.startsAt) : null, endsAt: data.endsAt ? new Date(data.endsAt) : null }, include: { assessments: { include: { mission: { include: { draftVersion: { select: { title: true } }, publishedVersion: { select: { title: true } } } } } } } });
       await this.db.auditEvent.create({ data: { actorId: userId, action: 'grade-period.create', resourceId: period.id } });
       return gradePeriodView(period);
     }
@@ -184,7 +209,11 @@ export class ProductService {
         const assessments = period.assessments.map(a => ({ assessmentId: a.id, missionId: a.missionId, title: a.mission.publishedVersion?.title ?? a.mission.draftVersion?.title ?? 'Atividade', value: valueFor(a.id, a.missionId, user.id), weight: a.weight }));
         const graded = assessments.filter(a => a.value !== null);
         const totalWeight = graded.reduce((sum, a) => sum + a.weight, 0);
-        const average = totalWeight ? Math.round(graded.reduce((sum, a) => sum + (a.value! * a.weight), 0) / totalWeight * 100) / 100 : null;
+        const average = !graded.length ? null : period.formula === 'sum'
+          ? Math.round(graded.reduce((sum, a) => sum + a.value!, 0) * 100) / 100
+          : period.formula === 'simple_average'
+            ? Math.round(graded.reduce((sum, a) => sum + a.value!, 0) / graded.length * 100) / 100
+            : totalWeight ? Math.round(graded.reduce((sum, a) => sum + (a.value! * a.weight), 0) / totalWeight * 100) / 100 : null;
         return { studentId: user.id, name: user.name, assessments, average };
       }) };
     }
@@ -283,6 +312,13 @@ export class ProductService {
           if (member.role === 'student') return missing();
           const m = await tx.mission.create({ data: { classroomId: id } });
           const version = await createVersion(tx, m.id, body as MissionInput);
+          if (version.workMode !== 'individual') {
+            const teams = await tx.classroomTeam.findMany({ where: { classroomId: id }, include: { members: true } });
+            for (const team of teams) {
+              const group = await tx.missionGroup.create({ data: { missionId: m.id, name: team.name, leaderId: team.leaderId, members: { create: team.members.map(member => ({ userId: member.userId })) } } });
+              await tx.missionParticipation.createMany({ data: team.members.map(member => ({ missionId: m.id, userId: member.userId, groupId: group.id, mode: 'group' })), skipDuplicates: true });
+            }
+          }
           const row = await tx.mission.update({ where: { id: m.id }, data: { draftVersionId: version.id }, include: missionInclude });
           return missionView(row, true);
         }
@@ -333,9 +369,13 @@ export class ProductService {
           return { items: groups.map(g => ({ id: g.id, name: g.name, leaderId: g.leaderId, studentIds: g.members.map(m => m.userId) })) };
         }
         if (op === 'createGroup') {
-          if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
+          if (row.status === 'archived') return missing();
           if (row.draftVersion?.workMode === 'individual' && row.publishedVersion?.workMode === 'individual') return fail(409, 'INDIVIDUAL_ACTIVITY', 'Esta atividade é individual.');
           const data = body as Body<'createGroup'>;
+          if (member.role === 'student') {
+            const team = await tx.classroomTeam.findFirst({ where: { classroomId: row.classroomId, leaderId: userId, members: { every: { userId: { in: data.studentIds } } } }, include: { members: true } });
+            if (!team || team.leaderId !== data.leaderId || team.members.length !== data.studentIds.length || team.members.some(item => !data.studentIds.includes(item.userId))) return missing();
+          } else if (!isInstructorRole(member.role)) return missing();
           if (await tx.missionGroup.count({ where: { missionId: id, name: data.name } })) return fail(409, 'GROUP_NAME_EXISTS', 'Já existe uma equipe com este nome nesta atividade.');
           const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
           if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');
@@ -348,10 +388,12 @@ export class ProductService {
           return { id: group.id, name: group.name, leaderId: group.leaderId, studentIds: data.studentIds };
         }
         if (op === 'updateGroup') {
-          if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
+          if (row.status === 'archived') return missing();
           const data = body as Body<'updateGroup'>;
           const group = await tx.missionGroup.findFirst({ where: { id: p.groupId, missionId: id }, include: { members: true } });
           if (!group) return missing();
+          if (member.role === 'student' && group.leaderId !== userId) return missing();
+          if (!isInstructorRole(member.role) && member.role !== 'student') return missing();
           if (data.leaderId && !data.studentIds.includes(data.leaderId)) return fail(400, 'INVALID_LEADER', 'O líder precisa pertencer à equipe.');
           const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
           if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');

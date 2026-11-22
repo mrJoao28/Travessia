@@ -10,7 +10,7 @@ function view(user: ProfileRow) {
   const s = user.studentProfile;
   return { id: user.id, name: user.name, email: user.email, emailVerified: user.emailVerified,
     phone: user.profile?.phone ?? null, alternateEmail: user.profile?.alternateEmail ?? null,
-    student: s ? { registration: s.registration, institution: s.institution, unit: s.unit, course: s.course, period: s.period } : null,
+    student: s ? { registration: s.registration, institution: s.institution, unit: s.unit, course: s.course, period: s.period, preferredWorkMode: s.preferredWorkMode as 'individual' | 'group' | 'mixed' } : null,
     teacher: user.teacherProfile ? { teachings: user.teacherProfile.teachings.map(t => ({ subject: t.subject, course: t.course })) } : null };
 }
 
