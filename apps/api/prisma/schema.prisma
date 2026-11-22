@@ -23,6 +23,7 @@ model User {
   teacherProfile TeacherProfile?
   preferences   ReadingPreferences?
   memberships   Membership[]
+  ownedClassrooms Classroom[] @relation("classroomOwner")
   missionGroups MissionGroupMember[]
   submissions   Submission[]
   studentDeadlineExtensions StepDeadlineExtension[] @relation("studentDeadlineExtensions")
@@ -157,9 +158,14 @@ model Classroom {
   id String @id @default(uuid())
   name String
   createdAt DateTime @default(now())
+  ownerId String
+  owner User @relation("classroomOwner", fields: [ownerId], references: [id])
+  archivedAt DateTime?
   memberships Membership[]
   invitations Invitation[]
   missions Mission[]
+
+  @@index([ownerId, archivedAt])
 }
 model Membership {
   id String @id @default(uuid())
