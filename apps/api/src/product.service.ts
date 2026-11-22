@@ -202,7 +202,7 @@ export class ProductService {
           return pagination(rows.map(barrierView), paging.limit);
         }
       }
-      if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'removeGroup'].includes(op)) {
+      if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op)) {
         const { row, member } = await scopedMission(tx, userId, id, ['publish', 'archive', 'setStepDeadlineExtension'].includes(op));
         if (op === 'mission') {
           const view = missionView(row, member.role !== 'student');
@@ -234,22 +234,53 @@ export class ProductService {
         }
         if (op === 'groups') {
           const relevant = member.role === 'student' ? row.publishedVersion : row.draftVersion ?? row.publishedVersion;
-          if (relevant?.workMode !== 'group') return { items: [] };
+          if (relevant?.workMode === 'individual') return { items: [] };
           const groups = await tx.missionGroup.findMany({ where: { missionId: id, ...(member.role === 'student' ? { members: { some: { userId } } } : {}) }, include: { members: { select: { userId: true } } }, orderBy: { name: 'asc' } });
-          return { items: groups.map(g => ({ id: g.id, name: g.name, studentIds: g.members.map(m => m.userId) })) };
+          return { items: groups.map(g => ({ id: g.id, name: g.name, leaderId: g.leaderId, studentIds: g.members.map(m => m.userId) })) };
         }
         if (op === 'createGroup') {
           if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
-          if (row.draftVersion?.workMode !== 'group' && row.publishedVersion?.workMode !== 'group') return fail(409, 'INDIVIDUAL_ACTIVITY', 'Esta atividade é individual.');
+          if (row.draftVersion?.workMode === 'individual' && row.publishedVersion?.workMode === 'individual') return fail(409, 'INDIVIDUAL_ACTIVITY', 'Esta atividade é individual.');
           const data = body as Body<'createGroup'>;
           if (await tx.missionGroup.count({ where: { missionId: id, name: data.name } })) return fail(409, 'GROUP_NAME_EXISTS', 'Já existe uma equipe com este nome nesta atividade.');
           const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
           if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');
+          if (data.leaderId && !data.studentIds.includes(data.leaderId)) return fail(400, 'INVALID_LEADER', 'O líder precisa pertencer à equipe.');
           const already = await tx.missionGroupMember.count({ where: { userId: { in: data.studentIds }, group: { missionId: id } } });
           if (already) return fail(409, 'GROUP_MEMBERSHIP_EXISTS', 'Um aluno já pertence a outra equipe desta atividade.');
-          const group = await tx.missionGroup.create({ data: { missionId: id, name: data.name, members: { create: data.studentIds.map(userId => ({ userId })) } } });
+          const group = await tx.missionGroup.create({ data: { missionId: id, name: data.name, leaderId: data.leaderId ?? data.studentIds[0], members: { create: data.studentIds.map(userId => ({ userId })) } } });
+          await tx.missionParticipation.createMany({ data: data.studentIds.map(userId => ({ missionId: id, userId, groupId: group.id, mode: 'group' })), skipDuplicates: true });
           await tx.auditEvent.create({ data: { actorId: userId, action: 'group.create', resourceId: group.id } });
-          return { id: group.id, name: group.name, studentIds: data.studentIds };
+          return { id: group.id, name: group.name, leaderId: group.leaderId, studentIds: data.studentIds };
+        }
+        if (op === 'updateGroup') {
+          if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
+          const data = body as Body<'updateGroup'>;
+          const group = await tx.missionGroup.findFirst({ where: { id: p.groupId, missionId: id }, include: { members: true } });
+          if (!group) return missing();
+          if (data.leaderId && !data.studentIds.includes(data.leaderId)) return fail(400, 'INVALID_LEADER', 'O líder precisa pertencer à equipe.');
+          const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
+          if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');
+          const occupied = await tx.missionGroupMember.count({ where: { userId: { in: data.studentIds }, group: { missionId: id, id: { not: group.id } } } });
+          if (occupied) return fail(409, 'GROUP_MEMBERSHIP_EXISTS', 'Um aluno já pertence a outra equipe desta atividade.');
+          await tx.missionGroupMember.deleteMany({ where: { groupId: group.id } });
+          const changed = await tx.missionGroup.update({ where: { id: group.id }, data: { leaderId: data.leaderId ?? data.studentIds[0], members: { create: data.studentIds.map(userId => ({ userId })) } }, include: { members: true } });
+          await tx.missionParticipation.deleteMany({ where: { missionId: id, groupId: group.id } });
+          await tx.missionParticipation.createMany({ data: data.studentIds.map(userId => ({ missionId: id, userId, groupId: group.id, mode: 'group' })) });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'group.update', resourceId: group.id } });
+          return { id: changed.id, name: changed.name, leaderId: changed.leaderId, studentIds: changed.members.map(m => m.userId) };
+        }
+        if (op === 'setParticipationMode') {
+          if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
+          const studentId = p.studentId;
+          const student = await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: studentId, role: 'student', active: true } });
+          if (!student) return missing();
+          const data = body as Body<'setParticipationMode'>;
+          const group = await tx.missionGroup.findFirst({ where: { missionId: id, members: { some: { userId: studentId } } } });
+          if (data.mode === 'group' && !group) return fail(409, 'GROUP_REQUIRED', 'Inclua o aluno em uma equipe antes de selecionar a entrega em grupo.');
+          const saved = await tx.missionParticipation.upsert({ where: { missionId_userId: { missionId: id, userId: studentId } }, create: { missionId: id, userId: studentId, mode: data.mode, groupId: data.mode === 'group' ? group?.id : null, reason: data.reason ?? null }, update: { mode: data.mode, groupId: data.mode === 'group' ? group?.id : null, reason: data.reason ?? null } });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'group.participation-mode', resourceId: saved.id } });
+          return { studentId, mode: saved.mode, groupId: saved.groupId, reason: saved.reason };
         }
         if (op === 'removeGroup') {
           if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
@@ -305,8 +336,11 @@ export class ProductService {
           if (input.versionId !== version.id) return fail(409, 'VERSION_CONFLICT', 'Uma nova versão foi publicada. Recarregue a missão.');
           const stepIds = new Set(version.steps.map(s => s.id));
           if (!stepIds.has(input.currentStepId) || input.completedStepIds.some(s => !stepIds.has(s)) || new Set(input.completedStepIds).size !== input.completedStepIds.length) return fail(400, 'INVALID_PROGRESS', 'Etapas inválidas.');
-          const group = version.workMode === 'group' ? await tx.missionGroup.findFirst({ where: { missionId: row.id, members: { some: { userId, user: { memberships: { some: { classroomId: row.classroomId, active: true, role: 'student' } } } } } } }) : null;
-          if (version.workMode === 'group' && !group) return fail(409, 'GROUP_REQUIRED', 'Peça ao professor para incluir você em uma equipe desta atividade.');
+          const participation = await tx.missionParticipation.findUnique({ where: { missionId_userId: { missionId: row.id, userId } } });
+          const group = version.workMode !== 'individual' && participation?.mode !== 'individual'
+            ? await tx.missionGroup.findFirst({ where: { id: participation?.groupId ?? undefined, missionId: row.id, members: { some: { userId } } } })
+            : null;
+          if ((version.workMode === 'group' || (version.workMode === 'mixed' && participation?.mode !== 'individual')) && !group) return fail(409, 'GROUP_REQUIRED', 'Peça ao professor para incluir você em uma equipe desta atividade.');
           const old = await tx.submission.findFirst({ where: { versionId: version.id, ...(group ? { groupId: group.id } : { userId, groupId: null }) }, orderBy: { attempt: 'desc' } });
           if ((old?.revision ?? 0) !== input.expectedRevision) {
             if (old && input.audio === undefined && input.textFile === undefined && old.content === input.content && old.status === input.status && old.currentStepId === input.currentStepId && JSON.stringify(old.completedStepIds) === JSON.stringify(input.completedStepIds)) return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: old.id }, include: submissionInclude }));

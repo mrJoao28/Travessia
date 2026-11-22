@@ -8539,7 +8539,8 @@
                                     "type": "string",
                                     "enum": [
                                       "individual",
-                                      "group"
+                                      "group",
+                                      "mixed"
                                     ]
                                   },
                                   "steps": {
@@ -8742,7 +8743,8 @@
                                     "type": "string",
                                     "enum": [
                                       "individual",
-                                      "group"
+                                      "group",
+                                      "mixed"
                                     ]
                                   },
                                   "steps": {
@@ -9025,7 +9027,8 @@
                     "type": "string",
                     "enum": [
                       "individual",
-                      "group"
+                      "group",
+                      "mixed"
                     ]
                   },
                   "steps": {
@@ -9199,7 +9202,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -9402,7 +9406,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -9697,7 +9702,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -9900,7 +9906,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -10169,7 +10176,8 @@
                     "type": "string",
                     "enum": [
                       "individual",
-                      "group"
+                      "group",
+                      "mixed"
                     ]
                   },
                   "steps": {
@@ -10365,7 +10373,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -10568,7 +10577,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -10890,7 +10900,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -11093,7 +11104,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -11401,7 +11413,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -11604,7 +11617,8 @@
                               "type": "string",
                               "enum": [
                                 "individual",
-                                "group"
+                                "group",
+                                "mixed"
                               ]
                             },
                             "steps": {
@@ -11845,6 +11859,18 @@
                             "minLength": 1,
                             "maxLength": 200
                           },
+                          "leaderId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
                           "studentIds": {
                             "type": "array",
                             "items": {
@@ -11857,6 +11883,7 @@
                         "required": [
                           "id",
                           "name",
+                          "leaderId",
                           "studentIds"
                         ],
                         "additionalProperties": false
@@ -11934,6 +11961,18 @@
                     "minLength": 1,
                     "maxLength": 150
                   },
+                  "leaderId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "studentIds": {
                     "minItems": 2,
                     "maxItems": 50,
@@ -11973,6 +12012,18 @@
                       "minLength": 1,
                       "maxLength": 200
                     },
+                    "leaderId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "studentIds": {
                       "type": "array",
                       "items": {
@@ -11985,6 +12036,7 @@
                   "required": [
                     "id",
                     "name",
+                    "leaderId",
                     "studentIds"
                   ],
                   "additionalProperties": false
@@ -12024,6 +12076,157 @@
       }
     },
     "/v1/activities/{id}/groups/{groupId}": {
+      "patch": {
+        "operationId": "updateGroup",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "leaderId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "studentIds": {
+                    "minItems": 2,
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  }
+                },
+                "required": [
+                  "studentIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "leaderId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "studentIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "leaderId",
+                    "studentIds"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "operationId": "removeGroup",
         "security": [
@@ -12071,6 +12274,155 @@
                   },
                   "required": [
                     "removed"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message",
+                    "requestId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}/participants/{studentId}": {
+      "patch": {
+        "operationId": "setParticipationMode",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "studentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "group",
+                      "individual"
+                    ]
+                  },
+                  "reason": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "mode"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "studentId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "group",
+                        "individual"
+                      ]
+                    },
+                    "groupId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "studentId",
+                    "mode",
+                    "groupId",
+                    "reason"
                   ],
                   "additionalProperties": false
                 }
