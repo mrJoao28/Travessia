@@ -83,7 +83,9 @@ export async function createApplication(db: PrismaClient, config: Config, provid
         const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
         if (!session) return fail(401, 'UNAUTHENTICATED', 'Entre novamente para continuar.');
         userId = session.user.id;
-        await budget(db, `api:${userId}`, 300, 60);
+        // Full browser integration runs in NODE_ENV=test and exercises many real routes
+        // in one minute; keep production's stricter user budget unchanged.
+        await budget(db, `api:${userId}`, process.env.NODE_ENV === 'test' ? 10000 : 300, 60);
       }
       const body = match.route.body.parse(req.body ?? {});
       const query = match.route.query.parse(req.query);

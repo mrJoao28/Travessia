@@ -27,7 +27,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const [showMoreSupports,setShowMoreSupports]=useState(false);
   const [showActivity,setShowActivity]=useState(false);
   const [activityDirty,setActivityDirty]=useState(false);
-  const [step, setStep] = useState(1), [studentId, setStudentId] = useState("");
+  const [step, setStep] = useState(1), [studentId, setStudentId] = useState(classroomAudience);
   const [delivery,setDelivery]=useState<"original"|"adapted">("original");
   const [downloadAllowed,setDownloadAllowed]=useState(initialDownloadAllowed);
   const [supports, setSupports] = useState<MaterialSupport[]>([]);
@@ -100,7 +100,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   }
   async function prepare() {
     await operation(async()=>{
-      if(!studentId || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha a turma ou um aluno, o PDF, as páginas e pelo menos um apoio.");
+      if(!studentId || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha um destinatário, o PDF, as páginas e pelo menos um apoio.");
       if(ai&&!approved)throw new Error("Confirme que as páginas selecionadas podem ser enviadas ao Gemini.");
       const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,...(studentId===classroomAudience?{audience:'classroom' as const}:{studentId}),pages:pageNumbers,autoRender:true,settings:{supports,fontSize:supports.includes('large-print')&&fontSize==='18'?'22':fontSize,color:supports.includes('high-contrast')&&color==='default'?'high':color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
       update(a);setReaderView('prepared');setStep(a.status==="ready"||a.status==="released"?3:2);
@@ -212,7 +212,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     });
   }
   return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material individual">
-    <header><h2>{recipientChosen?`Apoios para ${recipient}`:'Material da turma e adaptações'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o destinatário.'):'O PDF original vai para toda a turma ao publicar. Escolha a turma ou um aluno para preparar uma versão adaptada.'}</p><p className="small">Materiais publicados ficam disponíveis por 365 dias após a publicação. A data aparece em cada arquivo.</p></header>
+    <header><h2>{recipientChosen?`Apoios para ${recipient}`:'Material da turma e adaptações'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o destinatário.'):'O PDF original vai para toda a turma ao publicar. O destinatário inicial da adaptação também é toda a turma; você pode escolher um aluno.'}</p><p className="small">Materiais publicados ficam disponíveis por 365 dias após a publicação. A data aparece em cada arquivo.</p></header>
     {(error||message)&&<OperationStatus message={error||message} error={!!error}/>}
     {error&&<button className="text-button" type="button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo</button>}
     <div className="material-reference-desk">

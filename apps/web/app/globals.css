@@ -1257,7 +1257,10 @@ nav a:hover,
   }
   .classroom-card-actions {
     width: 100%;
-    flex-direction: column;
+    flex: 1 1 100%;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
     padding: 0.65rem;
   }
@@ -1269,6 +1272,7 @@ nav a:hover,
   .classroom-card-actions .classroom-action-item > .button {
     width: 100%;
     min-height: 2.75rem;
+    box-sizing: border-box;
   }
   .classroom-member-row,
   .classroom-invite-row {

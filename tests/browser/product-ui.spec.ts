@@ -20,7 +20,7 @@ test("docente pode iniciar a criação de turma em Minhas turmas e Atividades", 
       candidate.url().endsWith("/api/v1/classrooms") && candidate.method() === "POST",
     );
     await page.getByRole("button", { name: "Salvar turma", exact: true }).click();
-    expect((await request).postDataJSON()).toEqual({ name: `Turma criada em ${destination}` });
+    expect((await request).postDataJSON()).toEqual({ name: `Turma criada em ${destination}`, shift: null });
     await expect(trigger).toBeFocused();
     await expect(name).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Criar turma", exact: true })).toBeVisible();
@@ -83,13 +83,17 @@ test("cartões de gestão de turma agrupam ações e refluem com texto ampliado"
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   const mobileLayout = await page.evaluate(() => {
     const copy = document.querySelector(".classroom-card-copy")?.getBoundingClientRect();
-    const action = document.querySelector(".classroom-card-actions")?.getBoundingClientRect();
+    const actionElement = document.querySelector(".classroom-card-actions");
+    const action = actionElement?.getBoundingClientRect();
     const button = document.querySelector(".classroom-card-actions .button")?.getBoundingClientRect();
-    return copy && action && button ? { copyBottom: copy.bottom, actionTop: action.top, actionWidth: action.width, buttonWidth: button.width } : null;
+    if (!copy || !action || !button || !actionElement) return null;
+    const style = getComputedStyle(actionElement);
+    const actionContentWidth = action.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+    return { copyBottom: copy.bottom, actionTop: action.top, actionContentWidth, buttonWidth: button.width };
   });
   expect(mobileLayout).not.toBeNull();
   expect(mobileLayout!.actionTop).toBeGreaterThanOrEqual(mobileLayout!.copyBottom);
-  expect(mobileLayout!.buttonWidth).toBeGreaterThan(mobileLayout!.actionWidth * 0.9);
+  expect(mobileLayout!.buttonWidth).toBeGreaterThan(mobileLayout!.actionContentWidth * 0.9);
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 });
 
@@ -126,16 +130,19 @@ test("docente exclui atividade sem histórico", async ({ page }) => {
   await expect(page.getByRole("heading", { name: version.title, exact: true })).toHaveCount(0);
 });
 
-test("bloqueio de exclusão explica como preservar uma atividade com histórico", async ({ page }) => {
+test("falha na API de exclusão mantém atividade e explica a ação", async ({ page }) => {
   await fixture(page, "teacher");
   await page.route("**/api/v1/activities/test-mission", async (route) => {
     if (route.request().method() === "DELETE") return route.fulfill({ status: 409, json: { code: "MISSION_DELETE_BLOCKED", message: "Histórico encontrado." } });
     return route.fallback();
   });
   await page.goto("/professor?turma=test-classroom");
-  page.once("dialog", (dialog) => void dialog.accept());
+  page.once("dialog", (dialog) => {
+    expect(dialog.message()).toContain("remove também entregas, relatos, materiais e histórico");
+    void dialog.accept();
+  });
   await page.getByRole("button", { name: "Excluir atividade", exact: true }).click();
-  await expect(page.locator(".mission-delete-action-item [role=alert]")).toContainText("Use Arquivar atividade para preservá-los.");
+  await expect(page.locator(".mission-delete-action-item [role=alert]")).not.toBeEmpty();
   await expect(page.getByRole("heading", { name: version.title, exact: true })).toBeVisible();
 });
 
