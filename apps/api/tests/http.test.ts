@@ -1151,30 +1151,27 @@ test('limite de login persiste após recriar a aplicação e demo exige isolamen
   await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
   await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
 });
-test('exclusão de missão: somente teacher ativo, 409 com dados e hard delete sem dependências', async () => {
+test('exclusão de missão: somente teacher ativo e remoção permanente dos registros associados', async () => {
   const missionId = `${workshop}-mission`;
   await request(`/v1/missions/${missionId}`, '', 'DELETE', undefined, 401);
   await request(`/v1/missions/${missionId}`, a, 'DELETE', undefined, 404);
   await request(`/v1/missions/${missionId}`, b, 'DELETE', undefined, 404);
   await request(`/v1/missions/${missionId}`, otherTeacher, 'DELETE', undefined, 404);
-  const blocked = await request(`/v1/missions/${missionId}`, main, 'DELETE', undefined, 409);
-  assert.equal(blocked.json.code, 'MISSION_DELETE_BLOCKED');
-  assert.match(blocked.json.message, /Arquive/i);
   assert.ok(await db.mission.findUnique({ where: { id: missionId } }));
-  // monitor não é teacher: vínculo ativo não autoriza a exclusão.
   await db.membership.upsert({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } },
     update: { role: 'monitor', active: true }, create: { id: `${workshop}-member-monitor`, userId: 'demo-student-1', classroomId: workshop, role: 'monitor' } });
   await request(`/v1/missions/${missionId}`, a, 'DELETE', undefined, 404);
   await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { role: 'student' } });
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
-  assert.equal(created.status, 'draft');
-  assert.equal((await request(`/v1/missions/${created.id}`, main, 'DELETE')).json.deleted, true);
+  const version = await db.missionVersion.findUniqueOrThrow({ where: { id: created.draftVersion.id }, include: { steps: true } });
+  const submission = await db.submission.create({ data: { versionId: version.id, userId: 'demo-student-1', status: 'submitted',
+    content: 'Entrega associada.', currentStepId: version.steps[0].id, completedStepIds: [version.steps[0].id], submittedAt: new Date() } });
+  await db.feedback.create({ data: { submissionId: submission.id, teacherId: mainId, content: 'Feedback associado.' } });
+  const deleted = await request(`/v1/activities/${created.id}`, main, 'DELETE');
+  assert.equal(deleted.json.deleted, true);
   assert.equal(await db.mission.count({ where: { id: created.id } }), 0);
-  const second = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
-  assert.equal((await request(`/v1/activities/${second.id}`, main, 'DELETE')).json.deleted, true);
-  assert.equal(await db.mission.count({ where: { id: second.id } }), 0);
-  const audit = await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'mission.delete', resourceId: created.id } });
-  assert.ok(audit);
+  assert.equal(await db.submission.count({ where: { id: submission.id } }), 0);
+  assert.ok(await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'mission.delete', resourceId: created.id } }));
 });
 
 test('arquivamento de turma: metadados de posse, leitura histórica só do owner e mutações bloqueadas', async () => {
