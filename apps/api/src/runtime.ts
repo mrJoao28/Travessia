@@ -85,7 +85,7 @@ export async function createApplication(db: PrismaClient, config: Config, provid
         userId = session.user.id;
         // Full browser integration runs in NODE_ENV=test and exercises many real routes
         // in one minute; keep production's stricter user budget unchanged.
-        await budget(db, `api:${userId}`, process.env.NODE_ENV === 'test' ? 1200 : 300, 60);
+        await budget(db, `api:${userId}`, process.env.NODE_ENV === 'test' ? 10000 : 300, 60);
       }
       const body = match.route.body.parse(req.body ?? {});
       const query = match.route.query.parse(req.query);
