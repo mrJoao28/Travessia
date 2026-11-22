@@ -7,15 +7,25 @@ import {fixture,me,version,submission} from "../fixtures/product-ui";
 test("monitor tem ferramentas docentes na turma e é identificado como monitor", async ({ page }) => {
   await fixture(page, "monitor");
   await page.goto("/professor");
+  await expect(page.getByRole("heading", { name: "Painel de monitoria", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: version.title, exact: true })).toBeVisible();
-  await expect(page.getByText("Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.", { exact: true })).toBeVisible();
+  await expect(page.getByText("Você atua como monitor nesta turma.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Criar atividade", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Apoios e barreiras", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Entregas", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Consultar entregas", exact: true })).toHaveCount(0);
+  const deliveries = page.getByRole("link", { name: /Acompanhar entregas/ });
+  await expect(deliveries).toHaveAttribute("href", "/professor/entregas?turma=test-classroom");
+  await deliveries.focus();
+  await expect(deliveries).toBeFocused();
+  await expect(page.getByRole("link", { name: /Apoios e barreiras/ })).toHaveAttribute("href", "/professor/barreiras?turma=test-classroom");
+  await expect(page.getByRole("link", { name: "Criar atividade", exact: true })).toHaveAttribute("href", "/professor/atividades/nova?turma=test-classroom");
   await expect(page.getByRole("link", { name: "Gerenciar turmas e convites", exact: true })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Configurar materiais e apoios", exact: true })).toBeVisible();
+  await page.getByText("Alunos da turma e convites", { exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Participantes de Oficina de Projetos Inclusivos" })).toBeVisible();
+
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).include("section[aria-labelledby=monitoria-title]").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 
   await page.goto("/professor/turmas");
   await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
