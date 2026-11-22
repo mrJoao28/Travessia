@@ -26,6 +26,8 @@ const version = missionInput.extend({ id, missionId: id, source: z.enum(['manual
 const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', 'published', 'archived']),
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
 const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher', 'monitor']) });
+const gradePeriod = z.strictObject({ id, classroomId: id, name: short, startsAt: date.nullable(), endsAt: date.nullable(), assessments: z.array(z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() })) });
+const gradebook = z.strictObject({ period: gradePeriod, students: z.array(z.strictObject({ studentId: id, name: z.string(), assessments: z.array(z.strictObject({ assessmentId: id, missionId: id, title: short, value: z.number().nullable(), weight: z.number().int().positive() })), average: z.number().nullable() })) });
 const stepScore = z.strictObject({ stepId: id, points: z.number().int().min(0).max(100), comment: z.string().trim().max(1000) });
 const feedbackDraft = z.strictObject({ content: z.string().trim().min(1).max(6000), scores: z.array(stepScore).max(10) });
 const feedback = z.strictObject({ id, content: text, createdAt: date,
@@ -121,6 +123,10 @@ export const routes = {
   preferences: { method: 'patch', path: '/v1/me/preferences', body: preferences, query: empty, response: preferences },
   classrooms: { method: 'get', path: '/v1/classrooms', body: empty, query: page, response: list(classroom) },
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short }), query: empty, response: classroom },
+  gradePeriods: { method: 'get', path: '/v1/classrooms/{id}/grade-periods', body: empty, query: empty, response: z.strictObject({ items: z.array(gradePeriod) }) },
+  createGradePeriod: { method: 'post', path: '/v1/classrooms/{id}/grade-periods', body: z.strictObject({ name: short, startsAt: date.nullable().optional(), endsAt: date.nullable().optional() }), query: empty, response: gradePeriod },
+  addGradeAssessment: { method: 'post', path: '/v1/grade-periods/{id}/assessments', body: z.strictObject({ missionId: id, weight: z.number().int().positive().max(100) }), query: empty, response: z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() }) },
+  gradebook: { method: 'get', path: '/v1/grade-periods/{id}/gradebook', body: empty, query: empty, response: gradebook },
   members: { method: 'get', path: '/v1/classrooms/{id}/members', body: empty, query: page,
     response: list(z.strictObject({ id, name: z.string(), role: z.enum(['student', 'teacher', 'monitor']), active: z.boolean() })) },
   leaveClassroom: { method: 'post', path: '/v1/classrooms/{id}/leave', body: empty, query: empty, response: z.strictObject({ left: z.literal(true) }) },

@@ -78,6 +78,10 @@ function pagination<T extends {id: string}>(rows: T[], limit: number) {
 }
 const pageArgs = (p: Paging) => ({ take: p.limit + 1, orderBy: { id: 'asc' as const }, ...(p.cursor ? { where: { id: { gt: p.cursor } } } : {}) });
 const after = (p: Paging) => p.cursor ? { id: { gt: p.cursor } } : {};
+function gradePeriodView(period: { id: string; classroomId: string; name: string; startsAt: Date | null; endsAt: Date | null; assessments: { id: string; missionId: string; weight: number; mission: { draftVersion: { title: string } | null; publishedVersion: { title: string } | null } }[] }) {
+  return { id: period.id, classroomId: period.classroomId, name: period.name, startsAt: period.startsAt, endsAt: period.endsAt,
+    assessments: period.assessments.map(a => ({ id: a.id, missionId: a.missionId, title: a.mission.publishedVersion?.title ?? a.mission.draftVersion?.title ?? 'Atividade', weight: a.weight })) };
+}
 
 export class ProductService {
   readonly ai: AiService;
@@ -112,6 +116,56 @@ export class ProductService {
       const data = body as Body<'createClassroom'>;
       const c = await this.db.classroom.create({ data: { name: data.name, memberships: { create: { userId, role: 'teacher' } } } });
       return { id: c.id, name: c.name, role: 'teacher' };
+    }
+    if (op === 'gradePeriods' || op === 'createGradePeriod') {
+      const member = await membership(this.db, userId, id, true);
+      if (!isInstructorRole(member.role)) return missing();
+      if (op === 'gradePeriods') {
+        const rows = await this.db.gradePeriod.findMany({
+          where: { classroomId: id },
+          include: { assessments: { include: { mission: { include: { draftVersion: { select: { title: true } }, publishedVersion: { select: { title: true } } } } } } },
+          orderBy: { createdAt: 'asc' },
+        });
+        return { items: rows.map(gradePeriodView) };
+      }
+      const data = body as Body<'createGradePeriod'>;
+      const period = await this.db.gradePeriod.create({ data: { classroomId: id, name: data.name, startsAt: data.startsAt ? new Date(data.startsAt) : null, endsAt: data.endsAt ? new Date(data.endsAt) : null }, include: { assessments: { include: { mission: { include: { draftVersion: { select: { title: true } }, publishedVersion: { select: { title: true } } } } } } } });
+      await this.db.auditEvent.create({ data: { actorId: userId, action: 'grade-period.create', resourceId: period.id } });
+      return gradePeriodView(period);
+    }
+    if (op === 'addGradeAssessment') {
+      const period = await this.db.gradePeriod.findUnique({ where: { id }, include: { assessments: true } });
+      if (!period) return missing();
+      const member = await membership(this.db, userId, period.classroomId, true);
+      if (!isInstructorRole(member.role)) return missing();
+      const data = body as Body<'addGradeAssessment'>;
+      const mission = await this.db.mission.findFirst({ where: { id: data.missionId, classroomId: period.classroomId }, include: { draftVersion: true, publishedVersion: true } });
+      if (!mission) return missing();
+      const assessment = await this.db.gradeAssessment.create({ data: { periodId: id, missionId: data.missionId, weight: data.weight }, include: { mission: { include: { draftVersion: { select: { title: true } }, publishedVersion: { select: { title: true } } } } } });
+      await this.db.auditEvent.create({ data: { actorId: userId, action: 'grade-assessment.create', resourceId: assessment.id } });
+      return { id: assessment.id, missionId: assessment.missionId, title: assessment.mission.publishedVersion?.title ?? assessment.mission.draftVersion?.title ?? 'Atividade', weight: assessment.weight };
+    }
+    if (op === 'gradebook') {
+      const period = await this.db.gradePeriod.findUnique({ where: { id }, include: { assessments: { include: { mission: { include: { draftVersion: { select: { title: true } }, publishedVersion: { select: { title: true } } } } } } } });
+      if (!period) return missing();
+      const member = await membership(this.db, userId, period.classroomId, true);
+      if (!isInstructorRole(member.role)) return missing();
+      const students = await this.db.membership.findMany({ where: { classroomId: period.classroomId, role: 'student', active: true }, include: { user: { select: { id: true, name: true } } }, orderBy: { user: { name: 'asc' } } });
+      const submissions = await this.db.submission.findMany({ where: { status: 'reviewed', version: { missionId: { in: period.assessments.map(a => a.missionId) } } }, include: { feedback: { orderBy: { createdAt: 'desc' }, take: 1 }, version: { include: { steps: { select: { maxPoints: true } } } }, group: { include: { members: true } } } });
+      const valueFor = (assessmentId: string, missionId: string, studentId: string) => {
+        const row = submissions.find(s => s.version.missionId === missionId && (s.userId === studentId || s.group?.members.some(m => m.userId === studentId)));
+        const feedback = row?.feedback[0];
+        if (!feedback || feedback.totalPoints === null || feedback.totalPoints === undefined) return null;
+        const max = row.version.steps.reduce((sum, step) => sum + (step.maxPoints ?? 0), 0);
+        return max > 0 ? Math.round((feedback.totalPoints / max) * 10 * 100) / 100 : null;
+      };
+      return { period: gradePeriodView(period), students: students.map(({ user }) => {
+        const assessments = period.assessments.map(a => ({ assessmentId: a.id, missionId: a.missionId, title: a.mission.publishedVersion?.title ?? a.mission.draftVersion?.title ?? 'Atividade', value: valueFor(a.id, a.missionId, user.id), weight: a.weight }));
+        const graded = assessments.filter(a => a.value !== null);
+        const totalWeight = graded.reduce((sum, a) => sum + a.weight, 0);
+        const average = totalWeight ? Math.round(graded.reduce((sum, a) => sum + (a.value! * a.weight), 0) / totalWeight * 100) / 100 : null;
+        return { studentId: user.id, name: user.name, assessments, average };
+      }) };
     }
     if (op === 'acceptInvite') {
       await budget(this.db, `accept-invite:${userId}`, 20, 3600);
