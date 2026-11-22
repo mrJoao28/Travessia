@@ -64,6 +64,7 @@ export const submission: ApiResponse<"submission"> = {
 
 export async function fixture(page: Page, role: "student" | "teacher" | "monitor") {
   let classroomArchivedAt: string | null = null;
+  const createdClassrooms: { id: string; name: string; role: "teacher"; archivedAt: null; ownerId: string; isOwner: true }[] = [];
   let mission: ApiResponse<"mission"> = {
     id: "test-mission",
     classroomId: "test-classroom",
@@ -83,7 +84,13 @@ export async function fixture(page: Page, role: "student" | "teacher" | "monitor
     if (path === "/activities/test-mission/my-adaptations") return respond({ versionId: version.id, items: [], allowedFormats: ["text"] });
     if (path === "/activities/test-mission/supports") return respond({ versionId: version.id, items: [] });
     if (path === "/activities/test-mission/groups") return respond({ items: [] });
-    if (path === "/classrooms")
+    if (path === "/classrooms" && route.request().method() === "POST") {
+      const body = route.request().postDataJSON() as ApiBody<"createClassroom">;
+      const classroom = { id: `created-classroom-${createdClassrooms.length + 1}`, name: body.name, role: "teacher" as const, archivedAt: null, ownerId: me.id, isOwner: true as const };
+      createdClassrooms.push(classroom);
+      return respond(classroom);
+    }
+    if (path === "/classrooms" && route.request().method() === "GET")
       return respond({
         items: requestUrl.searchParams.get("view") === "archived"
           ? classroomArchivedAt && role === "teacher" ? [{
@@ -102,6 +109,7 @@ export async function fixture(page: Page, role: "student" | "teacher" | "monitor
             ownerId: role === "teacher" ? me.id : undefined,
             isOwner: role === "teacher",
           },
+          ...createdClassrooms,
         ],
         nextCursor: null,
       });
@@ -109,6 +117,8 @@ export async function fixture(page: Page, role: "student" | "teacher" | "monitor
       { classroomArchivedAt = version.createdAt; return respond({ archived: true, archivedAt: classroomArchivedAt }); }
     if (path === "/classrooms/test-classroom/activities")
       return respond({ items: [mission], nextCursor: null });
+    if (/^\/classrooms\/created-classroom-\d+\/activities$/.test(path))
+      return respond({ items: [], nextCursor: null });
     if (path === "/classrooms/test-classroom/members")
       return respond({
         items: [
