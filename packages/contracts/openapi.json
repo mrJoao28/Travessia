@@ -7527,6 +7527,14 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "ownerId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "isOwner": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -7651,6 +7659,14 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "ownerId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "isOwner": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -8500,6 +8516,14 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "ownerId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "isOwner": {
+                      "type": "boolean"
                     }
                   },
                   "required": [

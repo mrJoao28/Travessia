@@ -3199,6 +3199,8 @@ export interface operations {
                             /** @enum {string} */
                             role: "student" | "teacher" | "monitor";
                             archivedAt?: string | null;
+                            ownerId?: string;
+                            isOwner?: boolean;
                         }[];
                         nextCursor: string | null;
                     };
@@ -3246,6 +3248,8 @@ export interface operations {
                         /** @enum {string} */
                         role: "student" | "teacher" | "monitor";
                         archivedAt?: string | null;
+                        ownerId?: string;
+                        isOwner?: boolean;
                     };
                 };
             };
@@ -3602,6 +3606,8 @@ export interface operations {
                         /** @enum {string} */
                         role: "student" | "teacher" | "monitor";
                         archivedAt?: string | null;
+                        ownerId?: string;
+                        isOwner?: boolean;
                     };
                 };
             };

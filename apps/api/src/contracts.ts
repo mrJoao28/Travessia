@@ -26,7 +26,8 @@ const version = missionInput.extend({ id, missionId: id, source: z.enum(['manual
   materials: z.array(z.strictObject({ id, title: short, text, hasFile: z.boolean() })) });
 const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', 'published', 'archived']),
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
-const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher', 'monitor']), archivedAt: date.nullable().optional() });
+const classroom = z.strictObject({ id, name: short, role: z.enum(['student', 'teacher', 'monitor']), archivedAt: date.nullable().optional(),
+  ownerId: id.optional(), isOwner: z.boolean().optional() });
 const stepScore = z.strictObject({ stepId: id, points: z.number().int().min(0).max(100), comment: z.string().trim().max(1000) });
 const feedbackDraft = z.strictObject({ content: z.string().trim().min(1).max(6000), scores: z.array(stepScore).max(10) });
 const feedback = z.strictObject({ id, content: text, createdAt: date,
