@@ -35,7 +35,7 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     const classroomId = rooms.items[0].id;
     expect(rooms.items[0].role).toBe('teacher');
     await expect(teacher.getByRole('heading',{name:'Primeiros passos da sua turma',exact:true})).toBeVisible();
-    await teacher.locator('details.teacher-disclosure > summary').click();
+    await teacher.locator('details.teacher-disclosure > summary').filter({ hasText: 'Alunos da turma e convites' }).click();
     await teacher.getByRole('button', { name: 'Gerar convite de aluno', exact: true }).click();
     const invite = teacher.getByLabel('Código de convite', { exact: true });
     await expect(invite).toHaveValue(/^[A-HJ-NP-Z2-9]{8}$/);
