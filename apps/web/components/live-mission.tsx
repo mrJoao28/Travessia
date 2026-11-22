@@ -208,7 +208,7 @@ export function LiveMission({
         <p className="eyebrow accent">{classroom.name}</p>
         <h2>{version.title}</h2>
         <p>{version.description}</p>
-        {version.workMode === "group" && <p>{role === "aluno" ? team ? `Atividade em grupo · ${team}. Sua equipe compartilha esta entrega.` : "Atividade em grupo · você ainda não foi incluído em uma equipe. Solicite ao professor." : "Atividade em grupo · uma entrega por equipe."}</p>}
+        {version.workMode !== "individual" && <p>{role === "aluno" ? team ? `Atividade em grupo · ${team}. Sua equipe compartilha esta entrega.` : version.workMode === "mixed" ? "Atividade individual ou em grupo · o professor definiu sua forma de entrega." : "Atividade em grupo · você ainda não foi incluído em uma equipe. Solicite ao professor." : version.workMode === "mixed" ? "Atividade individual ou em grupo · confira a forma de entrega de cada aluno." : "Atividade em grupo · uma entrega por equipe."}</p>}
         {version.dueAt && (
           <p>
             Entrega prevista:{" "}
@@ -216,7 +216,7 @@ export function LiveMission({
           </p>
         )}
       </section>
-      {role === "professor" && version.workMode === "group" && <GroupManager missionId={id} />}
+      {role === "professor" && version.workMode !== "individual" && <GroupManager missionId={id} />}
       <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
         <div className="form-stack">
           <section className="paper preview-student-stage form-stack" id="etapas">

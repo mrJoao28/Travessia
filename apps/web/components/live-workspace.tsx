@@ -24,6 +24,7 @@ import { MissionSupportHub } from "./mission-support-hub";
 import { LiveStrategies } from "./live-strategies";
 import { MonitorDashboard } from "./monitoria-panel";
 import { ArchiveMissionAction } from "./archive-mission-action";
+import { GradebookManager } from "./gradebook-manager";
 
 export type Classroom = ApiResponse<"classrooms">["items"][number];
 export type Mission = ApiResponse<"mission">;
@@ -444,6 +445,7 @@ function TeacherDashboard({
       {!hasPublished && (classroom.role === 'teacher' || classroom.role === 'monitor') && <TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id}/>}
       {classroom.role === 'monitor' && <p className="notice">Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.</p>}
       {(classroom.role === 'teacher' || classroom.role === 'monitor') && <details className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
+      {(classroom.role === 'teacher' || classroom.role === 'monitor') && <GradebookManager classroomId={classroom.id} entries={entries} />}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
           <li className="paper mission-card" key={mission.id}>
