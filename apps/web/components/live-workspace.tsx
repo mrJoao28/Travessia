@@ -23,6 +23,7 @@ import { SubmissionMedia } from "./submission-media";
 import { MissionSupportHub } from "./mission-support-hub";
 import { LiveStrategies } from "./live-strategies";
 import { MonitorDashboard } from "./monitoria-panel";
+import { ArchiveMissionAction } from "./archive-mission-action";
 
 export type Classroom = ApiResponse<"classrooms">["items"][number];
 export type Mission = ApiResponse<"mission">;
@@ -70,11 +71,13 @@ function WorkspaceView({
   const [selected, setSelected] = useState(classroomId ?? "");
   const [pending, setPending] = useState(true);
   const [error, setError] = useState("");
+  const [archiveNotice, setArchiveNotice] = useState("");
   const [reload, setReload] = useState(0);
   useEffect(() => {
     let active = true;
     setPending(true);
     setError("");
+    setArchiveNotice("");
     setEntries([]);
     setClassrooms([]);
     setProfile(null);
@@ -144,6 +147,10 @@ function WorkspaceView({
   const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : monitorHome ? "Painel de monitoria" : ({ adaptacoes: "Adaptar material para um aluno", estrategias: "Estratégias de apoio", apoios: "Materiais e apoios da atividade", atividades: "Suas atividades", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
   const materialWorkspace=role==="professor"&&["adaptacoes","estrategias","apoios"].includes(section);
   const guidedEditor = role === "professor" && ["editor", "nova"].includes(section);
+  function handleArchived(archived: Mission) {
+    setEntries((current) => current.map((entry) => entry.mission.id === archived.id ? { ...entry, mission: archived } : entry));
+    setArchiveNotice("Atividade arquivada. O histórico e os arquivos foram preservados.");
+  }
   return (
     <Workspace
       role={role}
@@ -236,6 +243,7 @@ function WorkspaceView({
                     </select>
                   </label>
                 )}
+              {archiveNotice && <p className="notice" role="status">{archiveNotice}</p>}
               {section === "apoios" && role === "aluno" ? <LearningNeeds classrooms={permitted} /> : section === "adaptacoes" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "apoios" && role === "professor" ? <MissionSupportHub entry={entries.find(e => e.mission.id === missionId)} /> : section === "estrategias" && role === "professor" ? <LiveStrategies entries={entries} initialMissionId={missionId} initialVersionId={versionId} /> : section === "atividade" && missionId && profile ? (
                 <LiveMission
                   key={`${profile.id}:${missionId}`}
@@ -300,11 +308,12 @@ function WorkspaceView({
                   </p>}
                 </section>
               ) : monitorHome ? (
-                <MonitorDashboard classroom={chosen} entries={entries} />
+                <MonitorDashboard classroom={chosen} entries={entries} onArchived={handleArchived} />
               ) : (
                 <TeacherDashboard
                   classrooms={permitted}
                   entries={entries}
+                  onArchived={handleArchived}
                   classroom={
                     selected || permitted.length === 1 ? chosen : undefined
                   }
@@ -397,10 +406,12 @@ function TeacherDashboard({
   entries,
   classroom,
   classrooms,
+  onArchived,
 }: {
   entries: MissionEntry[];
   classroom?: Classroom;
   classrooms: Classroom[];
+  onArchived: (mission: Mission) => void;
 }) {
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
@@ -435,8 +446,8 @@ function TeacherDashboard({
       {(classroom.role === 'teacher' || classroom.role === 'monitor') && <details className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
-          <li className="paper" key={mission.id}>
-            <div>
+          <li className="paper mission-card" key={mission.id}>
+            <div className="mission-card-copy">
               <p className="eyebrow accent">{room.name}</p>
               <h2>
                 {(mission.draftVersion ?? mission.publishedVersion)?.title}
@@ -457,15 +468,23 @@ function TeacherDashboard({
                 </p>
               )}
             </div>
-            {mission.status !== "archived" && (
-              <Link
-                className="button"
-                href={`/professor/atividades/${mission.id}/editar`}
-              >
-                Editar e revisar
-              </Link>
-            )}
-            {(room.role === 'teacher' || room.role === 'monitor') && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Configurar materiais e apoios</Link>}
+            <div className="mission-card-actions" role="group" aria-label={`Ações para ${(mission.draftVersion ?? mission.publishedVersion)?.title ?? "atividade"} na turma ${room.name}`}>
+              {mission.status !== "archived" && (
+                <Link
+                  className="button"
+                  href={`/professor/atividades/${mission.id}/editar`}
+                >
+                  Editar e revisar
+                </Link>
+              )}
+              {(room.role === 'teacher' || room.role === 'monitor') && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Configurar materiais e apoios</Link>}
+              {(room.role === 'teacher' || room.role === 'monitor') && mission.status !== "archived" && <ArchiveMissionAction
+                missionId={mission.id}
+                missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
+                classroomName={room.name}
+                onArchived={onArchived}
+              />}
+            </div>
           </li>
         ))}
       </ul>
