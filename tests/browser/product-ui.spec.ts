@@ -4,6 +4,31 @@ import type { ApiBody, ApiResponse } from "../../apps/web/lib/api.generated";
 
 import {fixture,me,version,submission} from "../fixtures/product-ui";
 
+test("docente pode iniciar a criação de turma em Minhas turmas e Atividades", async ({ page }) => {
+  await fixture(page, "teacher");
+  for (const destination of ["/professor", "/professor/atividades"]) {
+    await page.goto(destination);
+    const trigger = page.getByRole("button", { name: "Criar turma", exact: true });
+    await expect(trigger).toBeVisible();
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    const name = page.getByLabel("Nome da turma", { exact: true });
+    await expect(name).toBeFocused();
+    expect((await new AxeBuilder({ page }).include(".page-heading").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+    await name.fill(`Turma criada em ${destination}`);
+    const request = page.waitForRequest((candidate) =>
+      candidate.url().endsWith("/api/v1/classrooms") && candidate.method() === "POST",
+    );
+    await page.getByRole("button", { name: "Salvar turma", exact: true }).click();
+    expect((await request).postDataJSON()).toEqual({ name: `Turma criada em ${destination}` });
+    await expect(trigger).toBeFocused();
+    await expect(name).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Criar turma", exact: true })).toBeVisible();
+    await page.setViewportSize({ width: 320, height: 800 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+
 test("monitor tem ferramentas docentes na turma e é identificado como monitor", async ({ page }) => {
   await fixture(page, "monitor");
   await page.goto("/professor");

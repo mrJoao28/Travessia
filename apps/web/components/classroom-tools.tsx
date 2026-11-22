@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   api,
   pages,
@@ -14,21 +14,25 @@ import type { Classroom } from "./live-workspace";
 export function ClassroomTools({
   teacher,
   onChanged,
+  buttonTrigger = false,
 }: {
   teacher: boolean;
   onChanged: () => void;
+  buttonTrigger?: boolean;
 }) {
   const [value, setValue] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
-  return (
-    <details className="paper" style={{ marginBlock: "1rem" }}>
-      <summary>
-        {teacher ? "Criar uma turma" : "Entrar em uma turma por convite"}
-      </summary>
+  const [open, setOpen] = useState(false);
+  const inputId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (buttonTrigger && open) inputRef.current?.focus();
+  }, [buttonTrigger, open]);
+  const form = (
       <form
-        className="form-stack"
-        style={{ marginTop: "1rem" }}
+        className="form-stack classroom-tools-form"
         onSubmit={async (e) => {
           e.preventDefault();
           if (pending) return;
@@ -40,6 +44,10 @@ export function ClassroomTools({
             else {const token=normalizeInvitation(value,window.location.origin);if(!token)throw new Error("Cole o link do Travessia ou digite o código de oito caracteres.");await api("acceptInvite", { body: { token } });}
             setValue("");
             onChanged();
+            if (buttonTrigger) {
+              setOpen(false);
+              requestAnimationFrame(() => triggerRef.current?.focus());
+            }
           } catch (reason) {
             setMessage(errorMessage(reason));
           } finally {
@@ -47,10 +55,11 @@ export function ClassroomTools({
           }
         }}
       >
-        <label htmlFor="classroom-action">
+        <label htmlFor={inputId}>
           {teacher ? "Nome da turma" : "Código de convite"}
           <input
-            id="classroom-action"
+            ref={inputRef}
+            id={inputId}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             required
@@ -58,19 +67,43 @@ export function ClassroomTools({
             minLength={1}
             autoComplete="off"
             disabled={pending}
-            aria-describedby="classroom-action-help"
+            aria-describedby={`${inputId}-help`}
           />
         </label>
-        <p id="classroom-action-help" className="small">
+        <p id={`${inputId}-help`} className="small">
           {teacher
             ? "O servidor criará a turma e seu vínculo como docente."
             : "Cole o link ou digite o código curto fornecido pelo professor. Sua entrada será confirmada pelo servidor."}
         </p>
         <button className="button button-outline" disabled={pending}>
-          {pending ? "Aguarde…" : teacher ? "Criar turma" : "Aceitar convite"}
+          {pending ? "Aguarde…" : teacher ? buttonTrigger ? "Salvar turma" : "Criar turma" : "Aceitar convite"}
         </button>
         <OperationStatus message={message} />
       </form>
+  );
+  if (buttonTrigger) return (
+    <section className="classroom-create-action">
+      <button
+        ref={triggerRef}
+        className="button"
+        type="button"
+        aria-expanded={open}
+        aria-controls={`${inputId}-form`}
+        onClick={() => setOpen((current) => !current)}
+      >
+        Criar turma
+      </button>
+      <div id={`${inputId}-form`} className="classroom-create-form" hidden={!open}>
+        {open ? form : null}
+      </div>
+    </section>
+  );
+  return (
+    <details className="paper" style={{ marginBlock: "1rem" }}>
+      <summary>
+        {teacher ? "Criar uma turma" : "Entrar em uma turma por convite"}
+      </summary>
+      {form}
     </details>
   );
 }
