@@ -724,6 +724,73 @@ nav a:hover,
 .card-list .paper p {
   margin-bottom: 0.35rem;
 }
+.card-list .mission-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(min(100%, 18rem), min(36%, 30rem));
+  align-items: stretch;
+  gap: clamp(1rem, 2.4vw, 2rem);
+}
+.mission-card-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mission-card-copy h2 {
+  max-width: 58ch;
+  overflow-wrap: anywhere;
+}
+.mission-card-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  align-content: center;
+  align-items: stretch;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--background);
+}
+.mission-card-actions > .button,
+.mission-card-actions > .text-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  overflow-wrap: anywhere;
+  text-align: center;
+  white-space: normal;
+}
+.mission-card-actions > .text-link {
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  color: var(--primary);
+  font-weight: 650;
+}
+.mission-card-actions > .text-link:hover {
+  background: var(--surface);
+}
+.mission-card-actions > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.mission-archive-action {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: center;
+  white-space: normal;
+}
+.mission-archive-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid var(--focus);
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
 .editor-step {
   border: 1px solid var(--border);
   padding: 1rem;
@@ -979,6 +1046,15 @@ nav a:hover,
   }
   .login-form {
     padding: 1.5rem;
+  }
+}
+@media (max-width: 64rem) {
+  .card-list .mission-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mission-card-actions {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    align-content: stretch;
   }
 }
 @media (max-width: 400px) {
