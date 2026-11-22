@@ -719,10 +719,180 @@ nav a:hover,
   gap: 1rem;
   justify-content: space-between;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
+}
+.card-list .paper > div:first-child {
+  flex: 1 1 18rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .card-list .paper p {
   margin-bottom: 0.35rem;
+}
+.classroom-card-copy {
+  flex: 1 1 18rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.classroom-card-copy h2,
+.classroom-card-copy h3 {
+  overflow-wrap: anywhere;
+}
+.classroom-card-actions {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--background);
+}
+.classroom-card-actions > .button,
+.classroom-card-actions > .text-link,
+.classroom-card-actions .form-stack > .button {
+  min-height: 2.75rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.classroom-card-actions .form-stack {
+  min-width: 0;
+  max-width: 100%;
+}
+.classroom-action-item,
+.mission-delete-action-item {
+  min-width: 0;
+  max-width: 100%;
+}
+.classroom-card-actions:has(.archived-classroom-history) {
+  flex: 1 1 100%;
+}
+.archived-classroom-history {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+.archived-classroom-history > summary,
+.archived-history-submission > summary {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.archived-history-entry {
+  min-width: 0;
+  margin-top: 0.85rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.archived-history-entry > :first-child {
+  margin-top: 0;
+}
+.archived-history-entry > :last-child {
+  margin-bottom: 0;
+}
+.archived-history-submission {
+  min-width: 0;
+  margin-top: 0.65rem;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--surface);
+}
+.archived-history-submission .submission-content {
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+}
+.archived-history-submission blockquote {
+  margin: 0.75rem 0 0;
+  overflow-wrap: anywhere;
+}
+.classroom-action-item > .button,
+.mission-delete-action-item > .button {
+  width: 100%;
+  min-height: 2.75rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.classroom-action-item > p,
+.mission-delete-action-item > p {
+  margin: 0.5rem 0 0;
+  overflow-wrap: anywhere;
+}
+.classroom-choice-list,
+.classroom-management-list {
+  margin-block: 1rem 0;
+}
+.classroom-participants,
+.classroom-invitations {
+  min-width: 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--background);
+}
+.classroom-participants > summary,
+.classroom-invitations > summary {
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.classroom-member-list,
+.invite-active-list {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.classroom-member-row,
+.classroom-invite-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--surface);
+}
+.classroom-member-copy,
+.classroom-invite-row > span {
+  flex: 1 1 18rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.classroom-member-row > .button,
+.classroom-invite-row > .button {
+  min-height: 2.75rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.invite-generation-actions > .button {
+  min-height: 2.75rem;
+  max-width: 100%;
+  white-space: normal;
+}
+.classroom-choice-card,
+.classroom-management-card {
+  align-items: flex-start;
+  border-inline-start: 3px solid var(--primary);
+}
+.classroom-management-card .classroom-card-copy > :first-child,
+.classroom-choice-card .classroom-card-copy > :first-child {
+  margin-top: 0;
+}
+.classroom-management-card .classroom-card-copy > :last-child,
+.classroom-choice-card .classroom-card-copy > :last-child {
+  margin-bottom: 0;
 }
 .card-list .mission-card {
   display: grid;
@@ -1055,6 +1225,41 @@ nav a:hover,
   .mission-card-actions {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
     align-content: stretch;
+  }
+}
+@media (max-width: 40rem) {
+  .card-list .paper {
+    align-items: stretch;
+  }
+  .card-list .paper > div:first-child,
+  .classroom-card-copy {
+    flex-basis: 100%;
+  }
+  .classroom-card-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.65rem;
+  }
+  .classroom-card-actions > .button,
+  .classroom-card-actions > .text-link,
+  .classroom-card-actions .form-stack,
+  .classroom-card-actions .form-stack > .button,
+  .classroom-card-actions .classroom-action-item,
+  .classroom-card-actions .classroom-action-item > .button {
+    width: 100%;
+    min-height: 2.75rem;
+  }
+  .classroom-member-row,
+  .classroom-invite-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .classroom-member-row > .button,
+  .classroom-invite-row > .button,
+  .invite-generation-actions > .button {
+    width: 100%;
+    min-height: 2.75rem;
   }
 }
 @media (max-width: 400px) {
@@ -1701,8 +1906,6 @@ body {
 .invite-sharing .notice { padding: 1.2rem; }
 .invite-sharing input { width: 100%; min-width: 0; }
 .invite-sharing input[readonly] { font-size: 1rem; }
-.invite-active-list { padding-left: 1.2rem; }
-.invite-active-list li { margin-block: 1rem; overflow-wrap: anywhere; }
 @media (max-width: 1050px) { .onboarding-grid { grid-template-columns: 1fr; } }
 
 /* Sidebar can contract to a real icon rail without remounting the workspace. */

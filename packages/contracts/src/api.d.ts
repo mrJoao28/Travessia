@@ -516,6 +516,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/classrooms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["archiveClassroom"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/classrooms/{id}/grade-periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["gradePeriods"];
+        put?: never;
+        post: operations["createGradePeriod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/grade-periods/{id}/assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["addGradeAssessment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/grade-periods/{id}/gradebook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["gradebook"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/classrooms/{id}/members": {
         parameters: {
             query?: never;
@@ -638,7 +702,7 @@ export interface paths {
         get: operations["mission"];
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["deleteMission"];
         options?: never;
         head?: never;
         patch: operations["editMission"];
@@ -705,7 +769,23 @@ export interface paths {
         delete: operations["removeGroup"];
         options?: never;
         head?: never;
-        patch?: never;
+        patch: operations["updateGroup"];
+        trace?: never;
+    };
+    "/v1/activities/{id}/participants/{studentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["setParticipationMode"];
         trace?: never;
     };
     "/v1/activities/{id}/submissions": {
@@ -3162,6 +3242,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 cursor?: string;
+                view?: "active" | "archived";
             };
             header?: never;
             path?: never;
@@ -3181,6 +3262,9 @@ export interface operations {
                             name: string;
                             /** @enum {string} */
                             role: "student" | "teacher" | "monitor";
+                            archivedAt?: string | null;
+                            ownerId?: string;
+                            isOwner?: boolean;
                         }[];
                         nextCursor: string | null;
                     };
@@ -3227,6 +3311,261 @@ export interface operations {
                         name: string;
                         /** @enum {string} */
                         role: "student" | "teacher" | "monitor";
+                        archivedAt?: string | null;
+                        ownerId?: string;
+                        isOwner?: boolean;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    archiveClassroom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        archived: true;
+                        /** Format: date-time */
+                        archivedAt: string;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    gradePeriods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            id: string;
+                            classroomId: string;
+                            name: string;
+                            startsAt: string | null;
+                            endsAt: string | null;
+                            assessments: {
+                                id: string;
+                                missionId: string;
+                                title: string;
+                                weight: number;
+                            }[];
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    createGradePeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                    startsAt?: string | null;
+                    endsAt?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        classroomId: string;
+                        name: string;
+                        startsAt: string | null;
+                        endsAt: string | null;
+                        assessments: {
+                            id: string;
+                            missionId: string;
+                            title: string;
+                            weight: number;
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    addGradeAssessment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    missionId: string;
+                    weight: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        missionId: string;
+                        title: string;
+                        weight: number;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    gradebook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        period: {
+                            id: string;
+                            classroomId: string;
+                            name: string;
+                            startsAt: string | null;
+                            endsAt: string | null;
+                            assessments: {
+                                id: string;
+                                missionId: string;
+                                title: string;
+                                weight: number;
+                            }[];
+                        };
+                        students: {
+                            studentId: string;
+                            name: string;
+                            assessments: {
+                                assessmentId: string;
+                                missionId: string;
+                                title: string;
+                                value: number | null;
+                                weight: number;
+                            }[];
+                            average: number | null;
+                        }[];
                     };
                 };
             };
@@ -3542,6 +3881,9 @@ export interface operations {
                         name: string;
                         /** @enum {string} */
                         role: "student" | "teacher" | "monitor";
+                        archivedAt?: string | null;
+                        ownerId?: string;
+                        isOwner?: boolean;
                     };
                 };
             };
@@ -3593,7 +3935,7 @@ export interface operations {
                                 criteria: string[];
                                 dueAt: string | null;
                                 /** @enum {string} */
-                                workMode: "individual" | "group";
+                                workMode: "individual" | "group" | "mixed";
                                 steps: {
                                     id: string;
                                     position: number;
@@ -3624,7 +3966,7 @@ export interface operations {
                                 criteria: string[];
                                 dueAt: string | null;
                                 /** @enum {string} */
-                                workMode: "individual" | "group";
+                                workMode: "individual" | "group" | "mixed";
                                 steps: {
                                     id: string;
                                     position: number;
@@ -3686,7 +4028,7 @@ export interface operations {
                     criteria: string[];
                     dueAt?: string | null;
                     /** @enum {string} */
-                    workMode?: "individual" | "group";
+                    workMode?: "individual" | "group" | "mixed";
                     steps: {
                         title: string;
                         instructions: string;
@@ -3720,7 +4062,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3751,7 +4093,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3822,7 +4164,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3853,7 +4195,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3895,6 +4237,44 @@ export interface operations {
             };
         };
     };
+    deleteMission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        deleted: true;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
     editMission: {
         parameters: {
             query?: never;
@@ -3913,7 +4293,7 @@ export interface operations {
                     criteria: string[];
                     dueAt?: string | null;
                     /** @enum {string} */
-                    workMode?: "individual" | "group";
+                    workMode?: "individual" | "group" | "mixed";
                     steps: {
                         title: string;
                         instructions: string;
@@ -3949,7 +4329,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -3980,7 +4360,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -4059,7 +4439,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -4090,7 +4470,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -4165,7 +4545,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -4196,7 +4576,7 @@ export interface operations {
                             criteria: string[];
                             dueAt: string | null;
                             /** @enum {string} */
-                            workMode: "individual" | "group";
+                            workMode: "individual" | "group" | "mixed";
                             steps: {
                                 id: string;
                                 position: number;
@@ -4259,6 +4639,7 @@ export interface operations {
                         items: {
                             id: string;
                             name: string;
+                            leaderId: string | null;
                             studentIds: string[];
                         }[];
                     };
@@ -4292,6 +4673,7 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
+                    leaderId?: string | null;
                     studentIds: string[];
                 };
             };
@@ -4306,6 +4688,7 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
+                        leaderId: string | null;
                         studentIds: string[];
                     };
                 };
@@ -4346,6 +4729,104 @@ export interface operations {
                     "application/json": {
                         /** @constant */
                         removed: true;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    updateGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    leaderId?: string | null;
+                    studentIds: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        name: string;
+                        leaderId: string | null;
+                        studentIds: string[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    setParticipationMode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                studentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    mode: "group" | "individual";
+                    reason?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        studentId: string;
+                        /** @enum {string} */
+                        mode: "group" | "individual";
+                        groupId: string | null;
+                        reason: string | null;
                     };
                 };
             };

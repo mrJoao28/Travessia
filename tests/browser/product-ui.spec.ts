@@ -29,8 +29,89 @@ test("monitor tem ferramentas docentes na turma e é identificado como monitor",
 
   await page.goto("/professor/turmas");
   await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Excluir turma", exact: true })).toHaveCount(0);
   await expect(page.getByText("Monitor · vínculo ativo", { exact: true })).toBeVisible();
   await expect(page.getByText("Monitor · vínculo ativo", { exact: true })).toBeVisible();
+});
+
+test("cartões de gestão de turma agrupam ações e refluem com texto ampliado", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.goto("/professor/turmas");
+  const actions = page.getByRole("group", { name: "Ações para a turma Oficina de Projetos Inclusivos" });
+  const open = actions.getByRole("button", { name: "Abrir turma" });
+  await expect(open).toBeVisible();
+  await open.focus();
+  await expect(open).toBeFocused();
+  const desktopLayout = await page.evaluate(() => {
+    const copy = document.querySelector(".classroom-card-copy")?.getBoundingClientRect();
+    const action = document.querySelector(".classroom-card-actions")?.getBoundingClientRect();
+    return copy && action ? { copyRight: copy.right, actionLeft: action.left } : null;
+  });
+  expect(desktopLayout).not.toBeNull();
+  expect(desktopLayout!.actionLeft).toBeGreaterThan(desktopLayout!.copyRight);
+  await page.evaluate(() => {
+    const title = document.querySelector(".classroom-card-copy h2");
+    if (title) title.textContent = "Turma com um título extenso para conferir a quebra de linha sem deslocar os controles de gestão";
+    document.documentElement.style.fontSize = "200%";
+  });
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  const mobileLayout = await page.evaluate(() => {
+    const copy = document.querySelector(".classroom-card-copy")?.getBoundingClientRect();
+    const action = document.querySelector(".classroom-card-actions")?.getBoundingClientRect();
+    const button = document.querySelector(".classroom-card-actions .button")?.getBoundingClientRect();
+    return copy && action && button ? { copyBottom: copy.bottom, actionTop: action.top, actionWidth: action.width, buttonWidth: button.width } : null;
+  });
+  expect(mobileLayout).not.toBeNull();
+  expect(mobileLayout!.actionTop).toBeGreaterThanOrEqual(mobileLayout!.copyBottom);
+  expect(mobileLayout!.buttonWidth).toBeGreaterThan(mobileLayout!.actionWidth * 0.9);
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+});
+
+test("proprietário exclui turma da lista ativa e consulta o histórico preservado", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.goto("/professor/turmas");
+  const remove = page.getByRole("button", { name: "Excluir turma", exact: true });
+  await expect(remove).toBeVisible();
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("preservados para consulta");
+    await dialog.accept();
+  });
+  await remove.click();
+  await expect(page.getByText("Turma excluída da lista ativa e arquivada. O histórico foi preservado.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toHaveCount(0);
+  await page.getByLabel("Exibir turmas").selectOption("archived");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  const history = page.getByText("Consultar atividades e entregas", { exact: true });
+  await history.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: version.title, exact: true })).toBeVisible();
+  await expect(page.getByText(/0 entregas/)).toBeVisible();
+  expect((await new AxeBuilder({ page }).include(".classroom-management-card").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+});
+
+test("docente exclui atividade sem histórico", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.goto("/professor?turma=test-classroom");
+  const remove = page.getByRole("button", { name: "Excluir atividade", exact: true });
+  await expect(remove).toBeVisible();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await remove.click();
+  await expect(page.getByRole("status")).toContainText("Atividade excluída.");
+  await expect(page.getByRole("heading", { name: version.title, exact: true })).toHaveCount(0);
+});
+
+test("bloqueio de exclusão explica como preservar uma atividade com histórico", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.route("**/api/v1/activities/test-mission", async (route) => {
+    if (route.request().method() === "DELETE") return route.fulfill({ status: 409, json: { code: "MISSION_DELETE_BLOCKED", message: "Histórico encontrado." } });
+    return route.fallback();
+  });
+  await page.goto("/professor?turma=test-classroom");
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Excluir atividade", exact: true }).click();
+  await expect(page.locator(".mission-delete-action-item [role=alert]")).toContainText("Use Arquivar atividade para preservá-los.");
+  await expect(page.getByRole("heading", { name: version.title, exact: true })).toBeVisible();
 });
 
 test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva texto no conflito", async ({

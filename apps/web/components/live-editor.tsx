@@ -273,9 +273,10 @@ export function LiveEditor({
                 />
               </label>
               <label htmlFor="editor-work-mode">Forma de realização
-                <select id="editor-work-mode" value={input.workMode ?? "individual"} onChange={e => change({ ...input, workMode: e.target.value as "individual" | "group" })}>
+                <select id="editor-work-mode" value={input.workMode ?? "individual"} onChange={e => change({ ...input, workMode: e.target.value as "individual" | "group" | "mixed" })}>
                   <option value="individual">Individual: cada aluno envia sua atividade</option>
                   <option value="group">Em grupo: uma entrega compartilhada por equipe</option>
+                  <option value="mixed">Individual ou grupo: o professor pode abrir exceções</option>
                 </select>
               </label>
               <label htmlFor="editor-objectives">
@@ -655,7 +656,7 @@ export function LiveEditor({
           </section>
         )}
         {stage === 2 && <div className="form-stack">
-          {mission && storedVersion?.workMode === "group" && <GroupManager missionId={mission.id} />}
+          {mission && storedVersion?.workMode !== "individual" && <GroupManager missionId={mission.id} />}
           {mission && <TeacherNeedsNotice classroomId={mission.classroomId} activityId={mission.id} />}
           {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da atividade",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} initialDownloadAllowed={pendingPdfDownloadAllowed} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
           <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da atividade, uma nova versão será criada e os apoios precisarão de nova revisão.</p>

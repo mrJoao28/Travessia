@@ -1151,6 +1151,111 @@ test('limite de login persiste após recriar a aplicação e demo exige isolamen
   await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
   await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
 });
+test('exclusão de missão: somente teacher ativo, 409 com dados e hard delete sem dependências', async () => {
+  const missionId = `${workshop}-mission`;
+  await request(`/v1/missions/${missionId}`, '', 'DELETE', undefined, 401);
+  await request(`/v1/missions/${missionId}`, a, 'DELETE', undefined, 404);
+  await request(`/v1/missions/${missionId}`, b, 'DELETE', undefined, 404);
+  await request(`/v1/missions/${missionId}`, otherTeacher, 'DELETE', undefined, 404);
+  const blocked = await request(`/v1/missions/${missionId}`, main, 'DELETE', undefined, 409);
+  assert.equal(blocked.json.code, 'MISSION_DELETE_BLOCKED');
+  assert.match(blocked.json.message, /Arquive/i);
+  assert.ok(await db.mission.findUnique({ where: { id: missionId } }));
+  // monitor não é teacher: vínculo ativo não autoriza a exclusão.
+  await db.membership.upsert({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } },
+    update: { role: 'monitor', active: true }, create: { id: `${workshop}-member-monitor`, userId: 'demo-student-1', classroomId: workshop, role: 'monitor' } });
+  await request(`/v1/missions/${missionId}`, a, 'DELETE', undefined, 404);
+  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { role: 'student' } });
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  assert.equal(created.status, 'draft');
+  assert.equal((await request(`/v1/missions/${created.id}`, main, 'DELETE')).json.deleted, true);
+  assert.equal(await db.mission.count({ where: { id: created.id } }), 0);
+  const second = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
+  assert.equal((await request(`/v1/activities/${second.id}`, main, 'DELETE')).json.deleted, true);
+  assert.equal(await db.mission.count({ where: { id: second.id } }), 0);
+  const audit = await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'mission.delete', resourceId: created.id } });
+  assert.ok(audit);
+});
+
+test('arquivamento de turma: metadados de posse, leitura histórica só do owner e mutações bloqueadas', async () => {
+  const room = (await request('/v1/classrooms', main, 'POST', { name: 'Turma para arquivamento' })).json;
+  const owner = await db.classroom.findUniqueOrThrow({ where: { id: room.id }, select: { ownerId: true, archivedAt: true } });
+  assert.equal(owner.ownerId, mainId);
+  assert.equal(owner.archivedAt, null);
+  const mission = (await request(`/v1/classrooms/${room.id}/missions`, main, 'POST', fixture)).json;
+  const published = (await request(`/v1/missions/${mission.id}/publish`, main, 'POST', { versionId: mission.draftVersion.id, reviewed: true })).json;
+  const version = await db.missionVersion.findUniqueOrThrow({ where: { id: published.publishedVersion.id }, include: { steps: { orderBy: { position: 'asc' } } } });
+  await db.membership.create({ data: { id: `${room.id}-member-student`, userId: 'demo-student-1', classroomId: room.id, role: 'student' } });
+  const submission = await db.submission.create({ data: { versionId: version.id, userId: 'demo-student-1', status: 'submitted',
+    content: 'Entrega preservada.', currentStepId: version.steps[0].id, completedStepIds: [version.steps[0].id], submittedAt: new Date() } });
+  await db.feedback.create({ data: { submissionId: submission.id, teacherId: mainId, content: 'Feedback preservado.' } });
+  const invite = (await request(`/v1/classrooms/${room.id}/invitations`, main, 'POST', { role: 'student' })).json;
+  const ownerActive = (await request('/v1/classrooms', main)).json.items.find((c: any) => c.id === room.id);
+  assert.equal(ownerActive.ownerId, mainId);
+  assert.equal(ownerActive.isOwner, true);
+  const studentActive = (await request('/v1/classrooms', a)).json.items.find((c: any) => c.id === room.id);
+  assert.equal(studentActive.ownerId, mainId);
+  assert.equal(studentActive.isOwner, false);
+  await request(`/v1/classrooms/${room.id}`, '', 'DELETE', undefined, 401);
+  await request(`/v1/classrooms/${room.id}`, otherTeacher, 'DELETE', undefined, 404);
+  await request(`/v1/classrooms/${room.id}`, a, 'DELETE', undefined, 404);
+  const counts = () => Promise.all([
+    db.submission.count({ where: { version: { mission: { classroomId: room.id } } } }),
+    db.feedback.count({ where: { submission: { version: { mission: { classroomId: room.id } } } } }),
+    db.material.count({ where: { version: { mission: { classroomId: room.id } } } }),
+    db.mission.count({ where: { classroomId: room.id } }),
+  ]);
+  const before = await counts();
+  const first = await request(`/v1/classrooms/${room.id}`, main, 'DELETE');
+  assert.equal(first.json.archived, true);
+  assert.ok(first.json.archivedAt);
+  const again = await request(`/v1/classrooms/${room.id}`, main, 'DELETE');
+  assert.equal(again.json.archivedAt, first.json.archivedAt);
+  for (const path of ['/v1/classrooms', '/v1/classrooms?view=active']) {
+    const list = (await request(path, main)).json.items;
+    assert.ok(!list.some((c: any) => c.id === room.id));
+  }
+  const history = (await request('/v1/classrooms?view=archived', main)).json.items;
+  const archived = history.find((c: any) => c.id === room.id);
+  assert.ok(archived);
+  assert.equal(archived.role, 'teacher');
+  assert.equal(archived.archivedAt, first.json.archivedAt);
+  assert.equal(archived.ownerId, mainId);
+  assert.equal(archived.isOwner, true);
+  const otherHistory = (await request('/v1/classrooms?view=archived', otherTeacher)).json.items;
+  assert.ok(!otherHistory.some((c: any) => c.id === room.id));
+  const studentHistory = (await request('/v1/classrooms?view=archived', b)).json.items;
+  assert.ok(!studentHistory.some((c: any) => c.id === room.id));
+  const reads = [
+    `/v1/classrooms/${room.id}/activities`,
+    `/v1/missions/${mission.id}`,
+    `/v1/missions/${mission.id}/submissions`,
+    `/v1/submissions/${submission.id}`,
+  ];
+  for (const path of reads) {
+    const ok = await request(path, main);
+    if (path === `/v1/submissions/${submission.id}`) assert.equal(ok.json.feedback[0].content, 'Feedback preservado.');
+    for (const cookie of [otherTeacher, a, b]) await request(path, cookie, 'GET', undefined, 404);
+    await request(path, '', 'GET', undefined, 401);
+  }
+  const writes: [string, string, unknown, string][] = [
+    [`/v1/classrooms/${room.id}/activities`, 'POST', fixture, main],
+    [`/v1/classrooms/${room.id}/invitations`, 'POST', { role: 'student' }, main],
+    [`/v1/missions/${mission.id}`, 'PATCH', { ...fixture, expectedDraftVersionId: null }, main],
+    [`/v1/missions/${mission.id}/publish`, 'POST', { versionId: version.id, reviewed: true }, main],
+    [`/v1/missions/${mission.id}/archive`, 'POST', {}, main],
+    [`/v1/missions/${mission.id}`, 'DELETE', undefined, main],
+    [`/v1/missions/${mission.id}/submissions`, 'POST', { versionId: version.id, content: 'x', completedStepIds: [], currentStepId: version.steps[0].id, status: 'draft', expectedRevision: 1 }, a],
+    [`/v1/submissions/${submission.id}/feedback`, 'POST', { content: 'Feedback novo.' }, main],
+  ];
+  for (const [path, method, body, cookie] of writes) await request(path, cookie, method, body, 404);
+  assert.ok((await db.invitation.findUniqueOrThrow({ where: { id: invite.id } })).revokedAt);
+  await request('/v1/invitations/accept', b, 'POST', { token: invite.token }, 400);
+  assert.deepEqual(await counts(), before);
+  assert.ok(await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'classroom.archive', resourceId: room.id } }));
+  assert.ok(await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'classroom.history-read', resourceId: room.id } }));
+});
+
 test('vínculo revogado impede novas leituras e sessão revogada/expirada não autentica', async () => {
   const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } } });
   await request(`/v1/classrooms/${workshop}/members/${member.id}`, main, 'DELETE');
