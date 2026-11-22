@@ -2,7 +2,7 @@ import { materialRoutes } from './material-contracts.js';
 import { MaterialService } from './materials.js';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { Prisma, type PrismaClient } from '@prisma/client';
-import { missionInput, type Body, type MissionInput, type Operation, type Paging } from './contracts.js';
+import { missionInput, type Body, type ClassroomsQuery, type MissionInput, type Operation, type Paging } from './contracts.js';
 import type { Config } from './config.js';
 import { fail, missing } from './errors.js';
 import { serial, type Tx } from './database.js';
@@ -53,17 +53,32 @@ export function isInstructorRole(role: string) { return role === 'teacher' || ro
 const instructorRoles = ['teacher', 'monitor'] as const;
 const classroomRoles = ['student', ...instructorRoles] as const;
 export async function membership(tx: Tx, userId: string, classroomId: string, teacher = false) {
-  const member = await tx.membership.findFirst({ where: { userId, classroomId, active: true,
+  const member = await tx.membership.findFirst({ where: { userId, classroomId, active: true, classroom: { archivedAt: null },
     role: teacher ? { in: [...instructorRoles] } : { in: [...classroomRoles] } } });
   return member ?? missing();
 }
 export async function scopedMission(tx: Tx, userId: string, id: string, teacher = false) {
-  const row = await tx.mission.findFirst({ where: { id, classroom: { memberships: { some: { userId, active: true,
+  const row = await tx.mission.findFirst({ where: { id, classroom: { archivedAt: null, memberships: { some: { userId, active: true,
     role: teacher ? { in: [...instructorRoles] } : { in: [...classroomRoles] } } } } }, include: missionInclude });
   if (!row) return missing();
   const member = await membership(tx, userId, row.classroomId, teacher);
   if (member.role === 'student' && row.status !== 'published') return missing();
   return { row, member };
+}
+// Leitura histórica: somente o dono, com vínculo teacher ativo, em turma arquivada.
+// Nunca usado por operações de escrita nem por serviços compartilhados.
+export async function historicalMission(tx: Tx, userId: string, id: string) {
+  return tx.mission.findFirst({ where: { id, classroom: { archivedAt: { not: null }, ownerId: userId,
+    memberships: { some: { userId, active: true, role: 'teacher' } } } }, include: missionInclude });
+}
+export async function historicalRoom(tx: Tx, userId: string, id: string) {
+  return tx.classroom.findFirst({ where: { id, archivedAt: { not: null }, ownerId: userId,
+    memberships: { some: { userId, active: true, role: 'teacher' } } }, select: { id: true } });
+}
+export async function historicalSubmission(tx: Tx, userId: string, id: string) {
+  return tx.submission.findFirst({ where: { id, version: { mission: { classroom: { archivedAt: { not: null }, ownerId: userId,
+    memberships: { some: { userId, active: true, role: 'teacher' } } } } } },
+    include: { ...submissionInclude, version: { include: { mission: true, steps: { orderBy: { position: 'asc' as const }, include: { deadlineExtensions: true } } } } } });
 }
 export async function createVersion(tx: Tx, missionId: string, input: MissionInput, source = 'manual') {
   return tx.missionVersion.create({ data: { missionId, title: input.title, description: input.description, workMode: input.workMode ?? 'individual',
@@ -107,15 +122,21 @@ export class ProductService {
       return this.preferenceView(await this.db.readingPreferences.upsert({ where: { userId }, create: { userId, ...data }, update: data }));
     }
     if (op === 'classrooms') {
-      const rows = await this.db.classroom.findMany({ ...pageArgs(paging), where: { ...after(paging), memberships: { some: { userId, active: true } } },
+      const classroomsQuery = query as ClassroomsQuery;
+      const history = classroomsQuery.view === 'archived';
+      const rows = await this.db.classroom.findMany({ ...pageArgs(classroomsQuery),
+        where: { ...after(classroomsQuery), archivedAt: history ? { not: null } : null,
+          ...(history ? { ownerId: userId } : {}),
+          memberships: { some: { userId, active: true, ...(history ? { role: 'teacher' } : {}) } } },
         include: { memberships: { where: { userId, active: true }, select: { role: true } } } });
-      return pagination(rows.map(c => ({ id: c.id, name: c.name, role: c.memberships[0].role })), paging.limit);
+      return pagination(rows.map(c => ({ id: c.id, name: c.name, role: c.memberships[0].role, archivedAt: c.archivedAt,
+        ownerId: c.ownerId, isOwner: c.ownerId === userId })), classroomsQuery.limit);
     }
     if (op === 'createClassroom') {
       await budget(this.db, `create-classroom:${userId}`, 10, 3600);
       const data = body as Body<'createClassroom'>;
-      const c = await this.db.classroom.create({ data: { name: data.name, memberships: { create: { userId, role: 'teacher' } } } });
-      return { id: c.id, name: c.name, role: 'teacher' };
+      const c = await this.db.classroom.create({ data: { name: data.name, ownerId: userId, memberships: { create: { userId, role: 'teacher' } } } });
+      return { id: c.id, name: c.name, role: 'teacher', archivedAt: null };
     }
     if (op === 'gradePeriods' || op === 'createGradePeriod') {
       const member = await membership(this.db, userId, id, true);
@@ -172,8 +193,8 @@ export class ProductService {
       await budget(this.db, 'accept-invite-global', 300, 60);
       return serial(this.db, async tx => {
         const token=(body as Body<'acceptInvite'>).token;
-        const invite = await tx.invitation.findUnique({ where: token.length===8 ? { codeHash: digest(token) } : { tokenHash: digest(token) } });
-        if (!invite || invite.revokedAt || (!invite.reusable && invite.consumedAt) || invite.expiresAt <= new Date()) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
+        const invite = await tx.invitation.findUnique({ where: token.length===8 ? { codeHash: digest(token) } : { tokenHash: digest(token) }, include: { classroom: true } });
+        if (!invite || invite.classroom.archivedAt || invite.revokedAt || (!invite.reusable && invite.consumedAt) || invite.expiresAt <= new Date()) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
         const old = await tx.membership.findUnique({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } } });
         // A valid, teacher-issued monitor invitation may promote an active student in this classroom.
         // Revoked memberships and other existing roles cannot regain or change access this way.
@@ -184,17 +205,30 @@ export class ProductService {
         if (promoteStudentToMonitor) await tx.membership.update({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } }, data: { role: 'monitor' } });
         else await tx.membership.create({ data: { userId, classroomId: invite.classroomId, role: invite.role } });
         const c = await tx.classroom.findUniqueOrThrow({ where: { id: invite.classroomId } });
-        return { id: c.id, name: c.name, role: invite.role };
+        return { id: c.id, name: c.name, role: invite.role, archivedAt: c.archivedAt };
       });
     }
     if (op === 'leaveClassroom') {
       return serial(this.db, async tx => {
-        const member = await tx.membership.findFirst({ where: { userId, classroomId: id, active: true, role: { in: ['student', 'monitor'] } } });
+        const member = await tx.membership.findFirst({ where: { userId, classroomId: id, active: true, classroom: { archivedAt: null }, role: { in: ['student', 'monitor'] } } });
         if (!member) return missing();
         const changed = await tx.membership.updateMany({ where: { id: member.id, userId, classroomId: id, active: true }, data: { active: false } });
         if (!changed.count) return missing();
         await tx.auditEvent.create({ data: { actorId: userId, resourceId: member.id, action: 'membership.leave' } });
         return { left: true };
+      });
+    }
+    if (op === 'archiveClassroom') {
+      return serial(this.db, async tx => {
+        const room = await tx.classroom.findFirst({ where: { id, ownerId: userId },
+          include: { memberships: { where: { userId, active: true, role: 'teacher' }, select: { id: true } } } });
+        if (!room || !room.memberships.length) return missing();
+        if (room.archivedAt) return { archived: true as const, archivedAt: room.archivedAt };
+        const archivedAt = new Date();
+        await tx.classroom.update({ where: { id }, data: { archivedAt } });
+        await tx.invitation.updateMany({ where: { classroomId: id, revokedAt: null }, data: { revokedAt: archivedAt } });
+        await tx.auditEvent.create({ data: { actorId: userId, action: 'classroom.archive', resourceId: id } });
+        return { archived: true as const, archivedAt };
       });
     }
     if (op === 'generateSupports') return this.ai.generateSupports(userId, id, body as Body<'generateSupports'>);
@@ -205,7 +239,10 @@ export class ProductService {
 
     return serial(this.db, async tx => {
       if (['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'missions', 'createMission', 'barriers', 'upload'].includes(op)) {
-        const member = await membership(tx, userId, id, ['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'upload'].includes(op));
+        const archived = op === 'missions' ? await historicalRoom(tx, userId, id) : null;
+        const member = archived ? { role: 'teacher' as const } :
+          await membership(tx, userId, id, ['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'upload'].includes(op));
+        if (archived) await tx.auditEvent.create({ data: { actorId: userId, action: 'classroom.history-read', resourceId: id } });
         if (op === 'members') {
           const rows = await tx.membership.findMany({ ...pageArgs(paging), where: { ...after(paging), classroomId: id }, include: { user: { select: { name: true } } } });
           return pagination(rows.map(m => ({ id: m.id, name: m.user.name, role: m.role, active: m.active })), paging.limit);
@@ -256,8 +293,11 @@ export class ProductService {
           return pagination(rows.map(barrierView), paging.limit);
         }
       }
-      if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op)) {
-        const { row, member } = await scopedMission(tx, userId, id, ['publish', 'archive', 'setStepDeadlineExtension'].includes(op));
+      if (['mission', 'editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op)) {
+        const archived = ['mission', 'submissions'].includes(op) ? await historicalMission(tx, userId, id) : null;
+        const { row, member } = archived ? { row: archived, member: { role: 'teacher' as const } } :
+          await scopedMission(tx, userId, id, ['publish', 'archive', 'deleteMission', 'setStepDeadlineExtension'].includes(op));
+        if (archived) await tx.auditEvent.create({ data: { actorId: userId, action: 'classroom.history-read', resourceId: archived.classroomId } });
         if (op === 'mission') {
           const view = missionView(row, member.role !== 'student');
           if (member.role !== 'student' || !view.publishedVersion) return view;
@@ -382,7 +422,31 @@ export class ProductService {
           await tx.auditEvent.create({ data: { actorId: userId, action: 'mission.publish', resourceId: id } });
           return missionView(changed, true);
         }
-        if (op === 'archive') return missionView(await tx.mission.update({ where: { id }, data: { status: 'archived' }, include: missionInclude }), true);
+        if (op === 'archive') {
+          const archived = await tx.mission.update({ where: { id }, data: { status: 'archived' }, include: missionInclude });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'mission.archive', resourceId: id } });
+          return missionView(archived, true);
+        }
+        if (op === 'deleteMission') {
+          if (member.role !== 'teacher') return missing();
+          const versionIds = [row.draftVersionId, row.publishedVersionId].filter((v): v is string => !!v);
+          const [submissions, barriers, generations, deadlineExtensions, sources, adaptations, groups, strategies, learningPlans] = await Promise.all([
+            tx.submission.count({ where: { versionId: { in: versionIds } } }),
+            tx.barrierReport.count({ where: { step: { versionId: { in: versionIds } } } }),
+            tx.aiGeneration.count({ where: { missionId: id } }),
+            tx.stepDeadlineExtension.count({ where: { step: { versionId: { in: versionIds } } } }),
+            tx.materialSource.count({ where: { versionId: { in: versionIds } } }),
+            tx.materialAdaptation.count({ where: { versionId: { in: versionIds } } }),
+            tx.missionGroup.count({ where: { missionId: id } }),
+            tx.strategyPlan.count({ where: { versionId: { in: versionIds } } }),
+            tx.activityAdaptation.count({ where: { versionId: { in: versionIds } } }),
+          ]);
+          if (submissions + barriers + generations + deadlineExtensions + sources + adaptations + groups + strategies + learningPlans > 0)
+            return fail(409, 'MISSION_DELETE_BLOCKED', 'Esta atividade possui entregas, materiais ou histórico. Arquive para preservá-los.');
+          await tx.mission.delete({ where: { id } });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'mission.delete', resourceId: id } });
+          return { deleted: true as const };
+        }
         if (op === 'saveSubmission') {
           if (member.role !== 'student' || !row.publishedVersion) return missing();
           const input = body as Body<'saveSubmission'>;
@@ -424,9 +488,11 @@ export class ProductService {
         }
       }
       if (['submission', 'feedback', 'submissionAudio', 'submissionTextFile'].includes(op)) {
-        const row = await tx.submission.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { ...submissionInclude, version: { include: { mission: true, steps: { orderBy: { position: 'asc' as const }, include: { deadlineExtensions: true } } } } } });
+        const archived = op === 'submission' ? await historicalSubmission(tx, userId, id) : null;
+        const row = archived ?? await tx.submission.findFirst({ where: { id, version: { mission: { classroom: { archivedAt: null, memberships: { some: { userId, active: true } } } } } }, include: { ...submissionInclude, version: { include: { mission: true, steps: { orderBy: { position: 'asc' as const }, include: { deadlineExtensions: true } } } } } });
         if (!row) return missing();
-        const member = await membership(tx, userId, row.version.mission.classroomId);
+        const member = archived ? { role: 'teacher' as const } : await membership(tx, userId, row.version.mission.classroomId);
+        if (archived) await tx.auditEvent.create({ data: { actorId: userId, action: 'classroom.history-read', resourceId: row.version.mission.classroomId } });
         const groupMember = member.role === 'student' && row.groupId && await tx.missionGroupMember.findUnique({ where: { groupId_userId: { groupId: row.groupId, userId } } });
         if (row.userId !== userId && !groupMember && (!isInstructorRole(member.role) || row.status === 'draft')) return missing();
         if (op === 'submissionAudio') { if (!row.audio) return missing(); return { base64: Buffer.from(row.audio).toString('base64'), mimeType: 'audio/wav' }; }
@@ -455,7 +521,7 @@ export class ProductService {
         return submissionView(saved);
       }
       if (op === 'createBarrier') {
-        const step = await tx.step.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { version: { include: { mission: true } } } });
+        const step = await tx.step.findFirst({ where: { id, version: { mission: { classroom: { archivedAt: null, memberships: { some: { userId, active: true } } } } } }, include: { version: { include: { mission: true } } } });
         if (!step) return missing();
         await scopedMission(tx, userId, step.version.missionId);
         if (step.version.mission.publishedVersionId !== step.versionId) return missing();
@@ -463,7 +529,7 @@ export class ProductService {
         return barrierView(await tx.barrierReport.create({ data: { ...input, stepId: id, userId } }));
       }
       if (op === 'barrier' || op === 'respondBarrier') {
-        const row = await tx.barrierReport.findFirst({ where: { id, step: { version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } } }, include: { step: { include: { version: { include: { mission: true } } } } } });
+        const row = await tx.barrierReport.findFirst({ where: { id, step: { version: { mission: { classroom: { archivedAt: null, memberships: { some: { userId, active: true } } } } } } }, include: { step: { include: { version: { include: { mission: true } } } } } });
         if (!row) return missing();
         const member = await membership(tx, userId, row.step.version.mission.classroomId);
         if (row.userId !== userId && !(isInstructorRole(member.role) && row.sharedWithTeacher)) return missing();
@@ -480,7 +546,7 @@ export class ProductService {
   }
 
   async download(userId: string, id: string) {
-    const material = await this.db.material.findFirst({ where: { id, version: { mission: { classroom: { memberships: { some: { userId, active: true } } } } } }, include: { version: { include: { mission: true } } } });
+    const material = await this.db.material.findFirst({ where: { id, version: { mission: { classroom: { archivedAt: null, memberships: { some: { userId, active: true } } } } } }, include: { version: { include: { mission: true } } } });
     if (!material) return missing();
     const { member } = await scopedMission(this.db, userId, material.version.missionId);
     if (member.role === 'student' && material.version.mission.publishedVersionId !== material.versionId) return missing();
