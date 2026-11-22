@@ -1177,7 +1177,7 @@ test('exclusão de missão: somente teacher ativo, 409 com dados e hard delete s
   assert.ok(audit);
 });
 
-test('arquivamento de turma: ownerId persistido, histórico do owner, somente leitura e dados preservados', async () => {
+test('arquivamento de turma: metadados de posse, leitura histórica só do owner e mutações bloqueadas', async () => {
   const room = (await request('/v1/classrooms', main, 'POST', { name: 'Turma para arquivamento' })).json;
   const owner = await db.classroom.findUniqueOrThrow({ where: { id: room.id }, select: { ownerId: true, archivedAt: true } });
   assert.equal(owner.ownerId, mainId);
@@ -1190,6 +1190,12 @@ test('arquivamento de turma: ownerId persistido, histórico do owner, somente le
     content: 'Entrega preservada.', currentStepId: version.steps[0].id, completedStepIds: [version.steps[0].id], submittedAt: new Date() } });
   await db.feedback.create({ data: { submissionId: submission.id, teacherId: mainId, content: 'Feedback preservado.' } });
   const invite = (await request(`/v1/classrooms/${room.id}/invitations`, main, 'POST', { role: 'student' })).json;
+  const ownerActive = (await request('/v1/classrooms', main)).json.items.find((c: any) => c.id === room.id);
+  assert.equal(ownerActive.ownerId, mainId);
+  assert.equal(ownerActive.isOwner, true);
+  const studentActive = (await request('/v1/classrooms', a)).json.items.find((c: any) => c.id === room.id);
+  assert.equal(studentActive.ownerId, mainId);
+  assert.equal(studentActive.isOwner, false);
   await request(`/v1/classrooms/${room.id}`, '', 'DELETE', undefined, 401);
   await request(`/v1/classrooms/${room.id}`, otherTeacher, 'DELETE', undefined, 404);
   await request(`/v1/classrooms/${room.id}`, a, 'DELETE', undefined, 404);
@@ -1214,19 +1220,40 @@ test('arquivamento de turma: ownerId persistido, histórico do owner, somente le
   assert.ok(archived);
   assert.equal(archived.role, 'teacher');
   assert.equal(archived.archivedAt, first.json.archivedAt);
+  assert.equal(archived.ownerId, mainId);
+  assert.equal(archived.isOwner, true);
   const otherHistory = (await request('/v1/classrooms?view=archived', otherTeacher)).json.items;
   assert.ok(!otherHistory.some((c: any) => c.id === room.id));
   const studentHistory = (await request('/v1/classrooms?view=archived', b)).json.items;
   assert.ok(!studentHistory.some((c: any) => c.id === room.id));
-  await request(`/v1/classrooms/${room.id}/missions`, main, 'GET', undefined, 404);
-  await request(`/v1/classrooms/${room.id}/missions`, main, 'POST', fixture, 404);
-  await request(`/v1/missions/${mission.id}`, main, 'GET', undefined, 404);
-  await request(`/v1/missions/${mission.id}`, main, 'DELETE', undefined, 404);
+  const reads = [
+    `/v1/classrooms/${room.id}/activities`,
+    `/v1/missions/${mission.id}`,
+    `/v1/missions/${mission.id}/submissions`,
+    `/v1/submissions/${submission.id}`,
+  ];
+  for (const path of reads) {
+    const ok = await request(path, main);
+    if (path === `/v1/submissions/${submission.id}`) assert.equal(ok.json.feedback[0].content, 'Feedback preservado.');
+    for (const cookie of [otherTeacher, a, b]) await request(path, cookie, 'GET', undefined, 404);
+    await request(path, '', 'GET', undefined, 401);
+  }
+  const writes: [string, string, unknown, string][] = [
+    [`/v1/classrooms/${room.id}/activities`, 'POST', fixture, main],
+    [`/v1/classrooms/${room.id}/invitations`, 'POST', { role: 'student' }, main],
+    [`/v1/missions/${mission.id}`, 'PATCH', { ...fixture, expectedDraftVersionId: null }, main],
+    [`/v1/missions/${mission.id}/publish`, 'POST', { versionId: version.id, reviewed: true }, main],
+    [`/v1/missions/${mission.id}/archive`, 'POST', {}, main],
+    [`/v1/missions/${mission.id}`, 'DELETE', undefined, main],
+    [`/v1/missions/${mission.id}/submissions`, 'POST', { versionId: version.id, content: 'x', completedStepIds: [], currentStepId: version.steps[0].id, status: 'draft', expectedRevision: 1 }, a],
+    [`/v1/submissions/${submission.id}/feedback`, 'POST', { content: 'Feedback novo.' }, main],
+  ];
+  for (const [path, method, body, cookie] of writes) await request(path, cookie, method, body, 404);
   assert.ok((await db.invitation.findUniqueOrThrow({ where: { id: invite.id } })).revokedAt);
   await request('/v1/invitations/accept', b, 'POST', { token: invite.token }, 400);
   assert.deepEqual(await counts(), before);
-  const audit = await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'classroom.archive', resourceId: room.id } });
-  assert.ok(audit);
+  assert.ok(await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'classroom.archive', resourceId: room.id } }));
+  assert.ok(await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'classroom.history-read', resourceId: room.id } }));
 });
 
 test('vínculo revogado impede novas leituras e sessão revogada/expirada não autentica', async () => {
