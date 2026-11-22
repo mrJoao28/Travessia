@@ -166,6 +166,26 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/classrooms"
   },
+  "archiveClassroom": {
+    "method": "DELETE",
+    "path": "/classrooms/{id}"
+  },
+  "gradePeriods": {
+    "method": "GET",
+    "path": "/classrooms/{id}/grade-periods"
+  },
+  "createGradePeriod": {
+    "method": "POST",
+    "path": "/classrooms/{id}/grade-periods"
+  },
+  "addGradeAssessment": {
+    "method": "POST",
+    "path": "/grade-periods/{id}/assessments"
+  },
+  "gradebook": {
+    "method": "GET",
+    "path": "/grade-periods/{id}/gradebook"
+  },
   "members": {
     "method": "GET",
     "path": "/classrooms/{id}/members"
@@ -210,6 +230,10 @@ export const apiRoutes = {
     "method": "PATCH",
     "path": "/activities/{id}"
   },
+  "deleteMission": {
+    "method": "DELETE",
+    "path": "/activities/{id}"
+  },
   "publish": {
     "method": "POST",
     "path": "/activities/{id}/publish"
@@ -226,9 +250,17 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/activities/{id}/groups"
   },
+  "updateGroup": {
+    "method": "PATCH",
+    "path": "/activities/{id}/groups/{groupId}"
+  },
   "removeGroup": {
     "method": "DELETE",
     "path": "/activities/{id}/groups/{groupId}"
+  },
+  "setParticipationMode": {
+    "method": "PATCH",
+    "path": "/activities/{id}/participants/{studentId}"
   },
   "saveSubmission": {
     "method": "POST",

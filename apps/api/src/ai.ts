@@ -133,7 +133,7 @@ export class AiService {
         scores: z.array(z.strictObject({ stepId: z.string().min(1).max(100), points: z.number().int().min(0).max(100), comment: z.string().trim().max(1000) })).max(10) }).parse(row.feedbackDraft) : null });
     const reserved = await serial(this.db, async tx => {
       if (!this.config.aiEnabled) return fail(503, 'AI_UNAVAILABLE', 'Assistência desativada. O professor pode escrever o feedback manualmente.');
-      const row = await tx.submission.findFirst({ where: { id: submissionId, version: { mission: { classroom: { memberships: { some: { userId, active: true, role: { in: ['teacher', 'monitor'] } } } } } } },
+      const row = await tx.submission.findFirst({ where: { id: submissionId, version: { mission: { classroom: { archivedAt: null, memberships: { some: { userId, active: true, role: { in: ['teacher', 'monitor'] } } } } } } },
         include: { version: { include: { mission: true, steps: { orderBy: { position: 'asc' } } } } } });
       if (!row) return missing();
       if (row.status !== 'submitted') return fail(409, 'SUBMISSION_NOT_PENDING', 'A sugestão só pode ser solicitada para uma entrega ainda não revisada.');
@@ -175,7 +175,7 @@ export class AiService {
       const mappedDraft = { content: draft.content, scores: draft.scores.map(score => ({ stepId: steps.find(step => step.stepRef === score.stepRef)!.stepId,
         points: score.points, comment: score.comment })) };
       return await serial(this.db, async tx => {
-        const current = await tx.submission.findFirst({ where: { id: submissionId, version: { mission: { classroom: { memberships: { some: { userId, active: true, role: { in: ['teacher', 'monitor'] } } } } } } }, select: { status: true, revision: true, versionId: true } });
+        const current = await tx.submission.findFirst({ where: { id: submissionId, version: { mission: { classroom: { archivedAt: null, memberships: { some: { userId, active: true, role: { in: ['teacher', 'monitor'] } } } } } } }, select: { status: true, revision: true, versionId: true } });
         const gen = await tx.aiGeneration.findUniqueOrThrow({ where: { id: generation.id } });
         if (!current || current.status !== 'submitted' || current.revision !== revision || current.versionId !== versionId || gen.status !== 'running' || gen.expiresAt <= new Date())
           return fail(409, 'GENERATION_CONFLICT', 'A entrega mudou durante a geração. Nenhum feedback foi publicado.');

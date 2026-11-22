@@ -20,7 +20,7 @@ test('primeira turma mostra três passos, convite curto, link e mensagem por e-m
  await expect(page.getByRole('heading',{name:'Primeiros passos da sua turma',exact:true})).toBeVisible();
  await expect(page.getByRole('link',{name:'Criar primeira atividade',exact:true})).toHaveAttribute('href','/professor/atividades/nova?turma=first-class');
  await expect(page.getByText('Abra “Alunos da turma e convites” nesta página para compartilhar o link, o código curto ou uma mensagem por e-mail.',{exact:false})).toBeVisible();
- await page.locator('details.teacher-disclosure > summary').focus();await page.keyboard.press('Enter');
+ await page.locator('details.teacher-disclosure > summary').filter({hasText:'Alunos da turma e convites'}).focus();await page.keyboard.press('Enter');
  await expect(page.getByText('Alunos da turma e convites',{exact:true})).toBeFocused();
  await page.getByRole('button',{name:'Gerar convite de aluno',exact:true}).click();
  await expect(page.getByLabel('Código de convite',{exact:true})).toHaveValue(code);await expect(page.getByLabel('Código de convite',{exact:true})).toBeFocused();
