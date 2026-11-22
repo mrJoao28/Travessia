@@ -25,6 +25,8 @@ model User {
   memberships   Membership[]
   ownedClassrooms Classroom[] @relation("classroomOwner")
   missionGroups MissionGroupMember[]
+  ledMissionGroups MissionGroup[] @relation("groupLeader")
+  missionParticipations MissionParticipation[]
   submissions   Submission[]
   studentDeadlineExtensions StepDeadlineExtension[] @relation("studentDeadlineExtensions")
   teacherDeadlineExtensions StepDeadlineExtension[] @relation("teacherDeadlineExtensions")
@@ -164,7 +166,7 @@ model Classroom {
   memberships Membership[]
   invitations Invitation[]
   missions Mission[]
-
+  gradePeriods GradePeriod[]
   @@index([ownerId, archivedAt])
 }
 model Membership {
@@ -203,6 +205,8 @@ model Mission {
   classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   versions MissionVersion[] @relation("versions")
   groups MissionGroup[]
+  participations MissionParticipation[]
+  gradeAssessments GradeAssessment[]
   draftVersion MissionVersion? @relation("draft", fields: [draftVersionId], references: [id])
   publishedVersion MissionVersion? @relation("published", fields: [publishedVersionId], references: [id])
   @@index([classroomId, status])
@@ -290,10 +294,14 @@ model MissionGroup {
   id String @id @default(uuid())
   missionId String
   name String @db.VarChar(150)
+  leaderId String?
   mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  leader User? @relation("groupLeader", fields: [leaderId], references: [id], onDelete: SetNull)
   members MissionGroupMember[]
+  participations MissionParticipation[]
   submissions Submission[]
   @@unique([missionId, name])
+  @@index([leaderId])
 }
 model MissionGroupMember {
   groupId String
@@ -302,6 +310,48 @@ model MissionGroupMember {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([groupId, userId])
   @@index([userId])
+}
+
+model MissionParticipation {
+  id String @id @default(uuid())
+  missionId String
+  userId String
+  mode String @default("group")
+  groupId String?
+  reason String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group MissionGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  @@unique([missionId, userId])
+  @@index([missionId, mode])
+  @@index([groupId])
+}
+
+model GradePeriod {
+  id String @id @default(uuid())
+  classroomId String
+  name String @db.VarChar(150)
+  startsAt DateTime?
+  endsAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  assessments GradeAssessment[]
+  @@unique([classroomId, name])
+  @@index([classroomId, createdAt])
+}
+
+model GradeAssessment {
+  id String @id @default(uuid())
+  periodId String
+  missionId String
+  weight Int @default(1)
+  period GradePeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  @@unique([periodId, missionId])
+  @@index([missionId])
 }
 model Feedback {
   id String @id @default(uuid())
