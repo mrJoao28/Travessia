@@ -83,13 +83,17 @@ test("cartões de gestão de turma agrupam ações e refluem com texto ampliado"
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   const mobileLayout = await page.evaluate(() => {
     const copy = document.querySelector(".classroom-card-copy")?.getBoundingClientRect();
-    const action = document.querySelector(".classroom-card-actions")?.getBoundingClientRect();
+    const actionElement = document.querySelector(".classroom-card-actions");
+    const action = actionElement?.getBoundingClientRect();
     const button = document.querySelector(".classroom-card-actions .button")?.getBoundingClientRect();
-    return copy && action && button ? { copyBottom: copy.bottom, actionTop: action.top, actionWidth: action.width, buttonWidth: button.width } : null;
+    if (!copy || !action || !button || !actionElement) return null;
+    const style = getComputedStyle(actionElement);
+    const actionContentWidth = action.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+    return { copyBottom: copy.bottom, actionTop: action.top, actionContentWidth, buttonWidth: button.width };
   });
   expect(mobileLayout).not.toBeNull();
   expect(mobileLayout!.actionTop).toBeGreaterThanOrEqual(mobileLayout!.copyBottom);
-  expect(mobileLayout!.buttonWidth).toBeGreaterThan(mobileLayout!.actionWidth * 0.9);
+  expect(mobileLayout!.buttonWidth).toBeGreaterThan(mobileLayout!.actionContentWidth * 0.9);
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 });
 

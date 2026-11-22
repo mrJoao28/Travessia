@@ -10,6 +10,7 @@ export async function setup(page: Page, failSave = false) {
   await page.route('**/api/v1/**', async route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/v1/me') return route.fulfill({ json: { id: profile.id, name: profile.name, email: profile.email, course: profile.student?.course, demo: true, preferences: {} } });
+    if (path === '/api/v1/classrooms') return route.fulfill({ json: { items: [], nextCursor: null } });
     if (path === '/api/v1/me/profile' && route.request().method() === 'GET') return route.fulfill({ json: profile });
     if (path === '/api/v1/me/profile' && route.request().method() === 'PATCH') {
       updates++;
