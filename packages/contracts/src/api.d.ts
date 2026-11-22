@@ -3435,6 +3435,8 @@ export interface operations {
                             id: string;
                             classroomId: string;
                             name: string;
+                            /** @enum {string} */
+                            formula: "weighted_average" | "simple_average" | "sum";
                             startsAt: string | null;
                             endsAt: string | null;
                             assessments: {
@@ -3475,6 +3477,8 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
+                    /** @enum {string} */
+                    formula?: "weighted_average" | "simple_average" | "sum";
                     startsAt?: string | null;
                     endsAt?: string | null;
                 };
@@ -3491,6 +3495,8 @@ export interface operations {
                         id: string;
                         classroomId: string;
                         name: string;
+                        /** @enum {string} */
+                        formula: "weighted_average" | "simple_average" | "sum";
                         startsAt: string | null;
                         endsAt: string | null;
                         assessments: {
@@ -3586,6 +3592,8 @@ export interface operations {
                             id: string;
                             classroomId: string;
                             name: string;
+                            /** @enum {string} */
+                            formula: "weighted_average" | "simple_average" | "sum";
                             startsAt: string | null;
                             endsAt: string | null;
                             assessments: {

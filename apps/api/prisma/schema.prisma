@@ -362,6 +362,7 @@ model GradePeriod {
   id String @id @default(uuid())
   classroomId String
   name String @db.VarChar(150)
+  formula String @default("weighted_average")
   startsAt DateTime?
   endsAt DateTime?
   createdAt DateTime @default(now())

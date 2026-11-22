@@ -10,13 +10,14 @@ export function GradebookManager({ classroomId, entries }: { classroomId: string
   const [name, setName] = useState("");
   const [selected, setSelected] = useState("");
   const [weight, setWeight] = useState("1");
+  const [formula, setFormula] = useState<"weighted_average" | "simple_average" | "sum">("weighted_average");
   const [active, setActive] = useState<ApiResponse<"gradebook"> | null>(null);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   useEffect(() => { let live = true; void api("gradePeriods", { params: { id: classroomId } }).then(value => { if (live) setPeriods(value.items); }).catch(reason => { if (live) setMessage(errorMessage(reason)); }); return () => { live = false; }; }, [classroomId]);
   async function create() {
     if (!name.trim() || pending) return; setPending(true); setMessage("");
-    try { const period = await api("createGradePeriod", { params: { id: classroomId }, body: { name: name.trim(), startsAt: null, endsAt: null } }); setPeriods(all => [...all, period]); setName(""); setMessage("Bimestre criado. Agora associe as avaliações."); }
+    try { const period = await api("createGradePeriod", { params: { id: classroomId }, body: { name: name.trim(), formula, startsAt: null, endsAt: null } }); setPeriods(all => [...all, period]); setName(""); setMessage("Bimestre criado. Agora associe as avaliações."); }
     catch (reason) { setMessage(errorMessage(reason)); } finally { setPending(false); }
   }
   async function addAssessment(period: Period) {
@@ -39,7 +40,7 @@ export function GradebookManager({ classroomId, entries }: { classroomId: string
     <summary>Bimestres e notas</summary>
     <div className="form-stack">
       <p>Crie o período e escolha quais atividades compõem a nota. Os pesos ficam configuráveis por bimestre; nenhuma nota é calculada pela IA.</p>
-      <div className="button-row"><label htmlFor="grade-period-name">Nome do bimestre<input id="grade-period-name" value={name} maxLength={150} onChange={e => setName(e.target.value)} placeholder="Ex.: 1º bimestre" /></label><button className="button button-outline" type="button" disabled={pending || !name.trim()} onClick={() => void create()}>Criar bimestre</button></div>
+      <div className="button-row"><label htmlFor="grade-period-name">Nome do bimestre<input id="grade-period-name" value={name} maxLength={150} onChange={e => setName(e.target.value)} placeholder="Ex.: 1º bimestre" /></label><label htmlFor="grade-period-formula">Cálculo da nota<select id="grade-period-formula" value={formula} onChange={e => setFormula(e.target.value as typeof formula)}><option value="weighted_average">Média ponderada</option><option value="simple_average">Média simples</option><option value="sum">Soma das avaliações</option></select></label><button className="button button-outline" type="button" disabled={pending || !name.trim()} onClick={() => void create()}>Criar bimestre</button></div>
       {periods.map(period => <section className="example" key={period.id}>
         <h3>{period.name}</h3>
         <p>{period.assessments.length ? period.assessments.map(item => `${item.title} (peso ${item.weight})`).join(" · ") : "Nenhuma avaliação associada."}</p>

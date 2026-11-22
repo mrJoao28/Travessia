@@ -28,7 +28,7 @@ const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', '
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
 const classroom = z.strictObject({ id, name: short, shift: z.string().nullable().optional(), role: z.enum(['student', 'teacher', 'monitor']), archivedAt: date.nullable().optional(), ownerId: id.optional(), isOwner: z.boolean().optional() });
 const classroomTeam = z.strictObject({ id, classroomId: id, name: short, leaderId: id, members: z.array(z.strictObject({ id, name: z.string() })) });
-const gradePeriod = z.strictObject({ id, classroomId: id, name: short, startsAt: date.nullable(), endsAt: date.nullable(), assessments: z.array(z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() })) });
+const gradePeriod = z.strictObject({ id, classroomId: id, name: short, formula: z.enum(['weighted_average', 'simple_average', 'sum']), startsAt: date.nullable(), endsAt: date.nullable(), assessments: z.array(z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() })) });
 const gradebook = z.strictObject({ period: gradePeriod, students: z.array(z.strictObject({ studentId: id, name: z.string(), assessments: z.array(z.strictObject({ assessmentId: id, missionId: id, title: short, value: z.number().nullable(), weight: z.number().int().positive() })), average: z.number().nullable() })) });
 const stepScore = z.strictObject({ stepId: id, points: z.number().int().min(0).max(100), comment: z.string().trim().max(1000) });
 const feedbackDraft = z.strictObject({ content: z.string().trim().min(1).max(6000), scores: z.array(stepScore).max(10) });
@@ -127,7 +127,7 @@ export const routes = {
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short, shift: optionalText(50) }), query: empty, response: classroom },
   archiveClassroom: { method: 'delete', path: '/v1/classrooms/{id}', body: empty, query: empty, response: z.strictObject({ archived: z.literal(true), archivedAt: date }) },
   gradePeriods: { method: 'get', path: '/v1/classrooms/{id}/grade-periods', body: empty, query: empty, response: z.strictObject({ items: z.array(gradePeriod) }) },
-  createGradePeriod: { method: 'post', path: '/v1/classrooms/{id}/grade-periods', body: z.strictObject({ name: short, startsAt: date.nullable().optional(), endsAt: date.nullable().optional() }), query: empty, response: gradePeriod },
+  createGradePeriod: { method: 'post', path: '/v1/classrooms/{id}/grade-periods', body: z.strictObject({ name: short, formula: z.enum(['weighted_average', 'simple_average', 'sum']).optional(), startsAt: date.nullable().optional(), endsAt: date.nullable().optional() }), query: empty, response: gradePeriod },
   addGradeAssessment: { method: 'post', path: '/v1/grade-periods/{id}/assessments', body: z.strictObject({ missionId: id, weight: z.number().int().positive().max(100) }), query: empty, response: z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() }) },
   gradebook: { method: 'get', path: '/v1/grade-periods/{id}/gradebook', body: empty, query: empty, response: gradebook },
   classroomTeams: { method: 'get', path: '/v1/classrooms/{id}/teams', body: empty, query: empty, response: z.strictObject({ items: z.array(classroomTeam) }) },

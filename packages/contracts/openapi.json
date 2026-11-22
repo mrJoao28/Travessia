@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 150490)
-Total output lines: 16834
+Warning: truncated output (original token count: 150800)
+Total output lines: 16869
 
 {
   "openapi": "3.1.0",
@@ -5958,7 +5958,7 @@ Total output lines: 16834
                     }
                   },
                   "required": [
-                    "co…50490 tokens truncated…ionalProperties": false
+                    "co…50800 tokens truncated…ionalProperties": false
                 }
               }
             }

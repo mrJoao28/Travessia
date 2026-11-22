@@ -94,8 +94,8 @@ function pagination<T extends {id: string}>(rows: T[], limit: number) {
 }
 const pageArgs = (p: Paging) => ({ take: p.limit + 1, orderBy: { id: 'asc' as const }, ...(p.cursor ? { where: { id: { gt: p.cursor } } } : {}) });
 const after = (p: Paging) => p.cursor ? { id: { gt: p.cursor } } : {};
-function gradePeriodView(period: { id: string; classroomId: string; name: string; startsAt: Date | null; endsAt: Date | null; assessments: { id: string; missionId: string; weight: number; mission: { draftVersion: { title: string } | null; publishedVersion: { title: string } | null } }[] }) {
-  return { id: period.id, classroomId: period.classroomId, name: period.name, startsAt: period.startsAt, endsAt: period.endsAt,
+function gradePeriodView(period: { id: string; classroomId: string; name: string; formula: string; startsAt: Date | null; endsAt: Date | null; assessments: { id: string; missionId: string; weight: number; mission: { draftVersion: { title: string } | null; publishedVersion: { title: string } | null } }[] }) {
+  return { id: period.id, classroomId: period.classroomId, name: period.name, formula: period.formula as 'weighted_average' | 'simple_average' | 'sum', startsAt: period.startsAt, endsAt: period.endsAt,
     assessments: period.assessments.map(a => ({ id: a.id, missionId: a.missionId, title: a.mission.publishedVersion?.title ?? a.mission.draftVersion?.title ?? 'Atividade', weight: a.weight })) };
 }
 function classroomTeamView(team: { id: string; classroomId: string; name: string; leaderId: string; members: { user: { id: string; name: string } }[] }) {
@@ -175,7 +175,7 @@ export class ProductService {
         return { items: rows.map(gradePeriodView) };
       }
       const data = body as Body<'createGradePeriod'>;
-      const period = await this.db.gradePeriod.create({ data: { classroomId: id, name: data.name, startsAt: data.startsAt ? new Date(data.startsAt) : null, endsAt: data.endsAt ? new Date(data.endsAt) : null }, include: { assessments: { include: { mission: { include: { draftVersion: { select: { title: true } }, publishedVersion: { select: { title: true } } } } } } } });
+      const period = await this.db.gradePeriod.create({ data: { classroomId: id, name: data.name, formula: data.formula ?? 'weighted_average', startsAt: data.startsAt ? new Date(data.startsAt) : null, endsAt: data.endsAt ? new Date(data.endsAt) : null }, include: { assessments: { include: { mission: { include: { draftVersion: { select: { title: true } }, publishedVersion: { select: { title: true } } } } } } } });
       await this.db.auditEvent.create({ data: { actorId: userId, action: 'grade-period.create', resourceId: period.id } });
       return gradePeriodView(period);
     }
@@ -209,7 +209,11 @@ export class ProductService {
         const assessments = period.assessments.map(a => ({ assessmentId: a.id, missionId: a.missionId, title: a.mission.publishedVersion?.title ?? a.mission.draftVersion?.title ?? 'Atividade', value: valueFor(a.id, a.missionId, user.id), weight: a.weight }));
         const graded = assessments.filter(a => a.value !== null);
         const totalWeight = graded.reduce((sum, a) => sum + a.weight, 0);
-        const average = totalWeight ? Math.round(graded.reduce((sum, a) => sum + (a.value! * a.weight), 0) / totalWeight * 100) / 100 : null;
+        const average = !graded.length ? null : period.formula === 'sum'
+          ? Math.round(graded.reduce((sum, a) => sum + a.value!, 0) * 100) / 100
+          : period.formula === 'simple_average'
+            ? Math.round(graded.reduce((sum, a) => sum + a.value!, 0) / graded.length * 100) / 100
+            : totalWeight ? Math.round(graded.reduce((sum, a) => sum + (a.value! * a.weight), 0) / totalWeight * 100) / 100 : null;
         return { studentId: user.id, name: user.name, assessments, average };
       }) };
     }
