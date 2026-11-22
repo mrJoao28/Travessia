@@ -185,13 +185,18 @@ function WorkspaceView({
           : undefined
       }
     >
-      {!guidedEditor && <div className={`page-heading${materialWorkspace?" material-page-heading":""}`}>
-        <h1>{title}</h1>
-        <p>
-          {materialWorkspace ? "Prepare, compare e confira antes de disponibilizar ao aluno." : role === "aluno"
-            ? (entries.some(entry=>entry.mission.publishedVersion)?"Retome sua atividade de onde parou.":"Suas atividades serão mostradas aqui.")
-            : "Organize objetivos, etapas e devolutivas para sua turma."}
-        </p>
+      {!guidedEditor && <div className={`page-heading${materialWorkspace?" material-page-heading":""}${role === "professor" && ["", "atividades"].includes(section) ? " page-heading-with-classroom-action" : ""}`}>
+        <div className="page-heading-copy">
+          <h1>{title}</h1>
+          <p>
+            {materialWorkspace ? "Prepare, compare e confira antes de disponibilizar ao aluno." : role === "aluno"
+              ? (entries.some(entry=>entry.mission.publishedVersion)?"Retome sua atividade de onde parou.":"Suas atividades serão mostradas aqui.")
+              : "Organize objetivos, etapas e devolutivas para sua turma."}
+          </p>
+        </div>
+        {role === "professor" && ["", "atividades"].includes(section) && (
+          <ClassroomTools teacher buttonTrigger onChanged={() => setReload((n) => n + 1)} />
+        )}
       </div>}
       {pending ? (
         <section className="paper" role="status">
@@ -217,7 +222,7 @@ function WorkspaceView({
             </p>
           )}
           {((section === "turmas" && classroomView === "active" && (chosen?.role === "teacher" || chosen?.role === "monitor" || !permitted.length)) ||
-            (!permitted.length && role === "professor" && section !== "turmas")) && (
+            (!permitted.length && role === "professor" && section !== "turmas" && !["", "atividades"].includes(section))) && (
             <ClassroomTools
               teacher={role === "professor"}
               onChanged={() => setReload((n) => n + 1)}
