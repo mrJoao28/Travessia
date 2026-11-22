@@ -230,7 +230,10 @@ export class ProductService {
         // An active student may also be promoted by a teacher-issued monitor invitation.
         const reactivate = !!old && !old.active;
         const promoteStudentToMonitor = !!old && old.active && old.role === 'student' && invite.role === 'monitor';
-        if (old && !reactivate && !promoteStudentToMonitor) return fail(409, 'MEMBERSHIP_EXISTS', 'Sua conta já possui um vínculo com essa turma.');
+        if (old && !reactivate && !promoteStudentToMonitor) {
+          const roleLabel = old.role === 'monitor' ? 'como monitor' : old.role === 'teacher' ? 'como professor' : 'como aluno';
+          return fail(409, 'MEMBERSHIP_EXISTS', `Sua conta já possui um vínculo ${roleLabel} com essa turma. Abra o espaço correspondente para acessá-la.`);
+        }
         const changed = await tx.invitation.updateMany({ where: { id: invite.id, consumedAt: null, revokedAt: null, expiresAt: { gt: new Date() } }, data: invite.reusable ? { expiresAt: invite.expiresAt } : { consumedAt: new Date(), consumedBy: userId } });
         if (!changed.count) return fail(400, 'INVALID_INVITATION', 'Convite indisponível.');
         if (reactivate || promoteStudentToMonitor) await tx.membership.update({ where: { userId_classroomId: { userId, classroomId: invite.classroomId } }, data: { role: invite.role, active: true } });
