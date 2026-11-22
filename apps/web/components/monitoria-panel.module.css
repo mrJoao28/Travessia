@@ -48,18 +48,23 @@
 .primaryAction small { color: var(--on-primary); }
 
 .sectionHeading { margin: 0; font-size: 1.35rem; }
-.missionLink { color: var(--primary); font-weight: 700; text-underline-offset: .2em; }
 .missions { display: grid; gap: .75rem; margin: -.8rem 0 0; padding: 0; list-style: none; }
-.missions li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-width: 0; padding: 1rem 1.15rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--surface); }
-.missions li > :last-child { flex: 0 0 auto; }
+.missions li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(min(100%, 16rem), min(38%, 27rem)); align-items: stretch; gap: 1rem; min-width: 0; padding: 1rem 1.15rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--surface); }
 .missionText { min-width: 0; }
 .missionText h4 { margin: .35rem 0 .15rem; color: var(--text); font-size: 1.05rem; overflow-wrap: anywhere; }
 .missionText p { margin: .2rem 0 0; color: var(--muted); font-size: .9rem; }
+.missionActions { display: grid; align-content: center; gap: .55rem; min-width: 0; padding: .65rem; border: 1px solid var(--border); border-radius: .75rem; background: var(--background); }
 .draftStatus, .publishedStatus { display: inline-block; padding: .12rem .55rem; border-radius: 999px; background: var(--gold); color: var(--on-gold); font-size: .8rem; font-weight: 700; }
 .publishedStatus { background: var(--sage); color: var(--text); }
 .empty { margin: -.8rem 0 0; padding: 1.25rem; border: 1px dashed var(--muted); border-radius: .75rem; background: var(--surface); color: var(--muted); }
 .members { padding: 1rem 1.15rem; border: 1px solid var(--border); border-radius: .8rem; background: var(--surface); }
 .members summary { width: fit-content; min-height: 2.75rem; color: var(--primary); font-weight: 700; cursor: pointer; }
+.missionLink { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 3rem; padding: .55rem .75rem; border: 1px solid var(--border); border-radius: .65rem; background: var(--surface); color: var(--primary); font-weight: 700; text-align: center; overflow-wrap: anywhere; text-decoration-thickness: .08em; }
+.missionLink:hover { background: var(--sage); }
+
+@media (max-width: 64rem) {
+  .missions li { grid-template-columns: minmax(0, 1fr); }
+}
 
 @media (max-width: 760px) {
   .hero { align-items: flex-start; flex-direction: column; }
@@ -70,7 +75,7 @@
 @media (max-width: 480px) {
   .panel { gap: 1rem; }
   .hero { padding: 1rem; }
-  .missions li { align-items: flex-start; flex-direction: column; }
+  .missions li { align-items: stretch; }
   .missionLink { min-height: 2.75rem; display: inline-flex; align-items: center; }
 }
 
