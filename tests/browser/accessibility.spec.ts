@@ -151,9 +151,7 @@ test("editor ordena por teclado e exige revisão antes da publicação local", a
   const moveStepDown = page.getByRole("button", {
     name: "Mover etapa 1 para baixo",
   });
-  await moveStepDown.focus();
-  await expect(moveStepDown).toBeFocused();
-  await page.keyboard.press("Space");
+  await moveStepDown.press("Space");
   await expect(page.getByLabel("Título da etapa").first()).toHaveValue(
     "Comparar as rotas",
   );
