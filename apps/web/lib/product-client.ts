@@ -89,7 +89,11 @@ export async function api<K extends keyof ApiOperations>(
       AI_PROVIDER_QUOTA: "O projeto Gemini atingiu um limite de uso. Aguarde ou peça ao administrador para conferir a cota.",
       AI_TIMEOUT: "O Gemini demorou demais. Confira o estado do rascunho antes de tentar com menos material.",
     };
+    const productErrors: Record<string, string> = {
+      MISSION_DELETE_BLOCKED: "Esta atividade possui entregas, materiais ou histórico. Use Arquivar atividade para preservá-los.",
+    };
     const message = Object.hasOwn(geminiErrors, code) ? geminiErrors[code] :
+      Object.hasOwn(productErrors, code) ? productErrors[code] :
       code === "MEMBERSHIP_EXISTS"
         ? "Sua conta já possui um vínculo com essa turma. Se deveria entrar como monitor, peça ao professor um novo convite de monitor."
         : code === "INVALID_INVITATION"
@@ -121,12 +125,12 @@ export function errorMessage(error: unknown) {
 
 export async function pages<
   K extends "classrooms" | "missions" | "submissions" | "barriers" | "members" | "invitations" | "strategyRecipients" | "sharedLearningNeeds",
->(operation: K, id?: string) {
+>(operation: K, id?: string, query?: ApiOperations[K]["query"]) {
   const items: Array<ApiResponse<K>["items"][number]> = [];
   let cursor: string | undefined;
   for (let page = 0; page < 100; page++) {
     const params = (id ? { id } : {}) as ApiOperations[K]["params"];
-    const response = await api(operation, { params, cursor });
+    const response = await api(operation, { params, cursor, query });
     items.push(...(response.items as Array<ApiResponse<K>["items"][number]>));
     if (!response.nextCursor) return items as ApiResponse<K>["items"];
     if (cursor === response.nextCursor)

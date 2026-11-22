@@ -166,6 +166,10 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/classrooms"
   },
+  "archiveClassroom": {
+    "method": "DELETE",
+    "path": "/classrooms/{id}"
+  },
   "members": {
     "method": "GET",
     "path": "/classrooms/{id}/members"
@@ -208,6 +212,10 @@ export const apiRoutes = {
   },
   "editMission": {
     "method": "PATCH",
+    "path": "/activities/{id}"
+  },
+  "deleteMission": {
+    "method": "DELETE",
     "path": "/activities/{id}"
   },
   "publish": {
