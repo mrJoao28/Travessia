@@ -148,6 +148,7 @@ function WorkspaceView({
       ? room.role === "student"
       : room.role === "teacher" || room.role === "monitor",
   );
+  const activeOtherRoleClassrooms = classrooms.filter((room) => role === "aluno" && room.role !== "student" && !room.archivedAt);
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
   const isClassroomManager = role === "professor" && section === "turmas";
@@ -240,15 +241,19 @@ function WorkspaceView({
                   </select>
                 </label>
               )}
-              <h2>{showingArchivedClassrooms ? "Nenhuma turma arquivada" : "Nenhuma turma neste espaço"}</h2>
-              <p>{showingArchivedClassrooms
+              <h2>{showingArchivedClassrooms ? "Nenhuma turma arquivada" : activeOtherRoleClassrooms.length ? "Você já possui vínculo com esta conta" : "Nenhuma turma neste espaço"}</h2>
+              {activeOtherRoleClassrooms.length ? <>
+                <p>Encontramos vínculos ativos em outro espaço de acesso. Por isso um novo convite para a mesma turma é recusado.</p>
+                <ul className="card-list">{activeOtherRoleClassrooms.map(room => <li className="paper" key={room.id}><strong>{room.name}</strong>{room.shift ? ` · ${room.shift}` : ""} · {room.role === "monitor" ? "Monitor" : "Professor"}</li>)}</ul>
+                <Link className="button" href="/professor">Abrir espaço correspondente</Link>
+              </> : <p>{showingArchivedClassrooms
                 ? "As turmas excluídas da lista ativa aparecerão aqui, com o histórico preservado para consulta."
                 : role === "aluno"
                   ? "Peça um convite ao professor para começar sua primeira atividade."
-                  : "Crie sua primeira turma para preparar atividades e convidar os alunos."}</p>
-              {role === "aluno" && section !== "turmas" && <Link className="button" href="/aluno/turmas">Entrar na minha turma</Link>}
+                  : "Crie sua primeira turma para preparar atividades e convidar os alunos."}</p>}
+              {role === "aluno" && section !== "turmas" && !activeOtherRoleClassrooms.length && <Link className="button" href="/aluno/turmas">Entrar na minha turma</Link>}
               {showingArchivedClassrooms && <button className="button button-outline" type="button" onClick={() => setClassroomView("active")}>Ver turmas ativas</button>}
-              {!showingArchivedClassrooms && <p><Link className="text-link" href={`/boas-vindas?espaco=${role === "aluno" ? "professor" : "aluno"}`}>{role === "aluno" ? "Quero preparar uma turma como professor" : "Quero participar como aluno"}</Link></p>}
+              {!showingArchivedClassrooms && !activeOtherRoleClassrooms.length && <p><Link className="text-link" href={`/boas-vindas?espaco=${role === "aluno" ? "professor" : "aluno"}`}>{role === "aluno" ? "Quero preparar uma turma como professor" : "Quero participar como aluno"}</Link></p>}
             </section>
           ) : (
             <>

@@ -2,6 +2,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
   api,
+  ApiError,
   pages,
   errorMessage,
   type ApiResponse,
@@ -52,6 +53,7 @@ export function ClassroomTools({
             }
           } catch (reason) {
             setMessage(errorMessage(reason));
+            if (reason instanceof ApiError && reason.code === "MEMBERSHIP_EXISTS") onChanged();
           } finally {
             setPending(false);
           }
