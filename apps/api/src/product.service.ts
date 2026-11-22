@@ -12,7 +12,7 @@ import { getProfile, updateProfile } from './profiles.js';
 import { LearningService, learnerPlans, allowedFormats } from './learning.js';
 import { verifySupportAudio } from './support-audio.js';
 import { StrategyService } from './strategies.js';
-import { copyMaterialFiles } from './material-files.js';
+import { copyMaterialFiles, removeMaterialFiles } from './material-files.js';
 import { MATERIAL_DRAFT_RETENTION_MS, publishedMaterialExpiry } from './material-limits.js';
 
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
@@ -271,7 +271,8 @@ export class ProductService {
     if (op === 'generation') return this.ai.get(userId, id);
     if (op === 'download') return this.download(userId, id);
 
-    return serial(this.db, async tx => {
+    const deletedMaterialFileIds: string[] = [];
+    const result = await serial(this.db, async tx => {
       if (['members', 'revokeMember', 'invite', 'invitations', 'revokeInvite', 'missions', 'createMission', 'barriers', 'upload'].includes(op)) {
         const archived = op === 'missions' ? await historicalRoom(tx, userId, id) : null;
         const member = archived ? { role: 'teacher' as const } :
@@ -477,19 +478,17 @@ export class ProductService {
         if (op === 'deleteMission') {
           if (member.role !== 'teacher') return missing();
           const versionIds = [row.draftVersionId, row.publishedVersionId].filter((v): v is string => !!v);
-          const [submissions, barriers, generations, deadlineExtensions, sources, adaptations, groups, strategies, learningPlans] = await Promise.all([
-            tx.submission.count({ where: { versionId: { in: versionIds } } }),
-            tx.barrierReport.count({ where: { step: { versionId: { in: versionIds } } } }),
-            tx.aiGeneration.count({ where: { missionId: id } }),
-            tx.stepDeadlineExtension.count({ where: { step: { versionId: { in: versionIds } } } }),
-            tx.materialSource.count({ where: { versionId: { in: versionIds } } }),
-            tx.materialAdaptation.count({ where: { versionId: { in: versionIds } } }),
-            tx.missionGroup.count({ where: { missionId: id } }),
-            tx.strategyPlan.count({ where: { versionId: { in: versionIds } } }),
-            tx.activityAdaptation.count({ where: { versionId: { in: versionIds } } }),
+          // Keep file cleanup IDs so storage objects can be removed after the DB commit.
+          const [sources, adaptations] = await Promise.all([
+            tx.materialSource.findMany({ where: { versionId: { in: versionIds } }, select: { id: true } }),
+            tx.materialAdaptation.findMany({ where: { versionId: { in: versionIds } }, select: { id: true } }),
           ]);
-          if (submissions + barriers + generations + deadlineExtensions + sources + adaptations + groups + strategies + learningPlans > 0)
-            return fail(409, 'MISSION_DELETE_BLOCKED', 'Esta atividade possui entregas, materiais ou histórico. Arquive para preservá-los.');
+          deletedMaterialFileIds.push(...sources.map(item => item.id), ...adaptations.map(item => item.id));
+          // Permanent deletion is explicit in the UI. Remove learner records first because
+          // Submission and BarrierReport intentionally restrict version/step deletion.
+          await tx.submission.deleteMany({ where: { versionId: { in: versionIds } } });
+          await tx.barrierReport.deleteMany({ where: { step: { versionId: { in: versionIds } } } });
+          await tx.aiGeneration.deleteMany({ where: { missionId: id } });
           await tx.mission.delete({ where: { id } });
           await tx.auditEvent.create({ data: { actorId: userId, action: 'mission.delete', resourceId: id } });
           return { deleted: true as const };
@@ -586,6 +585,8 @@ export class ProductService {
       }
       return missing();
     });
+    await Promise.allSettled(deletedMaterialFileIds.map(removeMaterialFiles));
+    return result;
   }
 
   preferenceView(p: {fontSize: string; spacing: string; contrast: string; reducedDistractions: boolean} | null) {
