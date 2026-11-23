@@ -28,6 +28,68 @@ test("docente pode criar novas turmas nas áreas de turmas e atividades", async 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });
+
+test("seletor de turmas agrupa nome e papel e mantém a ação alinhada em telas estreitas", async ({ page }) => {
+  await fixture(page, "teacher", { multipleClassrooms: true });
+  await page.goto("/professor");
+
+  const panel = page.locator(".classroom-choice-panel");
+  await expect(panel.getByRole("heading", { name: "Escolha uma turma para começar" })).toBeVisible();
+  const cards = panel.locator(".classroom-choice-card");
+  await expect(cards).toHaveCount(2);
+  await expect(cards.nth(0).locator(".classroom-role-badge")).toHaveText("Monitor");
+  await expect(cards.nth(1).locator(".classroom-role-badge")).toHaveText("Professor");
+
+  const firstCard = cards.nth(0);
+  const open = firstCard.getByRole("link", { name: "Abrir turma Legislação" });
+  await expect(open).toHaveAttribute("href", "/professor?turma=monitor-classroom");
+  await open.focus();
+  await expect(open).toBeFocused();
+
+  const desktopLayout = await firstCard.evaluate((card) => {
+    const copy = card.querySelector(".classroom-choice-copy")?.getBoundingClientRect();
+    const actions = card.querySelector(".classroom-choice-actions")?.getBoundingClientRect();
+    return copy && actions ? { copyRight: copy.right, actionsLeft: actions.left } : null;
+  });
+  expect(desktopLayout).not.toBeNull();
+  expect(desktopLayout!.actionsLeft).toBeGreaterThan(desktopLayout!.copyRight);
+
+  await firstCard.locator("h3").evaluate((heading) => {
+    heading.textContent = "Legislação e políticas públicas com um título longo para conferir o alinhamento dos controles";
+  });
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = "200%";
+  });
+  await page.setViewportSize({ width: 760, height: 900 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  const intermediateLayout = await firstCard.evaluate((card) => {
+    const copy = card.querySelector(".classroom-choice-copy")?.getBoundingClientRect();
+    const actions = card.querySelector(".classroom-choice-actions")?.getBoundingClientRect();
+    return copy && actions ? { copyRight: copy.right, actionsLeft: actions.left } : null;
+  });
+  expect(intermediateLayout).not.toBeNull();
+  expect(intermediateLayout!.actionsLeft).toBeGreaterThan(intermediateLayout!.copyRight);
+
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+
+  const mobileLayout = await firstCard.evaluate((card) => {
+    const copy = card.querySelector(".classroom-choice-copy")?.getBoundingClientRect();
+    const actions = card.querySelector(".classroom-choice-actions")?.getBoundingClientRect();
+    const button = card.querySelector(".classroom-choice-actions .button")?.getBoundingClientRect();
+    return copy && actions && button
+      ? { copyBottom: copy.bottom, actionsTop: actions.top, actionsWidth: actions.width, buttonWidth: button.width }
+      : null;
+  });
+  expect(mobileLayout).not.toBeNull();
+  expect(mobileLayout!.actionsTop).toBeGreaterThanOrEqual(mobileLayout!.copyBottom);
+  expect(mobileLayout!.buttonWidth).toBeGreaterThan(mobileLayout!.actionsWidth * 0.9);
+
+  expect(
+    (await new AxeBuilder({ page }).include(".classroom-choice-panel").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations,
+  ).toEqual([]);
+});
+
 test("monitor tem ferramentas docentes na turma e é identificado como monitor", async ({ page }) => {
   await fixture(page, "monitor");
   await page.goto("/professor");
