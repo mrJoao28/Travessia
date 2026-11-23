@@ -72,13 +72,11 @@ function WorkspaceView({
   const [pending, setPending] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
+  const hasLoaded = useRef(false);
   useEffect(() => {
     let active = true;
-    setPending(true);
+    if (!hasLoaded.current) setPending(true);
     setError("");
-    setEntries([]);
-    setClassrooms([]);
-    setProfile(null);
     async function load() {
       try {
         const me = await api("me");
@@ -122,6 +120,7 @@ function WorkspaceView({
           setProfile(me);
           setClassrooms(rooms);
           setEntries(data);
+          hasLoaded.current = true;
         }
       } catch (reason) {
         if (active) setError(errorMessage(reason));
