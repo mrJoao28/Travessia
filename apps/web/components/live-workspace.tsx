@@ -72,13 +72,11 @@ function WorkspaceView({
   const [pending, setPending] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
+  const hasLoaded = useRef(false);
   useEffect(() => {
     let active = true;
-    setPending(true);
+    if (!hasLoaded.current) setPending(true);
     setError("");
-    setEntries([]);
-    setClassrooms([]);
-    setProfile(null);
     async function load() {
       try {
         const me = await api("me");
@@ -122,6 +120,7 @@ function WorkspaceView({
           setProfile(me);
           setClassrooms(rooms);
           setEntries(data);
+          hasLoaded.current = true;
         }
       } catch (reason) {
         if (active) setError(errorMessage(reason));
@@ -198,10 +197,12 @@ function WorkspaceView({
               Ambiente de demonstração · dados fictícios
             </p>
           )}
-          {((section === "turmas" && (chosen?.role === "teacher" || chosen?.role === "monitor" || !permitted.length)) ||
+          {((role === "professor" && ["", "atividades", "turmas"].includes(section)) ||
+            (section === "turmas" && (chosen?.role === "teacher" || chosen?.role === "monitor" || !permitted.length)) ||
             (!permitted.length && role === "professor")) && (
             <ClassroomTools
               teacher={role === "professor"}
+              buttonTrigger={role === "professor"}
               onChanged={() => setReload((n) => n + 1)}
             />
           )}
@@ -260,34 +261,36 @@ function WorkspaceView({
               ) : section === "turmas" ? (
                 <ul className="card-list">
                   {permitted.map((room) => (
-                    <li key={room.id} className="paper">
-                      <div>
+                    <li key={room.id} className="paper classroom-management-card">
+                      <div className="classroom-card-copy">
                         <h2>{room.name}</h2>
                         <p>
                           {room.role === "student" ? "Aluno" : room.role === "monitor" ? "Monitor" : "Professor"} · vínculo
                           ativo
                         </p>
                       </div>
-                      <button
-                        className="button button-outline"
-                        onClick={() => {
-                          setSelected(room.id);
-                          window.location.assign(
-                            `/${role}?turma=${encodeURIComponent(room.id)}`,
-                          );
-                        }}
-                      >
-                        Abrir turma
-                      </button>
-                      {(room.role === "student" || room.role === "monitor") && (
-                        <LeaveClassroom
-                          classroom={room}
-                          onLeft={() => {
-                            if (selected === room.id) setSelected("");
-                            setReload((n) => n + 1);
+                      <div className="classroom-card-actions" role="group" aria-label={`Ações para a turma ${room.name}`}>
+                        <button
+                          className="button button-outline"
+                          onClick={() => {
+                            setSelected(room.id);
+                            window.location.assign(
+                              `/${role}?turma=${encodeURIComponent(room.id)}`,
+                            );
                           }}
-                        />
-                      )}
+                        >
+                          Abrir turma
+                        </button>
+                        {(room.role === "student" || room.role === "monitor") && (
+                          <LeaveClassroom
+                            classroom={room}
+                            onLeft={() => {
+                              if (selected === room.id) setSelected("");
+                              setReload((n) => n + 1);
+                            }}
+                          />
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
