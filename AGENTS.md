@@ -6,13 +6,17 @@ Produto: aprendizagem por missões acessíveis no ensino superior, com espaços 
 
 Uma pessoa pode ter papéis diferentes em turmas diferentes. O vínculo vem do banco e a identidade vem de uma sessão validada; dados do navegador não concedem permissões. Todo recurso privado precisa de autorização no servidor e escopo correto de turma/proprietário. O kernel em `packages/contracts/src/access-policy.ts` é referência; não é uma autenticação pronta.
 
-## Dois agentes, uma base
+## Divisão de trabalho com IA
 
+- **Codex é o responsável principal:** entende a solicitação, inspeciona o repositório, define o escopo, escolhe se vale paralelizar, integra contribuições, executa as verificações e prepara PR/relato. Também pode implementar diretamente quando a tarefa é pequena ou atravessa áreas.
+- **Antigravity é o especialista de interface:** priorizar implementação front-end isolada, inspeção visual no navegador e reprodução de bugs de layout/interação. Usar branch e worktree próprias; devolver arquivos alterados, evidências e verificações ao Codex para revisão e integração.
+- **Google AI Studio é opcional para protótipos front-end:** usar Build/annotation mode para explorar uma solução visual isolada. O fluxo recomendado e seus limites estão em `docs/agents/AI-WORKFLOW.md`. Código gerado não é implementação aprovada até ser adaptado ao Next.js, acessibilidade, contratos e arquitetura existentes e revisado pelo Codex.
+- Papéis indicam foco, não classificação de capacidade. Evite criar espaços ou agentes extras por padrão; use-os apenas para tarefas independentes com arquivos e critérios de aceite separados.
 - **Frontend:** `apps/web`, componentes e testes de interface. Ler também `apps/web/AGENTS.md` e `docs/agents/FRONTEND.md`.
 - **Backend:** `apps/api`, migrations futuras, segurança, Gemini e testes de acesso. Ler também `apps/api/AGENTS.md` e `docs/agents/BACKEND.md`.
 - **Compartilhados:** contratos, tokens, configurações da raiz e lockfile. Combine autoria por tarefa antes de editar o mesmo arquivo. Para contratos, o backend propõe e o frontend revisa o uso. Para tokens, o frontend propõe e registra os pares de contraste.
-- Cada agente trabalha em branch e worktree próprias. Nunca executar `git switch`, reset ou limpeza na pasta do outro agente.
-- Uma funcionalidade por branch (`feat/classroom-invites-api`, `feat/classroom-invites-ui`). Commits pequenos e específicos. Integrar por PR; corrigir conflitos preservando o trabalho existente. Não publicar segredos nem reescrever a main à força.
+- Cada implementador trabalha em branch e worktree próprias. Nunca executar `git switch`, reset ou limpeza na pasta de outra pessoa/agente. Codex integra por PR após revisar o diff.
+- Uma funcionalidade por branch (`feat/classroom-invites-api`, `feat/classroom-invites-ui`). Commits pequenos e específicos. Corrigir conflitos preservando o trabalho existente. Não publicar segredos nem reescrever a main à força.
 
 ## Contratos
 

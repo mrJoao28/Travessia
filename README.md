@@ -482,6 +482,7 @@ Antes de alterar o projeto, consulte:
 | `docs/ARTWORK.md` | Artes e referências |
 | `docs/FRONTEND.md` | Orientações do frontend |
 | `docs/BACKEND.md` | Orientações do backend |
+| `docs/agents/AI-WORKFLOW.md` | Divisão de tarefas entre Codex, Antigravity e protótipos no Google AI Studio |
 
 > Alguns nomes/arquivos podem ser atualizados conforme a evolução do projeto. Consulte a pasta `docs/` para a documentação disponível na versão atual.
 

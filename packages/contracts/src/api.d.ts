@@ -516,22 +516,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/classrooms/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["archiveClassroom"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/classrooms/{id}/grade-periods": {
         parameters: {
             query?: never;
@@ -578,38 +562,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/v1/classrooms/{id}/teams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["classroomTeams"];
-        put?: never;
-        post: operations["createClassroomTeam"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/classrooms/{id}/teams/{teamId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["deleteClassroomTeam"];
-        options?: never;
-        head?: never;
-        patch: operations["updateClassroomTeam"];
         trace?: never;
     };
     "/v1/classrooms/{id}/members": {
@@ -734,7 +686,7 @@ export interface paths {
         get: operations["mission"];
         put?: never;
         post?: never;
-        delete: operations["deleteMission"];
+        delete?: never;
         options?: never;
         head?: never;
         patch: operations["editMission"];
@@ -2003,8 +1955,6 @@ export interface operations {
                             unit: string | null;
                             course: string | null;
                             period: string | null;
-                            /** @enum {string} */
-                            preferredWorkMode: "individual" | "group" | "mixed";
                         } | null;
                         teacher: {
                             teachings: {
@@ -2049,8 +1999,6 @@ export interface operations {
                         unit?: string | null;
                         course?: string | null;
                         period?: string | null;
-                        /** @enum {string} */
-                        preferredWorkMode?: "individual" | "group" | "mixed";
                     };
                     teacher?: {
                         teachings: {
@@ -2082,8 +2030,6 @@ export interface operations {
                             unit: string | null;
                             course: string | null;
                             period: string | null;
-                            /** @enum {string} */
-                            preferredWorkMode: "individual" | "group" | "mixed";
                         } | null;
                         teacher: {
                             teachings: {
@@ -3280,7 +3226,6 @@ export interface operations {
             query?: {
                 limit?: number;
                 cursor?: string;
-                view?: "active" | "archived";
             };
             header?: never;
             path?: never;
@@ -3298,12 +3243,8 @@ export interface operations {
                         items: {
                             id: string;
                             name: string;
-                            shift?: string | null;
                             /** @enum {string} */
                             role: "student" | "teacher" | "monitor";
-                            archivedAt?: string | null;
-                            ownerId?: string;
-                            isOwner?: boolean;
                         }[];
                         nextCursor: string | null;
                     };
@@ -3335,7 +3276,6 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    shift?: string | null;
                 };
             };
         };
@@ -3349,52 +3289,8 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
-                        shift?: string | null;
                         /** @enum {string} */
                         role: "student" | "teacher" | "monitor";
-                        archivedAt?: string | null;
-                        ownerId?: string;
-                        isOwner?: boolean;
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    archiveClassroom: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @constant */
-                        archived: true;
-                        /** Format: date-time */
-                        archivedAt: string;
                     };
                 };
             };
@@ -3435,8 +3331,6 @@ export interface operations {
                             id: string;
                             classroomId: string;
                             name: string;
-                            /** @enum {string} */
-                            formula: "weighted_average" | "simple_average" | "sum";
                             startsAt: string | null;
                             endsAt: string | null;
                             assessments: {
@@ -3477,8 +3371,6 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    /** @enum {string} */
-                    formula?: "weighted_average" | "simple_average" | "sum";
                     startsAt?: string | null;
                     endsAt?: string | null;
                 };
@@ -3495,8 +3387,6 @@ export interface operations {
                         id: string;
                         classroomId: string;
                         name: string;
-                        /** @enum {string} */
-                        formula: "weighted_average" | "simple_average" | "sum";
                         startsAt: string | null;
                         endsAt: string | null;
                         assessments: {
@@ -3592,8 +3482,6 @@ export interface operations {
                             id: string;
                             classroomId: string;
                             name: string;
-                            /** @enum {string} */
-                            formula: "weighted_average" | "simple_average" | "sum";
                             startsAt: string | null;
                             endsAt: string | null;
                             assessments: {
@@ -3614,196 +3502,6 @@ export interface operations {
                                 weight: number;
                             }[];
                             average: number | null;
-                        }[];
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    classroomTeams: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        items: {
-                            id: string;
-                            classroomId: string;
-                            name: string;
-                            leaderId: string;
-                            members: {
-                                id: string;
-                                name: string;
-                            }[];
-                        }[];
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    createClassroomTeam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                    leaderId: string;
-                    studentIds: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        classroomId: string;
-                        name: string;
-                        leaderId: string;
-                        members: {
-                            id: string;
-                            name: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    deleteClassroomTeam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                teamId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @constant */
-                        removed: true;
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    updateClassroomTeam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                teamId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                    leaderId: string;
-                    studentIds: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        classroomId: string;
-                        name: string;
-                        leaderId: string;
-                        members: {
-                            id: string;
-                            name: string;
                         }[];
                     };
                 };
@@ -4118,12 +3816,8 @@ export interface operations {
                     "application/json": {
                         id: string;
                         name: string;
-                        shift?: string | null;
                         /** @enum {string} */
                         role: "student" | "teacher" | "monitor";
-                        archivedAt?: string | null;
-                        ownerId?: string;
-                        isOwner?: boolean;
                     };
                 };
             };
@@ -4459,44 +4153,6 @@ export interface operations {
                             /** Format: date-time */
                             createdAt: string;
                         } | null;
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    deleteMission: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @constant */
-                        deleted: true;
                     };
                 };
             };
@@ -5111,10 +4767,6 @@ export interface operations {
                             versionId: string;
                             userId: string;
                             groupId: string | null;
-                            groupMembers?: {
-                                id: string;
-                                name: string;
-                            }[];
                             attempt?: number;
                             revisionRequested?: boolean;
                             /** @enum {string} */
@@ -5208,10 +4860,6 @@ export interface operations {
                         versionId: string;
                         userId: string;
                         groupId: string | null;
-                        groupMembers?: {
-                            id: string;
-                            name: string;
-                        }[];
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
@@ -5287,10 +4935,6 @@ export interface operations {
                         versionId: string;
                         userId: string;
                         groupId: string | null;
-                        groupMembers?: {
-                            id: string;
-                            name: string;
-                        }[];
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
@@ -5378,10 +5022,6 @@ export interface operations {
                         versionId: string;
                         userId: string;
                         groupId: string | null;
-                        groupMembers?: {
-                            id: string;
-                            name: string;
-                        }[];
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */

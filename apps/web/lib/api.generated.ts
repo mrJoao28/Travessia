@@ -166,10 +166,6 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/classrooms"
   },
-  "archiveClassroom": {
-    "method": "DELETE",
-    "path": "/classrooms/{id}"
-  },
   "gradePeriods": {
     "method": "GET",
     "path": "/classrooms/{id}/grade-periods"
@@ -185,22 +181,6 @@ export const apiRoutes = {
   "gradebook": {
     "method": "GET",
     "path": "/grade-periods/{id}/gradebook"
-  },
-  "classroomTeams": {
-    "method": "GET",
-    "path": "/classrooms/{id}/teams"
-  },
-  "createClassroomTeam": {
-    "method": "POST",
-    "path": "/classrooms/{id}/teams"
-  },
-  "updateClassroomTeam": {
-    "method": "PATCH",
-    "path": "/classrooms/{id}/teams/{teamId}"
-  },
-  "deleteClassroomTeam": {
-    "method": "DELETE",
-    "path": "/classrooms/{id}/teams/{teamId}"
   },
   "members": {
     "method": "GET",
@@ -244,10 +224,6 @@ export const apiRoutes = {
   },
   "editMission": {
     "method": "PATCH",
-    "path": "/activities/{id}"
-  },
-  "deleteMission": {
-    "method": "DELETE",
     "path": "/activities/{id}"
   },
   "publish": {

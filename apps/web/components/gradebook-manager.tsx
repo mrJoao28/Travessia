@@ -10,14 +10,13 @@ export function GradebookManager({ classroomId, entries }: { classroomId: string
   const [name, setName] = useState("");
   const [selected, setSelected] = useState("");
   const [weight, setWeight] = useState("1");
-  const [formula, setFormula] = useState<"weighted_average" | "simple_average" | "sum">("weighted_average");
   const [active, setActive] = useState<ApiResponse<"gradebook"> | null>(null);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   useEffect(() => { let live = true; void api("gradePeriods", { params: { id: classroomId } }).then(value => { if (live) setPeriods(value.items); }).catch(reason => { if (live) setMessage(errorMessage(reason)); }); return () => { live = false; }; }, [classroomId]);
   async function create() {
     if (!name.trim() || pending) return; setPending(true); setMessage("");
-    try { const period = await api("createGradePeriod", { params: { id: classroomId }, body: { name: name.trim(), formula, startsAt: null, endsAt: null } }); setPeriods(all => [...all, period]); setName(""); setMessage("Bimestre criado. Agora associe as avaliações."); }
+    try { const period = await api("createGradePeriod", { params: { id: classroomId }, body: { name: name.trim(), startsAt: null, endsAt: null } }); setPeriods(all => [...all, period]); setName(""); setMessage("Bimestre criado. Agora associe as avaliações."); }
     catch (reason) { setMessage(errorMessage(reason)); } finally { setPending(false); }
   }
   async function addAssessment(period: Period) {
@@ -26,27 +25,17 @@ export function GradebookManager({ classroomId, entries }: { classroomId: string
     catch (reason) { setMessage(errorMessage(reason)); } finally { setPending(false); }
   }
   async function open(period: Period) { setPending(true); setMessage(""); try { setActive(await api("gradebook", { params: { id: period.id } })); } catch (reason) { setMessage(errorMessage(reason)); } finally { setPending(false); } }
-  function exportCsv() {
-    if (!active) return;
-    const rows = [
-      ["Aluno", ...active.period.assessments.map(item => item.title), "Média"],
-      ...active.students.map(student => [student.name, ...student.assessments.map(item => item.value === null ? "" : item.value.toFixed(2)), student.average === null ? "" : student.average.toFixed(2)]),
-    ];
-    const csv = "\\uFEFF" + rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(";")).join("\\r\\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a"); link.href = url; link.download = `${active.period.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "notas"}.csv`; link.click(); URL.revokeObjectURL(url);
-  }
   return <details className="paper teacher-disclosure">
     <summary>Bimestres e notas</summary>
     <div className="form-stack">
       <p>Crie o período e escolha quais atividades compõem a nota. Os pesos ficam configuráveis por bimestre; nenhuma nota é calculada pela IA.</p>
-      <div className="button-row"><label htmlFor="grade-period-name">Nome do bimestre<input id="grade-period-name" value={name} maxLength={150} onChange={e => setName(e.target.value)} placeholder="Ex.: 1º bimestre" /></label><label htmlFor="grade-period-formula">Cálculo da nota<select id="grade-period-formula" value={formula} onChange={e => setFormula(e.target.value as typeof formula)}><option value="weighted_average">Média ponderada</option><option value="simple_average">Média simples</option><option value="sum">Soma das avaliações</option></select></label><button className="button button-outline" type="button" disabled={pending || !name.trim()} onClick={() => void create()}>Criar bimestre</button></div>
+      <div className="button-row"><label htmlFor="grade-period-name">Nome do bimestre<input id="grade-period-name" value={name} maxLength={150} onChange={e => setName(e.target.value)} placeholder="Ex.: 1º bimestre" /></label><button className="button button-outline" type="button" disabled={pending || !name.trim()} onClick={() => void create()}>Criar bimestre</button></div>
       {periods.map(period => <section className="example" key={period.id}>
         <h3>{period.name}</h3>
         <p>{period.assessments.length ? period.assessments.map(item => `${item.title} (peso ${item.weight})`).join(" · ") : "Nenhuma avaliação associada."}</p>
         <div className="button-row"><label htmlFor={`grade-assessment-${period.id}`}>Adicionar avaliação<select id={`grade-assessment-${period.id}`} value={selected} onChange={e => setSelected(e.target.value)}><option value="">Escolher atividade</option>{entries.filter(entry => !period.assessments.some(item => item.missionId === entry.mission.id)).map(entry => <option key={entry.mission.id} value={entry.mission.id}>{(entry.mission.draftVersion ?? entry.mission.publishedVersion)?.title ?? "Atividade"}</option>)}</select></label><label htmlFor={`grade-weight-${period.id}`}>Peso<input id={`grade-weight-${period.id}`} type="number" min="1" max="100" value={weight} onChange={e => setWeight(e.target.value)} /></label><button className="button button-outline" type="button" disabled={pending || !selected} onClick={() => void addAssessment(period)}>Adicionar</button><button className="text-button" type="button" disabled={pending} onClick={() => void open(period)}>Visualizar notas</button></div>
       </section>)}
-      {active && <section aria-live="polite"><div className="button-row"><h3>{active.period.name}</h3><button type="button" className="button button-outline" onClick={exportCsv}>Baixar notas para Excel</button></div><div className="table-scroll"><table><caption>Notas por aluno</caption><thead><tr><th scope="col">Aluno</th>{active.period.assessments.map(item => <th scope="col" key={item.id}>{item.title}</th>)}<th scope="col">Média</th></tr></thead><tbody>{active.students.map(student => <tr key={student.studentId}><th scope="row">{student.name}</th>{student.assessments.map(item => <td key={item.assessmentId}>{item.value === null ? "—" : item.value.toFixed(2)}</td>)}<td>{student.average === null ? "—" : student.average.toFixed(2)}</td></tr>)}</tbody></table></div><p className="small">O arquivo CSV é compatível com Excel e preserva todas as avaliações e médias do bimestre.</p></section>}
+      {active && <section aria-live="polite"><h3>{active.period.name}</h3><div className="table-scroll"><table><caption>Notas por aluno</caption><thead><tr><th scope="col">Aluno</th>{active.period.assessments.map(item => <th scope="col" key={item.id}>{item.title}</th>)}<th scope="col">Média</th></tr></thead><tbody>{active.students.map(student => <tr key={student.studentId}><th scope="row">{student.name}</th>{student.assessments.map(item => <td key={item.assessmentId}>{item.value === null ? "—" : item.value.toFixed(2)}</td>)}<td>{student.average === null ? "—" : student.average.toFixed(2)}</td></tr>)}</tbody></table></div></section>}
       {message && <p role="status">{message}</p>}
     </div>
   </details>;
