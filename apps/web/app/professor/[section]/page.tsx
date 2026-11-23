@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { LiveWorkspace } from "../../../components/live-workspace";
 import {
   requestedClassroom,
+  requestedActivity,
   type ClassroomQuery,
 } from "../../../lib/classroom-context";
 const titles: Record<string, string> = {
@@ -27,6 +28,7 @@ export default async function Page({
       role="professor"
       section={section}
       classroomId={await requestedClassroom(searchParams)}
+      missionId={section === "entregas" ? await requestedActivity(searchParams) : undefined}
     />
   );
 }

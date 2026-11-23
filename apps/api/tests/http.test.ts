@@ -246,6 +246,21 @@ test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega ún
   assert.equal((await request(`${path}/submissions`, main)).json.items.length, 1);
   await request(`${path}/submissions`, a, 'POST', { ...input, expectedRevision: submitted.revision }, 409);
 });
+test('atividade mista: líder, edição de membros e exceção individual', async () => {
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', { ...fixture, workMode: 'mixed' })).json;
+  const path = `/v1/missions/${created.id}`;
+  const team = (await request(`${path}/groups`, main, 'POST', { name: 'Equipe Mista', leaderId: 'demo-student-2', studentIds: ['demo-student-1', 'demo-student-2'] })).json;
+  assert.equal(team.leaderId, 'demo-student-2');
+  const changed = (await request(`${path}/groups/${team.id}`, main, 'PATCH', { leaderId: 'demo-student-1', studentIds: ['demo-student-1', 'demo-student-3'] })).json;
+  assert.equal(changed.leaderId, 'demo-student-1');
+  assert.deepEqual(changed.studentIds.sort(), ['demo-student-1', 'demo-student-3']);
+  const exception = (await request(`${path}/participants/demo-student-1`, main, 'PATCH', { mode: 'individual', reason: 'Necessidade de organização individual nesta atividade.' })).json;
+  assert.deepEqual(exception, { studentId: 'demo-student-1', mode: 'individual', groupId: null, reason: 'Necessidade de organização individual nesta atividade.' });
+  await request(`/v1/missions/${created.id}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true });
+  const input = { versionId: created.draftVersion.id, content: 'Entrega individual', completedStepIds: [], currentStepId: created.draftVersion.steps[0].id, status: 'draft', expectedRevision: 0 };
+  const saved = (await request(`${path}/submissions`, a, 'POST', input)).json;
+  assert.equal(saved.groupId, null);
+});
 test('feedback com ajustes abre nova tentativa e preserva a entrega revisada', async () => {
   const mission = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   const versionId = mission.draftVersion.id;
@@ -345,9 +360,7 @@ test('código curto da turma é privado, reutilizável, transacional e desativá
  await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code},409);
  const member=await db.membership.findUniqueOrThrow({where:{userId_classroomId:{userId:one.user.id,classroomId:workshop}}});
  await request(`/v1/classrooms/${workshop}/members/${member.id}`,main,'DELETE');
- const rejoined = await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code});
- assert.equal(rejoined.json.role, 'student');
- assert.equal((await db.membership.findUniqueOrThrow({where:{userId_classroomId:{userId:one.user.id,classroomId:workshop}}})).active, true);
+ await request('/v1/invitations/accept',one.cookie,'POST',{token:invite.code},409);
  await request(`/v1/classrooms/${workshop}/invitations/${invite.id}`,main,'DELETE');
  await request('/v1/invitations/accept',three.cookie,'POST',{token:invite.code},400);
  await request('/v1/invitations/accept',three.cookie,'POST',{token:invite.token},400);
@@ -1153,108 +1166,6 @@ test('limite de login persiste após recriar a aplicação e demo exige isolamen
   await request('/api/auth/sign-in/email', '', 'POST', { email: 'absent@example.invalid', password: testPassword }, 429);
   await request('/api/auth/sign-up/email', '', 'POST', {}, 429);
 });
-test('exclusão de missão: somente teacher ativo e remoção permanente dos registros associados', async () => {
-  const missionId = `${workshop}-mission`;
-  await request(`/v1/missions/${missionId}`, '', 'DELETE', undefined, 401);
-  await request(`/v1/missions/${missionId}`, a, 'DELETE', undefined, 404);
-  await request(`/v1/missions/${missionId}`, b, 'DELETE', undefined, 404);
-  await request(`/v1/missions/${missionId}`, otherTeacher, 'DELETE', undefined, 404);
-  assert.ok(await db.mission.findUnique({ where: { id: missionId } }));
-  await db.membership.upsert({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } },
-    update: { role: 'monitor', active: true }, create: { id: `${workshop}-member-monitor`, userId: 'demo-student-1', classroomId: workshop, role: 'monitor' } });
-  await request(`/v1/missions/${missionId}`, a, 'DELETE', undefined, 404);
-  await db.membership.update({ where: { userId_classroomId: { userId: 'demo-student-1', classroomId: workshop } }, data: { role: 'student' } });
-  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
-  const version = await db.missionVersion.findUniqueOrThrow({ where: { id: created.draftVersion.id }, include: { steps: true } });
-  const submission = await db.submission.create({ data: { versionId: version.id, userId: 'demo-student-1', status: 'submitted',
-    content: 'Entrega associada.', currentStepId: version.steps[0].id, completedStepIds: [version.steps[0].id], submittedAt: new Date() } });
-  await db.feedback.create({ data: { submissionId: submission.id, teacherId: mainId, content: 'Feedback associado.' } });
-  const deleted = await request(`/v1/activities/${created.id}`, main, 'DELETE');
-  assert.equal(deleted.json.deleted, true);
-  assert.equal(await db.mission.count({ where: { id: created.id } }), 0);
-  assert.equal(await db.submission.count({ where: { id: submission.id } }), 0);
-  assert.ok(await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'mission.delete', resourceId: created.id } }));
-});
-
-test('arquivamento de turma: metadados de posse, leitura histórica só do owner e mutações bloqueadas', async () => {
-  const room = (await request('/v1/classrooms', main, 'POST', { name: 'Turma para arquivamento' })).json;
-  const owner = await db.classroom.findUniqueOrThrow({ where: { id: room.id }, select: { ownerId: true, archivedAt: true } });
-  assert.equal(owner.ownerId, mainId);
-  assert.equal(owner.archivedAt, null);
-  const mission = (await request(`/v1/classrooms/${room.id}/missions`, main, 'POST', fixture)).json;
-  const published = (await request(`/v1/missions/${mission.id}/publish`, main, 'POST', { versionId: mission.draftVersion.id, reviewed: true })).json;
-  const version = await db.missionVersion.findUniqueOrThrow({ where: { id: published.publishedVersion.id }, include: { steps: { orderBy: { position: 'asc' } } } });
-  await db.membership.create({ data: { id: `${room.id}-member-student`, userId: 'demo-student-1', classroomId: room.id, role: 'student' } });
-  const submission = await db.submission.create({ data: { versionId: version.id, userId: 'demo-student-1', status: 'submitted',
-    content: 'Entrega preservada.', currentStepId: version.steps[0].id, completedStepIds: [version.steps[0].id], submittedAt: new Date() } });
-  await db.feedback.create({ data: { submissionId: submission.id, teacherId: mainId, content: 'Feedback preservado.' } });
-  const invite = (await request(`/v1/classrooms/${room.id}/invitations`, main, 'POST', { role: 'student' })).json;
-  const ownerActive = (await request('/v1/classrooms', main)).json.items.find((c: any) => c.id === room.id);
-  assert.equal(ownerActive.ownerId, mainId);
-  assert.equal(ownerActive.isOwner, true);
-  const studentActive = (await request('/v1/classrooms', a)).json.items.find((c: any) => c.id === room.id);
-  assert.equal(studentActive.ownerId, mainId);
-  assert.equal(studentActive.isOwner, false);
-  await request(`/v1/classrooms/${room.id}`, '', 'DELETE', undefined, 401);
-  await request(`/v1/classrooms/${room.id}`, otherTeacher, 'DELETE', undefined, 404);
-  await request(`/v1/classrooms/${room.id}`, a, 'DELETE', undefined, 404);
-  const counts = () => Promise.all([
-    db.submission.count({ where: { version: { mission: { classroomId: room.id } } } }),
-    db.feedback.count({ where: { submission: { version: { mission: { classroomId: room.id } } } } }),
-    db.material.count({ where: { version: { mission: { classroomId: room.id } } } }),
-    db.mission.count({ where: { classroomId: room.id } }),
-  ]);
-  const before = await counts();
-  const first = await request(`/v1/classrooms/${room.id}`, main, 'DELETE');
-  assert.equal(first.json.archived, true);
-  assert.ok(first.json.archivedAt);
-  const again = await request(`/v1/classrooms/${room.id}`, main, 'DELETE');
-  assert.equal(again.json.archivedAt, first.json.archivedAt);
-  for (const path of ['/v1/classrooms', '/v1/classrooms?view=active']) {
-    const list = (await request(path, main)).json.items;
-    assert.ok(!list.some((c: any) => c.id === room.id));
-  }
-  const history = (await request('/v1/classrooms?view=archived', main)).json.items;
-  const archived = history.find((c: any) => c.id === room.id);
-  assert.ok(archived);
-  assert.equal(archived.role, 'teacher');
-  assert.equal(archived.archivedAt, first.json.archivedAt);
-  assert.equal(archived.ownerId, mainId);
-  assert.equal(archived.isOwner, true);
-  const otherHistory = (await request('/v1/classrooms?view=archived', otherTeacher)).json.items;
-  assert.ok(!otherHistory.some((c: any) => c.id === room.id));
-  const studentHistory = (await request('/v1/classrooms?view=archived', b)).json.items;
-  assert.ok(!studentHistory.some((c: any) => c.id === room.id));
-  const reads = [
-    `/v1/classrooms/${room.id}/activities`,
-    `/v1/missions/${mission.id}`,
-    `/v1/missions/${mission.id}/submissions`,
-    `/v1/submissions/${submission.id}`,
-  ];
-  for (const path of reads) {
-    const ok = await request(path, main);
-    if (path === `/v1/submissions/${submission.id}`) assert.equal(ok.json.feedback[0].content, 'Feedback preservado.');
-    for (const cookie of [otherTeacher, a, b]) await request(path, cookie, 'GET', undefined, 404);
-    await request(path, '', 'GET', undefined, 401);
-  }
-  const writes: [string, string, unknown, string][] = [
-    [`/v1/classrooms/${room.id}/activities`, 'POST', fixture, main],
-    [`/v1/classrooms/${room.id}/invitations`, 'POST', { role: 'student' }, main],
-    [`/v1/missions/${mission.id}`, 'PATCH', { ...fixture, expectedDraftVersionId: null }, main],
-    [`/v1/missions/${mission.id}/publish`, 'POST', { versionId: version.id, reviewed: true }, main],
-    [`/v1/missions/${mission.id}/archive`, 'POST', {}, main],
-    [`/v1/missions/${mission.id}`, 'DELETE', undefined, main],
-    [`/v1/missions/${mission.id}/submissions`, 'POST', { versionId: version.id, content: 'x', completedStepIds: [], currentStepId: version.steps[0].id, status: 'draft', expectedRevision: 1 }, a],
-    [`/v1/submissions/${submission.id}/feedback`, 'POST', { content: 'Feedback novo.' }, main],
-  ];
-  for (const [path, method, body, cookie] of writes) await request(path, cookie, method, body, 404);
-  assert.ok((await db.invitation.findUniqueOrThrow({ where: { id: invite.id } })).revokedAt);
-  await request('/v1/invitations/accept', b, 'POST', { token: invite.token }, 400);
-  assert.deepEqual(await counts(), before);
-  assert.ok(await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'classroom.archive', resourceId: room.id } }));
-  assert.ok(await db.auditEvent.findFirst({ where: { actorId: mainId, action: 'classroom.history-read', resourceId: room.id } }));
-});
-
 test('vínculo revogado impede novas leituras e sessão revogada/expirada não autentica', async () => {
   const member = await db.membership.findUniqueOrThrow({ where: { userId_classroomId: { userId: 'demo-student-2', classroomId: workshop } } });
   await request(`/v1/classrooms/${workshop}/members/${member.id}`, main, 'DELETE');

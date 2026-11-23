@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { ClassroomMembers } from "./classroom-tools";
-import { ArchiveMissionAction } from "./archive-mission-action";
 import { Icon } from "./icons";
 import type { Classroom, MissionEntry } from "./live-workspace";
 import monitoriaStyles from "./monitoria-panel.module.css";
 
-export function MonitorDashboard({ classroom, entries, onArchived }: { classroom: Classroom; entries: MissionEntry[]; onArchived: (mission: MissionEntry["mission"]) => void }) {
+export function MonitorDashboard({ classroom, entries }: { classroom: Classroom; entries: MissionEntry[] }) {
   const activeMissions = entries.filter(({ mission }) => mission.status !== "archived");
   const submissions = entries.flatMap(entry => entry.submissions);
   const awaitingReview = submissions.filter(item => item.status === "submitted").length;
@@ -46,12 +45,9 @@ export function MonitorDashboard({ classroom, entries, onArchived }: { classroom
           <div className={monitoriaStyles.missionActions} role="group" aria-label={`Ações para ${(mission.draftVersion ?? mission.publishedVersion)?.title ?? "atividade"} na turma ${classroom.name}`}>
             <Link className={monitoriaStyles.missionLink} href={`/professor/atividades/${mission.id}/editar`}>Abrir atividade<span aria-hidden="true"> →</span></Link>
             <Link className={monitoriaStyles.missionLink} href={`/professor/atividades/${mission.id}/apoios`}>Configurar materiais e apoios</Link>
-            <ArchiveMissionAction
-              missionId={mission.id}
-              missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
-              classroomName={classroom.name}
-              onArchived={onArchived}
-            />
+            <Link className={monitoriaStyles.missionLink} href={`/professor/entregas?atividade=${encodeURIComponent(mission.id)}&turma=${encodeURIComponent(classroom.id)}`}>
+              Ver entregas da atividade
+            </Link>
           </div>
         </li>)}
       </ul> : <p className={monitoriaStyles.empty}>Nenhuma atividade em andamento nesta turma.</p>}

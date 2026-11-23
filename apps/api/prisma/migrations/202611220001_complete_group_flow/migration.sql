@@ -23,3 +23,9 @@ ALTER TABLE "MissionParticipation" ADD CONSTRAINT "MissionParticipation_missionI
 ALTER TABLE "MissionParticipation" ADD CONSTRAINT "MissionParticipation_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "MissionParticipation" ADD CONSTRAINT "MissionParticipation_groupId_fkey" FOREIGN KEY ("groupId") REFERENCES "MissionGroup"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "MissionParticipation" ADD CONSTRAINT "MissionParticipation_mode_check" CHECK ("mode" IN ('group', 'individual'));
+
+INSERT INTO "MissionParticipation" ("id", "missionId", "userId", "groupId", "mode", "createdAt", "updatedAt")
+SELECT md5(random()::text || clock_timestamp()::text || gm."groupId" || gm."userId"), g."missionId", gm."userId", gm."groupId", 'group', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+FROM "MissionGroupMember" gm
+JOIN "MissionGroup" g ON g."id" = gm."groupId"
+ON CONFLICT ("missionId", "userId") DO NOTHING;
