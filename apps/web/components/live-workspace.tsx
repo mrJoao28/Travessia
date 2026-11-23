@@ -355,6 +355,11 @@ function WorkspaceView({
                     setEntries(current => current.filter(entry => entry.mission.id !== missionId));
                   }}
                   onMissionArchived={mission => setEntries(current => current.map(entry => entry.mission.id === mission.id ? { ...entry, mission } : entry))}
+                  onClassroomArchived={classroom => {
+                    setActionMessage(`Turma ${classroom.name} excluída da lista ativa e arquivada. O histórico foi preservado.`);
+                    setSelected("");
+                    setReload(value => value + 1);
+                  }}
                   classroom={
                     selected || permitted.length === 1 ? chosen : undefined
                   }
@@ -449,12 +454,14 @@ function TeacherDashboard({
   classrooms,
   onMissionDeleted,
   onMissionArchived,
+  onClassroomArchived,
 }: {
   entries: MissionEntry[];
   classroom?: Classroom;
   classrooms: Classroom[];
   onMissionDeleted: (missionId: string) => void;
   onMissionArchived: (mission: Mission) => void;
+  onClassroomArchived: (classroom: Classroom) => void;
 }) {
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
@@ -471,7 +478,7 @@ function TeacherDashboard({
                 {room.role === "monitor" ? "Monitor" : "Professor"}
               </span>
             </div>
-            <div className="classroom-choice-actions">
+            <div className="classroom-choice-actions" role="group" aria-label={`Ações para a turma ${room.name}`}>
               <Link
                 className="button button-outline"
                 href={`/professor?turma=${encodeURIComponent(room.id)}`}
@@ -479,6 +486,13 @@ function TeacherDashboard({
               >
                 Abrir turma
               </Link>
+              {room.isOwner && room.role === "teacher" && (
+                <ArchiveClassroomAction
+                  classroomId={room.id}
+                  classroomName={room.name}
+                  onArchived={() => onClassroomArchived(room)}
+                />
+              )}
             </div>
           </li>
         ))}
