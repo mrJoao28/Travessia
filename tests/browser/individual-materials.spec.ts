@@ -8,7 +8,7 @@ import {fixture,addPdf} from '../fixtures/individual-materials';
 test('PDF da atividade é anexado para toda a turma sem selecionar aluno',async({page})=>{
  const captured=await fixture(page,false,[],[]);await addPdf(page,'');
  await expect(page.getByLabel('Destinatário da adaptação',{exact:true})).toHaveValue('');
- await expect(page.getByText('O PDF original vai para toda a turma ao publicar. Escolha a turma ou um aluno para preparar uma versão adaptada.',{exact:true})).toBeVisible();
+ await expect(page.getByText('O PDF original vai para toda a turma ao publicar. Escolha a turma, a equipe ou um aluno para preparar uma versão adaptada.',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Usar PDF original',exact:true})).toHaveCount(0);
  await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
  await page.screenshot({path:'test-results/reference-material-no-disclosure.png',fullPage:true});
