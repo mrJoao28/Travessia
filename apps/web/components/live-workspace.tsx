@@ -2,7 +2,7 @@
 
 import { StudentFirstSteps } from "./first-steps-guide";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   api,
   pages,
@@ -463,6 +463,7 @@ function TeacherDashboard({
   onMissionArchived: (mission: Mission) => void;
   onClassroomArchived: (classroom: Classroom) => void;
 }) {
+  const participantsHintId = useId();
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
   if (!classroom) return (
@@ -526,8 +527,13 @@ function TeacherDashboard({
       </section>
       {!hasPublished && (classroom.role === 'teacher' || classroom.role === 'monitor') && <TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id}/>}
       {classroom.role === 'monitor' && <p className="notice">Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.</p>}
-      {(classroom.role === 'teacher' || classroom.role === 'monitor') && <details className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
-      {(classroom.role === 'teacher' || classroom.role === 'monitor') && <GradebookManager classroomId={classroom.id} entries={entries} />}
+      {(classroom.role === 'teacher' || classroom.role === 'monitor') && <div className="teacher-dashboard-tools">
+        <details className="paper teacher-disclosure">
+          <summary aria-label="Alunos da turma e convites" aria-describedby={participantsHintId}><span className="teacher-disclosure-title">Alunos da turma e convites</span><span id={participantsHintId} className="teacher-disclosure-hint">Gerencie participantes e links de convite</span></summary>
+          <ClassroomMembers classroom={classroom} />
+        </details>
+        <GradebookManager classroomId={classroom.id} entries={entries} />
+      </div>}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
           <li className="paper mission-card" key={mission.id}>
