@@ -65,6 +65,7 @@ export const submission: ApiResponse<"submission"> = {
 export async function fixture(page: Page, role: "student" | "teacher" | "monitor") {
   let classroomArchivedAt: string | null = null;
   const createdClassrooms: { id: string; name: string; role: "teacher"; archivedAt: null; ownerId: string; isOwner: true }[] = [];
+  const gradePeriods: ApiResponse<"gradePeriods">["items"] = [];
   let mission: ApiResponse<"mission"> = {
     id: "test-mission",
     classroomId: "test-classroom",
@@ -131,6 +132,64 @@ export async function fixture(page: Page, role: "student" | "teacher" | "monitor
         ],
         nextCursor: null,
       });
+    if (path === "/classrooms/test-classroom/grade-periods" && route.request().method() === "GET")
+      return respond({ items: gradePeriods });
+    if (path === "/classrooms/test-classroom/grade-periods" && route.request().method() === "POST") {
+      const body = route.request().postDataJSON() as ApiBody<"createGradePeriod">;
+      const period = {
+        id: `period-${gradePeriods.length + 1}`,
+        classroomId: "test-classroom",
+        name: body.name,
+        formula: "weighted_average" as const,
+        startsAt: null,
+        endsAt: null,
+        assessments: [],
+      };
+      gradePeriods.push(period);
+      return respond(period);
+    }
+    if (/^\/grade-periods\/[^/]+\/assessments$/.test(path) && route.request().method() === "POST") {
+      const periodId = path.split("/")[2];
+      const body = route.request().postDataJSON() as ApiBody<"addGradeAssessment">;
+      const target = gradePeriods.find((p) => p.id === periodId);
+      const assessment = {
+        id: `assessment-${(target?.assessments.length ?? 0) + 1}`,
+        missionId: body.missionId,
+        title: "Uma biblioteca para todos",
+        weight: body.weight,
+      };
+      if (target) target.assessments.push(assessment);
+      return respond(assessment);
+    }
+    if (/^\/grade-periods\/[^/]+\/gradebook$/.test(path) && route.request().method() === "GET") {
+      const periodId = path.split("/")[2];
+      const period = gradePeriods.find((p) => p.id === periodId) ?? {
+        id: periodId,
+        classroomId: "test-classroom",
+        name: "Avaliação 1",
+        formula: "weighted_average" as const,
+        startsAt: null,
+        endsAt: null,
+        assessments: [],
+      };
+      return respond({
+        period,
+        students: [
+          {
+            studentId: "student-1",
+            name: "Estudante Demonstração",
+            assessments: period.assessments.map((a) => ({
+              assessmentId: a.id,
+              missionId: a.missionId,
+              title: a.title,
+              value: 9.0,
+              weight: a.weight,
+            })),
+            average: period.assessments.length > 0 ? 9.0 : null,
+          },
+        ],
+      });
+    }
     if (path === "/classrooms/test-classroom/invitations" && route.request().method() === "GET") return respond({items:[],nextCursor:null});
     if (
       path === "/classrooms/test-classroom/invitations" &&

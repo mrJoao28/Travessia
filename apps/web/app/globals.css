@@ -2363,3 +2363,463 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 }
 .student-step-pagination .button { padding: .35rem .65rem; min-height: 44px; }
 .student-step-pagination .eyebrow { color: var(--muted); }
+
+/* Gradebook Manager & Assessment area */
+.gradebook-disclosure {
+  margin-top: 1.25rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.gradebook-content {
+  gap: 1.25rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.gradebook-intro p {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.gradebook-status {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.gradebook-status.success {
+  background: var(--sage);
+  color: var(--text);
+  border-color: var(--border);
+}
+.gradebook-status.error {
+  background: var(--surface);
+  color: var(--terracotta);
+  border-color: var(--terracotta);
+}
+
+/* Compact creation card */
+.grade-creation-card {
+  background: var(--sage);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: clamp(0.75rem, 2.5vw, 1.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-creation-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.grade-creation-title {
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.grade-creation-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: stretch;
+  min-width: 0;
+}
+.grade-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text);
+}
+.grade-creation-row .button {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding-inline: 1.25rem;
+  max-width: 100%;
+}
+.grade-quick-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.grade-chips-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.grade-chip-button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text);
+  min-height: 2rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+  overflow-wrap: anywhere;
+}
+.grade-chip-button:hover,
+.grade-chip-button:focus-visible {
+  border-color: var(--primary);
+  background: var(--background);
+}
+
+/* Assessment cards list */
+.grade-periods-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-period-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-period-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: clamp(0.75rem, 2.5vw, 1.25rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-card-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 650;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.grade-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 550;
+  padding: 0.2rem 0.65rem;
+  border-radius: 2rem;
+  background: var(--sage);
+  color: var(--text);
+  border: 1px solid var(--border);
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.grade-badge.formula {
+  background: var(--background);
+  color: var(--muted);
+}
+.grade-card-top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+/* Composition list */
+.grade-composition-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-section-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.grade-composition-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-composition-chip {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--sage);
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+  color: var(--text);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.grade-item-title {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.grade-item-weight {
+  font-size: 0.8rem;
+  font-weight: 650;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 0.1rem 0.45rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+/* Add activity mini-form */
+.grade-add-box {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: clamp(0.65rem, 2vw, 0.85rem) clamp(0.75rem, 2vw, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  min-width: 0;
+  max-width: 100%;
+}
+.grade-add-field {
+  flex: 1 1 10rem;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.grade-weight-field {
+  flex: 0 1 5.5rem;
+  min-width: 4.5rem;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.grade-field-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.grade-select {
+  width: 100%;
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text);
+}
+.grade-weight-input {
+  width: 100%;
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text);
+}
+.grade-add-btn {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  padding-inline: 1.1rem;
+  max-width: 100%;
+}
+
+/* Gradebook active table */
+.gradebook-active-panel {
+  background: var(--surface);
+  border: 2px solid var(--primary);
+  border-radius: 0.75rem;
+  padding: clamp(0.75rem, 2.5vw, 1.25rem);
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.gradebook-active-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.gradebook-active-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.table-scroll {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  -webkit-overflow-scrolling: touch;
+}
+.table-scroll:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.table-scroll caption {
+  padding: 0.65rem 0.95rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.88rem;
+  background: var(--sage);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.table-scroll th,
+.table-scroll td {
+  padding: 0.65rem 0.95rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+  vertical-align: middle;
+}
+.table-scroll thead th {
+  background: var(--background);
+  color: var(--muted);
+  font-size: 0.83rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+.table-scroll thead th.grade-col-average {
+  background: var(--sage);
+  color: var(--primary);
+  font-weight: 700;
+}
+.table-scroll tbody th {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+.table-scroll tbody td {
+  color: var(--text);
+  white-space: nowrap;
+}
+.table-scroll tbody td.grade-cell-average {
+  font-weight: 700;
+  background: var(--sage);
+  color: var(--primary);
+}
+.table-scroll tbody tr:last-child th,
+.table-scroll tbody tr:last-child td {
+  border-bottom: none;
+}
+.table-scroll tbody tr:hover {
+  background: var(--sage);
+}
+
+@media (max-width: 600px) {
+  .grade-creation-row {
+    flex-direction: column;
+  }
+  .grade-creation-row .button {
+    width: 100%;
+  }
+  .grade-card-top {
+    flex-direction: column;
+  }
+  .grade-card-top-actions {
+    width: 100%;
+  }
+  .grade-card-top-actions .button {
+    width: 100%;
+  }
+  .grade-add-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .grade-add-field,
+  .grade-weight-field {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  .grade-add-btn {
+    width: 100%;
+  }
+  .gradebook-active-header {
+    flex-direction: column;
+  }
+  .gradebook-active-header .text-button {
+    align-self: flex-start;
+  }
+}
