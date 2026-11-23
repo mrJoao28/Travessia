@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { api, pages, errorMessage } from "../lib/product-client";
+import { api, pages, errorMessage, type ApiResponse } from "../lib/product-client";
 import type { Classroom, Mission, Submission } from "./live-workspace";
 import { OperationStatus } from "./operation-status";
 import { BarrierComposer } from "./live-barriers";
@@ -26,6 +26,8 @@ export function LiveMission({
 }) {
   const [mission, setMission] = useState<Mission | null>(null);
   const [team, setTeam] = useState<string | null>(null);
+  const [teamGroup, setTeamGroup] = useState<ApiResponse<"groups">["items"][number] | null>(null);
+  const [teamMode, setTeamMode] = useState<"group" | "individual" | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [index, setIndex] = useState(0);
   const [formats, setFormats] = useState<("text" | "audio" | "text_file")[] | null>(null);
@@ -78,14 +80,17 @@ export function LiveMission({
         setRecovered(!!recover);
         setDirty(!!recover);
         setMission(value);
-        setTeam(groups.items.find(group => group.studentIds.includes(viewerId))?.name ?? null);
+        const ownTeam = groups.items.find(group => group.studentIds.includes(viewerId)) ?? null;
+        setTeamGroup(groups.participationMode === "group" ? ownTeam : null);
+        setTeamMode(groups.participationMode);
+        setTeam(ownTeam?.name ?? null);
         setSubmission(current ?? null);
         const savedResponses = current?.stepResponses ?? {};
         const migratedResponses = current && !Object.keys(savedResponses).length && current.content
           ? { [current.currentStepId]: current.content } : savedResponses;
         const initialResponses = recover && local.stepResponses ? local.stepResponses : migratedResponses;
         setStepResponses(initialResponses);
-        setContent(recover ? (initialResponses[local.stepId] ?? local.content) : migratedResponses[current?.currentStepId ?? ""] ?? current?.content ?? "");
+        setContent(recover ? (initialResponses[local.stepId] ?? local.content) : migratedResponses[current?.currentStepId ?? ""] ?? "");
         setCompleted(recover ? local.completed.filter(id => version?.steps.some(step => step.id === id) ?? false) : current?.completedStepIds ?? []);
         setIndex(
           Math.max(
@@ -106,6 +111,36 @@ export function LiveMission({
       active = false;
     };
   }, [id, recoveryKey, role]);
+  useEffect(() => {
+    if (role !== "aluno" || !submission?.groupId) return;
+    let active = true;
+    let inFlight = false;
+    const refresh = async () => {
+      if (inFlight || document.visibilityState !== "visible") return;
+      inFlight = true;
+      try {
+        const latest = await api("submission", { params: { id: submission.id } });
+        if (!active) return;
+        const changed = latest.revision > submission.revision || JSON.stringify(latest.validations) !== JSON.stringify(submission.validations);
+        if (!changed) return;
+        setSubmission(latest);
+        if (latest.revision > submission.revision && !dirty) {
+          const responses = latest.stepResponses ?? {};
+          setStepResponses(responses);
+          setContent(responses[latest.currentStepId] ?? "");
+          setCompleted(latest.completedStepIds);
+          const latestIndex = mission?.publishedVersion?.steps.findIndex(item => item.id === latest.currentStepId) ?? -1;
+          if (latestIndex >= 0) setIndex(latestIndex);
+        }
+      } catch {
+        // Keep the local draft available while the shared draft is temporarily unreachable.
+      } finally { inFlight = false; }
+    };
+    const timer = window.setInterval(() => void refresh(), 2000);
+    const onFocus = () => void refresh();
+    window.addEventListener("focus", onFocus);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
+  }, [role, submission?.id, submission?.groupId, submission?.revision, submission?.validations, dirty, mission]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (dirty) event.preventDefault();
@@ -156,6 +191,14 @@ export function LiveMission({
   if (!classroom || !step)
     return <p className="paper">Este contexto não está disponível.</p>;
   const locked = !!submission && submission.status !== "draft" && !submission.revisionRequested;
+  const requiresTeam = version.workMode === "group" || (version.workMode === "mixed" && teamMode === "group");
+  const allMembersValidated = Boolean(submission && teamGroup && submission.groupId === teamGroup.id && !dirty && version.steps.every(item => {
+    const response = submission.stepResponses?.[item.id] ?? "";
+    return response.trim() && teamGroup.studentIds.every(memberId => submission.validations?.some(validation =>
+      validation.stepId === item.id && validation.userId === memberId && validation.current));
+  }));
+  const canSubmit = !requiresTeam || Boolean(teamGroup && teamGroup.leaderId === viewerId && allMembersValidated);
+  const currentValidatedCount = new Set((submission?.validations ?? []).filter(validation => validation.stepId === step.id && validation.current && teamGroup?.studentIds.includes(validation.userId)).map(validation => validation.userId)).size;
   async function save(status: "draft" | "submitted", automatic = false) {
     if (pending || mediaBusy || !mission?.publishedVersion || !step) return;
     setPending(true);
@@ -166,7 +209,7 @@ export function LiveMission({
         body: {
           versionId: mission.publishedVersion.id,
           content,
-          stepResponses: { ...stepResponses, [step.id]: content },
+          stepId: step.id,
           ...(audio !== undefined ? { audio } : {}),
           ...(textFile !== undefined ? { textFile } : {}),
           completedStepIds: completed,
@@ -177,7 +220,7 @@ export function LiveMission({
       });
       if (submission && submission.id !== saved.id) setAttemptHistory(history => [submission, ...history]);
       setSubmission(saved); setAudio(undefined); setTextFile(undefined);
-      setContent(saved.content);
+      setContent(saved.stepResponses?.[step.id] ?? saved.content);
       setStepResponses(saved.stepResponses ?? { [step.id]: saved.content });
       setCompleted(saved.completedStepIds);
       setDirty(false);
@@ -195,6 +238,21 @@ export function LiveMission({
     } finally {
       setPending(false);
     }
+  }
+  async function validateCurrentStep() {
+    if (!submission || !teamGroup || dirty || pending || !content.trim()) {
+      setMessage("Salve a resposta desta etapa antes de validá-la.");
+      return;
+    }
+    setPending(true); setMessage("");
+    try {
+      const validated = await api("validateSubmissionStep", { params: { id: submission.id, stepId: step.id },
+        body: { expectedStepRevision: submission.stepRevisions?.[step.id] ?? 0 } });
+      setSubmission(validated);
+      setStepResponses(validated.stepResponses ?? {});
+      setMessage("Você validou a resposta atual desta etapa.");
+    } catch (reason) { setMessage(errorMessage(reason)); }
+    finally { setPending(false); }
   }
   function reuseDraft(text: string) {
     if (pending || locked || (content && !window.confirm("Substituir o texto da atividade atual pelo rascunho escolhido?"))) return;
@@ -388,6 +446,12 @@ export function LiveMission({
                   aria-busy={pending}
                   onSubmit={(e) => {
                     e.preventDefault();
+                    if (!canSubmit) {
+                      setMessage(teamGroup?.leaderId !== viewerId
+                        ? "Somente o líder da equipe pode enviar a atividade."
+                        : "A equipe precisa validar todas as etapas antes do envio.");
+                      return;
+                    }
                     if (window.confirm("Enviar esta tentativa para revisão? Confira o texto e os anexos selecionados antes de confirmar."))
                       void save("submitted");
                   }}
@@ -414,6 +478,17 @@ export function LiveMission({
                     {classroom.name}. O texto e o progresso são salvos automaticamente. O rascunho
                     {version.workMode === "group" ? "fica visível aos integrantes da sua equipe." : "permanece privado para você."}
                   </p>
+                  {requiresTeam && <section className="notice form-stack" aria-label="Validação da equipe">
+                    {teamGroup ? <>
+                      <p>Rascunho compartilhado com {teamGroup.studentIds.length} integrantes. Todos podem editar; a atualização aparece para a equipe em poucos segundos.</p>
+                      <p>Etapa {index + 1}: {currentValidatedCount} de {teamGroup.studentIds.length} integrantes validaram a resposta atual.</p>
+                      <button type="button" className="button button-outline" disabled={pending || dirty || !content.trim() || submission?.groupId !== teamGroup.id || currentValidatedCount === teamGroup.studentIds.length} onClick={() => void validateCurrentStep()}>
+                        {submission?.validations?.some(validation => validation.stepId === step.id && validation.userId === viewerId && validation.current) ? "Etapa validada por você" : "Validar conteúdo desta etapa"}
+                      </button>
+                      {teamGroup.leaderId !== viewerId && <p className="small">Somente o líder da equipe pode enviar a atividade depois que todos validarem todas as etapas.</p>}
+                      {teamGroup.leaderId === viewerId && !allMembersValidated && <p className="small">O envio será liberado quando cada integrante validar a resposta atual de todas as etapas.</p>}
+                    </> : <p>Esta atividade exige uma equipe. Peça ao professor para confirmar seu vínculo antes de enviar.</p>}
+                  </section>}
                   {formats === null && <p role="status">Os formatos adicionais aparecem quando a consulta de adaptações da atividade for concluída.</p>}
                   {formats?.length === 1 && <p className="small">Formato disponível nesta atividade: texto no editor.</p>}
                   <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao Gemini.</p>
@@ -433,7 +508,7 @@ export function LiveMission({
                     >
                       {pending ? "Aguarde…" : "Salvar rascunho"}
                     </button>
-                    <button className="button" disabled={pending || mediaBusy}>
+                    <button className="button" disabled={pending || mediaBusy || !canSubmit}>
                       {pending ? "Aguarde…" : "Enviar atividade"}
                     </button>
                   </div>
