@@ -65,7 +65,7 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
     ];
     const dueAt = new Date(dataset.anchor.getTime() + 45 * 86400000).toISOString();
     for (const [index, c] of classes.entries()) {
-      await tx.classroom.upsert({ where: { id: c.id }, create: { id: c.id, name: c.name, ownerId: c.teacher }, update: {} });
+      await tx.classroom.upsert({ where: { id: c.id }, create: { id: c.id, name: c.name, ownerId: c.teacher }, update: { ownerId: c.teacher } });
       for (const uid of [c.teacher, ...c.students]) await tx.membership.upsert({ where: { userId_classroomId: { userId: uid, classroomId: c.id } },
         create: { id: `${c.id}-member-${uid === userId ? 'principal' : uid}`, userId: uid, classroomId: c.id, role: uid === c.teacher ? 'teacher' : 'student' }, update: {} });
       const missionId = `${c.id}-mission`;
