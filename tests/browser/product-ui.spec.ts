@@ -96,22 +96,34 @@ test("cartões de gestão de turma agrupam ações e refluem com texto ampliado"
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 });
 
-test("turmas ativas permanecem acessíveis sem ação de arquivamento não suportada", async ({ page }) => {
+test("proprietário arquiva turma e consulta o histórico preservado", async ({ page }) => {
   await fixture(page, "teacher");
   await page.goto("/professor/turmas");
   await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Abrir turma", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Excluir turma", exact: true })).toHaveCount(0);
-  await expect(page.getByLabel("Exibir turmas")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Excluir turma", exact: true })).toBeVisible();
+  page.once("dialog", dialog => dialog.accept());
+  const request = page.waitForRequest(candidate => candidate.url().endsWith("/api/v1/classrooms/test-classroom") && candidate.method() === "DELETE");
+  await page.getByRole("button", { name: "Excluir turma", exact: true }).click();
+  await request;
+  await expect(page.getByText("Turma excluída da lista ativa e arquivada. O histórico foi preservado.")).toBeVisible();
+  await page.getByLabel("Exibir turmas").selectOption("archived");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByText("Consultar atividades e entregas", { exact: true })).toBeVisible();
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 });
 
-test("atividade oferece acesso direto às entregas sem ação de exclusão", async ({ page }) => {
+test("docente exclui atividade sem histórico e mantém acesso às entregas", async ({ page }) => {
   await fixture(page, "teacher");
   await page.goto("/professor?turma=test-classroom");
   const deliveries = page.getByRole("link", { name: "Ver entregas da atividade", exact: true });
   await expect(deliveries).toHaveAttribute("href", "/professor/entregas?atividade=test-mission&turma=test-classroom");
-  await expect(page.getByRole("button", { name: "Excluir atividade", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Excluir atividade", exact: true })).toBeVisible();
+  page.once("dialog", dialog => dialog.accept());
+  const request = page.waitForRequest(candidate => candidate.url().endsWith("/api/v1/activities/test-mission") && candidate.method() === "DELETE");
+  await page.getByRole("button", { name: "Excluir atividade", exact: true }).click();
+  await request;
+  await expect(page.getByText("Atividade excluída.", { exact: true })).toBeVisible();
 });
 
 test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva texto no conflito", async ({

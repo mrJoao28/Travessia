@@ -166,6 +166,10 @@ export const apiRoutes = {
     "method": "POST",
     "path": "/classrooms"
   },
+  "archiveClassroom": {
+    "method": "DELETE",
+    "path": "/classrooms/{id}"
+  },
   "gradePeriods": {
     "method": "GET",
     "path": "/classrooms/{id}/grade-periods"

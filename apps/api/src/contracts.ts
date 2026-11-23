@@ -90,6 +90,8 @@ const strategyPlan = z.strictObject({ id, versionId: id, stepId: id.nullable(), 
   items: z.array(z.strictObject({ id, strategyId, title: short, content: z.string(), hasAudio: z.boolean().optional() })),
   recipients: z.array(z.strictObject({ id, name: z.string() })) });
 
+const classroomsQuery = page.extend({ view: z.enum(['active', 'archived']).optional() });
+
 export const routes = {
   ...materialRoutes,
   health: { method: 'get', path: '/v1/health', body: empty, query: empty, response: z.strictObject({ status: z.literal('ok'), service: z.literal('travessia-api'), stage: z.literal('mvp') }), public: true },
@@ -122,8 +124,9 @@ export const routes = {
   supportAudio: { method: 'get', path: '/v1/activities/{id}/support-audio/{itemId}', body: empty, query: empty, response: z.strictObject({ base64: z.string(), mimeType: z.literal('audio/wav') }) },
   generateSupports: { method: 'post', path: '/v1/activities/{id}/ai-supports', body: z.strictObject({ versionId: id, stepId: id.nullable(), materialIds: z.array(id).min(1).max(3), strategyIds: z.array(z.enum(['step-checklist', 'worked-example', 'context-glossary', 'written-instructions', 'planning-outline'])).min(1).max(5), activityAdaptation: z.literal(true).optional(), supportNeeds: unique(needCode, 8).optional(), approvedForProvider: z.literal(true), idempotencyKey: z.uuid() }), query: empty, response: z.strictObject({ id, status: z.enum(['running', 'succeeded', 'failed']), draft: supportDraft.nullable() }) },
   preferences: { method: 'patch', path: '/v1/me/preferences', body: preferences, query: empty, response: preferences },
-  classrooms: { method: 'get', path: '/v1/classrooms', body: empty, query: page, response: list(classroom) },
+  classrooms: { method: 'get', path: '/v1/classrooms', body: empty, query: classroomsQuery, response: list(classroom) },
   createClassroom: { method: 'post', path: '/v1/classrooms', body: z.strictObject({ name: short, shift: optionalText(50) }), query: empty, response: classroom },
+  archiveClassroom: { method: 'delete', path: '/v1/classrooms/{id}', body: empty, query: empty, response: z.strictObject({ archived: z.literal(true), archivedAt: date }) },
   gradePeriods: { method: 'get', path: '/v1/classrooms/{id}/grade-periods', body: empty, query: empty, response: z.strictObject({ items: z.array(gradePeriod) }) },
   createGradePeriod: { method: 'post', path: '/v1/classrooms/{id}/grade-periods', body: z.strictObject({ name: short, startsAt: date.nullable().optional(), endsAt: date.nullable().optional() }), query: empty, response: gradePeriod },
   addGradeAssessment: { method: 'post', path: '/v1/grade-periods/{id}/assessments', body: z.strictObject({ missionId: id, weight: z.number().int().positive().max(100) }), query: empty, response: z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() }) },
