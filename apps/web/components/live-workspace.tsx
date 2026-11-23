@@ -24,6 +24,10 @@ import { MissionSupportHub } from "./mission-support-hub";
 import { LiveStrategies } from "./live-strategies";
 import { MonitorDashboard } from "./monitoria-panel";
 import { GradebookManager } from "./gradebook-manager";
+import { ArchivedClassroomHistory } from "./archived-classroom-history";
+import { ArchiveClassroomAction } from "./archive-classroom-action";
+import { ArchiveMissionAction } from "./archive-mission-action";
+import { DeleteMissionAction } from "./delete-mission-action";
 
 export type Classroom = ApiResponse<"classrooms">["items"][number];
 export type Mission = ApiResponse<"mission">;
@@ -72,17 +76,23 @@ function WorkspaceView({
   const [pending, setPending] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
+  const [classroomView, setClassroomView] = useState<"active" | "archived">("active");
+  const [actionMessage, setActionMessage] = useState("");
+  const hasLoaded = useRef(false);
   useEffect(() => {
     let active = true;
-    setPending(true);
+    if (!hasLoaded.current) setPending(true);
     setError("");
-    setEntries([]);
-    setClassrooms([]);
-    setProfile(null);
+    if (!hasLoaded.current) {
+      setEntries([]);
+      setClassrooms([]);
+      setProfile(null);
+    }
     async function load() {
       try {
         const me = await api("me");
-        const rooms = await pages("classrooms");
+        const rooms = await pages("classrooms", undefined,
+          role === "professor" && section === "turmas" ? { view: classroomView } : undefined);
         const permitted = rooms.filter((room) =>
           role === "aluno"
             ? room.role === "student"
@@ -122,6 +132,7 @@ function WorkspaceView({
           setProfile(me);
           setClassrooms(rooms);
           setEntries(data);
+          hasLoaded.current = true;
         }
       } catch (reason) {
         if (active) setError(errorMessage(reason));
@@ -133,7 +144,7 @@ function WorkspaceView({
     return () => {
       active = false;
     };
-  }, [role, selected, reload, section, missionId]);
+  }, [role, selected, reload, section, missionId, classroomView]);
   useEffect(() => {
     if (role !== "professor" || !["", "atividades", "entregas"].includes(section)) return;
     const refreshWhenVisible = () => setReload((value) => value + 1);
@@ -151,6 +162,7 @@ function WorkspaceView({
   const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : monitorHome ? "Painel de monitoria" : ({ adaptacoes: "Adaptar material para um aluno", estrategias: "Estratégias de apoio", apoios: "Materiais e apoios da atividade", atividades: "Suas atividades", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
   const materialWorkspace=role==="professor"&&["adaptacoes","estrategias","apoios"].includes(section);
   const guidedEditor = role === "professor" && ["editor", "nova"].includes(section);
+  const showClassroomCreation = role === "professor" && ["", "atividades", "turmas"].includes(section) && chosen?.role !== "monitor";
   return (
     <Workspace
       role={role}
@@ -198,15 +210,29 @@ function WorkspaceView({
               Ambiente de demonstração · dados fictícios
             </p>
           )}
-          {((section === "turmas" && (chosen?.role === "teacher" || chosen?.role === "monitor" || !permitted.length)) ||
-            (!permitted.length && role === "professor")) && (
+          {showClassroomCreation && (
             <ClassroomTools
               teacher={role === "professor"}
+              buttonTrigger
               onChanged={() => setReload((n) => n + 1)}
             />
           )}
+          {actionMessage && section !== "turmas" && <p role="status">{actionMessage}</p>}
           {!permitted.length ? (
             <section className="paper">
+              {role === "professor" && section === "turmas" && <>
+                <label htmlFor="classroom-view">Exibir turmas
+                  <select id="classroom-view" value={classroomView} onChange={event => {
+                    setClassroomView(event.target.value as "active" | "archived");
+                    setSelected("");
+                    setActionMessage("");
+                  }}>
+                    <option value="active">Ativas</option>
+                    <option value="archived">Arquivadas</option>
+                  </select>
+                </label>
+                {actionMessage && <p role="status">{actionMessage}</p>}
+              </>}
               <h2>Nenhuma turma neste espaço</h2>
               <p>{role === "aluno" ? "Peça um convite ao professor para começar sua primeira atividade." : "Crie sua primeira turma para preparar atividades e convidar os alunos."}</p>
               {role === "aluno" && section !== "turmas" && <Link className="button" href="/aluno/turmas">Entrar na minha turma</Link>}
@@ -258,39 +284,51 @@ function WorkspaceView({
               ) : section === "barreiras" && chosen ? (
                 <LiveBarriers classroom={chosen} />
               ) : section === "turmas" ? (
+                <>
+                <label htmlFor="classroom-view">Exibir turmas
+                  <select id="classroom-view" value={classroomView} onChange={event => {
+                    setClassroomView(event.target.value as "active" | "archived");
+                    setSelected("");
+                    setActionMessage("");
+                  }}>
+                    <option value="active">Ativas</option>
+                    <option value="archived">Arquivadas</option>
+                  </select>
+                </label>
+                {actionMessage && <p role="status">{actionMessage}</p>}
                 <ul className="card-list">
                   {permitted.map((room) => (
-                    <li key={room.id} className="paper">
-                      <div>
+                    <li key={room.id} className={`paper classroom-management-card${classroomView === "archived" ? " is-archived" : ""}`}>
+                      <div className="classroom-card-copy">
                         <h2>{room.name}</h2>
                         <p>
                           {room.role === "student" ? "Aluno" : room.role === "monitor" ? "Monitor" : "Professor"} · vínculo
                           ativo
                         </p>
                       </div>
-                      <button
-                        className="button button-outline"
-                        onClick={() => {
+                      <div className="classroom-card-actions" role="group" aria-label={`Ações para a turma ${room.name}`}>
+                        <button className="button button-outline" onClick={() => {
                           setSelected(room.id);
-                          window.location.assign(
-                            `/${role}?turma=${encodeURIComponent(room.id)}`,
-                          );
-                        }}
-                      >
-                        Abrir turma
-                      </button>
-                      {(room.role === "student" || room.role === "monitor") && (
-                        <LeaveClassroom
-                          classroom={room}
-                          onLeft={() => {
+                          window.location.assign(`/${role}?turma=${encodeURIComponent(room.id)}`);
+                        }}>Abrir turma</button>
+                        {classroomView === "active" && room.isOwner && role === "professor" && <ArchiveClassroomAction
+                          classroomId={room.id} classroomName={room.name} onArchived={() => {
+                            setActionMessage("Turma excluída da lista ativa e arquivada. O histórico foi preservado.");
+                            setSelected("");
+                            setReload(value => value + 1);
+                          }} />}
+                        {classroomView === "archived" && room.isOwner && <ArchivedClassroomHistory classroom={room} />}
+                        {classroomView === "active" && (room.role === "student" || room.role === "monitor") && (
+                          <LeaveClassroom classroom={room} onLeft={() => {
                             if (selected === room.id) setSelected("");
                             setReload((n) => n + 1);
-                          }}
-                        />
-                      )}
+                          }} />
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>
+                </>
               ) : role === "aluno" && !section ? (
                 <StudentDashboard entries={entries} classrooms={selected?permitted.filter(c=>c.id===selected):permitted} />
               ) : section === "feedback" || section === "entregas" ? (
@@ -312,6 +350,11 @@ function WorkspaceView({
                 <TeacherDashboard
                   classrooms={permitted}
                   entries={entries}
+                  onMissionDeleted={missionId => {
+                    setActionMessage("Atividade excluída.");
+                    setEntries(current => current.filter(entry => entry.mission.id !== missionId));
+                  }}
+                  onMissionArchived={mission => setEntries(current => current.map(entry => entry.mission.id === mission.id ? { ...entry, mission } : entry))}
                   classroom={
                     selected || permitted.length === 1 ? chosen : undefined
                   }
@@ -404,10 +447,14 @@ function TeacherDashboard({
   entries,
   classroom,
   classrooms,
+  onMissionDeleted,
+  onMissionArchived,
 }: {
   entries: MissionEntry[];
   classroom?: Classroom;
   classrooms: Classroom[];
+  onMissionDeleted: (missionId: string) => void;
+  onMissionArchived: (mission: Mission) => void;
 }) {
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
@@ -481,6 +528,16 @@ function TeacherDashboard({
               >
                 Ver entregas da atividade
               </Link>}
+              {(room.role === 'teacher' || room.role === 'monitor') && mission.status !== "archived" && <ArchiveMissionAction
+                missionId={mission.id}
+                missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
+                classroomName={room.name}
+                onArchived={onMissionArchived} />}
+              {room.role === 'teacher' && <DeleteMissionAction
+                missionId={mission.id}
+                missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
+                classroomName={room.name}
+                onDeleted={() => onMissionDeleted(mission.id)} />}
             </div>
           </li>
         ))}

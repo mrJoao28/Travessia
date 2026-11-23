@@ -57,11 +57,14 @@ export async function membership(tx: Tx, userId: string, classroomId: string, te
     role: teacher ? { in: [...instructorRoles] } : { in: [...classroomRoles] } } });
   return member ?? missing();
 }
-export async function scopedMission(tx: Tx, userId: string, id: string, teacher = false) {
-  const row = await tx.mission.findFirst({ where: { id, classroom: { memberships: { some: { userId, active: true,
-    role: teacher ? { in: [...instructorRoles] } : { in: [...classroomRoles] } } } } }, include: missionInclude });
+export async function scopedMission(tx: Tx, userId: string, id: string, teacher = false, requireActiveClassroom = false) {
+  const row = await tx.mission.findFirst({ where: { id, classroom: {
+    memberships: { some: { userId, active: true, role: teacher ? { in: [...instructorRoles] } : { in: [...classroomRoles] } } },
+    ...(requireActiveClassroom ? { archivedAt: null } : {}),
+  } }, include: missionInclude });
   if (!row) return missing();
   const member = await membership(tx, userId, row.classroomId, teacher);
+  if (member.role === 'student' && (await tx.classroom.findUnique({ where: { id: row.classroomId }, select: { archivedAt: true } }))?.archivedAt) return missing();
   if (member.role === 'student' && row.status !== 'published') return missing();
   return { row, member };
 }
@@ -107,15 +110,32 @@ export class ProductService {
       return this.preferenceView(await this.db.readingPreferences.upsert({ where: { userId }, create: { userId, ...data }, update: data }));
     }
     if (op === 'classrooms') {
-      const rows = await this.db.classroom.findMany({ ...pageArgs(paging), where: { ...after(paging), memberships: { some: { userId, active: true } } },
+      const view = (query as { view?: 'active' | 'archived' }).view ?? 'active';
+      const rows = await this.db.classroom.findMany({ ...pageArgs(paging), where: { ...after(paging),
+        ...(view === 'archived' ? { ownerId: userId, archivedAt: { not: null } } : { archivedAt: null }),
+        memberships: { some: { userId, active: true } } },
         include: { memberships: { where: { userId, active: true }, select: { role: true } } } });
-      return pagination(rows.map(c => ({ id: c.id, name: c.name, role: c.memberships[0].role })), paging.limit);
+      return pagination(rows.map(c => ({ id: c.id, name: c.name, shift: c.shift, role: c.memberships[0].role,
+        archivedAt: c.archivedAt, ownerId: c.ownerId, isOwner: c.ownerId === userId })), paging.limit);
     }
     if (op === 'createClassroom') {
       await budget(this.db, `create-classroom:${userId}`, 10, 3600);
       const data = body as Body<'createClassroom'>;
       const c = await this.db.classroom.create({ data: { name: data.name, owner: { connect: { id: userId } }, memberships: { create: { userId, role: 'teacher' } } } });
       return { id: c.id, name: c.name, role: 'teacher' };
+    }
+    if (op === 'archiveClassroom') {
+      return serial(this.db, async tx => {
+        const classroom = await tx.classroom.findFirst({ where: { id, ownerId: userId,
+          memberships: { some: { userId, active: true, role: 'teacher' } } } });
+        if (!classroom) return missing();
+        if (classroom.archivedAt) return { archived: true as const, archivedAt: classroom.archivedAt };
+        const archivedAt = new Date();
+        await tx.classroom.update({ where: { id }, data: { archivedAt } });
+        await tx.invitation.updateMany({ where: { classroomId: id, revokedAt: null }, data: { revokedAt: archivedAt } });
+        await tx.auditEvent.create({ data: { actorId: userId, action: 'classroom.archive', resourceId: id } });
+        return { archived: true as const, archivedAt };
+      });
     }
     if (op === 'gradePeriods' || op === 'createGradePeriod') {
       const member = await membership(this.db, userId, id, true);
@@ -256,8 +276,22 @@ export class ProductService {
           return pagination(rows.map(barrierView), paging.limit);
         }
       }
-      if (['mission', 'editMission', 'publish', 'archive', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op)) {
-        const { row, member } = await scopedMission(tx, userId, id, ['publish', 'archive', 'setStepDeadlineExtension'].includes(op));
+      if (['mission', 'editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op)) {
+        const instructorAction = ['editMission', 'publish', 'archive', 'deleteMission', 'setStepDeadlineExtension', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
+        const mutation = ['editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'setStepDeadlineExtension', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
+        const { row, member } = await scopedMission(tx, userId, id, instructorAction, mutation);
+        if (op === 'deleteMission') {
+          if (member.role !== 'teacher') return missing();
+          const [submissions, barriers, files] = await Promise.all([
+            tx.submission.count({ where: { version: { missionId: id } } }),
+            tx.barrierReport.count({ where: { step: { version: { missionId: id } } } }),
+            tx.material.count({ where: { version: { missionId: id }, storagePath: { not: null } } }),
+          ]);
+          if (submissions || barriers || files) return fail(409, 'MISSION_DELETE_BLOCKED', 'Esta atividade possui histórico ou arquivos. Use Arquivar atividade para preservá-los.');
+          await tx.mission.delete({ where: { id } });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'mission.delete', resourceId: id } });
+          return { deleted: true as const };
+        }
         if (op === 'mission') {
           const view = missionView(row, member.role !== 'student');
           if (member.role !== 'student' || !view.publishedVersion) return view;
