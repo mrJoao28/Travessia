@@ -252,7 +252,9 @@ test('entregas: autoria, isolamento A/B, draft privado e controle de concorrênc
 });
 test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega única', async () => {
   const c = (await provision('demo-student-3')).cookie;
-  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', { ...fixture, workMode: 'group' })).json;
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', { ...fixture, workMode: 'group', steps: [
+    fixture.steps[0], { title: 'Planejar', instructions: 'Descreva o plano.', example: 'Uma lista de ações.' },
+  ] })).json;
   const path = `/v1/missions/${created.id}`;
   assert.equal(created.draftVersion.workMode, 'group');
   await request(`${path}/groups`, a, 'GET', undefined, 404);
@@ -263,16 +265,29 @@ test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega ún
   await request(`${path}/publish`, main, 'POST', { versionId: created.draftVersion.id, reviewed: true });
   assert.deepEqual((await request(`${path}/groups`, a)).json.items.map((g: any) => g.id), [team.id]);
   assert.deepEqual((await request(`${path}/groups`, c)).json.items, []);
-  const input = { versionId: created.draftVersion.id, content: 'Texto coletivo', completedStepIds: [], currentStepId: created.draftVersion.steps[0].id, status: 'draft', expectedRevision: 0 };
+  const [stepOne, stepTwo] = created.draftVersion.steps;
+  const input = { versionId: created.draftVersion.id, content: 'Texto coletivo', stepId: stepOne.id, stepResponses: { [stepOne.id]: 'Texto coletivo' }, completedStepIds: [], currentStepId: stepOne.id, status: 'draft', expectedRevision: 0 };
   await request(`${path}/submissions`, c, 'POST', input, 409);
   const first = (await request(`${path}/submissions`, a, 'POST', input)).json;
   assert.equal(first.groupId, team.id);
+  const second = (await request(`${path}/submissions`, b, 'POST', { ...input, stepId: stepTwo.id,
+    stepResponses: { [stepTwo.id]: 'Plano coletivo' }, content: 'Plano coletivo', currentStepId: stepTwo.id, expectedRevision: first.revision })).json;
+  assert.deepEqual(second.stepResponses, { [stepOne.id]: 'Texto coletivo', [stepTwo.id]: 'Plano coletivo' });
+  await request(`${path}/submissions`, a, 'POST', { ...input, content: 'Conflito na primeira etapa', expectedRevision: 0 }, 409);
   assert.equal((await request(`${path}/submissions`, b)).json.items[0].id, first.id);
-  assert.equal((await request(`/v1/submissions/${first.id}`, b)).json.content, 'Texto coletivo');
+  assert.equal((await request(`/v1/submissions/${first.id}`, b)).json.stepResponses[stepOne.id], 'Texto coletivo');
   await request(`/v1/submissions/${first.id}`, c, 'GET', undefined, 404);
   await request(`/v1/submissions/${first.id}`, main, 'GET', undefined, 404);
   await request(`${path}/groups/${team.id}`, main, 'DELETE', undefined, 409);
-  const submitted = (await request(`${path}/submissions`, b, 'POST', { ...input, content: 'Resposta conjunta', status: 'submitted', expectedRevision: first.revision })).json;
+  await request(`${path}/submissions`, b, 'POST', { ...input, content: 'Resposta conjunta', status: 'submitted', expectedRevision: second.revision }, 403);
+  await request(`${path}/submissions`, a, 'POST', { ...input, status: 'submitted', expectedRevision: second.revision }, 409);
+  for (const step of [stepOne, stepTwo]) {
+    for (const [cookie, expectedRevision] of [[a, second.stepRevisions[step.id]], [b, second.stepRevisions[step.id]]] as const) {
+      await request(`/v1/submissions/${first.id}/steps/${step.id}/validate`, cookie, 'POST', { expectedStepRevision: expectedRevision });
+    }
+  }
+  const current = (await request(`/v1/submissions/${first.id}`, a)).json;
+  const submitted = (await request(`${path}/submissions`, a, 'POST', { ...input, content: 'Texto coletivo', status: 'submitted', expectedRevision: current.revision })).json;
   assert.equal(submitted.id, first.id);
   assert.equal(submitted.userId, 'demo-student-1');
   assert.equal((await request(`${path}/submissions`, main)).json.items.length, 1);

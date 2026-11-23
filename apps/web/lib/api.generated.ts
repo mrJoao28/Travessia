@@ -290,6 +290,10 @@ export const apiRoutes = {
     "method": "GET",
     "path": "/activities/{id}/submissions"
   },
+  "validateSubmissionStep": {
+    "method": "POST",
+    "path": "/submissions/{id}/steps/{stepId}/validate"
+  },
   "submission": {
     "method": "GET",
     "path": "/submissions/{id}"
