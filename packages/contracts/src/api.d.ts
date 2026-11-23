@@ -852,6 +852,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/submissions/{id}/steps/{stepId}/validate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["validateSubmissionStep"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/submissions/{id}": {
         parameters: {
             query?: never;
@@ -5004,6 +5020,7 @@ export interface operations {
                             leaderId: string | null;
                             studentIds: string[];
                         }[];
+                        participationMode: ("group" | "individual") | null;
                     };
                 };
             };
@@ -5241,6 +5258,16 @@ export interface operations {
                             stepResponses?: {
                                 [key: string]: string;
                             };
+                            stepRevisions?: {
+                                [key: string]: number;
+                            };
+                            validations?: {
+                                stepId: string;
+                                userId: string;
+                                /** Format: date-time */
+                                validatedAt: string;
+                                current: boolean;
+                            }[];
                             hasAudio?: boolean;
                             hasTextFile?: boolean;
                             completedStepIds: string[];
@@ -5305,6 +5332,7 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     content: string;
+                    stepId?: string;
                     stepResponses?: {
                         [key: string]: string;
                     };
@@ -5340,6 +5368,111 @@ export interface operations {
                         stepResponses?: {
                             [key: string]: string;
                         };
+                        stepRevisions?: {
+                            [key: string]: number;
+                        };
+                        validations?: {
+                            stepId: string;
+                            userId: string;
+                            /** Format: date-time */
+                            validatedAt: string;
+                            current: boolean;
+                        }[];
+                        hasAudio?: boolean;
+                        hasTextFile?: boolean;
+                        completedStepIds: string[];
+                        currentStepId: string;
+                        revision: number;
+                        submittedAt: string | null;
+                        /** Format: date-time */
+                        updatedAt: string;
+                        gradingSteps: {
+                            id: string;
+                            title: string;
+                            dueAt: string | null;
+                            baseDueAt: string | null;
+                            deadlineExtended: boolean;
+                            completedAt: string | null;
+                            late: boolean;
+                            maxPoints: number | null;
+                        }[];
+                        feedback: {
+                            id: string;
+                            content: string;
+                            /** Format: date-time */
+                            createdAt: string;
+                            scores: {
+                                stepId: string;
+                                points: number;
+                                comment: string;
+                            }[] | null;
+                            totalPoints: number | null;
+                        }[];
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    validateSubmissionStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                stepId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    expectedStepRevision: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        versionId: string;
+                        userId: string;
+                        groupId: string | null;
+                        attempt?: number;
+                        revisionRequested?: boolean;
+                        /** @enum {string} */
+                        status: "draft" | "submitted" | "reviewed";
+                        content: string;
+                        stepResponses?: {
+                            [key: string]: string;
+                        };
+                        stepRevisions?: {
+                            [key: string]: number;
+                        };
+                        validations?: {
+                            stepId: string;
+                            userId: string;
+                            /** Format: date-time */
+                            validatedAt: string;
+                            current: boolean;
+                        }[];
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];
@@ -5418,6 +5551,16 @@ export interface operations {
                         stepResponses?: {
                             [key: string]: string;
                         };
+                        stepRevisions?: {
+                            [key: string]: number;
+                        };
+                        validations?: {
+                            stepId: string;
+                            userId: string;
+                            /** Format: date-time */
+                            validatedAt: string;
+                            current: boolean;
+                        }[];
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];
@@ -5508,6 +5651,16 @@ export interface operations {
                         stepResponses?: {
                             [key: string]: string;
                         };
+                        stepRevisions?: {
+                            [key: string]: number;
+                        };
+                        validations?: {
+                            stepId: string;
+                            userId: string;
+                            /** Format: date-time */
+                            validatedAt: string;
+                            current: boolean;
+                        }[];
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];
