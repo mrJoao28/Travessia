@@ -28,6 +28,7 @@ import { ArchivedClassroomHistory } from "./archived-classroom-history";
 import { ArchiveClassroomAction } from "./archive-classroom-action";
 import { ArchiveMissionAction } from "./archive-mission-action";
 import { DeleteMissionAction } from "./delete-mission-action";
+import { CopyMissionAction } from "./copy-mission-action";
 
 export type Classroom = ApiResponse<"classrooms">["items"][number];
 export type Mission = ApiResponse<"mission">;
@@ -351,6 +352,10 @@ function WorkspaceView({
                     setEntries(current => current.filter(entry => entry.mission.id !== missionId));
                   }}
                   onMissionArchived={mission => setEntries(current => current.map(entry => entry.mission.id === mission.id ? { ...entry, mission } : entry))}
+                  onMissionCopied={(mission, classroom) => {
+                    setEntries(current => [...current, { mission, classroom, submissions: [] }]);
+                    setActionMessage(`Cópia criada como rascunho em ${classroom.name}.`);
+                  }}
                   onClassroomArchived={classroom => {
                     setActionMessage(`Turma ${classroom.name} excluída da lista ativa e arquivada. O histórico foi preservado.`);
                     setSelected("");
@@ -450,6 +455,7 @@ function TeacherDashboard({
   classrooms,
   onMissionDeleted,
   onMissionArchived,
+  onMissionCopied,
   onClassroomArchived,
 }: {
   entries: MissionEntry[];
@@ -457,6 +463,7 @@ function TeacherDashboard({
   classrooms: Classroom[];
   onMissionDeleted: (missionId: string) => void;
   onMissionArchived: (mission: Mission) => void;
+  onMissionCopied: (mission: Mission, classroom: Classroom) => void;
   onClassroomArchived: (classroom: Classroom) => void;
 }) {
   const participantsHintId = useId();
@@ -570,6 +577,10 @@ function TeacherDashboard({
               >
                 Ver entregas da atividade
               </Link>}
+              {(room.role === 'teacher' || room.role === 'monitor') && <CopyMissionAction
+                missionId={mission.id}
+                classrooms={classrooms.filter(target => target.id !== room.id && (target.role === 'teacher' || target.role === 'monitor'))}
+                onCopied={(copied, target) => onMissionCopied(copied, classrooms.find(room => room.id === target.id)!)} />}
               {(room.role === 'teacher' || room.role === 'monitor') && mission.status !== "archived" && <ArchiveMissionAction
                 missionId={mission.id}
                 missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
