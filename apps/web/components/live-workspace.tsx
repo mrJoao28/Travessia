@@ -2,7 +2,7 @@
 
 import { StudentFirstSteps } from "./first-steps-guide";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   api,
   pages,
@@ -179,13 +179,16 @@ function WorkspaceView({
           : undefined
       }
     >
-      {!guidedEditor && <div className={`page-heading${materialWorkspace?" material-page-heading":""}`}>
-        <h1>{title}</h1>
-        <p>
-          {materialWorkspace ? "Prepare, compare e confira antes de disponibilizar ao aluno." : role === "aluno"
-            ? (entries.some(entry=>entry.mission.publishedVersion)?"Retome sua atividade de onde parou.":"Suas atividades serão mostradas aqui.")
-            : "Organize objetivos, etapas e devolutivas para sua turma."}
-        </p>
+      {!guidedEditor && <div className={`page-heading${materialWorkspace?" material-page-heading":""}${showClassroomCreation ? " page-heading-with-classroom-action" : ""}`}>
+        <div className="page-heading-copy">
+          <h1>{title}</h1>
+          <p>
+            {materialWorkspace ? "Prepare, compare e confira antes de disponibilizar ao aluno." : role === "aluno"
+              ? (entries.some(entry=>entry.mission.publishedVersion)?"Retome sua atividade de onde parou.":"Suas atividades serão mostradas aqui.")
+              : "Organize objetivos, etapas e devolutivas para sua turma."}
+          </p>
+        </div>
+        {!pending && !error && showClassroomCreation && <ClassroomTools teacher buttonTrigger onChanged={() => setReload((n) => n + 1)} />}
       </div>}
       {pending ? (
         <section className="paper" role="status">
@@ -209,13 +212,6 @@ function WorkspaceView({
             <p className="demo-banner">
               Ambiente de demonstração · dados fictícios
             </p>
-          )}
-          {showClassroomCreation && (
-            <ClassroomTools
-              teacher={role === "professor"}
-              buttonTrigger
-              onChanged={() => setReload((n) => n + 1)}
-            />
           )}
           {actionMessage && section !== "turmas" && <p role="status">{actionMessage}</p>}
           {!permitted.length ? (
@@ -463,6 +459,7 @@ function TeacherDashboard({
   onMissionArchived: (mission: Mission) => void;
   onClassroomArchived: (classroom: Classroom) => void;
 }) {
+  const participantsHintId = useId();
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
   if (!classroom) return (
@@ -526,8 +523,13 @@ function TeacherDashboard({
       </section>
       {!hasPublished && (classroom.role === 'teacher' || classroom.role === 'monitor') && <TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id}/>}
       {classroom.role === 'monitor' && <p className="notice">Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.</p>}
-      {(classroom.role === 'teacher' || classroom.role === 'monitor') && <details className="paper teacher-disclosure"><summary>Alunos da turma e convites</summary><ClassroomMembers classroom={classroom} /></details>}
-      {(classroom.role === 'teacher' || classroom.role === 'monitor') && <GradebookManager classroomId={classroom.id} entries={entries} />}
+      {(classroom.role === 'teacher' || classroom.role === 'monitor') && <div className="teacher-dashboard-tools">
+        <details className="paper teacher-disclosure">
+          <summary aria-label="Alunos da turma e convites" aria-describedby={participantsHintId}><span className="teacher-disclosure-title">Alunos da turma e convites</span><span id={participantsHintId} className="teacher-disclosure-hint">Gerencie participantes e links de convite</span></summary>
+          <ClassroomMembers classroom={classroom} />
+        </details>
+        <GradebookManager classroomId={classroom.id} entries={entries} />
+      </div>}
       <ul className="card-list">
         {entries.map(({ mission, classroom: room }) => (
           <li className="paper mission-card" key={mission.id}>
