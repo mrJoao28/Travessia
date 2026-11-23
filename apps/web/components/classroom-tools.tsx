@@ -22,7 +22,6 @@ export function ClassroomTools({
   buttonTrigger?: boolean;
 }) {
   const [value, setValue] = useState("");
-  const [shift, setShift] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [open, setOpen] = useState(false);
@@ -42,10 +41,9 @@ export function ClassroomTools({
           setMessage("");
           try {
             if (teacher)
-              await api("createClassroom", { body: { name: value, shift: shift.trim() || null } });
+              await api("createClassroom", { body: { name: value } });
             else {const token=normalizeInvitation(value,window.location.origin);if(!token)throw new Error("Cole o link do Travessia ou digite o código de oito caracteres.");await api("acceptInvite", { body: { token } });}
             setValue("");
-            setShift("");
             onChanged();
             if (buttonTrigger) {
               setOpen(false);
@@ -74,9 +72,6 @@ export function ClassroomTools({
             aria-describedby={`${inputId}-help`}
           />
         </label>
-        {teacher && <label htmlFor={`${inputId}-shift`}>Turno da turma (opcional)
-          <input id={`${inputId}-shift`} value={shift} onChange={e => setShift(e.target.value)} maxLength={50} placeholder="Ex.: manhã, tarde ou noite" disabled={pending} />
-        </label>}
         <p id={`${inputId}-help`} className="small">
           {teacher
             ? "O servidor criará a turma e seu vínculo como docente."
