@@ -90,6 +90,42 @@ test("seletor de turmas agrupa nome e papel e mantém a ação alinhada em telas
   ).toEqual([]);
 });
 
+test("proprietário pode excluir a turma direto no cartão de seleção", async ({ page }) => {
+  await fixture(page, "teacher", { multipleClassrooms: true });
+  await page.goto("/professor");
+
+  const cards = page.locator(".classroom-choice-card");
+  const monitorCard = cards.filter({ hasText: "Legislação" });
+  const ownerCard = cards.filter({ hasText: "abacate" });
+  await expect(monitorCard.getByRole("button", { name: "Excluir turma", exact: true })).toHaveCount(0);
+  const deleteButton = ownerCard.getByRole("button", { name: "Excluir turma", exact: true });
+  await expect(deleteButton).toBeVisible();
+  await deleteButton.focus();
+  await expect(deleteButton).toBeFocused();
+  expect(
+    (await new AxeBuilder({ page }).include(".classroom-choice-panel").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations,
+  ).toEqual([]);
+  await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  const actionWidths = await ownerCard.locator(".classroom-choice-actions").evaluate(actions => {
+    const container = actions.getBoundingClientRect();
+    const buttons = [...actions.querySelectorAll(".button")].map(button => button.getBoundingClientRect());
+    return { container: container.width, buttons: buttons.map(button => button.width) };
+  });
+  expect(actionWidths.buttons).toHaveLength(2);
+  expect(actionWidths.buttons.every(width => width > actionWidths.container * 0.9)).toBe(true);
+
+  page.once("dialog", async dialog => {
+    expect(dialog.message()).toContain("ficará em Turmas arquivadas");
+    await dialog.accept();
+  });
+  const request = page.waitForRequest(candidate => candidate.url().endsWith("/api/v1/classrooms/test-classroom") && candidate.method() === "DELETE");
+  await deleteButton.click();
+  await request;
+  await expect(page.getByRole("status")).toContainText("Turma abacate excluída da lista ativa e arquivada. O histórico foi preservado.");
+});
+
 test("monitor tem ferramentas docentes na turma e é identificado como monitor", async ({ page }) => {
   await fixture(page, "monitor");
   await page.goto("/professor");
