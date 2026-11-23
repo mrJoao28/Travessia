@@ -59,6 +59,14 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
   <h2>O que você vai aprender</h2><p className="submission-content">{mission.objectives}</p>
   <h3>Como sua atividade será avaliada</h3><p className="submission-content">{mission.criteria}</p>
  </details>
+ {mission.teamExample&&<section className="paper form-stack" aria-labelledby="preview-team-example-heading">
+  <h2 id="preview-team-example-heading">Trabalho em equipe: veja como começar</h2>
+  <p>{mission.teamExample.scenario}</p>
+  <div className="example"><h3>Divisão de responsabilidades</h3><ul>{mission.teamExample.roles.map(role=><li key={role}>{role}</li>)}</ul></div>
+  <article className="example"><h3>Exemplo de resposta da IA</h3><p className="small">Rascunho fictício para inspirar perguntas; a IA pode errar e não substitui a decisão da equipe.</p><p className="submission-content">{mission.teamExample.aiResponse}</p></article>
+  <article className="example"><h3>Exemplo real preenchido pela equipe</h3><p className="small">Modelo fictício de uma entrega construída, revisada e assumida pelos integrantes.</p><p className="submission-content">{mission.teamExample.teamResponse}</p></article>
+  <div className="example"><h3>Como transformar o rascunho em trabalho do grupo</h3><p className="submission-content">{mission.teamExample.adaptation}</p></div>
+ </section>}
  {!!materials.length&&<section id="materiais" className="paper form-stack" aria-label="Materiais preparados para você"><h2>Materiais preparados para você</h2>{materials.map(m=><details key={m.id} className="preview-material-item"><summary>{previewFiles[m.source].filename} · {presetLabels[m.preset]}</summary><div className="comparison-paper" data-color={m.preset==='expanded'?'high':undefined}
  style={materialReadingStyle({supports:[...presetSupports[m.preset]],fontSize:m.preset==='expanded'?'22':'18',color:m.preset==='expanded'?'high':'default'})}>
  <PreparedDocument document={previewDocument(m.source,m.preset)}/>
