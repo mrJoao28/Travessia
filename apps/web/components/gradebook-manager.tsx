@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
 
 type Period = ApiResponse<"gradePeriods">["items"][number];
@@ -33,6 +33,7 @@ export function GradebookManager({
   classroomId: string;
   entries: Entry[];
 }) {
+  const disclosureHintId = useId();
   const [periods, setPeriods] = useState<Period[]>([]);
   const [name, setName] = useState("");
   const [active, setActive] = useState<ApiResponse<"gradebook"> | null>(null);
@@ -141,7 +142,7 @@ export function GradebookManager({
 
   return (
     <details className="paper teacher-disclosure gradebook-disclosure">
-      <summary>Avaliações e notas</summary>
+      <summary aria-label="Avaliações e notas" aria-describedby={disclosureHintId}><span className="teacher-disclosure-title">Avaliações e notas</span><span id={disclosureHintId} className="teacher-disclosure-hint">Organize períodos e consulte resultados</span></summary>
       <div className="form-stack gradebook-content">
         <div className="gradebook-intro">
           <p>

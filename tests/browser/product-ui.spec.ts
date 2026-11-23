@@ -7,9 +7,19 @@ import {fixture,me,version,submission} from "../fixtures/product-ui";
 test("docente pode criar novas turmas nas áreas de turmas e atividades", async ({ page }) => {
   await fixture(page, "teacher");
   for (const destination of ["/professor", "/professor/atividades"]) {
+    await page.setViewportSize({ width: 1600, height: 900 });
     await page.goto(destination);
     const trigger = page.getByRole("button", { name: "Criar turma", exact: true });
     await expect(trigger).toBeVisible();
+    const desktopAlignment = await trigger.evaluate(button => {
+      const heading = button.closest(".page-heading-with-classroom-action");
+      const copy = heading?.querySelector(".page-heading-copy")?.getBoundingClientRect();
+      const action = button.getBoundingClientRect();
+      return copy ? { copyTop: copy.top, actionTop: action.top, copyRight: copy.right, actionLeft: action.left } : null;
+    });
+    expect(desktopAlignment).not.toBeNull();
+    expect(Math.abs(desktopAlignment!.copyTop - desktopAlignment!.actionTop)).toBeLessThan(2);
+    expect(desktopAlignment!.actionLeft).toBeGreaterThan(desktopAlignment!.copyRight);
     await trigger.focus();
     await page.keyboard.press("Enter");
     const name = page.getByLabel("Nome da turma", { exact: true });
@@ -26,6 +36,8 @@ test("docente pode criar novas turmas nas áreas de turmas e atividades", async 
     await expect(trigger).toBeVisible();
     await page.setViewportSize({ width: 320, height: 800 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const mobileActionWidth = await trigger.evaluate(button => ({ button: button.getBoundingClientRect().width, action: button.parentElement?.getBoundingClientRect().width ?? 0 }));
+    expect(mobileActionWidth.button).toBeGreaterThan(mobileActionWidth.action * 0.9);
   }
 });
 
@@ -141,12 +153,23 @@ test("monitor tem ferramentas docentes na turma e é identificado como monitor",
   await expect(page.getByRole("link", { name: /Apoios e barreiras/ })).toHaveAttribute("href", "/professor/barreiras?turma=test-classroom");
   await expect(page.getByRole("link", { name: "Criar atividade", exact: true })).toHaveAttribute("href", "/professor/atividades/nova?turma=test-classroom");
   await expect(page.getByRole("link", { name: "Gerenciar turmas e convites", exact: true })).toHaveCount(0);
+  const missionActions = page.getByRole("group", { name: /Ações para Uma biblioteca para todos/ });
+  const missionLinks = missionActions.getByRole("link");
+  await expect(missionLinks.first()).toHaveAccessibleName("Abrir atividade");
+  const buttonMetrics = await missionActions.evaluate(actions => {
+    const links = [...actions.querySelectorAll("a")].map(link => link.getBoundingClientRect());
+    return { minHeight: Math.min(...links.map(link => link.height)), gap: links[1].top - links[0].bottom };
+  });
+  expect(buttonMetrics.minHeight).toBeGreaterThanOrEqual(44);
+  expect(buttonMetrics.gap).toBeGreaterThanOrEqual(12);
   await expect(page.getByRole("link", { name: "Configurar materiais e apoios", exact: true })).toBeVisible();
   await page.getByText("Alunos da turma e convites", { exact: true }).click();
   await expect(page.getByRole("heading", { name: "Participantes de Oficina de Projetos Inclusivos" })).toBeVisible();
 
   await page.setViewportSize({ width: 320, height: 800 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const mobileMissionActionHeights = await missionActions.locator("a").evaluateAll(links => links.map(link => link.getBoundingClientRect().height));
+  expect(mobileMissionActionHeights.every(height => height >= 44)).toBe(true);
   expect((await new AxeBuilder({ page }).include("section[aria-labelledby=monitoria-title]").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 
   await page.goto("/professor/turmas");
