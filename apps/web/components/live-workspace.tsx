@@ -458,7 +458,33 @@ function TeacherDashboard({
 }) {
   const hasPublished=entries.some(e=>e.mission.status==='published');
   const draft=entries.find(e=>e.mission.status==='draft');
-  if (!classroom) return <section className="paper"><h2>Escolha uma turma para começar</h2><p>Abra a turma para preparar atividades.</p><ul className="card-list">{classrooms.map(room => <li className="paper" key={room.id}><h3>{room.name}</h3><p>{room.role === 'monitor' ? 'Monitor' : 'Professor'}</p><Link className="text-link" href={`/professor?turma=${encodeURIComponent(room.id)}`}>Abrir turma</Link></li>)}</ul></section>;
+  if (!classroom) return (
+    <section className="paper classroom-choice-panel">
+      <h2>Escolha uma turma para começar</h2>
+      <p>Abra a turma para preparar atividades.</p>
+      <ul className="card-list classroom-choice-list">
+        {classrooms.map((room) => (
+          <li className="paper classroom-choice-card" key={room.id}>
+            <div className="classroom-choice-copy">
+              <h3>{room.name}</h3>
+              <span className={`classroom-role-badge${room.role === "monitor" ? " is-monitor" : ""}`}>
+                {room.role === "monitor" ? "Monitor" : "Professor"}
+              </span>
+            </div>
+            <div className="classroom-choice-actions">
+              <Link
+                className="button button-outline"
+                href={`/professor?turma=${encodeURIComponent(room.id)}`}
+                aria-label={`Abrir turma ${room.name}`}
+              >
+                Abrir turma
+              </Link>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
   return (
     <>
       <section className="paper teacher-overview">
