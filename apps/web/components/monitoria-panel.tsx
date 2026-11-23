@@ -43,7 +43,7 @@ export function MonitorDashboard({ classroom, entries }: { classroom: Classroom;
             {mission.draftVersion && <p>Há uma versão de rascunho disponível para revisão.</p>}
           </div>
           <div className={monitoriaStyles.missionActions} role="group" aria-label={`Ações para ${(mission.draftVersion ?? mission.publishedVersion)?.title ?? "atividade"} na turma ${classroom.name}`}>
-            <Link className={monitoriaStyles.missionLink} href={`/professor/atividades/${mission.id}/editar`}>Abrir atividade<span aria-hidden="true"> →</span></Link>
+            <Link className={monitoriaStyles.missionPrimaryLink} href={`/professor/atividades/${mission.id}/editar`}>Abrir atividade</Link>
             <Link className={monitoriaStyles.missionLink} href={`/professor/atividades/${mission.id}/apoios`}>Configurar materiais e apoios</Link>
             <Link className={monitoriaStyles.missionLink} href={`/professor/entregas?atividade=${encodeURIComponent(mission.id)}&turma=${encodeURIComponent(classroom.id)}`}>
               Ver entregas da atividade
