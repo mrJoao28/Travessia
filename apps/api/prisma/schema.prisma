@@ -23,6 +23,9 @@ model User {
   teacherProfile TeacherProfile?
   preferences   ReadingPreferences?
   memberships   Membership[]
+  ownedClassrooms Classroom[] @relation("classroomOwner")
+  ownedClassroomTeams ClassroomTeam[] @relation("teamLeader")
+  classroomTeamMemberships ClassroomTeamMember[]
   missionGroups MissionGroupMember[]
   ledMissionGroups MissionGroup[] @relation("groupLeader")
   missionParticipations MissionParticipation[]
@@ -93,6 +96,7 @@ model StudentProfile {
   unit String? @db.VarChar(150)
   course String?
   period String? @db.VarChar(50)
+  preferredWorkMode String @default("individual")
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -158,11 +162,41 @@ model Classroom {
   needsSharing NeedsSharing[]
   id String @id @default(uuid())
   name String
+  shift String? @db.VarChar(50)
   createdAt DateTime @default(now())
+  ownerId String
+  owner User @relation("classroomOwner", fields: [ownerId], references: [id])
+  archivedAt DateTime?
   memberships Membership[]
   invitations Invitation[]
   missions Mission[]
   gradePeriods GradePeriod[]
+  teams ClassroomTeam[]
+  @@index([ownerId, archivedAt])
+}
+
+model ClassroomTeam {
+  id String @id @default(uuid())
+  classroomId String
+  name String @db.VarChar(150)
+  leaderId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  leader User @relation("teamLeader", fields: [leaderId], references: [id])
+  members ClassroomTeamMember[]
+  @@unique([classroomId, name])
+  @@index([classroomId])
+  @@index([leaderId])
+}
+
+model ClassroomTeamMember {
+  teamId String
+  userId String
+  team ClassroomTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([teamId, userId])
+  @@index([userId])
 }
 model Membership {
   id String @id @default(uuid())
@@ -328,6 +362,7 @@ model GradePeriod {
   id String @id @default(uuid())
   classroomId String
   name String @db.VarChar(150)
+  formula String @default("weighted_average")
   startsAt DateTime?
   endsAt DateTime?
   createdAt DateTime @default(now())

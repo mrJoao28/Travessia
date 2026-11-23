@@ -114,7 +114,7 @@ export class ProductService {
     if (op === 'createClassroom') {
       await budget(this.db, `create-classroom:${userId}`, 10, 3600);
       const data = body as Body<'createClassroom'>;
-      const c = await this.db.classroom.create({ data: { name: data.name, memberships: { create: { userId, role: 'teacher' } } } });
+      const c = await this.db.classroom.create({ data: { name: data.name, owner: { connect: { id: userId } }, memberships: { create: { userId, role: 'teacher' } } } });
       return { id: c.id, name: c.name, role: 'teacher' };
     }
     if (op === 'gradePeriods' || op === 'createGradePeriod') {
