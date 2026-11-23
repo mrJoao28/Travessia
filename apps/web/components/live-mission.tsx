@@ -86,7 +86,7 @@ export function LiveMission({
         const initialResponses = recover && local.stepResponses ? local.stepResponses : migratedResponses;
         setStepResponses(initialResponses);
         setContent(recover ? (initialResponses[local.stepId] ?? local.content) : migratedResponses[current?.currentStepId ?? ""] ?? current?.content ?? "");
-        setCompleted(recover ? local.completed.filter(id => version.steps.some(step => step.id === id)) : current?.completedStepIds ?? []);
+        setCompleted(recover ? local.completed.filter(id => version?.steps.some(step => step.id === id) ?? false) : current?.completedStepIds ?? []);
         setIndex(
           Math.max(
             0,
