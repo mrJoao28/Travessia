@@ -247,6 +247,23 @@ test("docente exclui atividade sem histórico e mantém acesso às entregas", as
   await expect(page.getByText("Atividade excluída.", { exact: true })).toBeVisible();
 });
 
+test("docente recebe o motivo correto quando a exclusão da atividade é bloqueada por histórico", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.route("**/api/v1/activities/test-mission", async route => {
+    if (route.request().method() === "DELETE") {
+      await route.fulfill({ status: 409, json: { code: "MISSION_DELETE_BLOCKED", message: "Esta atividade possui histórico ou arquivos. Use Arquivar atividade para preservá-los." } });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto("/professor?turma=test-classroom");
+  page.once("dialog", dialog => dialog.accept());
+  await page.getByRole("button", { name: "Excluir atividade", exact: true }).click();
+  const deleteError = page.locator(".mission-delete-action-item [role=alert]");
+  await expect(deleteError).toContainText("Esta atividade possui entregas, relatos ou arquivos.");
+  await expect(deleteError).toContainText("Use Arquivar atividade para preservar o histórico.");
+});
+
 test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva texto no conflito", async ({
   page,
 }) => {

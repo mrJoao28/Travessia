@@ -89,7 +89,12 @@ export async function api<K extends keyof ApiOperations>(
       AI_PROVIDER_QUOTA: "O projeto Gemini atingiu um limite de uso. Aguarde ou peça ao administrador para conferir a cota.",
       AI_TIMEOUT: "O Gemini demorou demais. Confira o estado do rascunho antes de tentar com menos material.",
     };
+    const operationErrors: Record<string, string> = {
+      MISSION_DELETE_BLOCKED:
+        "Esta atividade possui entregas, relatos ou arquivos. Use Arquivar atividade para preservar o histórico.",
+    };
     const message = Object.hasOwn(geminiErrors, code) ? geminiErrors[code] :
+      Object.hasOwn(operationErrors, code) ? operationErrors[code] :
       code === "MEMBERSHIP_EXISTS"
         ? "Sua conta já possui um vínculo com essa turma. Se deveria entrar como monitor, peça ao professor um novo convite de monitor."
         : code === "INVALID_INVITATION"
