@@ -2,6 +2,7 @@ export type StudentDraft = {
   versionId: string;
   revision: number;
   content: string;
+  stepResponses?: Record<string, string>;
   completed: string[];
   stepId: string;
 };
@@ -12,6 +13,7 @@ export function readStudentDraft(key: string): StudentDraft | null {
     if (value && typeof value.versionId === "string" && Number.isSafeInteger(value.revision)
         && typeof value.content === "string" && value.content.length <= 12000
         && typeof value.stepId === "string" && Array.isArray(value.completed)
+        && (value.stepResponses === undefined || (value.stepResponses && typeof value.stepResponses === "object" && Object.entries(value.stepResponses).every(([id, response]) => typeof id === "string" && typeof response === "string" && response.length <= 12000)))
         && value.completed.every((id: unknown) => typeof id === "string")) return value;
   } catch { /* Storage can be unavailable. */ }
   return null;

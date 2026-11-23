@@ -299,6 +299,7 @@ model Submission {
   group MissionGroup? @relation(fields: [groupId], references: [id])
   status SubmissionStatus @default(draft)
   content String
+  stepResponses Json @default("{}")
   audio Bytes?
   hasAudio Boolean @default(false)
   textFile String?

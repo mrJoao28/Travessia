@@ -14559,6 +14559,18 @@
                     "type": "string",
                     "maxLength": 12000
                   },
+                  "stepResponses": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 12000
+                    }
+                  },
                   "audio": {
                     "anyOf": [
                       {
@@ -14686,6 +14698,16 @@
                     "content": {
                       "type": "string",
                       "maxLength": 12000
+                    },
+                    "stepResponses": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "maxLength": 12000
+                      }
                     },
                     "hasAudio": {
                       "type": "boolean"
@@ -15042,6 +15064,16 @@
                             "type": "string",
                             "maxLength": 12000
                           },
+                          "stepResponses": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "string",
+                              "maxLength": 12000
+                            }
+                          },
                           "hasAudio": {
                             "type": "boolean"
                           },
@@ -15386,6 +15418,16 @@
                     "content": {
                       "type": "string",
                       "maxLength": 12000
+                    },
+                    "stepResponses": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "maxLength": 12000
+                      }
                     },
                     "hasAudio": {
                       "type": "boolean"
@@ -15771,6 +15813,16 @@
                     "content": {
                       "type": "string",
                       "maxLength": 12000
+                    },
+                    "stepResponses": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "maxLength": 12000
+                      }
                     },
                     "hasAudio": {
                       "type": "boolean"

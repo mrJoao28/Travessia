@@ -33,6 +33,7 @@ export function LiveMission({
   const [textFile, setTextFile] = useState<{ text: string } | null | undefined>();
   const [mediaBusy, setMediaBusy] = useState(false);
   const [content, setContent] = useState("");
+  const [stepResponses, setStepResponses] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
@@ -79,7 +80,12 @@ export function LiveMission({
         setMission(value);
         setTeam(groups.items.find(group => group.studentIds.includes(viewerId))?.name ?? null);
         setSubmission(current ?? null);
-        setContent(recover ? local.content : current?.content ?? "");
+        const savedResponses = current?.stepResponses ?? {};
+        const migratedResponses = current && !Object.keys(savedResponses).length && current.content
+          ? { [current.currentStepId]: current.content } : savedResponses;
+        const initialResponses = recover && local.stepResponses ? local.stepResponses : migratedResponses;
+        setStepResponses(initialResponses);
+        setContent(recover ? (initialResponses[local.stepId] ?? local.content) : migratedResponses[current?.currentStepId ?? ""] ?? current?.content ?? "");
         setCompleted(recover ? local.completed.filter(id => version.steps.some(step => step.id === id)) : current?.completedStepIds ?? []);
         setIndex(
           Math.max(
@@ -113,9 +119,9 @@ export function LiveMission({
     if (role !== "aluno" || !dirty || !version || !step) return;
     setLocalSaved(storeStudentDraft(recoveryKey, {
       versionId: version.id, revision: submission?.revision ?? 0,
-      content, completed, stepId: step.id,
+      content, stepResponses: { ...stepResponses, [step.id]: content }, completed, stepId: step.id,
     }));
-  }, [role, dirty, mission, index, recoveryKey, submission, content, completed]);
+  }, [role, dirty, mission, index, recoveryKey, submission, content, completed, stepResponses]);
   useEffect(() => {
     if (!dirty || pending || mediaBusy || saveError || role !== "aluno" || audio !== undefined || textFile !== undefined) return;
     const timer = window.setTimeout(() => void save("draft", true), 900);
@@ -160,6 +166,7 @@ export function LiveMission({
         body: {
           versionId: mission.publishedVersion.id,
           content,
+          stepResponses: { ...stepResponses, [step.id]: content },
           ...(audio !== undefined ? { audio } : {}),
           ...(textFile !== undefined ? { textFile } : {}),
           completedStepIds: completed,
@@ -171,6 +178,7 @@ export function LiveMission({
       if (submission && submission.id !== saved.id) setAttemptHistory(history => [submission, ...history]);
       setSubmission(saved); setAudio(undefined); setTextFile(undefined);
       setContent(saved.content);
+      setStepResponses(saved.stepResponses ?? { [step.id]: saved.content });
       setCompleted(saved.completedStepIds);
       setDirty(false);
       setSaveError(false);
@@ -197,6 +205,10 @@ export function LiveMission({
   }
   function navigate(next: number) {
     if (next === index) return;
+    const nextStep = version.steps[next];
+    const updatedResponses = { ...stepResponses, [step.id]: content };
+    setStepResponses(updatedResponses);
+    setContent(updatedResponses[nextStep.id] ?? "");
     stepNavigation.current = true;
     setIndex(next);
     if (!locked && role === "aluno") setDirty(true);
@@ -331,7 +343,7 @@ export function LiveMission({
               {submission?.revisionRequested && <p role="status">O professor solicitou ajustes. Leia o feedback e prepare uma nova tentativa.</p>}
               {[...(submission?.revisionRequested ? [submission] : []), ...attemptHistory].map(attempt => <details key={attempt.id}>
                 <summary>Tentativa {attempt.attempt ?? 1} · entrega e feedback</summary>
-                <p className="submission-content">{attempt.content}</p>
+                {Object.keys(attempt.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa">{attempt.gradingSteps.map(item => attempt.stepResponses?.[item.id] ? <article key={item.id}><h3>{item.title}</h3><p className="submission-content">{attempt.stepResponses[item.id]}</p></article> : null)}</section> : <p className="submission-content">{attempt.content}</p>}
                 <SubmissionMedia id={attempt.id} hasAudio={attempt.hasAudio} hasTextFile={attempt.hasTextFile} />
                 {attempt.feedback.map(feedback => <blockquote key={feedback.id}><p>{feedback.content}</p></blockquote>)}
               </details>)}
@@ -357,7 +369,7 @@ export function LiveMission({
                       ? "Revisada"
                       : "Aguardando feedback"}
                   </p>
-                  <p className="submission-content">{submission.content}</p>
+                  {Object.keys(submission.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa">{submission.gradingSteps.map(item => submission.stepResponses?.[item.id] ? <article key={item.id}><h3>{item.title}</h3><p className="submission-content">{submission.stepResponses[item.id]}</p></article> : null)}</section> : <p className="submission-content">{submission.content}</p>}
                   <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
                   {submission.feedback.map((feedback) => (
                     <blockquote key={feedback.id}>
@@ -389,6 +401,7 @@ export function LiveMission({
                       value={content}
                       onChange={(e) => {
                         setContent(e.target.value);
+                        setStepResponses(responses => ({ ...responses, [step.id]: e.target.value }));
                         setDirty(true);
                         setMessage("");
                       }}

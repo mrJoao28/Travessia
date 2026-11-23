@@ -704,7 +704,7 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
   return (
     <details>
       <summary>Consultar entrega e escrever feedback</summary>
-      <p className="submission-content">{submission.content}</p>
+      {Object.keys(submission.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa"><h3>Respostas por etapa</h3>{steps.map(step => submission.stepResponses?.[step.id] ? <article key={step.id}><h4>{step.title}</h4><p className="submission-content">{submission.stepResponses[step.id]}</p></article> : null)}</section> : <p className="submission-content">{submission.content}</p>}
       <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
       {steps.some(step => step.completedAt) && <section aria-label="Registro de prazo das etapas">
         <h3>Entrega por etapa</h3>
