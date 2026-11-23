@@ -5238,6 +5238,9 @@ export interface operations {
                             /** @enum {string} */
                             status: "draft" | "submitted" | "reviewed";
                             content: string;
+                            stepResponses?: {
+                                [key: string]: string;
+                            };
                             hasAudio?: boolean;
                             hasTextFile?: boolean;
                             completedStepIds: string[];
@@ -5302,6 +5305,9 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     content: string;
+                    stepResponses?: {
+                        [key: string]: string;
+                    };
                     audio?: string | null;
                     textFile?: {
                         text: string;
@@ -5331,6 +5337,9 @@ export interface operations {
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
+                        stepResponses?: {
+                            [key: string]: string;
+                        };
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];
@@ -5406,6 +5415,9 @@ export interface operations {
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
+                        stepResponses?: {
+                            [key: string]: string;
+                        };
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];
@@ -5493,6 +5505,9 @@ export interface operations {
                         /** @enum {string} */
                         status: "draft" | "submitted" | "reviewed";
                         content: string;
+                        stepResponses?: {
+                            [key: string]: string;
+                        };
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];

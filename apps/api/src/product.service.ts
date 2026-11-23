@@ -33,7 +33,7 @@ export function missionView(row: MissionRow, teacher: boolean) {
 export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof submissionInclude }>) {
   const completions = s.stepCompletedAt && typeof s.stepCompletedAt === 'object' && !Array.isArray(s.stepCompletedAt)
     ? s.stepCompletedAt as Record<string, string> : {};
-  return { id: s.id, versionId: s.versionId, userId: s.userId, groupId: s.groupId, status: s.status, content: s.content, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
+  return { id: s.id, versionId: s.versionId, userId: s.userId, groupId: s.groupId, status: s.status, content: s.content, stepResponses: (s.stepResponses && typeof s.stepResponses === 'object' && !Array.isArray(s.stepResponses) ? s.stepResponses : {}) as Record<string, string>, hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
     submittedAt: s.submittedAt, updatedAt: s.updatedAt, attempt: s.attempt, revisionRequested: s.revisionRequested,
     gradingSteps: s.version.steps.map(step => {
@@ -460,7 +460,7 @@ export class ProductService {
           if ((version.workMode === 'group' || (version.workMode === 'mixed' && participation?.mode !== 'individual')) && !group) return fail(409, 'GROUP_REQUIRED', 'Peça ao professor para incluir você em uma equipe desta atividade.');
           const old = await tx.submission.findFirst({ where: { versionId: version.id, ...(group ? { groupId: group.id } : { userId, groupId: null }) }, orderBy: { attempt: 'desc' } });
           if ((old?.revision ?? 0) !== input.expectedRevision) {
-            if (old && input.audio === undefined && input.textFile === undefined && old.content === input.content && old.status === input.status && old.currentStepId === input.currentStepId && JSON.stringify(old.completedStepIds) === JSON.stringify(input.completedStepIds)) return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: old.id }, include: submissionInclude }));
+            if (old && input.audio === undefined && input.textFile === undefined && old.content === input.content && JSON.stringify(old.stepResponses) === JSON.stringify(input.stepResponses ?? old.stepResponses) && old.status === input.status && old.currentStepId === input.currentStepId && JSON.stringify(old.completedStepIds) === JSON.stringify(input.completedStepIds)) return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: old.id }, include: submissionInclude }));
             return fail(409, 'REVISION_CONFLICT', 'A entrega mudou. Recarregue antes de salvar.');
           }
           const retry = old?.status === 'reviewed' && old.revisionRequested;
@@ -470,11 +470,13 @@ export class ProductService {
           if (textFile !== null && (Buffer.byteLength(textFile, 'utf8') > 32768 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(textFile))) return fail(400, 'INVALID_TEXT_FILE', 'Use arquivo de texto UTF-8, até 32 KiB, sem conteúdo binário.');
           const formats = allowedFormats(await learnerPlans(tx, version.id, userId));
           if ((audio && !formats.includes('audio')) || (textFile !== null && !formats.includes('text_file'))) return fail(409, 'FORMAT_NOT_ALLOWED', 'O professor não liberou este formato. Preserve sua resposta e consulte os formatos atuais.');
-          if (input.status === 'submitted' && !input.content.trim() && !audio && !textFile?.trim()) return fail(400, 'EMPTY_SUBMISSION', 'Inclua sua atividade antes de enviar.');
+          if (input.status === 'submitted' && !input.content.trim() && !Object.values(input.stepResponses ?? {}).some(response => response.trim()) && !audio && !textFile?.trim()) return fail(400, 'EMPTY_SUBMISSION', 'Inclua sua atividade antes de enviar.');
           const completedAt: Record<string, string> = retry ? {} : old?.stepCompletedAt && typeof old.stepCompletedAt === 'object' && !Array.isArray(old.stepCompletedAt)
             ? { ...(old.stepCompletedAt as Record<string, string>) } : {};
           for (const completedId of input.completedStepIds) if (!completedAt[completedId]) completedAt[completedId] = new Date().toISOString();
-          const data = { audio, hasAudio: !!audio, textFile, hasTextFile: textFile !== null, content: input.content, currentStepId: input.currentStepId, completedStepIds: input.completedStepIds, stepCompletedAt: completedAt, status: input.status,
+          const stepResponses = input.stepResponses ?? (old?.stepResponses && typeof old.stepResponses === 'object' && !Array.isArray(old.stepResponses) ? old.stepResponses as Record<string, string> : {});
+          for (const [stepId, response] of Object.entries(stepResponses)) if (!stepIds.has(stepId) || typeof response !== 'string' || response.length > 12000) return fail(400, 'INVALID_STEP_RESPONSES', 'Respostas por etapa inválidas.');
+          const data = { audio, hasAudio: !!audio, textFile, hasTextFile: textFile !== null, content: input.content, stepResponses, currentStepId: input.currentStepId, completedStepIds: input.completedStepIds, stepCompletedAt: completedAt, status: input.status,
             submittedAt: input.status === 'submitted' ? new Date() : null };
           const saved = old && !retry ? await tx.submission.update({ where: { id: old.id }, data: { ...data, revision: { increment: 1 } }, include: submissionInclude }) :
             await tx.submission.create({ data: { ...data, versionId: version.id, userId, groupId: group?.id ?? null, attempt: (old?.attempt ?? 0) + 1, revision: (old?.revision ?? 0) + 1 }, include: submissionInclude });
