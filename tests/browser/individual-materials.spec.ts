@@ -8,13 +8,32 @@ import {fixture,addPdf} from '../fixtures/individual-materials';
 test('PDF da atividade é anexado para toda a turma sem selecionar aluno',async({page})=>{
  const captured=await fixture(page,false,[],[]);await addPdf(page,'');
  await expect(page.getByLabel('Destinatário da adaptação',{exact:true})).toHaveValue('__classroom__');
- await expect(page.getByText('O PDF original vai para toda a turma ao publicar. O destinatário inicial da adaptação também é toda a turma; você pode escolher um aluno.',{exact:true})).toBeVisible();
+ await expect(page.getByText('O PDF original vai para toda a turma ao publicar. O destinatário inicial da adaptação também é toda a turma; você pode escolher uma equipe ou um aluno.',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Usar PDF original',exact:true})).toHaveCount(0);
  await expect(page.getByRole('checkbox',{name:/texto ampliado/i})).not.toBeChecked();
  await page.screenshot({path:'test-results/reference-material-no-disclosure.png',fullPage:true});
  await expect(page.getByRole('checkbox',{name:/Audiodescrição/})).toBeVisible();
  await expect(page.getByRole('checkbox',{name:/Leitura em áudio/})).toHaveCount(0);
  expect(captured()).toBeUndefined();expect(captured.original()).toBeUndefined();
+});
+test('adaptação em atividade de equipe identifica a equipe e reorganiza o painel em tela estreita',async({page})=>{
+ await page.setViewportSize({width:790,height:900});
+ const captured=await fixture(page,false,[],[],false,true);
+ const recipients=page.getByLabel('Destinatário da adaptação',{exact:true});
+ await expect(recipients.locator('option')).toHaveText(['Escolha o destinatário','Toda a turma','Equipe · Equipe Horizonte']);
+ await expect(recipients).not.toContainText('Marina fictícia');
+ await addPdf(page,'');
+ await recipients.selectOption('team-a');
+ await page.getByRole('checkbox',{name:/Leitura ampliada/}).check();
+ await page.getByRole('button',{name:'Gerar prévia adaptada',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Confira a prévia',exact:true})).toBeVisible();
+ expect(captured()?.audience).toBe('group');
+ expect(captured()?.groupId).toBe('team-a');
+ expect(captured()?.studentId).toBeUndefined();
+ const settings=await page.getByRole('complementary',{name:'Preparação e revisão do material'}).boundingBox();
+ const viewer=await page.getByRole('region',{name:'Comparação do material'}).boundingBox();
+ expect(viewer!.y).toBeGreaterThan(settings!.y+settings!.height-8);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('TEA compartilhado: somente sugestões pertinentes, prévia automática e revisão sem enviar perfil à IA',async({page})=>{
  await page.setViewportSize({width:1920,height:1080});

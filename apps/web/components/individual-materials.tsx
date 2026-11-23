@@ -18,6 +18,7 @@ type Document = ApiBody<"editMaterial">["document"];
 const classroomAudience = "__classroom__";
 export function IndividualMaterials({ missionId, versionId, classroomId, archived, version, initialFile, initialDownloadAllowed = false, onFileReceived, onUnsavedChange }: { missionId: string; versionId: string; classroomId: string; archived: boolean; version?: NonNullable<ApiResponse<"mission">["draftVersion"]>; initialFile?: File | null; initialDownloadAllowed?: boolean; onFileReceived?: () => void; onUnsavedChange?: (dirty:boolean)=>void }) {
   const [students, setStudents] = useState<ApiResponse<"strategyRecipients">["items"]>([]);
+  const [teams, setTeams] = useState<ApiResponse<"groups">["items"]>([]);
   const [shared, setShared] = useState<ApiResponse<"sharedLearningNeeds">["items"]>([]);
   const [sources, setSources] = useState<Source[]>([]);
   const [adaptations, setAdaptations] = useState<Adaptation[]>([]);
@@ -51,11 +52,12 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   useEffect(()=>{
     let active=true;
     setLoading(true); setError("");
-    void Promise.all([pages("strategyRecipients",missionId), pages("sharedLearningNeeds",classroomId), api("materialSources",{params:{id:missionId},query:{versionId}}),api("materialAdaptations",{params:{id:missionId},query:{versionId}})])
-      .then(([s,n,f,a])=>{ if(active){setStudents(s);setShared(n);setSources(f.items);setAdaptations(a.items);} })
+    const groupRequest=version?.workMode==='group'?api("groups",{params:{id:missionId}}):Promise.resolve({items:[] as ApiResponse<"groups">["items"]});
+    void Promise.all([pages("strategyRecipients",missionId), pages("sharedLearningNeeds",classroomId), api("materialSources",{params:{id:missionId},query:{versionId}}),api("materialAdaptations",{params:{id:missionId},query:{versionId}}),groupRequest])
+      .then(([s,n,f,a,g])=>{ if(active){setStudents(s);setShared(n);setSources(f.items);setAdaptations(a.items);setTeams(g.items);} })
       .catch(reason=>{if(active)setError(errorMessage(reason));}).finally(()=>{if(active)setLoading(false);});
     return ()=>{active=false;};
-  },[missionId,versionId,classroomId,retry]);
+  },[missionId,versionId,classroomId,version?.workMode,retry]);
   const waiting = sources.some(s=>["queued","extracting"].includes(s.status)) || adaptations.some(a=>["queued","generating","rendering"].includes(a.status));
   useEffect(()=>{
     if(!waiting)return;
@@ -100,9 +102,9 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   }
   async function prepare() {
     await operation(async()=>{
-      if(!studentId || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha um destinatário, o PDF, as páginas e pelo menos um apoio.");
+      if(!recipientChosen || !source || source.status!=="ready" || !pageNumbers.length || !supports.length)throw new Error("Escolha a turma, a equipe ou um aluno, o PDF, as páginas e pelo menos um apoio.");
       if(ai&&!approved)throw new Error("Confirme que as páginas selecionadas podem ser enviadas ao Gemini.");
-      const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,...(studentId===classroomAudience?{audience:'classroom' as const}:{studentId}),pages:pageNumbers,autoRender:true,settings:{supports,fontSize:supports.includes('large-print')&&fontSize==='18'?'22':fontSize,color:supports.includes('high-contrast')&&color==='default'?'high':color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
+      const a=await api("prepareMaterial",{params:{id:missionId},body:{versionId,sourceId,...(forClassroom?{audience:'classroom' as const}:team?{audience:'group' as const,groupId:team.id}:{audience:'student' as const,studentId}),pages:pageNumbers,autoRender:true,settings:{supports,fontSize:supports.includes('large-print')&&fontSize==='18'?'22':fontSize,color:supports.includes('high-contrast')&&color==='default'?'high':color,useAi:ai,approvedForProvider:ai&&approved},requestKey:key.current??=crypto.randomUUID()}});
       update(a);setReaderView('prepared');setStep(a.status==="ready"||a.status==="released"?3:2);
     });
   }
@@ -126,8 +128,8 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       const rendered=await api("renderMaterial",{params:{id:missionId,adaptationId:a.id},body:{expectedRevision:a.revision}});update(rendered);setStep(rendered.status==="ready"?3:2);
     });
   }
-  const student=students.find(s=>s.id===studentId), declared=shared.find(s=>s.userId===studentId);
-  const forClassroom=studentId===classroomAudience, recipient=forClassroom?'toda a turma':student?.name, recipientChosen=forClassroom||!!student;
+  const student=students.find(s=>s.id===studentId), team=teams.find(group=>group.id===studentId), declared=shared.find(s=>s.userId===studentId);
+  const forClassroom=studentId===classroomAudience, recipient=forClassroom?'toda a turma':team?.name??student?.name, recipientChosen=forClassroom||!!student||!!team;
   const suggestions=materialSuggestions(declared?.disabilities,declared?.supports);
   const otherSupports = ['wide-spacing','high-contrast','literal-language','short-sections','glossary'] as const;
   const visibleOtherSupports = otherSupports.filter(id=>showMoreSupports||suggestions.primary.includes(id)||supports.includes(id));
@@ -149,7 +151,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     setDelivery('adapted');
     setManualDescription(false);
     setShowMoreSupports(false);
-    if(!id)setShowActivity(false);
+    if(!id||!students.some(s=>s.id===id))setShowActivity(false);
     setStep(1);
     setReaderView('original');
     setFontSize('22');
@@ -180,7 +182,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   function activityChanged(value:boolean){setActivityDirty(value);if(value)setReviewed(false);}
   const fileRow=source?<div className="comparison-selected-file"><span className="pdf-file-badge" aria-hidden="true">PDF</span><div><strong>{source.title}</strong><p className="small">{source.status==='ready'?`Arquivo verificado · ${source.pageCount} ${source.pageCount===1?'página':'páginas'} · disponível até ${new Date(source.expiresAt).toLocaleDateString('pt-BR')}`:labels[source.status]}</p></div></div>:null;
   if(loading)return <p role="status">Carregando alunos e materiais…</p>;
-  const released=!!current&&current.status==='released'&&(forClassroom?current.studentId===null:current.studentId===studentId);
+  const released=!!current&&current.status==='released'&&(team?current.groupId===team.id:forClassroom?current.studentId===null&&!current.groupId:current.studentId===studentId&&!current.groupId);
   const fileControl=<div className="workspace-file-control">
     <span className="pdf-file-badge" aria-hidden="true">PDF</span>
     {sources.length>0&&<select aria-label="Arquivo PDF" value={sourceId} disabled={locked} onChange={e=>chooseSource(e.target.value)}>
@@ -193,7 +195,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const canRelease=!archived&&step===3&&!released&&recipientChosen&&delivery==='adapted'&&current?.status==='ready';
   const supportOptions=<fieldset className="strategy-fields material-support-cards" disabled={!recipientChosen||locked||released}>
           <legend>Apoios para o material</legend>
-          <p className="small">{!recipientChosen?'Escolha a turma ou um aluno para configurar os apoios.':suggestions.primary.length?'Confira as sugestões e ajuste conforme a preferência do aluno.':'Escolha os apoios que deseja oferecer.'}</p>
+          <p className="small">{!recipientChosen?'Escolha a turma, a equipe ou um aluno para configurar os apoios.':team?'Escolha os apoios de leitura e compreensão para a equipe.':suggestions.primary.length?'Confira as sugestões e ajuste conforme a preferência do aluno.':'Escolha os apoios que deseja oferecer.'}</p>
           <div className="material-support-card-grid">
             {(['image-description','large-print'] as const).map(option)}
           </div>
@@ -211,8 +213,8 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
       setMessage(`Material disponibilizado para ${recipient}. No rascunho, ficará disponível após publicar esta versão.`);
     });
   }
-  return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material individual">
-    <header><h2>{recipientChosen?`Apoios para ${recipient}`:'Material da turma e adaptações'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o destinatário.'):'O PDF original vai para toda a turma ao publicar. O destinatário inicial da adaptação também é toda a turma; você pode escolher um aluno.'}</p><p className="small">Materiais publicados ficam disponíveis por 365 dias após a publicação. A data aparece em cada arquivo.</p></header>
+  return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material da turma e adaptações">
+    <header><h2>{recipientChosen?`Apoios para ${recipient}`:'Material da turma e adaptações'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o destinatário.'):'O PDF original vai para toda a turma ao publicar. O destinatário inicial da adaptação também é toda a turma; você pode escolher uma equipe ou um aluno.'}</p><p className="small">Materiais publicados ficam disponíveis por 365 dias após a publicação. A data aparece em cada arquivo.</p></header>
     {(error||message)&&<OperationStatus message={error||message} error={!!error}/>}
     {error&&<button className="text-button" type="button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo</button>}
     <div className="material-reference-desk">
@@ -222,8 +224,9 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
           <select id="material-student" value={studentId} disabled={locked} onChange={e=>chooseStudent(e.target.value)}>
             <option value="">Escolha o destinatário</option>
             <option value={classroomAudience}>Toda a turma</option>
-            {students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+            {version?.workMode==='group'?teams.map(group=><option key={group.id} value={group.id}>Equipe · {group.name}</option>):students.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
+          {version?.workMode==='group'&&!teams.length&&<p className="small">Cadastre as equipes na atividade para preparar um material para cada equipe.</p>}
           {student&&<p className="small">{declared?.disabilities?.length
             ? declared.disabilities.map(d=>materialProfiles.find(p=>p.id===d)?.label??({visual:'Visual (sem detalhar)',hearing:'Auditiva (sem detalhar)',other:'Outra deficiência',multiple:'Múltipla'} as Record<string,string>)[d]??d).join(' · ')+' · informação compartilhada pelo aluno'
             : 'Nenhuma deficiência informada'}</p>}
@@ -291,6 +294,6 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     </div>
     {canRelease&&<footer className="material-reference-footer"><button className="button" type="button" disabled={!reviewed||locked||showActivity} onClick={releaseMaterial}>Disponibilizar para {recipient} →</button></footer>}
     {busy&&<p role="status">Salvando sua solicitação…</p>}
-    {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {a.studentId===null?'Toda a turma':students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.studentId??classroomAudience);setSourceId(a.sourceId);setReaderView(a.mode==='original'?'original':'prepared');setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setManualDescription(!a.settings.useAi&&a.settings.supports.includes('image-description'));setFontSize(a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description'));setShowActivity(false);setStep(a.status==='ready'||a.status==='released'||a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description')?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm(a.studentId===null?'Retirar este material adaptado de toda a turma?':'Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(1);}});}}>Remover material</button>}</div></article>)}</details>}
+    {!!adaptations.length&&<details className="simple-saved-materials"><summary>Materiais já preparados · {adaptations.length}</summary>{adaptations.map(a=><article className="paper" key={a.id}><h3>{sources.find(s=>s.id===a.sourceId)?.title??'Material'} · {a.groupId?`Equipe · ${teams.find(group=>group.id===a.groupId)?.name??'Equipe da atividade'}`:a.studentId===null?'Toda a turma':students.find(s=>s.id===a.studentId)?.name??'Aluno sem vínculo ativo'}</h3><p>{a.mode==='original'?'PDF original':labels[a.status]}</p><div className="actions"><button type="button" className="button button-outline" disabled={busy||dirty||activityDirty} onClick={()=>{setSelectedId(a.id);setStudentId(a.groupId??a.studentId??classroomAudience);setSourceId(a.sourceId);setReaderView(a.mode==='original'?'original':'prepared');setDelivery(a.mode==='original'?'original':'adapted');setSupports(a.settings.supports);setManualDescription(!a.settings.useAi&&a.settings.supports.includes('image-description'));setFontSize(a.settings.fontSize);setColor(a.settings.color);setPageNumbers(a.pages);setDocument(a.document);setEditText(a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description'));setShowActivity(false);setStep(a.status==='ready'||a.status==='released'||a.status==='draft'&&!a.settings.useAi&&a.settings.supports.includes('image-description')?3:2);setReviewed(false);}}>Abrir material</button>{!archived&&!['queued','generating','rendering'].includes(a.status)&&<button type="button" className="text-button" onClick={()=>{if(window.confirm(a.groupId?`Retirar este material da equipe ${teams.find(group=>group.id===a.groupId)?.name??''}?`:a.studentId===null?'Retirar este material adaptado de toda a turma?':'Retirar este material do aluno?'))void operation(async()=>{await api('removeMaterial',{params:{id:missionId,adaptationId:a.id}});setAdaptations(old=>old.filter(v=>v.id!==a.id));if(current?.id===a.id){setSelectedId('');setStep(1);}});}}>Remover material</button>}</div></article>)}</details>}
   </section>;
 }

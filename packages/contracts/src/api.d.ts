@@ -1225,8 +1225,9 @@ export interface operations {
                             versionId: string;
                             sourceId: string;
                             studentId: string | null;
+                            groupId?: string | null;
                             /** @enum {string} */
-                            audience: "student" | "classroom";
+                            audience: "student" | "classroom" | "group";
                             /** @enum {string} */
                             status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                             hasReleasedVersion?: boolean;
@@ -1294,8 +1295,9 @@ export interface operations {
                     versionId: string;
                     sourceId: string;
                     studentId?: string;
+                    groupId?: string;
                     /** @enum {string} */
-                    audience?: "student" | "classroom";
+                    audience?: "student" | "classroom" | "group";
                     pages: number[];
                     settings: {
                         supports: ("large-print" | "wide-spacing" | "high-contrast" | "literal-language" | "short-sections" | "glossary" | "image-description" | "narration")[];
@@ -1328,8 +1330,9 @@ export interface operations {
                         versionId: string;
                         sourceId: string;
                         studentId: string | null;
+                        groupId?: string | null;
                         /** @enum {string} */
-                        audience: "student" | "classroom";
+                        audience: "student" | "classroom" | "group";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1417,8 +1420,9 @@ export interface operations {
                         versionId: string;
                         sourceId: string;
                         studentId: string | null;
+                        groupId?: string | null;
                         /** @enum {string} */
-                        audience: "student" | "classroom";
+                        audience: "student" | "classroom" | "group";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1554,8 +1558,9 @@ export interface operations {
                         versionId: string;
                         sourceId: string;
                         studentId: string | null;
+                        groupId?: string | null;
                         /** @enum {string} */
-                        audience: "student" | "classroom";
+                        audience: "student" | "classroom" | "group";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1638,8 +1643,9 @@ export interface operations {
                         versionId: string;
                         sourceId: string;
                         studentId: string | null;
+                        groupId?: string | null;
                         /** @enum {string} */
-                        audience: "student" | "classroom";
+                        audience: "student" | "classroom" | "group";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;
@@ -1724,8 +1730,9 @@ export interface operations {
                         versionId: string;
                         sourceId: string;
                         studentId: string | null;
+                        groupId?: string | null;
                         /** @enum {string} */
-                        audience: "student" | "classroom";
+                        audience: "student" | "classroom" | "group";
                         /** @enum {string} */
                         status: "queued" | "generating" | "draft" | "rendering" | "ready" | "released" | "failed";
                         hasReleasedVersion?: boolean;

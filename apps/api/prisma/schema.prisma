@@ -329,6 +329,7 @@ model MissionGroup {
   members MissionGroupMember[]
   participations MissionParticipation[]
   submissions Submission[]
+  materialAdaptations MaterialAdaptation[]
   @@unique([missionId, name])
   @@index([leaderId])
 }
@@ -571,6 +572,7 @@ model MaterialAdaptation {
   versionId String
   sourceId String
   studentId String?
+  groupId String?
   creatorId String
   requestKey String
   requestHash String
@@ -589,7 +591,9 @@ model MaterialAdaptation {
   expiresAt DateTime
   version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
   source MaterialSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  group MissionGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
   @@unique([versionId, requestKey])
   @@index([status, createdAt])
   @@index([versionId, studentId, status])
+  @@index([versionId, groupId, status])
 }
