@@ -35,7 +35,7 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     const classroomId = rooms.items[0].id;
     expect(rooms.items[0].role).toBe('teacher');
     await expect(teacher.getByRole('heading',{name:'Primeiros passos da sua turma',exact:true})).toBeVisible();
-    await teacher.getByRole('button',{name:'Convidar alunos',exact:true}).click();
+    await teacher.locator('details.teacher-disclosure > summary').filter({ hasText: 'Alunos da turma e convites' }).click();
     await teacher.getByRole('button', { name: 'Gerar convite de aluno', exact: true }).click();
     const invite = teacher.getByLabel('Código de convite', { exact: true });
     await expect(invite).toHaveValue(/^[A-HJ-NP-Z2-9]{8}$/);
@@ -78,6 +78,7 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     // A fresh professor is also free to use the student area without losing access.
     await teacher.locator('summary[aria-label="Menu da conta"]').click();
     await teacher.getByRole('link', { name: 'Ir para o espaço do aluno', exact: true }).click();
-    await expect(teacher.getByRole('link', { name: 'Entrar na minha turma', exact: true })).toBeVisible();
+    await expect(teacher).toHaveURL(/\/aluno$/);
+    await expect(teacher.getByRole('heading', { name: 'Um passo de cada vez.', exact: true })).toBeVisible();
   } finally { await teacherContext.close(); await studentContext.close(); }
 });

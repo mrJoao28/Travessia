@@ -121,12 +121,12 @@ export function errorMessage(error: unknown) {
 
 export async function pages<
   K extends "classrooms" | "missions" | "submissions" | "barriers" | "members" | "invitations" | "strategyRecipients" | "sharedLearningNeeds",
->(operation: K, id?: string) {
+>(operation: K, id?: string, query?: ApiOperations[K]["query"]) {
   const items: Array<ApiResponse<K>["items"][number]> = [];
   let cursor: string | undefined;
   for (let page = 0; page < 100; page++) {
     const params = (id ? { id } : {}) as ApiOperations[K]["params"];
-    const response = await api(operation, { params, cursor });
+    const response = await api(operation, { params, cursor, query });
     items.push(...(response.items as Array<ApiResponse<K>["items"][number]>));
     if (!response.nextCursor) return items as ApiResponse<K>["items"];
     if (cursor === response.nextCursor)

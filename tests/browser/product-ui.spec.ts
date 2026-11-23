@@ -4,6 +4,128 @@ import type { ApiBody, ApiResponse } from "../../apps/web/lib/api.generated";
 
 import {fixture,me,version,submission} from "../fixtures/product-ui";
 
+test("docente pode criar novas turmas nas áreas de turmas e atividades", async ({ page }) => {
+  await fixture(page, "teacher");
+  for (const destination of ["/professor", "/professor/atividades"]) {
+    await page.goto(destination);
+    const trigger = page.getByRole("button", { name: "Criar turma", exact: true });
+    await expect(trigger).toBeVisible();
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    const name = page.getByLabel("Nome da turma", { exact: true });
+    await expect(name).toBeFocused();
+    expect((await new AxeBuilder({ page }).include(".page-heading").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+    await name.fill(`Turma criada em ${destination}`);
+    const request = page.waitForRequest((candidate) =>
+      candidate.url().endsWith("/api/v1/classrooms") && candidate.method() === "POST",
+    );
+    await page.getByRole("button", { name: "Salvar turma", exact: true }).click();
+    expect((await request).postDataJSON()).toEqual({ name: `Turma criada em ${destination}`, shift: null });
+    await expect(trigger).toBeFocused();
+    await expect(name).toHaveCount(0);
+    await expect(trigger).toBeVisible();
+    await page.setViewportSize({ width: 320, height: 800 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+test("monitor tem ferramentas docentes na turma e é identificado como monitor", async ({ page }) => {
+  await fixture(page, "monitor");
+  await page.goto("/professor");
+  await expect(page.getByRole("heading", { name: "Painel de monitoria", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: version.title, exact: true })).toBeVisible();
+  await expect(page.getByText("Você atua como monitor nesta turma.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Criar atividade", exact: true })).toBeVisible();
+  const deliveries = page.getByRole("link", { name: /Acompanhar entregas/ });
+  await expect(deliveries).toHaveAttribute("href", "/professor/entregas?turma=test-classroom");
+  await deliveries.focus();
+  await expect(deliveries).toBeFocused();
+  await expect(page.getByRole("link", { name: /Apoios e barreiras/ })).toHaveAttribute("href", "/professor/barreiras?turma=test-classroom");
+  await expect(page.getByRole("link", { name: "Criar atividade", exact: true })).toHaveAttribute("href", "/professor/atividades/nova?turma=test-classroom");
+  await expect(page.getByRole("link", { name: "Gerenciar turmas e convites", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Configurar materiais e apoios", exact: true })).toBeVisible();
+  await page.getByText("Alunos da turma e convites", { exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Participantes de Oficina de Projetos Inclusivos" })).toBeVisible();
+
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).include("section[aria-labelledby=monitoria-title]").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+
+  await page.goto("/professor/turmas");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Excluir turma", exact: true })).toHaveCount(0);
+  await expect(page.getByText("Monitor · vínculo ativo", { exact: true })).toBeVisible();
+  await expect(page.getByText("Monitor · vínculo ativo", { exact: true })).toBeVisible();
+});
+
+test("cartões de gestão de turma agrupam ações e refluem com texto ampliado", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.goto("/professor/turmas");
+  const actions = page.getByRole("group", { name: "Ações para a turma Oficina de Projetos Inclusivos" });
+  const open = actions.getByRole("button", { name: "Abrir turma" });
+  await expect(open).toBeVisible();
+  await open.focus();
+  await expect(open).toBeFocused();
+  const desktopLayout = await page.evaluate(() => {
+    const copy = document.querySelector(".classroom-card-copy")?.getBoundingClientRect();
+    const action = document.querySelector(".classroom-card-actions")?.getBoundingClientRect();
+    return copy && action ? { copyRight: copy.right, actionLeft: action.left } : null;
+  });
+  expect(desktopLayout).not.toBeNull();
+  expect(desktopLayout!.actionLeft).toBeGreaterThan(desktopLayout!.copyRight);
+  await page.evaluate(() => {
+    const title = document.querySelector(".classroom-card-copy h2");
+    if (title) title.textContent = "Turma com um título extenso para conferir a quebra de linha sem deslocar os controles de gestão";
+    document.documentElement.style.fontSize = "200%";
+  });
+  await page.setViewportSize({ width: 320, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  const mobileLayout = await page.evaluate(() => {
+    const copy = document.querySelector(".classroom-card-copy")?.getBoundingClientRect();
+    const actionElement = document.querySelector(".classroom-card-actions");
+    const action = actionElement?.getBoundingClientRect();
+    const button = document.querySelector(".classroom-card-actions .button")?.getBoundingClientRect();
+    if (!copy || !action || !button || !actionElement) return null;
+    const style = getComputedStyle(actionElement);
+    const actionContentWidth = action.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+    return { copyBottom: copy.bottom, actionTop: action.top, actionContentWidth, buttonWidth: button.width };
+  });
+  expect(mobileLayout).not.toBeNull();
+  expect(mobileLayout!.actionTop).toBeGreaterThanOrEqual(mobileLayout!.copyBottom);
+  expect(mobileLayout!.buttonWidth).toBeGreaterThan(mobileLayout!.actionContentWidth * 0.9);
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+});
+
+test("proprietário arquiva turma e consulta o histórico preservado", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.goto("/professor/turmas");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Abrir turma", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Excluir turma", exact: true })).toBeVisible();
+  page.once("dialog", dialog => dialog.accept());
+  const request = page.waitForRequest(candidate => candidate.url().endsWith("/api/v1/classrooms/test-classroom") && candidate.method() === "DELETE");
+  await page.getByRole("button", { name: "Excluir turma", exact: true }).click();
+  await request;
+  await expect(page.getByText("Turma excluída da lista ativa e arquivada. O histórico foi preservado.")).toBeVisible();
+  await page.getByLabel("Exibir turmas").selectOption("archived");
+  await expect(page.getByRole("heading", { name: "Oficina de Projetos Inclusivos", exact: true })).toBeVisible();
+  await expect(page.getByText("Consultar atividades e entregas", { exact: true })).toBeVisible();
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+});
+
+test("docente exclui atividade sem histórico e mantém acesso às entregas", async ({ page }) => {
+  await fixture(page, "teacher");
+  await page.goto("/professor?turma=test-classroom");
+  const deliveries = page.getByRole("link", { name: "Ver entregas da atividade", exact: true });
+  await expect(deliveries).toHaveAttribute("href", "/professor/entregas?atividade=test-mission&turma=test-classroom");
+  await expect(page.getByRole("button", { name: "Excluir atividade", exact: true })).toBeVisible();
+  page.once("dialog", dialog => dialog.accept());
+  const request = page.waitForRequest(candidate => candidate.url().endsWith("/api/v1/activities/test-mission") && candidate.method() === "DELETE");
+  await page.getByRole("button", { name: "Excluir atividade", exact: true }).click();
+  await request;
+  await expect(page.getByText("Atividade excluída.", { exact: true })).toBeVisible();
+});
+
 test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva texto no conflito", async ({
   page,
 }) => {
@@ -29,6 +151,7 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
   );
   await page.goto("/aluno/atividades/test-mission");
   await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
+  await expect(page.getByRole("link", { name: "← Voltar às entregas da turma", exact: true })).toHaveAttribute("href", "/aluno/entregas?turma=test-classroom");
   expect(
     (
       await new AxeBuilder({ page })

@@ -1,0 +1,62 @@
+.page {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.layout, .actionsGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.panel, .review { min-width: 0; }
+.page h2 {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin: 0;
+  font-size: 1.35rem;
+}
+.page h2 svg { color: var(--primary); flex-shrink: 0; }
+.stack, .permissions, .queue { display: grid; gap: 1rem; min-width: 0; }
+.stack { align-content: start; }
+.page button { justify-self: start; max-width: 100%; white-space: normal; }
+.permissions { border: 0; margin: 0; padding: 0; gap: .5rem; }
+.permissions legend { padding: 0; margin-bottom: .5rem; font-weight: 650; }
+.panel label.option, .panel label.warning {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: .65rem;
+}
+.panel label.option { cursor: pointer; }
+.option:has(:checked) { background: var(--sage); outline: 1px solid var(--primary); }
+.panel .option input[type="radio"], .panel .warning input {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--primary);
+}
+.option small { display: block; font-size: .92rem; font-weight: 400; color: var(--muted); }
+.panel label.warning { border-inline-start: .3rem solid var(--focus); font-weight: 400; }
+.review { border-top: .25rem solid var(--primary); }
+.empty, .queue li { margin-top: 1rem; padding: 1rem; background: var(--sage); border-radius: .6rem; }
+.empty p, .queue p { margin: .4rem 0 0; }
+.queue { list-style: none; margin: 0; padding: 0; gap: 0; }
+.queue h3, .summary { margin: 0; }
+.queue button { margin-top: .75rem; }
+.summary { display: grid; gap: .65rem; }
+.summary dt { color: var(--muted); font-size: .9rem; }
+.summary dd { margin: 0; font-weight: 650; }
+.status { margin: 0; }
+.status:not(:empty) { padding: 1rem; background: var(--sage); border-inline-start: .25rem solid var(--primary); }
+@media (max-width: 55rem) {
+  .layout, .actionsGrid { grid-template-columns: minmax(0, 1fr); }
+}
+.field { display: grid; min-width: 0; gap: .4rem; }

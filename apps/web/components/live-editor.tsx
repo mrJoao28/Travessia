@@ -59,12 +59,10 @@ export function LiveEditor({
   id,
   classroomId,
   classroomNames,
-  classroomRoles,
 }: {
   id?: string;
   classroomId?: string;
   classroomNames?: Record<string, string>;
-  classroomRoles?: Record<string, 'student' | 'teacher' | 'monitor'>;
 }) {
   const [stage, setStage] = useState(0);
   const [supportsDirty,setSupportsDirty]=useState(false);
@@ -93,11 +91,10 @@ export function LiveEditor({
   const [carrySourcesLoading, setCarrySourcesLoading] = useState(false);
   const [carrySourcesError, setCarrySourcesError] = useState(false);
   const [carrySourceRetry, setCarrySourceRetry] = useState(0);
-  const monitor = classroomRoles?.[mission?.classroomId ?? classroomId ?? ''] === 'monitor';
   const [review, setReview] = useState<string | null>(null);
   useEffect(() => {
     const published = mission?.publishedVersion;
-    if (!mission || !published || monitor) { setCarrySources([]); setCarrySourcesLoading(false); setCarrySourcesError(false); return; }
+    if (!mission || !published) { setCarrySources([]); setCarrySourcesLoading(false); setCarrySourcesError(false); return; }
     let active = true;
     setCarrySourcesLoading(true); setCarrySourcesError(false);
     void api("materialSources", { params: { id: mission.id }, query: { versionId: published.id } })
@@ -105,7 +102,7 @@ export function LiveEditor({
       .catch(() => { if (active) { setCarrySources([]); setCarrySourcesError(true); } })
       .finally(() => { if (active) setCarrySourcesLoading(false); });
     return () => { active = false; };
-  }, [mission?.id, mission?.publishedVersion?.id, monitor, carrySourceRetry]);
+  }, [mission?.id, mission?.publishedVersion?.id, carrySourceRetry]);
   useEffect(() => {
     if (review) document.getElementById("publish-review")?.focus();
   }, [review]);
@@ -168,8 +165,8 @@ export function LiveEditor({
   }
   async function save(forReview = false, nextStage?: number) {
     if (!validate() || pending) return;
-    if (!monitor && mission?.publishedVersion && carrySourcesLoading) { setMessage("Aguarde a lista de PDFs da versão publicada carregar antes de salvar."); return; }
-    if (!monitor && mission?.publishedVersion && carrySourcesError) { setMessage("Não foi possível consultar os PDFs publicados. Recarregue a lista antes de salvar."); return; }
+    if (mission?.publishedVersion && carrySourcesLoading) { setMessage("Aguarde a lista de PDFs da versão publicada carregar antes de salvar."); return; }
+    if (mission?.publishedVersion && carrySourcesError) { setMessage("Não foi possível consultar os PDFs publicados. Recarregue a lista antes de salvar."); return; }
     if (!dirty && mission?.draftVersion) {
       if (forReview) setReview(mission.draftVersion.id);
       if (nextStage !== undefined) setStage(nextStage);
@@ -216,8 +213,8 @@ export function LiveEditor({
   const storedVersion = mission?.draftVersion ?? mission?.publishedVersion;
   return (
     <div className="teacher-guide">
-      <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar atividade"}</p><Link className="text-link" href="/professor/atividades">← Minhas atividades</Link><h1>Vamos preparar sua atividade</h1><p>{monitor ? 'Prepare e salve o rascunho. O professor fará a revisão e a publicação.' : 'Um passo de cada vez. Você revisa antes de publicar.'}</p></header>
-      <TeacherSteps labels={monitor ? ["Sobre a atividade", "Etapas e materiais"] : ["Sobre a atividade", "Etapas e materiais", "Apoios", "Revisão"]} current={stage} disabled={pending||supportsDirty} onBack={value => { setConfirmed(false); setReview(null); setStage(value); }} />
+      <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar atividade"}</p><Link className="text-link" href="/professor/atividades">← Minhas atividades</Link><h1>Vamos preparar sua atividade</h1><p>Um passo de cada vez. Você revisa antes de publicar.</p></header>
+      <TeacherSteps labels={["Sobre a atividade", "Etapas e materiais", "Apoios", "Revisão"]} current={stage} disabled={pending||supportsDirty} onBack={value => { setConfirmed(false); setReview(null); setStage(value); }} />
       <div className={`teacher-guide-grid${stage===2?" teacher-support-stage":""}`}><section className="paper teacher-editor-panel">
         <h2 ref={stageTitle} tabIndex={-1} id="editor-stage-title">{["O que a turma vai aprender?", "Como o aluno vai realizar a atividade?", "Quer oferecer alguma ajuda?", "Confira antes de publicar"][stage]}</h2>
         <p className="muted">{["Dê um nome à atividade e explique o que será aprendido e avaliado.", "Divida o trabalho em ações claras. Acrescente os materiais que o aluno vai consultar.", "Os apoios são opcionais. Você pode prepará-los agora ou depois da publicação.", "Confira o conteúdo completo. Só você pode autorizar a publicação."][stage]}</p>
@@ -276,9 +273,10 @@ export function LiveEditor({
                 />
               </label>
               <label htmlFor="editor-work-mode">Forma de realização
-                <select id="editor-work-mode" value={input.workMode ?? "individual"} onChange={e => change({ ...input, workMode: e.target.value as "individual" | "group" })}>
+                <select id="editor-work-mode" value={input.workMode ?? "individual"} onChange={e => change({ ...input, workMode: e.target.value as "individual" | "group" | "mixed" })}>
                   <option value="individual">Individual: cada aluno envia sua atividade</option>
                   <option value="group">Em grupo: uma entrega compartilhada por equipe</option>
+                  <option value="mixed">Individual ou grupo: o professor pode abrir exceções</option>
                 </select>
               </label>
               <label htmlFor="editor-objectives">
@@ -484,7 +482,7 @@ export function LiveEditor({
               >
                 Adicionar etapa
               </button>
-              {!monitor && <section className="mission-file-entry form-stack" aria-label="Arquivos da atividade">
+              {<section className="mission-file-entry form-stack" aria-label="Arquivos da atividade">
                 <h3>Materiais da atividade</h3><p>Acrescente o PDF que toda a turma verá ao abrir esta atividade, depois que a versão for publicada. Apoios adaptados para alunos específicos são opcionais.</p>
                 <label htmlFor="editor-pdf-upload">Adicionar PDF à atividade</label>
                 <label className="check"><input type="checkbox" checked={pendingPdfDownloadAllowed} onChange={event=>setPendingPdfDownloadAllowed(event.target.checked)}/>Ao adicionar este PDF, disponibilizar também o botão de download</label>
@@ -501,10 +499,10 @@ export function LiveEditor({
                 {pendingPdf&&<p className="small">PDF escolhido: {pendingPdf.name}. Complete as etapas para anexá-lo à atividade; após a publicação e a verificação do arquivo, ele aparecerá para todos os alunos ativos da turma.</p>}
                 <p className="small">PDF de até {PDF_MAX_MB} MB e {PDF_MAX_PAGES} páginas, sem senha ou conteúdo ativo. A publicação da atividade disponibiliza este arquivo para toda a turma. Apoios individuais continuam opcionais.</p>
               </section>}
-              {!monitor && mission?.publishedVersion && carrySourcesLoading && <p role="status">Consultando os PDFs publicados para escolher quais acompanham a nova versão…</p>}
-              {!monitor && mission?.publishedVersion && carrySourcesError && <p role="alert">Não foi possível consultar os PDFs publicados. <button type="button" className="text-button" onClick={() => setCarrySourceRetry(value => value + 1)}>Tentar novamente</button></p>}
-              {!monitor && mission?.publishedVersion && !carrySourcesLoading && !carrySourcesError && carrySources.length === 0 && <p className="small">A versão publicada não tem PDFs verificados para acompanhar este rascunho.</p>}
-              {!monitor && mission?.publishedVersion && carrySources.length > 0 && <fieldset className="mission-file-entry form-stack"><legend>PDFs que acompanham a nova versão</legend>
+              {mission?.publishedVersion && carrySourcesLoading && <p role="status">Consultando os PDFs publicados para escolher quais acompanham a nova versão…</p>}
+              {mission?.publishedVersion && carrySourcesError && <p role="alert">Não foi possível consultar os PDFs publicados. <button type="button" className="text-button" onClick={() => setCarrySourceRetry(value => value + 1)}>Tentar novamente</button></p>}
+              {mission?.publishedVersion && !carrySourcesLoading && !carrySourcesError && carrySources.length === 0 && <p className="small">A versão publicada não tem PDFs verificados para acompanhar este rascunho.</p>}
+              {mission?.publishedVersion && carrySources.length > 0 && <fieldset className="mission-file-entry form-stack"><legend>PDFs que acompanham a nova versão</legend>
                 <p className="small">Selecione os PDFs originais verificados que devem ser copiados para este rascunho. Apoios adaptados precisam ser preparados e revisados novamente.</p>
                 {carrySources.map(source => <label className="check" key={source.id}><input type="checkbox" checked={carryForwardMaterialIds.includes(source.id)} onChange={event => {
                   setCarryForwardMaterialIds(previous => event.target.checked ? [...previous, source.id] : previous.filter(id => id !== source.id));
@@ -586,7 +584,7 @@ export function LiveEditor({
             </div>
           </fieldset>
         </form>
-        {!monitor && stage === 3 && review && mission?.draftVersion && (
+        {stage === 3 && review && mission?.draftVersion && (
           <section className="notice" style={{ marginTop: "1rem" }}>
             <h3 id="publish-review" tabIndex={-1}>
               Revisão antes de publicar
@@ -657,8 +655,8 @@ export function LiveEditor({
             </button>
           </section>
         )}
-        {!monitor && stage === 2 && <div className="form-stack">
-          {mission && storedVersion?.workMode === "group" && <GroupManager missionId={mission.id} />}
+        {stage === 2 && <div className="form-stack">
+          {mission && storedVersion?.workMode !== "individual" && <GroupManager missionId={mission.id} />}
           {mission && <TeacherNeedsNotice classroomId={mission.classroomId} activityId={mission.id} />}
           {mission && storedVersion && <MissionSupportsEditor key={storedVersion.id} entry={{mission,classroom:{id:mission.classroomId,name:classroomNames?.[mission.classroomId]??"Turma da atividade",role:"teacher"},submissions:[]}} version={storedVersion} initialFile={pendingPdf} initialDownloadAllowed={pendingPdfDownloadAllowed} onFileReceived={()=>setPendingPdf(null)} onUnsavedChange={setSupportsDirty}/>}
           <p className="notice">Finalize os apoios desejados e clique em “Salvar e revisar” para publicar a mesma versão. Não é necessário sair do editor. Se voltar e alterar o conteúdo da atividade, uma nova versão será criada e os apoios precisarão de nova revisão.</p>
@@ -700,7 +698,7 @@ export function LiveEditor({
       </section>
       <aside className="teacher-guidance paper"><h2>{stage === 0 ? "Uma boa atividade tem" : "Você está no controle"}</h2><ul><li>Um objetivo claro</li><li>Uma ação possível</li><li>Critérios compreensíveis</li></ul><p>O aluno verá as instruções e os critérios antes de começar.</p><p className="small">{mission ? "Rascunho salvo no servidor. Alterações precisam ser salvas novamente." : "Seu texto permanece nesta tela. O primeiro salvamento acontece depois de preencher as etapas."}</p></aside></div>
       {supportsDirty&&<p className="notice" role="status">Salve ou descarte os ajustes abertos nos apoios antes de avançar para a revisão da atividade.</p>}
-      <footer className="teacher-guide-footer"><div>{stage > 0 && <button type="button" className="text-button" disabled={pending||supportsDirty} onClick={() => { setConfirmed(false); setStage(stage - 1); }}>← Voltar</button>}<span className="small">Etapa {stage + 1} de {monitor ? 2 : 4}</span></div><div className="actions">{stage > 0 && stage < 3 && !monitor && <button type="button" className="text-button" disabled={pending||supportsDirty} onClick={() => void save()}>Salvar rascunho</button>}{stage < (monitor ? 2 : 3) && <button type="button" className="button" disabled={pending || supportsDirty || mission?.status === "archived"} onClick={() => { if (stage === 0) { if (validate(0)) setStage(1); } else void save(stage === 2, monitor ? undefined : stage + 1); }}>{pending ? "Salvando…" : monitor ? ["Continuar para as etapas →", "Salvar rascunho"][stage] : ["Continuar para as etapas →", "Salvar e continuar →", "Salvar e revisar"][stage]}</button>}</div></footer>
+      <footer className="teacher-guide-footer"><div>{stage > 0 && <button type="button" className="text-button" disabled={pending||supportsDirty} onClick={() => { setConfirmed(false); setStage(stage - 1); }}>← Voltar</button>}<span className="small">Etapa {stage + 1} de 4</span></div><div className="actions">{stage > 0 && stage < 3 && <button type="button" className="text-button" disabled={pending||supportsDirty} onClick={() => void save()}>Salvar rascunho</button>}{stage < 3 && <button type="button" className="button" disabled={pending || supportsDirty || mission?.status === "archived"} onClick={() => { if (stage === 0) { if (validate(0)) setStage(1); } else void save(stage === 2, stage + 1); }}>{pending ? "Salvando…" : ["Continuar para as etapas →", "Salvar e continuar →", "Salvar e revisar"][stage]}</button>}</div></footer>
     </div>
   );
 }

@@ -62,18 +62,21 @@ export const submission: ApiResponse<"submission"> = {
   feedback: [],
 };
 
-export async function fixture(page: Page, role: "student" | "teacher") {
+export async function fixture(page: Page, role: "student" | "teacher" | "monitor") {
+  let classroomArchivedAt: string | null = null;
+  const createdClassrooms: { id: string; name: string; role: "teacher"; archivedAt: null; ownerId: string; isOwner: true }[] = [];
   let mission: ApiResponse<"mission"> = {
     id: "test-mission",
     classroomId: "test-classroom",
     status: role === "student" ? "published" : "draft",
-    draftVersion: role === "teacher" ? version : null,
+    draftVersion: role !== "student" ? version : null,
     publishedVersion: role === "student" ? version : null,
   };
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.slice(
       "/api/v1".length,
     );
+    const requestUrl = new URL(route.request().url());
     const respond = (body: unknown) => route.fulfill({ json: body });
     if (path.endsWith("/material-sources") || path.endsWith("/material-adaptations") || path.endsWith("/my-materials")) return respond({items:[]});
     if(path.endsWith("/strategy-recipients") || path.endsWith("/learning-needs")) return respond({items:[],nextCursor:null});
@@ -81,9 +84,20 @@ export async function fixture(page: Page, role: "student" | "teacher") {
     if (path === "/activities/test-mission/my-adaptations") return respond({ versionId: version.id, items: [], allowedFormats: ["text"] });
     if (path === "/activities/test-mission/supports") return respond({ versionId: version.id, items: [] });
     if (path === "/activities/test-mission/groups") return respond({ items: [] });
-    if (path === "/classrooms")
+    if (path === "/classrooms" && route.request().method() === "POST") {
+      const body = route.request().postDataJSON() as ApiBody<"createClassroom">;
+      const classroom = { id: `created-classroom-${createdClassrooms.length + 1}`, name: body.name, role: "teacher" as const, archivedAt: null, ownerId: me.id, isOwner: true as const };
+      createdClassrooms.push(classroom);
+      return respond(classroom);
+    }
+    if (path === "/classrooms" && route.request().method() === "GET")
       return respond({
-        items: [
+        items: requestUrl.searchParams.get("view") === "archived"
+          ? classroomArchivedAt && role === "teacher" ? [{
+              id: "test-classroom", name: "Oficina de Projetos Inclusivos", role,
+              archivedAt: classroomArchivedAt, ownerId: me.id, isOwner: true,
+            }] : []
+          : classroomArchivedAt ? [] : [
           {
             id: "test-classroom",
             name:
@@ -91,12 +105,20 @@ export async function fixture(page: Page, role: "student" | "teacher") {
                 ? "Programação I"
                 : "Oficina de Projetos Inclusivos",
             role,
+            archivedAt: classroomArchivedAt,
+            ownerId: role === "teacher" ? me.id : undefined,
+            isOwner: role === "teacher",
           },
+          ...createdClassrooms,
         ],
         nextCursor: null,
       });
+    if (path === "/classrooms/test-classroom" && route.request().method() === "DELETE")
+      { classroomArchivedAt = version.createdAt; return respond({ archived: true, archivedAt: classroomArchivedAt }); }
     if (path === "/classrooms/test-classroom/activities")
       return respond({ items: [mission], nextCursor: null });
+    if (/^\/classrooms\/created-classroom-\d+\/activities$/.test(path))
+      return respond({ items: [], nextCursor: null });
     if (path === "/classrooms/test-classroom/members")
       return respond({
         items: [
@@ -136,6 +158,8 @@ export async function fixture(page: Page, role: "student" | "teacher") {
       });
     if (path === "/activities/test-mission" && route.request().method() === "GET")
       return respond(mission);
+    if (path === "/activities/test-mission" && route.request().method() === "DELETE")
+      return respond({ deleted: true });
     if (
       path === "/activities/test-mission" &&
       route.request().method() === "PATCH"

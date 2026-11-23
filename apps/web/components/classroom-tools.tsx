@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   api,
+  ApiError,
   pages,
   errorMessage,
   type ApiResponse,
@@ -14,21 +15,26 @@ import type { Classroom } from "./live-workspace";
 export function ClassroomTools({
   teacher,
   onChanged,
+  buttonTrigger = false,
 }: {
   teacher: boolean;
   onChanged: () => void;
+  buttonTrigger?: boolean;
 }) {
   const [value, setValue] = useState("");
+  const [shift, setShift] = useState("");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
-  return (
-    <details className="paper" style={{ marginBlock: "1rem" }}>
-      <summary>
-        {teacher ? "Criar uma turma" : "Entrar em uma turma por convite"}
-      </summary>
+  const [open, setOpen] = useState(false);
+  const inputId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (buttonTrigger && open) inputRef.current?.focus();
+  }, [buttonTrigger, open]);
+  const form = (
       <form
-        className="form-stack"
-        style={{ marginTop: "1rem" }}
+        className="form-stack classroom-tools-form"
         onSubmit={async (e) => {
           e.preventDefault();
           if (pending) return;
@@ -36,21 +42,28 @@ export function ClassroomTools({
           setMessage("");
           try {
             if (teacher)
-              await api("createClassroom", { body: { name: value } });
+              await api("createClassroom", { body: { name: value, shift: shift.trim() || null } });
             else {const token=normalizeInvitation(value,window.location.origin);if(!token)throw new Error("Cole o link do Travessia ou digite o código de oito caracteres.");await api("acceptInvite", { body: { token } });}
             setValue("");
+            setShift("");
             onChanged();
+            if (buttonTrigger) {
+              setOpen(false);
+              requestAnimationFrame(() => triggerRef.current?.focus());
+            }
           } catch (reason) {
             setMessage(errorMessage(reason));
+            if (reason instanceof ApiError && reason.code === "MEMBERSHIP_EXISTS") onChanged();
           } finally {
             setPending(false);
           }
         }}
       >
-        <label htmlFor="classroom-action">
+        <label htmlFor={inputId}>
           {teacher ? "Nome da turma" : "Código de convite"}
           <input
-            id="classroom-action"
+            ref={inputRef}
+            id={inputId}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             required
@@ -58,19 +71,46 @@ export function ClassroomTools({
             minLength={1}
             autoComplete="off"
             disabled={pending}
-            aria-describedby="classroom-action-help"
+            aria-describedby={`${inputId}-help`}
           />
         </label>
-        <p id="classroom-action-help" className="small">
+        {teacher && <label htmlFor={`${inputId}-shift`}>Turno da turma (opcional)
+          <input id={`${inputId}-shift`} value={shift} onChange={e => setShift(e.target.value)} maxLength={50} placeholder="Ex.: manhã, tarde ou noite" disabled={pending} />
+        </label>}
+        <p id={`${inputId}-help`} className="small">
           {teacher
             ? "O servidor criará a turma e seu vínculo como docente."
             : "Cole o link ou digite o código curto fornecido pelo professor. Sua entrada será confirmada pelo servidor."}
         </p>
         <button className="button button-outline" disabled={pending}>
-          {pending ? "Aguarde…" : teacher ? "Criar turma" : "Aceitar convite"}
+          {pending ? "Aguarde…" : teacher ? buttonTrigger ? "Salvar turma" : "Criar turma" : "Aceitar convite"}
         </button>
         <OperationStatus message={message} />
       </form>
+  );
+  if (buttonTrigger) return (
+    <section className="classroom-create-action">
+      <button
+        ref={triggerRef}
+        className="button"
+        type="button"
+        aria-expanded={open}
+        aria-controls={`${inputId}-form`}
+        onClick={() => setOpen((current) => !current)}
+      >
+        Criar turma
+      </button>
+      <div id={`${inputId}-form`} className="classroom-create-form" hidden={!open}>
+        {open ? form : null}
+      </div>
+    </section>
+  );
+  return (
+    <details className="paper" style={{ marginBlock: "1rem" }}>
+      <summary>
+        {teacher ? "Criar uma turma" : "Entrar em uma turma por convite"}
+      </summary>
+      {form}
     </details>
   );
 }
@@ -79,5 +119,5 @@ export function ClassroomMembers({ classroom }: { classroom: Classroom }) {
   const [loading,setLoading]=useState(true),[message,setMessage]=useState(''),[revoking,setRevoking]=useState<string|null>(null);
   useEffect(()=>{let active=true;setLoading(true);setMembers([]);setMessage('');pages('members',classroom.id).then(value=>{if(active)setMembers(value);}).catch(reason=>{if(active)setMessage(errorMessage(reason));}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[classroom.id]);
   async function revokeMonitor(id:string){setRevoking(id);setMessage('');try{await api('revokeMember',{params:{id:classroom.id,memberId:id}});setMembers(current=>current.map(member=>member.id===id?{...member,active:false}:member));setMessage('Vínculo de monitor encerrado nesta turma.');}catch(error){setMessage(errorMessage(error));}finally{setRevoking(null);}}
-  return <section className="paper form-stack" style={{marginTop:'1rem'}}><h2>Participantes de {classroom.name}</h2>{loading?<p role="status">Consultando vínculos…</p>:<details><summary>Consultar participantes com vínculo ativo</summary><ul>{members.filter(m=>m.active).map(m=><li key={m.id}>{m.name} · {m.role==='teacher'?'Professor':m.role==='monitor'?'Monitor':'Aluno'} {m.role==='monitor'&&<button type="button" className="text-button" disabled={!!revoking} onClick={()=>void revokeMonitor(m.id)} aria-label={`Encerrar vínculo de monitor de ${m.name}`}>{revoking===m.id?'Encerrando…':'Encerrar vínculo'}</button>}</li>)}</ul></details>}<InviteSharing key={classroom.id} classroom={classroom}/><OperationStatus message={message}/></section>;
+  return <section className="paper form-stack classroom-settings-panel" style={{marginTop:'1rem'}}><h2>Participantes de {classroom.name}</h2>{loading?<p role="status">Consultando vínculos…</p>:<details className="classroom-participants"><summary>Consultar participantes com vínculo ativo</summary><ul className="classroom-member-list">{members.filter(m=>m.active).map(m=><li className="classroom-member-row" key={m.id}><span className="classroom-member-copy">{m.name} · {m.role==='teacher'?'Professor':m.role==='monitor'?'Monitor':'Aluno'}</span>{m.role==='monitor'&&<button type="button" className="button button-outline" disabled={!!revoking} onClick={()=>void revokeMonitor(m.id)} aria-label={`Encerrar vínculo de monitor de ${m.name}`}>{revoking===m.id?'Encerrando…':'Encerrar vínculo'}</button>}</li>)}</ul></details>}<InviteSharing key={classroom.id} classroom={classroom}/><OperationStatus message={message}/></section>;
 }

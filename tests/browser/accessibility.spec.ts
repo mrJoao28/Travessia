@@ -148,8 +148,10 @@ test("editor ordena por teclado e exige revisão antes da publicação local", a
 }) => {
   await page.goto("/previa/professor/atividades/editor");
   await page.getByRole("button", { name: "Continuar para as etapas →" }).click();
-  await page.getByRole("button", { name: "Mover etapa 1 para baixo" }).focus();
-  await page.keyboard.press("Enter");
+  const moveStepDown = page.getByRole("button", {
+    name: "Mover etapa 1 para baixo",
+  });
+  await moveStepDown.press("Space");
   await expect(page.getByLabel("Título da etapa").first()).toHaveValue(
     "Comparar as rotas",
   );

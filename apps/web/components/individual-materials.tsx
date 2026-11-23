@@ -28,7 +28,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
   const [showMoreSupports,setShowMoreSupports]=useState(false);
   const [showActivity,setShowActivity]=useState(false);
   const [activityDirty,setActivityDirty]=useState(false);
-  const [step, setStep] = useState(1), [studentId, setStudentId] = useState("");
+  const [step, setStep] = useState(1), [studentId, setStudentId] = useState(classroomAudience);
   const [delivery,setDelivery]=useState<"original"|"adapted">("original");
   const [downloadAllowed,setDownloadAllowed]=useState(initialDownloadAllowed);
   const [supports, setSupports] = useState<MaterialSupport[]>([]);
@@ -214,7 +214,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     });
   }
   return <section className="simple-material-preparation material-comparison-workspace form-stack" aria-label="Preparar material da turma e adaptações">
-    <header><h2>{recipientChosen?`Apoios para ${recipient}`:'Material da turma e adaptações'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o destinatário.'):'O PDF original vai para toda a turma ao publicar. Escolha a turma, a equipe ou um aluno para preparar uma versão adaptada.'}</p><p className="small">Materiais publicados ficam disponíveis por 365 dias após a publicação. A data aparece em cada arquivo.</p></header>
+    <header><h2>{recipientChosen?`Apoios para ${recipient}`:'Material da turma e adaptações'}</h2><p>{step===3?(current?.status==='draft'?'Escreva a descrição das imagens e gere a prévia para ouvir.':'Compare o original, confira a prévia e disponibilize para o destinatário.'):'O PDF original vai para toda a turma ao publicar. O destinatário inicial da adaptação também é toda a turma; você pode escolher uma equipe ou um aluno.'}</p><p className="small">Materiais publicados ficam disponíveis por 365 dias após a publicação. A data aparece em cada arquivo.</p></header>
     {(error||message)&&<OperationStatus message={error||message} error={!!error}/>}
     {error&&<button className="text-button" type="button" onClick={()=>setRetry(n=>n+1)}>Consultar estado salvo</button>}
     <div className="material-reference-desk">

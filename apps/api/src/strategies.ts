@@ -2,7 +2,7 @@ import type { Prisma, PrismaClient } from '@prisma/client';
 import type { Body, Operation, Paging } from './contracts.js';
 import { serial, type Tx } from './database.js';
 import { fail, missing } from './errors.js';
-import { scopedMission } from './product.service.js';
+import { isInstructorRole, scopedMission } from './product.service.js';
 import { digest } from './rate-limit.js';
 import { verifySupportAudio } from './support-audio.js';
 import { strategyCatalog } from './strategy-catalog.js';
@@ -55,7 +55,7 @@ export class StrategyService {
         if (!item?.audio) return missing();
         const plan = item.plan;
         if (member.role === 'student' && (row.publishedVersionId !== plan.versionId || (plan.audience !== 'classroom' && !plan.recipients.length))) return missing();
-        if (member.role === 'teacher') currentVersion(row, plan.versionId);
+        if (isInstructorRole(member.role)) currentVersion(row, plan.versionId);
         return { base64: Buffer.from(item.audio).toString('base64'), mimeType: 'audio/wav' as const };
       }
       if (op === 'missionSupports') {

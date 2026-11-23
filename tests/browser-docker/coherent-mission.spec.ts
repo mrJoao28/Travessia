@@ -80,7 +80,8 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await teacher.getByRole('button',{name:'Salvar e revisar',exact:true}).click();await teacher.getByRole('checkbox',{name:'Revisei objetivos, critérios, etapas e materiais.',exact:true}).check();
   await teacher.getByRole('button',{name:'Publicar atividade',exact:true}).click();await expect(teacher.getByRole('heading',{name:'Pronto para sua turma!',exact:true})).toBeVisible();
   mission=await teacher.request.get(`/api/v1/activities/${missionId}`).then(r=>r.json());expect(mission.publishedVersion.id).toBe(versionId);
-  for(const suffix of ['apoios','adaptacoes','estrategias']){await teacher.goto(`/professor/atividades/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:'Adaptar material',exact:true})).toBeVisible();}
+  const sections=[['apoios','Materiais e apoios da atividade'],['adaptacoes','Adaptar material para um aluno'],['estrategias','Estratégias de apoio']] as const;
+  for(const [suffix,title] of sections){await teacher.goto(`/professor/atividades/${missionId}/${suffix}`);await expect(teacher.getByRole('heading',{name:title,exact:true})).toBeVisible();}
   // A receives the mission PDF plus the reviewed individual adaptation; B receives the same mission PDF without any per-student release.
   const secondClassroom=await post(teacher,'/api/v1/classrooms',{name:'Outra turma da estudante'});
   const secondInvitation=await post(teacher,`/api/v1/classrooms/${secondClassroom.id}/invitations`,{});
@@ -151,5 +152,28 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await student.setViewportSize({width:320,height:850});expect(await student.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect((await new AxeBuilder({page:student}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
   await student.screenshot({path:'test-results/reference-coherent-student-feedback.png',fullPage:true});
+  await student.goto('/aluno/turmas');
+  student.once('dialog', dialog => dialog.accept());
+  await student.getByRole('button',{name:'Sair da turma Turma do fluxo completo',exact:true}).click();
+  await expect(student.getByRole('heading',{name:'Turma do fluxo completo',exact:true})).toHaveCount(0);
+  expect((await student.request.get('/api/v1/classrooms').then(r=>r.json())).items.some((room:{id:string})=>room.id===classroom.id)).toBe(false);
+  const monitorInvitation=await post(teacher,`/api/v1/classrooms/${classroom.id}/invitations`,{role:'monitor'});
+  await post(other,'/api/v1/invitations/accept',{token:monitorInvitation.code});
+  await other.goto(`/professor?turma=${classroom.id}`);
+  const monitorPanel = other.getByRole('region', {name: classroom.name, exact: true});
+  await expect(monitorPanel.getByRole('heading', {name:'Rotas acessíveis no campus', exact:true})).toBeVisible();
+  await other.setViewportSize({width:320,height:850});
+  expect(await other.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await monitorPanel.getByRole('link', {name:/Acompanhar entregas/}).click();
+  await expect(other).toHaveURL(url => url.pathname === '/professor/entregas' && url.searchParams.get('turma') === classroom.id);
+  await expect(other.getByRole('heading', {name:'Entregas para acompanhar', exact:true})).toBeVisible();
+  await expect(other.getByLabel('Contexto de turma')).toHaveValue(classroom.id);
+  await other.goto(`/professor/turmas?turma=${classroom.id}`);
+  await expect(other.getByRole('heading',{name:'Turma do fluxo completo',exact:true})).toBeVisible();
+  await expect(other.getByText('Monitor · vínculo ativo',{exact:true})).toBeVisible();
+  other.once('dialog', dialog => dialog.accept());
+  await other.getByRole('button',{name:'Sair da turma Turma do fluxo completo',exact:true}).click();
+  await expect(other.getByRole('heading',{name:'Turma do fluxo completo',exact:true})).toHaveCount(0);
+  expect((await other.request.get('/api/v1/classrooms').then(r=>r.json())).items.some((room:{id:string})=>room.id===classroom.id)).toBe(false);
  }finally{await Promise.allSettled(contexts.map(c=>c.close()));}
 });
