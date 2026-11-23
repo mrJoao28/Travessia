@@ -250,6 +250,10 @@ export const apiRoutes = {
     "method": "DELETE",
     "path": "/activities/{id}"
   },
+  "copyMission": {
+    "method": "POST",
+    "path": "/activities/{id}/copy"
+  },
   "publish": {
     "method": "POST",
     "path": "/activities/{id}/publish"

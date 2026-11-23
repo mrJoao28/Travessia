@@ -194,6 +194,38 @@ test('rascunho privado, publicação com revisão explícita e versões imutáve
   const studentView = (await request(`/v1/missions/${created.id}`, a)).json;
   assert.equal(studentView.draftVersion, null); assert.equal(studentView.publishedVersion.title, fixture.title);
 });
+test('copiar atividade cria rascunho em outra turma sem transportar prazos ou histórico', async () => {
+  const source = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', {
+    ...fixture,
+    dueAt: '2026-12-08T12:00:00.000Z',
+    steps: [{ ...fixture.steps[0], dueAt: '2026-12-01T12:00:00.000Z' }],
+  })).json;
+  await request(`/v1/activities/${source.id}/publish`, main, 'POST', { versionId: source.draftVersion.id, reviewed: true });
+  const target = (await request('/v1/classrooms', main, 'POST', { name: 'Turma destino fictícia' })).json;
+  const privateTarget = (await request('/v1/classrooms', otherTeacher, 'POST', { name: 'Turma privada fictícia' })).json;
+  const copyPath = `/v1/activities/${source.id}/copy`;
+  await request(copyPath, '', 'POST', { targetClassroomId: target.id }, 401);
+  await request(copyPath, a, 'POST', { targetClassroomId: target.id }, 404);
+  await request(copyPath, otherTeacher, 'POST', { targetClassroomId: target.id }, 404);
+  await request(copyPath, main, 'POST', { targetClassroomId: workshop }, 400);
+  await request(copyPath, main, 'POST', { targetClassroomId: privateTarget.id }, 404);
+  const copied = (await request(copyPath, main, 'POST', { targetClassroomId: target.id })).json;
+  assert.equal(copied.classroomId, target.id);
+  assert.equal(copied.status, 'draft');
+  assert.equal(copied.publishedVersion, null);
+  assert.equal(copied.draftVersion.title, fixture.title);
+  assert.equal(copied.draftVersion.description, fixture.description);
+  assert.deepEqual(copied.draftVersion.objectives, fixture.objectives);
+  assert.deepEqual(copied.draftVersion.criteria, fixture.criteria);
+  assert.equal(copied.draftVersion.workMode, 'individual');
+  assert.equal(copied.draftVersion.dueAt, null);
+  assert.equal(copied.draftVersion.steps[0].dueAt, null);
+  assert.equal(copied.draftVersion.steps[0].example, fixture.steps[0].example);
+  assert.deepEqual(copied.draftVersion.materials.map((item: { title: string; text: string }) => ({ title: item.title, text: item.text })), fixture.materials);
+  assert.equal((await request(`/v1/activities/${copied.id}/submissions`, main)).json.items.length, 0);
+  assert.equal((await request(`/v1/activities/${source.id}`, main)).json.status, 'published');
+  await request(copyPath, main, 'POST', { targetClassroomId: target.id, status: 'published' }, 400);
+});
 test('entregas: autoria, isolamento A/B, draft privado e controle de concorrência', async () => {
   const mission = (await request(`/v1/missions/${workshop}-mission`, a)).json;
   const input = { versionId: mission.publishedVersion.id, content: 'Rascunho aluno A', completedStepIds: [], currentStepId: mission.publishedVersion.steps[0].id, status: 'draft', expectedRevision: 0 };

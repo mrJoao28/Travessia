@@ -740,6 +740,22 @@ export interface paths {
         patch: operations["editMission"];
         trace?: never;
     };
+    "/v1/activities/{id}/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["copyMission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/activities/{id}/publish": {
         parameters: {
             query?: never;
@@ -4545,6 +4561,114 @@ export interface operations {
                     }[];
                     expectedDraftVersionId: string | null;
                     carryForwardMaterialIds?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        classroomId: string;
+                        /** @enum {string} */
+                        status: "draft" | "published" | "archived";
+                        draftVersion: {
+                            title: string;
+                            description: string;
+                            objectives: string[];
+                            criteria: string[];
+                            dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group" | "mixed";
+                            steps: {
+                                id: string;
+                                position: number;
+                                title: string;
+                                instructions: string;
+                                example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
+                            }[];
+                            materials: {
+                                id: string;
+                                title: string;
+                                text: string;
+                                hasFile: boolean;
+                            }[];
+                            id: string;
+                            missionId: string;
+                            /** @enum {string} */
+                            source: "manual" | "gemini" | "demo_fixture";
+                            /** Format: date-time */
+                            createdAt: string;
+                        } | null;
+                        publishedVersion: {
+                            title: string;
+                            description: string;
+                            objectives: string[];
+                            criteria: string[];
+                            dueAt: string | null;
+                            /** @enum {string} */
+                            workMode: "individual" | "group" | "mixed";
+                            steps: {
+                                id: string;
+                                position: number;
+                                title: string;
+                                instructions: string;
+                                example: string;
+                                dueAt: string | null;
+                                deadlineExtended: boolean;
+                                maxPoints: number | null;
+                            }[];
+                            materials: {
+                                id: string;
+                                title: string;
+                                text: string;
+                                hasFile: boolean;
+                            }[];
+                            id: string;
+                            missionId: string;
+                            /** @enum {string} */
+                            source: "manual" | "gemini" | "demo_fixture";
+                            /** Format: date-time */
+                            createdAt: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    copyMission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    targetClassroomId: string;
                 };
             };
         };

@@ -276,10 +276,39 @@ export class ProductService {
           return pagination(rows.map(barrierView), paging.limit);
         }
       }
-      if (['mission', 'editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op)) {
-        const instructorAction = ['editMission', 'publish', 'archive', 'deleteMission', 'setStepDeadlineExtension', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
-        const mutation = ['editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'setStepDeadlineExtension', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
+      if (['mission', 'copyMission', 'editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op)) {
+        const instructorAction = ['copyMission', 'editMission', 'publish', 'archive', 'deleteMission', 'setStepDeadlineExtension', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
+        const mutation = ['copyMission', 'editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'setStepDeadlineExtension', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
         const { row, member } = await scopedMission(tx, userId, id, instructorAction, mutation);
+        if (op === 'copyMission') {
+          const targetClassroomId = (body as Body<'copyMission'>).targetClassroomId;
+          if (member.role === 'student') return missing();
+          if (targetClassroomId === row.classroomId) return fail(400, 'SAME_CLASSROOM', 'Escolha uma turma diferente da turma original.');
+          const target = await tx.classroom.findFirst({ where: { id: targetClassroomId, archivedAt: null,
+            memberships: { some: { userId, active: true, role: { in: [...instructorRoles] } } } }, select: { id: true } });
+          if (!target) return missing();
+          const sourceVersion = row.draftVersion ?? row.publishedVersion;
+          if (!sourceVersion) return fail(409, 'MISSION_HAS_NO_VERSION', 'A atividade não tem conteúdo para copiar.');
+          const copied = await tx.mission.create({ data: { classroomId: target.id } });
+          const version = await createVersion(tx, copied.id, {
+            title: sourceVersion.title, description: sourceVersion.description,
+            objectives: sourceVersion.objectives as string[], criteria: sourceVersion.criteria as string[],
+            workMode: sourceVersion.workMode as MissionInput['workMode'], dueAt: null,
+            steps: sourceVersion.steps.map(step => ({ title: step.title, instructions: step.instructions, example: step.example, dueAt: null, maxPoints: step.maxPoints })),
+            materials: sourceVersion.materials.map(material => ({ title: material.title, text: material.text })),
+          }, 'manual');
+          const files = await tx.materialSource.findMany({ where: { versionId: sourceVersion.id, status: 'ready', expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 });
+          for (const source of files) {
+            const sourceId = randomUUID();
+            await tx.materialSource.create({ data: { id: sourceId, versionId: version.id, creatorId: userId, title: source.title, downloadAllowed: source.downloadAllowed,
+              hash: source.hash, requestKey: randomUUID(), status: 'ready', pageCount: source.pageCount, pages: source.pages as Prisma.InputJsonValue,
+              warnings: source.warnings as Prisma.InputJsonValue, expiresAt: new Date(Date.now() + MATERIAL_DRAFT_RETENTION_MS) } });
+            await copyMaterialFiles(source.id, sourceId);
+          }
+          const result = await tx.mission.update({ where: { id: copied.id }, data: { draftVersionId: version.id }, include: missionInclude });
+          await tx.auditEvent.create({ data: { actorId: userId, action: 'mission.copy', resourceId: copied.id } });
+          return missionView(result, true);
+        }
         if (op === 'deleteMission') {
           if (member.role !== 'teacher') return missing();
           const [submissions, barriers, files] = await Promise.all([
