@@ -906,6 +906,60 @@ nav a:hover,
   align-items: flex-start;
   border-inline-start: 3px solid var(--primary);
 }
+.card-list .classroom-choice-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 13rem);
+  align-items: center;
+  gap: clamp(0.75rem, 2vw, 1.5rem);
+  padding: 1rem 1.1rem;
+}
+.classroom-choice-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+}
+.classroom-choice-copy h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.15rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.classroom-role-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background: var(--sage);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.classroom-role-badge.is-monitor {
+  background: var(--background);
+  color: var(--muted);
+}
+.classroom-choice-actions {
+  min-width: 0;
+}
+.classroom-choice-actions .button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  padding: 0.65rem 1rem;
+  overflow-wrap: anywhere;
+  text-align: center;
+  white-space: normal;
+}
 .classroom-management-card .classroom-card-copy > :first-child,
 .classroom-choice-card .classroom-card-copy > :first-child {
   margin-top: 0;
@@ -1250,6 +1304,15 @@ nav a:hover,
 @media (max-width: 40rem) {
   .card-list .paper {
     align-items: stretch;
+  }
+  .card-list .classroom-choice-card {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+  .classroom-choice-actions,
+  .classroom-choice-actions .button {
+    width: 100%;
+    box-sizing: border-box;
   }
   .card-list .paper > div:first-child,
   .classroom-card-copy {

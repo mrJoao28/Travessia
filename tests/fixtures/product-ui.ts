@@ -62,10 +62,43 @@ export const submission: ApiResponse<"submission"> = {
   feedback: [],
 };
 
-export async function fixture(page: Page, role: "student" | "teacher" | "monitor") {
+export async function fixture(
+  page: Page,
+  role: "student" | "teacher" | "monitor",
+  options: { multipleClassrooms?: boolean } = {},
+) {
   let classroomArchivedAt: string | null = null;
   const createdClassrooms: { id: string; name: string; role: "teacher"; archivedAt: null; ownerId: string; isOwner: true }[] = [];
   const gradePeriods: ApiResponse<"gradePeriods">["items"] = [];
+  const classroomChoices: ApiResponse<"classrooms">["items"] =
+    role === "teacher" && options.multipleClassrooms
+      ? [
+          {
+            id: "monitor-classroom",
+            name: "Legislação",
+            role: "monitor",
+            archivedAt: null,
+            isOwner: false,
+          },
+          {
+            id: "test-classroom",
+            name: "abacate",
+            role: "teacher",
+            archivedAt: null,
+            ownerId: me.id,
+            isOwner: true,
+          },
+        ]
+      : [
+          {
+            id: "test-classroom",
+            name: role === "student" ? "Programação I" : "Oficina de Projetos Inclusivos",
+            role,
+            archivedAt: null,
+            ownerId: role === "teacher" ? me.id : undefined,
+            isOwner: role === "teacher",
+          },
+        ];
   let mission: ApiResponse<"mission"> = {
     id: "test-mission",
     classroomId: "test-classroom",
@@ -99,25 +132,18 @@ export async function fixture(page: Page, role: "student" | "teacher" | "monitor
               archivedAt: classroomArchivedAt, ownerId: me.id, isOwner: true,
             }] : []
           : classroomArchivedAt ? [] : [
-          {
-            id: "test-classroom",
-            name:
-              role === "student"
-                ? "Programação I"
-                : "Oficina de Projetos Inclusivos",
-            role,
-            archivedAt: classroomArchivedAt,
-            ownerId: role === "teacher" ? me.id : undefined,
-            isOwner: role === "teacher",
-          },
+          ...classroomChoices,
           ...createdClassrooms,
         ],
         nextCursor: null,
       });
     if (path === "/classrooms/test-classroom" && route.request().method() === "DELETE")
       { classroomArchivedAt = version.createdAt; return respond({ archived: true, archivedAt: classroomArchivedAt }); }
-    if (path === "/classrooms/test-classroom/activities")
-      return respond({ items: [mission], nextCursor: null });
+    if (/^\/classrooms\/[^/]+\/activities$/.test(path))
+      return respond({
+        items: path === "/classrooms/test-classroom/activities" ? [mission] : [],
+        nextCursor: null,
+      });
     if (/^\/classrooms\/created-classroom-\d+\/activities$/.test(path))
       return respond({ items: [], nextCursor: null });
     if (path === "/classrooms/test-classroom/members")
