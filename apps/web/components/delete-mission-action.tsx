@@ -19,7 +19,7 @@ export function DeleteMissionAction({
 
   async function remove() {
     if (pending || !window.confirm(
-      `Excluir definitivamente “${missionTitle}” da turma “${classroomName}”? Essa ação remove também entregas, relatos, materiais e histórico associados e não pode ser desfeita.`,
+      `Excluir definitivamente “${missionTitle}” da turma “${classroomName}”? Só é possível excluir atividades sem entregas, relatos ou arquivos. Se houver histórico, use Arquivar atividade.`,
     )) return;
 
     setPending(true);

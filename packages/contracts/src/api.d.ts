@@ -516,6 +516,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/classrooms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["archiveClassroom"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/classrooms/{id}/grade-periods": {
         parameters: {
             query?: never;
@@ -3264,6 +3280,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 cursor?: string;
+                view?: "active" | "archived";
             };
             header?: never;
             path?: never;
@@ -3338,6 +3355,46 @@ export interface operations {
                         archivedAt?: string | null;
                         ownerId?: string;
                         isOwner?: boolean;
+                    };
+                };
+            };
+            /** @description Erro */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        code: string;
+                        message: string;
+                        requestId: string;
+                    };
+                };
+            };
+        };
+    };
+    archiveClassroom: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        archived: true;
+                        /** Format: date-time */
+                        archivedAt: string;
                     };
                 };
             };
