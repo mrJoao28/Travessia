@@ -7,9 +7,19 @@ import {fixture,me,version,submission} from "../fixtures/product-ui";
 test("docente pode criar novas turmas nas áreas de turmas e atividades", async ({ page }) => {
   await fixture(page, "teacher");
   for (const destination of ["/professor", "/professor/atividades"]) {
+    await page.setViewportSize({ width: 1600, height: 900 });
     await page.goto(destination);
     const trigger = page.getByRole("button", { name: "Criar turma", exact: true });
     await expect(trigger).toBeVisible();
+    const desktopAlignment = await trigger.evaluate(button => {
+      const heading = button.closest(".page-heading-with-classroom-action");
+      const copy = heading?.querySelector(".page-heading-copy")?.getBoundingClientRect();
+      const action = button.getBoundingClientRect();
+      return copy ? { copyTop: copy.top, actionTop: action.top, copyRight: copy.right, actionLeft: action.left } : null;
+    });
+    expect(desktopAlignment).not.toBeNull();
+    expect(Math.abs(desktopAlignment!.copyTop - desktopAlignment!.actionTop)).toBeLessThan(2);
+    expect(desktopAlignment!.actionLeft).toBeGreaterThan(desktopAlignment!.copyRight);
     await trigger.focus();
     await page.keyboard.press("Enter");
     const name = page.getByLabel("Nome da turma", { exact: true });
@@ -26,6 +36,8 @@ test("docente pode criar novas turmas nas áreas de turmas e atividades", async 
     await expect(trigger).toBeVisible();
     await page.setViewportSize({ width: 320, height: 800 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const mobileActionWidth = await trigger.evaluate(button => ({ button: button.getBoundingClientRect().width, action: button.parentElement?.getBoundingClientRect().width ?? 0 }));
+    expect(mobileActionWidth.button).toBeGreaterThan(mobileActionWidth.action * 0.9);
   }
 });
 

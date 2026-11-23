@@ -7,9 +7,18 @@ test.describe("Área de Avaliações e Notas do Professor", () => {
     page,
   }) => {
     await fixture(page, "teacher");
+    await page.setViewportSize({ width: 1600, height: 1000 });
     await page.goto("/professor?turma=test-classroom");
 
     // 1. Localizar e abrir disclosure de avaliações
+    const tools = page.locator(".teacher-dashboard-tools");
+    const collapsedLayout = await tools.evaluate(grid => Array.from(grid.children).map(card => {
+      const rect = card.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, top: rect.top };
+    }));
+    expect(collapsedLayout).toHaveLength(2);
+    expect(Math.abs(collapsedLayout[0].top - collapsedLayout[1].top)).toBeLessThan(2);
+    expect(collapsedLayout[1].left).toBeGreaterThan(collapsedLayout[0].right);
     const disclosure = page.locator("details.gradebook-disclosure");
     await expect(disclosure).toBeVisible();
     const summary = disclosure.locator("summary");

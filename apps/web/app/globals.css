@@ -1691,7 +1691,7 @@ body {
 .teacher-disclosure-hint { color: var(--muted); font-size: .9rem; font-weight: 400; }
 @container (max-width: 40rem) {
   .page-heading-with-classroom-action { align-items: stretch; }
-  .page-heading-with-classroom-action .classroom-create-action { align-self: stretch; margin-inline-start: 0; }
+  .page-heading-with-classroom-action .classroom-create-action { align-self: stretch; width: 100%; margin-inline-start: 0; }
   .page-heading-with-classroom-action .classroom-create-action > .button { width: 100%; }
 }
 .teacher-ai > form { margin-top: 1rem; }
