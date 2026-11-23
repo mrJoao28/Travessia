@@ -205,7 +205,8 @@ export function LiveMission({
   }
   function navigate(next: number) {
     if (next === index) return;
-    const nextStep = version.steps[next];
+    const nextStep = mission?.publishedVersion?.steps[next];
+    if (!nextStep) return;
     const updatedResponses = { ...stepResponses, [step.id]: content };
     setStepResponses(updatedResponses);
     setContent(updatedResponses[nextStep.id] ?? "");
