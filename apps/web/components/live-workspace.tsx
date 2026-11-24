@@ -424,7 +424,6 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
     0,
     version.steps.findIndex((step) => step.id === submission?.currentStepId),
   );
-  const current = version.steps[index];
   const firstMission=entries.every(e=>e.submissions.length===0);
   return (
     <>
@@ -433,7 +432,12 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
           <p className="eyebrow accent">{entry.classroom.name}</p>
           <h2 id="mission-title">{version.title}</h2>
           <p>{version.description}</p>
-          <p className="small">Atividade {index + 1} de {version.steps.length} · {current?.title}</p>
+          <div className="student-stage-indicator">
+            <span id="student-current-stage-label">Etapa {index + 1} de {version.steps.length}</span>
+            <div className="student-stage-progress-track" role="progressbar" aria-labelledby="student-current-stage-label" aria-valuemin={1} aria-valuemax={version.steps.length} aria-valuenow={index + 1} aria-valuetext={`Etapa ${index + 1} de ${version.steps.length}`}>
+              <span style={{ width: `${((index + 1) / version.steps.length) * 100}%` }} />
+            </div>
+          </div>
           <Link className="button" href={`/aluno/atividades/${entry.mission.id}`}>
             {firstMission ? "Começar minha primeira atividade" : "Continuar atividade"}
             <Icon name="arrow" />
@@ -660,10 +664,11 @@ function SubmissionList({
                 </blockquote>
               ))}
               <Link
-                className="text-link"
+                className={role === "aluno" ? "button button-outline student-open-activity-button" : "text-link"}
                 href={`/${role}/atividades/${entry.mission.id}`}
+                aria-label={`Abrir atividade: ${(entry.mission.publishedVersion ?? entry.mission.draftVersion)?.title ?? "atividade"}`}
               >
-                Consultar atividade
+                {role === "aluno" ? "Abrir atividade" : "Consultar atividade"}
               </Link>
               {role === "professor" && (
                 <TeacherFeedback missionId={entry.mission.id} submission={submission} steps={submission.gradingSteps} />

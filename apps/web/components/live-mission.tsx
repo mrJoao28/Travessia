@@ -288,7 +288,7 @@ export function LiveMission({
     if (!saved) return;
     const next = index + 1;
     navigate(next);
-    setMessage(`Etapa ${index + 1} salva como rascunho. Agora você está na etapa ${next + 1} de ${version?.steps.length ?? 0}.`);
+    setMessage(`Etapa ${next + 1} de ${version?.steps.length ?? 0}.`);
   }
   function dismissSubmitConfirmation() {
     setConfirmSubmit(false);
@@ -323,16 +323,23 @@ export function LiveMission({
       {started && <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
         <div className="form-stack">
           <section className="paper preview-student-stage form-stack" id="etapas">
-            <nav className="student-step-pagination" aria-label={role === "aluno" ? "Paginação das atividades" : "Paginação das etapas"}>
+            <nav className="student-step-pagination" aria-label="Navegação das etapas">
               <button
                 className="button button-outline"
                 disabled={pending || index === 0}
-                aria-label={role === "aluno" ? "Atividade anterior" : "Etapa anterior"}
+                aria-label="Etapa anterior"
                 onClick={() => navigate(index - 1)}
               >
                 Anterior
               </button>
-              <span className="eyebrow">{role === "aluno" ? "Atividade" : "Etapa"} {index + 1} de {version.steps.length}</span>
+              {role === "aluno" ? (
+                <div className="student-stage-indicator">
+                  <span id="student-current-stage-label">Etapa {index + 1} de {version.steps.length}</span>
+                  <div className="student-stage-progress-track" role="progressbar" aria-labelledby="student-current-stage-label" aria-valuemin={1} aria-valuemax={version.steps.length} aria-valuenow={index + 1} aria-valuetext={`Etapa ${index + 1} de ${version.steps.length}`}>
+                    <span style={{ width: `${((index + 1) / version.steps.length) * 100}%` }} />
+                  </div>
+                </div>
+              ) : <span className="eyebrow">Etapa {index + 1} de {version.steps.length}</span>}
             </nav>
             {role === "aluno" ? <h2 ref={title} tabIndex={-1}><strong>Título da atividade:</strong> {step.title}</h2> : <h2 ref={title} tabIndex={-1}>{step.title}</h2>}
             {(step.dueAt || version.dueAt) && <p className="small"><strong>Prazo desta atividade:</strong> {step.deadlineExtended ? "Prazo individual prorrogado até " : ""}{formatDeadline(step.dueAt ?? version.dueAt!, timeZone)}</p>}

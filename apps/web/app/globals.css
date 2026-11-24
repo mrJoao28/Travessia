@@ -2443,7 +2443,19 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .preview-student-continue > .path-art { flex: 0 1 20rem; max-width: 100%; align-self: center; }
 .preview-student-other { margin-top: 1.25rem; }
 .preview-student-other .card-list { margin: .6rem 0 0; gap: .5rem; }
-.preview-student-other .card-list > li { padding: .75rem 1rem; flex-wrap: wrap; }
+.preview-student-other .card-list > li { padding: .75rem 1rem; flex-wrap: wrap; align-items: center; }
+.preview-activity-open-button,
+.student-open-activity-button {
+  min-height: 2.9rem;
+  min-width: 10.5rem;
+  gap: .55rem;
+  font-weight: 700;
+}
+.preview-activity-open-button { justify-content: space-between; }
+.preview-activity-open-button > span { font-size: 1.15em; line-height: 1; }
+.preview-activity-open-button:hover:not(:disabled),
+.student-open-activity-button:hover:not(:disabled) { box-shadow: 0 0 0 3px var(--sage); }
+.student-open-activity-button { margin-top: .65rem; }
 .preview-student-mission.form-stack { gap: .75rem; }
 .preview-student-mission > .paper { padding: clamp(.85rem, 2cqi, 1.4rem); }
 .preview-student-stage h2, .preview-student-stage p { margin: 0; }
@@ -2471,13 +2483,47 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: .35rem .6rem;
   padding-bottom: .5rem;
   border-bottom: 1px solid var(--border);
 }
 .student-step-pagination .button { padding: .35rem .65rem; min-height: 44px; }
-.student-step-pagination .eyebrow { color: var(--muted); }
-.student-step-pagination .eyebrow { margin-inline-start: auto; }
+.student-stage-indicator {
+  display: grid;
+  gap: .4rem;
+  width: min(100%, 13rem);
+  margin-inline-start: auto;
+  padding: .55rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: .8rem;
+  background: var(--sage);
+  color: var(--primary);
+  font-size: .82rem;
+  font-weight: 750;
+  letter-spacing: .035em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.student-stage-progress-track {
+  height: .42rem;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--surface);
+}
+.student-stage-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+@media (max-width: 40rem) {
+  .student-step-pagination { align-items: stretch; }
+  .student-stage-indicator { width: min(100%, 11rem); }
+  .preview-activity-open-button,
+  .student-open-activity-button { min-width: 0; }
+  .preview-student-other .preview-activity-open-button { width: 100%; }
+}
 
 /* Use one recognizable disclosure-button pattern for optional actions. */
 .action-disclosure > summary {

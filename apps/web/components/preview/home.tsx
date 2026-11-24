@@ -41,7 +41,7 @@ export function PreviewHome({role,route}:{role:'aluno'|'professor';route:string}
     const answer=answerFor(m.id,m.revision);
     return <li key={m.id} className="paper">
      <div><h3>{m.title}</h3><p className="small">{answer?.feedback?'Feedback disponível':answer?.status==='submitted'?'Atividade enviada':`${answer?.completed.length??0} de ${m.steps.length} atividades concluídas`}</p></div>
-     <Link className="text-link" href={`/previa/aluno/atividades/${m.id}`} aria-label={`Abrir atividade: ${m.title}`}>Abrir atividade</Link>
+     <Link className="button button-outline preview-activity-open-button" href={`/previa/aluno/atividades/${m.id}`} aria-label={`Abrir atividade: ${m.title}`}>Abrir atividade <span aria-hidden="true">→</span></Link>
     </li>;
    })}</ul>
   </section>}

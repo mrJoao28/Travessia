@@ -39,7 +39,7 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
   const answer={id:saved?.id??previewId(),missionId:mission!.id,revision:mission!.revision,studentId:student.id,content:content.trim()||'Resposta em anexo fictício.',completed,step:index,status,audio:formats.includes('audio')&&audio,textFile:formats.includes('text_file')&&textFile,feedback:saved?.feedback??''};
   update(s=>({...s,submissions:[...s.submissions.filter(x=>!(x.missionId===mission!.id&&x.revision===mission!.revision&&x.studentId===student.id)),answer]}));setDirty(false);setMessage(status==='submitted'?'Envio simulado registrado. A professora fictícia pode consultar esta resposta neste navegador.':simulatedSave);return true;
  }
- function saveAndAdvance(){if(index>=mission!.steps.length-1)return;if(save('draft')){go(index+1);setMessage(`Etapa ${index+1} salva como rascunho. Agora você está na etapa ${index+2} de ${mission!.steps.length}.`);}}
+ function saveAndAdvance(){if(index>=mission!.steps.length-1)return;if(save('draft')){go(index+1);setMessage(`Etapa ${index+2} de ${mission!.steps.length}.`);}}
  function dismissSubmitConfirmation(){setConfirmSubmit(false);requestAnimationFrame(()=>finalizeButton.current?.focus());}
  return <><Link className="text-link" href="/previa/aluno">← Voltar ao meu percurso</Link><PreviewHeading title={mission.title} description={started?`${student.name} · ${state.classrooms.find(c=>c.id===mission.classroomId)?.name}`:mission.description}/>
  <div className="preview-student-mission form-stack">
@@ -49,10 +49,13 @@ export function PreviewStudentMission({missionId}:{missionId:string}){
   <button type="button" className="button" onClick={()=>setStarted(true)}>{saved?.status==='draft'?'Continuar atividade':saved?'Consultar atividade':'Clique aqui para iniciar'}</button>
  </section> : <>
  <section className="paper form-stack preview-student-stage" aria-labelledby="preview-stage-heading">
-  <div className="student-step-pagination">
+ <nav className="student-step-pagination" aria-label="Navegação das etapas">
    <button type="button" className="button button-outline" aria-label="Etapa anterior" disabled={index===0} onClick={()=>go(index-1)}>Anterior</button>
-   <span className="eyebrow">Atividade {index+1} de {mission.steps.length}</span>
+  <div className="student-stage-indicator">
+   <span id="preview-current-stage-label">Etapa {index+1} de {mission.steps.length}</span>
+   <div className="student-stage-progress-track" role="progressbar" aria-labelledby="preview-current-stage-label" aria-valuemin={1} aria-valuemax={mission.steps.length} aria-valuenow={index+1} aria-valuetext={`Etapa ${index+1} de ${mission.steps.length}`}><span style={{width:`${((index+1)/mission.steps.length)*100}%`}}/></div>
   </div>
+ </nav>
   <h2 id="preview-stage-heading" ref={heading} tabIndex={-1}><strong>Título da atividade:</strong> {step.title}</h2>
   <p><strong>Descrição da atividade: </strong>{adapted || step.instructions}</p>
   {(adapted || step.example || activityStrategies.length>0)&&<details className="example" key={index}>
