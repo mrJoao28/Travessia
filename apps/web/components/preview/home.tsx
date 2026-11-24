@@ -30,7 +30,10 @@ export function PreviewHome({role,route}:{role:'aluno'|'professor';route:string}
    <p className="eyebrow">{state.classrooms.find(c=>c.id===active.classroomId)?.name}</p>
    <h2 id="preview-current-mission">{active.title}</h2>
    <p>{active.description}</p>
-   <p className="small">{submission?.feedback?'Feedback disponível':submission?.status==='submitted'?'Atividade enviada · aguardando feedback':`Atividade ${(submission?.step??0)+1} de ${active.steps.length} · ${active.steps[submission?.step??0]?.title}`}</p>
+   {submission?.feedback ? <p className="small">Feedback disponível</p> : submission?.status==='submitted' ? <p className="small">Atividade enviada · aguardando feedback</p> : <div className="student-stage-indicator">
+    <span id="preview-home-stage-label">Etapa {(submission?.step??0)+1} de {active.steps.length}</span>
+    <div className="student-stage-progress-track" role="progressbar" aria-labelledby="preview-home-stage-label" aria-valuemin={1} aria-valuemax={active.steps.length} aria-valuenow={(submission?.step??0)+1} aria-valuetext={`Etapa ${(submission?.step??0)+1} de ${active.steps.length}`}><span style={{width:`${(((submission?.step??0)+1)/active.steps.length)*100}%`}}/></div>
+   </div>}
    <Link className="button" href={`/previa/aluno/atividades/${active.id}`}>{submission?.status==='submitted'?'Consultar atividade':submission?'Continuar minha atividade':'Abrir atividade'}</Link>
    </div>
    <PathIllustration sizes="(max-width: 600px) 208px, 320px"/>
