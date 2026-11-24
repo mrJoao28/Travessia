@@ -88,7 +88,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await post(student,'/api/v1/invitations/accept',{token:secondInvitation.token});
   const materialsRequest=`**/api/v1/activities/${missionId}/my-materials?*`;
   await student.route(materialsRequest,async route=>{await new Promise(resolve=>setTimeout(resolve,750));await route.continue();});
-  await student.goto(`/aluno/atividades/${missionId}`);await student.getByRole('button',{name:'Clique aqui para iniciar',exact:true}).click();await expect(student.locator('#etapas h2')).toContainText('Comparar rotas');
+  await student.goto(`/aluno/atividades/${missionId}`);await student.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
   const prepared=student.getByRole('region',{name:'PDFs e materiais da atividade',exact:true});
   await expect(prepared.getByRole('status')).toHaveText('Consultando materiais da atividade…');
   await expect(prepared.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toHaveCount(2);
@@ -103,6 +103,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   const audio=await prepared.locator('audio').getAttribute('src');expect(audio).toBeTruthy();const playback=await student.request.get(audio!, {headers:{Range:'bytes=0-31'}});
   expect(playback.status()).toBe(206);expect(playback.headers()['content-type']).toBe('audio/mpeg');
   expect(playback.headers()['content-range']).toMatch(/^bytes 0-31\//);
+  await student.getByRole('button',{name:'Clique aqui para iniciar',exact:true}).click();await expect(student.locator('#etapas h2')).toContainText('Comparar rotas');
   await student.getByText('Consultar enunciado adaptado',{exact:true}).click();await expect(student.getByText('Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.',{exact:true})).toBeVisible();
   await other.goto(`/aluno/atividades/${missionId}`);await other.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
   const originalRegion=other.getByRole('region',{name:'PDFs e materiais da atividade',exact:true});

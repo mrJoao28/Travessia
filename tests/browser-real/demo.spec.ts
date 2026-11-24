@@ -323,12 +323,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   const createdMissionResponse = await page.request.get(`/api/v1/missions/${createdMissionId}`);
   expect(createdMissionResponse.status()).toBe(200);
   const inclusiveMission = await createdMissionResponse.json();
-  await page.getByRole('link', { name: 'Preparar apoios desta atividade', exact: true }).click();
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
-  await page.getByText('Ajustar instruções ou entregas para a turma inteira', {exact:true}).click();
-  await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link')).toHaveCount(3);
-  await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
-  await page.getByRole('checkbox', { name: 'Estudante Fictício 1', exact: true }).check();
+  await page.goto(`/professor/atividades/${createdMissionId}/adaptacoes`);
+  await page.getByLabel('Aluno que receberá esta adaptação', { exact: true }).selectOption({ label: 'Estudante Fictício 1' });
   await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
   await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.');
   await page.getByText(/^Formas de entrega/).click();
@@ -392,6 +388,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByText('Objetivos e critérios da atividade', { exact: true }).click();
     await expect(page.getByText('Justificar uma escolha.', { exact: true })).toBeVisible();
     await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Clique aqui para iniciar', exact: true }).click();
     if (suffix === 'A') {
       await page.getByText('Consultar enunciado adaptado', { exact: true }).click();
       await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: true })).toBeVisible();
@@ -402,6 +399,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
       await expect(page.getByText('Rascunho e atividade atual salvos no servidor.', { exact: true })).toBeVisible();
       await page.reload();
+      await page.getByRole('button', { name: 'Continuar atividade', exact: true }).click();
       await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();
       page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
