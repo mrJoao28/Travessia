@@ -143,7 +143,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await student.unroute(submissionsRequest);
   await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await expect(student.getByRole('status').filter({hasText:'Rascunho e atividade atual salvos no servidor.'})).toBeVisible();
   await student.getByLabel('O que dificultou esta atividade?',{exact:true}).fill('Preciso de uma descrição mais clara do obstáculo apresentado no exemplo.');
-  await student.getByRole('checkbox',{name:'Compartilhar com o(a) professor(a) a dificuldade encontrada',exact:true}).check();await student.getByRole('button',{name:'Enviar relato',exact:true}).click();
+  await student.getByRole('checkbox',{name:'Compartilhar com o(a) professor(a) a dificuldade encontrada',exact:true}).check();await student.keyboard.press('Tab');
   await expect(student.getByText('Relato salvo e compartilhado com os docentes desta turma.',{exact:true})).toBeVisible();
   await teacher.goto(`/professor/barreiras?turma=${classroom.id}`);await teacher.getByLabel('Responder ao estudante',{exact:true}).fill('O obstáculo é a ausência de passagem livre. Compare as alternativas de acesso.');await teacher.getByRole('button',{name:'Enviar resposta',exact:true}).click();await expect(teacher.getByText('Resposta salva e disponível para o autor do relato.',{exact:true})).toBeVisible();
   await student.goto(`/aluno/barreiras?turma=${classroom.id}`);await expect(student.getByText('O obstáculo é a ausência de passagem livre. Compare as alternativas de acesso.',{exact:true})).toBeVisible();

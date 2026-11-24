@@ -133,11 +133,14 @@ test("prévia preserva atividade e não fabrica salvamento", async ({ page }) =>
   await page.getByRole("button", { name: "Próxima atividade" }).click();
   await expect(page.getByRole("heading", { name: "Título da atividade: Planejar a solução", exact: true })).toBeFocused();
 });
-test("barreira informa destinatário antes do envio", async ({ page }) => {
+test("relato de barreira é salvo ao sair do formulário", async ({ page }) => {
   await page.goto("/previa/aluno/barreiras");
   await expect(page.locator("#recipients")).toHaveCount(0);
-  await expect(page.getByText("O compartilhamento só será realizado após clicar no botão Enviar relato.", { exact: true })).toBeVisible();
+  await expect(page.getByText(/salvo automaticamente quando você sair deste formulário/)).toBeVisible();
+  await page.getByLabel("O que dificultou esta atividade?").fill("Preciso de uma explicação mais clara.");
   await page.getByLabel("Compartilhar com o(a) professor(a) a dificuldade encontrada").check();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("status")).toContainText("compartilhado com a professora");
 });
 test("editor ordena por teclado e exige revisão antes da publicação local", async ({
   page,
