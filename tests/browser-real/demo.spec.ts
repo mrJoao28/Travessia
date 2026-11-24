@@ -467,6 +467,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
   await page.goto(`/aluno/atividades/${inclusiveMission.id}`);
+  await page.getByRole('button', { name: 'Consultar atividade', exact: true }).click();
   await expect(page.getByText(feedback, { exact: true })).toBeVisible();
   await expect(page.getByText('Revisada', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Escreva a sua resposta', { exact: true })).toHaveCount(0);

@@ -57,6 +57,7 @@ test('prévia conecta criação, apoios simulados, PDF, áudio, aluno e feedback
  await page.getByLabel('Anexar resposta fictícia em áudio').check();
  await page.getByLabel('Anexar arquivo de texto fictício (.txt)').check();
  await page.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await page.reload();
+ await page.getByRole('button',{name:'Continuar atividade',exact:true}).click();
  await expect(page.getByLabel('Escreva a sua resposta')).toHaveValue(/Comparei 180 m/);
  await expect(page.getByLabel('Anexar resposta fictícia em áudio')).toBeChecked();
  await page.getByRole('button',{name:'Enviar atividade',exact:true}).click();
@@ -65,7 +66,7 @@ test('prévia conecta criação, apoios simulados, PDF, áudio, aluno e feedback
  const item=page.locator('li.paper').filter({has:page.getByRole('heading',{name:'Uma rota melhor para nossa biblioteca',exact:true})});
  await item.getByLabel('Orientação para o próximo passo').fill('Você comparou os dados. Explique como verificará a legibilidade das placas.');
  await item.getByRole('button',{name:'Publicar feedback'}).click();
- await page.goto(url);await expect(page.getByRole('heading',{name:'Feedback da professora'})).toBeVisible();
+ await page.goto(url);await page.getByRole('button',{name:'Consultar atividade',exact:true}).click();await expect(page.getByRole('heading',{name:'Feedback da professora'})).toBeVisible();
  await expect(page.getByText('Você comparou os dados. Explique como verificará a legibilidade das placas.',{exact:true})).toBeVisible();
  await page.getByLabel('Aluno fictício').selectOption('preview-student-2');
  await expect(page.getByRole('region',{name:'PDFs e materiais da atividade'})).toHaveCount(0);
