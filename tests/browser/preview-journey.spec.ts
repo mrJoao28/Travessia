@@ -121,13 +121,16 @@ test('pedidos são opcionais, perfil não compartilhado não gera recomendaçõe
  await expect(page.getByRole('radio',{name:/Explicação direta, em passos/})).toBeChecked();
  await page.goto('/previa/aluno/barreiras');
  await page.getByLabel('O que dificultou esta atividade?').fill('RELATO PRIVADO DE TESTE');
- await page.getByRole('button',{name:'Enviar relato',exact:true}).click();
+ await page.getByLabel('O que dificultou esta atividade?').press('Tab');
+ await page.keyboard.press('Tab');
+ await expect(page.getByRole('status')).toContainText('Relato privado simulado salvo');
  await page.goto('/previa/professor/barreiras');
  await expect(page.getByText('RELATO PRIVADO DE TESTE',{exact:true})).toHaveCount(0);
  await page.goto('/previa/aluno/barreiras');
  await page.getByLabel('O que dificultou esta atividade?').fill('Preciso de um exemplo da segunda etapa.');
  await page.getByLabel('Compartilhar com o(a) professor(a) a dificuldade encontrada').check();
- await page.getByRole('button',{name:'Enviar relato',exact:true}).click();
+ await page.getByRole('heading',{name:'O que podemos tornar mais claro?'}).click();
+ await expect(page.getByRole('status')).toContainText('compartilhado com a professora');
  await page.goto('/previa/professor/barreiras');
  const report=page.locator('section.paper').filter({has:page.getByText('Preciso de um exemplo da segunda etapa.',{exact:true})});
  await report.getByLabel('Responder ao estudante').fill('Compare as rotas A e C usando distância e condições observadas.');
