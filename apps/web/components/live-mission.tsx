@@ -288,7 +288,7 @@ export function LiveMission({
     if (!saved) return;
     const next = index + 1;
     navigate(next);
-    setMessage(`Etapa ${index + 1} salva como rascunho. Agora você está na etapa ${next + 1} de ${version.steps.length}.`);
+    setMessage(`Etapa ${index + 1} salva como rascunho. Agora você está na etapa ${next + 1} de ${version?.steps.length ?? 0}.`);
   }
   function dismissSubmitConfirmation() {
     setConfirmSubmit(false);
