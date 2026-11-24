@@ -433,7 +433,7 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
           <p className="eyebrow accent">{entry.classroom.name}</p>
           <h2 id="mission-title">{version.title}</h2>
           <p>{version.description}</p>
-          <p className="small">Etapa {index + 1} de {version.steps.length} · {current?.title}</p>
+          <p className="small">Atividade {index + 1} de {version.steps.length} · {current?.title}</p>
           <Link className="button" href={`/aluno/atividades/${entry.mission.id}`}>
             {firstMission ? "Começar minha primeira atividade" : "Continuar atividade"}
             <Icon name="arrow" />
