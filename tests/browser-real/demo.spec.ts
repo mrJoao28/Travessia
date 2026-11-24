@@ -29,7 +29,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     page.getByRole("link", { name: "Continuar atividade" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Atividade 2 de 5 · Planejar a solução", { exact: true }),
+    page.getByText("Etapa 2 de 5", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("Ambiente de demonstração · dados fictícios", {
@@ -121,9 +121,21 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
         .analyze()
     ).violations,
   ).toEqual([]);
-  page.once('dialog', dialog => dialog.accept());
-  await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
+  const progress = page.getByRole('progressbar');
+  const totalSteps = Number(await progress.getAttribute('aria-valuemax'));
+  let currentStep = Number(await progress.getAttribute('aria-valuenow'));
+  while (currentStep < totalSteps) {
+    if (currentStep > 2) {
+      await page.getByLabel('Escreva a sua resposta').fill(`Resposta de planejamento da etapa ${currentStep}.`);
+    }
+    await page.getByRole('button', { name: `Salvar e avançar para a etapa ${currentStep + 1}`, exact: true }).click();
+    currentStep++;
+    await expect(progress).toHaveAttribute('aria-valuenow', String(currentStep));
+  }
+  await page.getByRole('button', { name: 'Finalizar e enviar atividade', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirmar envio', exact: true }).click();
   await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
+  await page.getByText('Encontrou uma dificuldade?', { exact: true }).click();
   await page.getByLabel('O que dificultou esta atividade?').fill('Exemplo de relato privado criado no teste integrado.');
   await page.getByLabel('O que dificultou esta atividade?').press('Tab');
   await page.keyboard.press('Tab');
@@ -363,12 +375,15 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       expect(await response.text()).not.toContain('Apoio individual de A');
     }
     await page.getByRole('button', { name: /Clique aqui para iniciar|Continuar atividade|Consultar atividade/ }).click();
-    const pagination = page.getByRole('navigation', { name: 'Paginação das atividades' });
-    const previous = pagination.getByRole('button', { name: 'Atividade anterior', exact: true });
+    const pagination = page.getByRole('navigation', { name: 'Navegação das etapas' });
+    const previous = pagination.getByRole('button', { name: 'Etapa anterior', exact: true });
     await expect(previous).toBeVisible();
     const stage = page.locator('#etapas h2');
     await expect(stage).toBeVisible();
-    await page.getByRole('button', { name: 'Próxima atividade', exact: true }).click();
+    const progress = page.getByRole('progressbar');
+    const previousStep = Number(await progress.getAttribute('aria-valuenow')) - 1;
+    await previous.click();
+    await expect(progress).toHaveAttribute('aria-valuenow', String(previousStep));
     await expect(page.locator('#etapas h2')).toBeFocused();
     if (suffix === 'A') {
       await page.goto('/aluno/apoios');
@@ -398,8 +413,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.reload();
       await page.getByRole('button', { name: 'Continuar atividade', exact: true }).click();
       await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();
-      page.once('dialog', dialog => dialog.accept());
-  await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
+      await page.getByRole('button', { name: 'Finalizar e enviar atividade', exact: true }).click();
+      await page.getByRole('button', { name: 'Confirmar envio', exact: true }).click();
       await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
     } else {
       await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: false })).toHaveCount(0);
