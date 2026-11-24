@@ -30,6 +30,7 @@ model User {
   ledMissionGroups MissionGroup[] @relation("groupLeader")
   missionParticipations MissionParticipation[]
   submissions   Submission[]
+  updatedSubmissions Submission[] @relation("SubmissionLastEditor")
   submissionValidations SubmissionStepValidation[]
   studentDeadlineExtensions StepDeadlineExtension[] @relation("studentDeadlineExtensions")
   teacherDeadlineExtensions StepDeadlineExtension[] @relation("teacherDeadlineExtensions")
@@ -144,6 +145,7 @@ enum MissionStatus {
 }
 enum SubmissionStatus {
   draft
+  partial
   submitted
   reviewed
 }
@@ -309,6 +311,9 @@ model Submission {
   hasTextFile Boolean @default(false)
   completedStepIds Json
   stepCompletedAt Json @default("{}")
+  submittedStepIds Json @default("[]")
+  submittedStepAt Json @default("{}")
+  updatedById String?
   currentStepId String
   revision Int @default(1)
   attempt Int @default(1)
@@ -318,6 +323,7 @@ model Submission {
   updatedAt DateTime @updatedAt
   version MissionVersion @relation(fields: [versionId], references: [id])
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedBy User? @relation("SubmissionLastEditor", fields: [updatedById], references: [id], onDelete: SetNull)
   feedback Feedback[]
   validations SubmissionStepValidation[]
   @@unique([versionId, userId, attempt])
@@ -341,13 +347,15 @@ model MissionGroup {
   missionId String
   name String @db.VarChar(150)
   leaderId String?
+  archivedAt DateTime?
   mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
   leader User? @relation("groupLeader", fields: [leaderId], references: [id], onDelete: SetNull)
   members MissionGroupMember[]
   participations MissionParticipation[]
   submissions Submission[]
-  @@unique([missionId, name])
   @@index([leaderId])
+  @@index([missionId, archivedAt])
+  @@index([missionId, name])
 }
 model MissionGroupMember {
   groupId String

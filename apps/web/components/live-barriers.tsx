@@ -12,11 +12,9 @@ import { OperationStatus } from "./operation-status";
 export function BarrierComposer({
   stepId,
   stepTitle,
-  classroomName,
 }: {
   stepId: string;
   stepTitle: string;
-  classroomName: string;
 }) {
   const [description, setDescription] = useState("");
   const [target, setTarget] = useState({ id: stepId, title: stepTitle });
@@ -28,7 +26,7 @@ export function BarrierComposer({
   const [message, setMessage] = useState("");
   return (
     <>
-      <h2>Encontrou uma barreira?</h2>
+      <h2>Registre eventuais barreiras para cumprir a atividade</h2>
       <p>
         Relato sobre a etapa: <strong>{target.title}</strong>.
       </p>
@@ -79,18 +77,12 @@ export function BarrierComposer({
             checked={shared}
             onChange={(e) => setShared(e.target.checked)}
           />
-          Compartilhar com os docentes desta turma
+          Compartilhar com o(a) professor(a) a dificuldade encontrada
         </label>
-        <p className="notice" id="barrier-recipients">
-          <strong>Quem poderá ler:</strong>{" "}
-          {shared
-            ? `você e os docentes com vínculo ativo em ${classroomName}.`
-            : "somente você. O relato não será mostrado ao professor."}
-        </p>
+        <p className="small">O compartilhamento só será realizado após clicar no botão Enviar relato.</p>
         <button
           className="button button-outline"
           disabled={pending}
-          aria-describedby="barrier-recipients"
         >
           {pending ? "Enviando…" : "Enviar relato"}
         </button>

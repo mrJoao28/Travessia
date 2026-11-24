@@ -571,6 +571,7 @@ function TeacherDashboard({
                 </Link>
               )}
               {(room.role === 'teacher' || room.role === 'monitor') && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Configurar materiais e apoios</Link>}
+              {room.role === 'teacher' && (mission.draftVersion ?? mission.publishedVersion)?.workMode !== 'individual' && <Link className="text-link" href={`/professor/atividades/${mission.id}`}>Designar equipes e integrantes</Link>}
               {(room.role === 'teacher' || room.role === 'monitor') && <Link
                 className="button button-outline"
                 href={`/professor/entregas?atividade=${encodeURIComponent(mission.id)}&turma=${encodeURIComponent(room.id)}`}

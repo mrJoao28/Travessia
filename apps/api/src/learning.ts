@@ -26,7 +26,7 @@ type Plan = Prisma.ActivityAdaptationGetPayload<{ include: typeof include }>;
 const view = (p: Plan) => ({ id: p.id, versionId: p.versionId, stepId: p.stepId, audience: p.audience, instructions: p.instructions, example: p.example,
   supportNeeds: p.supportNeeds, allowedFormats: p.allowedFormats, studentIds: p.recipients.map(r => r.userId), revision: p.revision });
 export async function learnerPlans(tx: Tx, versionId: string, userId: string) {
-  return tx.activityAdaptation.findMany({ where: { versionId, OR: [{ audience: 'classroom' }, { audience: 'students', recipients: { some: { userId } } }] }, orderBy: { id: 'asc' } });
+  return tx.activityAdaptation.findMany({ where: { versionId, audience: 'students', recipients: { some: { userId } } }, orderBy: { id: 'asc' } });
 }
 export function allowedFormats(plans: { allowedFormats: Prisma.JsonValue }[]) {
   return [...new Set(['text', ...plans.flatMap(p => z.array(responseFormat).parse(p.allowedFormats))])];

@@ -278,20 +278,59 @@ test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega ún
   assert.equal((await request(`/v1/submissions/${first.id}`, b)).json.stepResponses[stepOne.id], 'Texto coletivo');
   await request(`/v1/submissions/${first.id}`, c, 'GET', undefined, 404);
   await request(`/v1/submissions/${first.id}`, main, 'GET', undefined, 404);
-  await request(`${path}/groups/${team.id}`, main, 'DELETE', undefined, 409);
   await request(`${path}/submissions`, b, 'POST', { ...input, content: 'Resposta conjunta', status: 'submitted', expectedRevision: second.revision }, 403);
   await request(`${path}/submissions`, a, 'POST', { ...input, status: 'submitted', expectedRevision: second.revision }, 409);
-  for (const step of [stepOne, stepTwo]) {
-    for (const [cookie, expectedRevision] of [[a, second.stepRevisions[step.id]], [b, second.stepRevisions[step.id]]] as const) {
-      await request(`/v1/submissions/${first.id}/steps/${step.id}/validate`, cookie, 'POST', { expectedStepRevision: expectedRevision });
-    }
-  }
+  for (const cookie of [a, b]) await request(`/v1/submissions/${first.id}/steps/${stepOne.id}/validate`, cookie, 'POST', { expectedStepRevision: second.stepRevisions[stepOne.id] });
+  const beforePartial = (await request(`/v1/submissions/${first.id}`, a)).json;
+  assert.equal(beforePartial.validations[0].userName, 'Aluno e professor fictício');
+  await request(`${path}/submissions`, b, 'POST', { ...input, status: 'draft', submitStepIds: [stepOne.id], expectedRevision: beforePartial.revision }, 403);
+  const partial = (await request(`${path}/submissions`, a, 'POST', { ...input, status: 'draft', submitStepIds: [stepOne.id], expectedRevision: beforePartial.revision })).json;
+  assert.equal(partial.status, 'partial');
+  assert.deepEqual(partial.submittedStepIds, [stepOne.id]);
+  assert.ok(partial.submittedStepAt[stepOne.id]);
+  assert.equal(partial.updatedById, 'demo-student-1');
+  const teacherPartial = (await request(`${path}/submissions`, main)).json.items[0];
+  assert.deepEqual(Object.keys(teacherPartial.stepResponses), [stepOne.id]);
+  assert.equal(teacherPartial.stepResponses[stepTwo.id], undefined);
+  assert.equal((await request(`/v1/submissions/${first.id}`, main)).json.stepResponses[stepTwo.id], undefined);
+  for (const cookie of [a, b]) await request(`/v1/submissions/${first.id}/steps/${stepTwo.id}/validate`, cookie, 'POST', { expectedStepRevision: partial.stepRevisions[stepTwo.id] });
   const current = (await request(`/v1/submissions/${first.id}`, a)).json;
   const submitted = (await request(`${path}/submissions`, a, 'POST', { ...input, content: 'Texto coletivo', status: 'submitted', expectedRevision: current.revision })).json;
   assert.equal(submitted.id, first.id);
   assert.equal(submitted.userId, 'demo-student-1');
   assert.equal((await request(`${path}/submissions`, main)).json.items.length, 1);
   await request(`${path}/submissions`, a, 'POST', { ...input, expectedRevision: submitted.revision }, 409);
+});
+test('remoção de equipe preserva entregas, histórico de acesso e libera nova designação', async () => {
+  const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', { ...fixture, workMode: 'group' })).json;
+  const path = `/v1/missions/${created.id}`;
+  const version = created.draftVersion;
+  const step = version.steps[0];
+  const team = (await request(`${path}/groups`, main, 'POST', { name: 'Equipe antiga', studentIds: ['demo-student-1', 'demo-student-2'] })).json;
+  await request(`${path}/publish`, main, 'POST', { versionId: version.id, reviewed: true });
+  const input = { versionId: version.id, content: 'Resposta da equipe antiga', stepId: step.id, stepResponses: { [step.id]: 'Resposta da equipe antiga' }, completedStepIds: [], currentStepId: step.id, status: 'draft', expectedRevision: 0 };
+  const draft = (await request(`${path}/submissions`, a, 'POST', input)).json;
+  await request(`/v1/submissions/${draft.id}/steps/${step.id}/validate`, a, 'POST', { expectedStepRevision: draft.stepRevisions[step.id] });
+  await request(`/v1/submissions/${draft.id}/steps/${step.id}/validate`, b, 'POST', { expectedStepRevision: draft.stepRevisions[step.id] });
+  const current = (await request(`/v1/submissions/${draft.id}`, a)).json;
+  const submitted = (await request(`${path}/submissions`, a, 'POST', { ...input, status: 'submitted', expectedRevision: current.revision })).json;
+  const renamed = (await request(`${path}/groups/${team.id}`, main, 'PATCH', { name: 'Equipe corrigida', leaderId: 'demo-student-2', studentIds: team.studentIds })).json;
+  assert.equal(renamed.name, 'Equipe corrigida');
+  assert.equal(renamed.leaderId, 'demo-student-2');
+  assert.equal(renamed.hasSubmissions, true);
+  await request(`${path}/groups/${team.id}`, main, 'PATCH', { name: 'Equipe corrigida', leaderId: 'demo-student-1', studentIds: ['demo-student-1', 'demo-student-3'] }, 409);
+  await request(`${path}/groups/${team.id}`, main, 'DELETE');
+  assert.deepEqual((await request(`${path}/groups`, main)).json.items, []);
+  assert.deepEqual((await request(`${path}/groups`, a)).json.items, []);
+  assert.equal((await request(`${path}/submissions`, main)).json.items[0].id, submitted.id);
+  assert.equal((await request(`/v1/submissions/${submitted.id}`, b)).json.content, 'Resposta da equipe antiga');
+  await request(`/v1/submissions/${submitted.id}`, otherTeacher, 'GET', undefined, 404);
+  const replacement = (await request(`${path}/groups`, main, 'POST', { name: 'Equipe antiga', studentIds: ['demo-student-1', 'demo-student-2'] })).json;
+  const next = (await request(`${path}/submissions`, a, 'POST', { ...input, status: 'draft', expectedRevision: 0 })).json;
+  assert.equal(next.groupId, replacement.id);
+  assert.equal(next.attempt, 2);
+  assert.equal((await request(`/v1/submissions/${submitted.id}`, b)).json.id, submitted.id);
+  await request(`/v1/submissions/${submitted.id}`, otherTeacher, 'GET', undefined, 404);
 });
 test('atividade mista: líder, edição de membros e exceção individual', async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', { ...fixture, workMode: 'mixed' })).json;
@@ -760,8 +799,11 @@ test('adaptações e respostas multimodais: autorização por aluno, bytes priva
 test('adaptação valida versões, edições concorrentes, arquivos de texto e formatos revogados', async () => {
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', fixture)).json;
   const v = created.draftVersion; const path = `/v1/missions/${created.id}`;
-  const input = { versionId: v.id, stepId: null, audience: 'classroom', studentIds: [], instructions: 'Enunciado adaptado.', example: '', supportNeeds: [], allowedFormats: ['text', 'text_file', 'audio'], reviewed: true, requestKey: randomUUID() };
+  const input = { versionId: v.id, stepId: null, audience: 'students', studentIds: ['demo-student-1'], instructions: 'Enunciado adaptado.', example: '', supportNeeds: [], allowedFormats: ['text', 'text_file', 'audio'], reviewed: true, requestKey: randomUUID() };
+  await request(`${path}/adaptations`, main, 'POST', { ...input, audience: 'classroom', studentIds: [] }, 400);
+  await request(`${path}/adaptations`, main, 'POST', { ...input, studentIds: ['demo-student-1', 'demo-student-2'] }, 400);
   const plan = (await request(`${path}/adaptations`, main, 'POST', input)).json;
+  await db.activityAdaptation.create({ data: { versionId: v.id, stepId: null, audience: 'classroom', instructions: 'Adaptação antiga de turma que não deve aparecer.', example: '', supportNeeds: [], allowedFormats: ['audio'], requestKey: randomUUID(), requestHash: randomUUID() } });
   await request(`${path}/my-adaptations?versionId=${v.id}`, a, 'GET', undefined, 404);
   await request(`${path}/publish`, main, 'POST', { versionId: v.id, reviewed: true });
   const response = { versionId: v.id, content: '', currentStepId: v.steps[0].id, completedStepIds: [], status: 'submitted', expectedRevision: 0 };
@@ -772,6 +814,8 @@ test('adaptação valida versões, edições concorrentes, arquivos de texto e f
   const concurrent = await Promise.all(['A', 'B'].map(instructions => fetch(base + `${path}/adaptations/${plan.id}`, { method: 'PATCH', headers: { cookie: main, origin: config.origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...edit, instructions, expectedRevision: 1 }) })));
   assert.deepEqual(concurrent.map(r => r.status).sort(), [200, 409]);
   const savedDraft = (await request(`${path}/submissions`, a, 'POST', { ...response, status: 'draft', audio: wavFixture() })).json;
+  assert.equal((await request(`${path}/my-adaptations?versionId=${v.id}`, a)).json.items.length, 1);
+  assert.deepEqual((await request(`${path}/my-adaptations?versionId=${v.id}`, a)).json.allowedFormats, ['text', 'text_file', 'audio']);
   await request(`${path}/adaptations/${plan.id}/remove`, main, 'POST', { expectedRevision: 2 });
   await request(`${path}/submissions`, a, 'POST', { ...response, status: 'draft', content: 'Texto preservado.', expectedRevision: savedDraft.revision }, 409);
   await request(`${path}/submissions`, a, 'POST', { ...response, status: 'draft', content: 'Texto preservado.', audio: null, expectedRevision: savedDraft.revision });
@@ -816,6 +860,24 @@ test('PDF da missão publicada aparece para toda a turma com autorização ativa
     const download = await fetch(`${base}${path}/material-assets/${source.id}/download`, { headers: { cookie } });
     assert.equal(download.status, 200);
     assert.match(download.headers.get('content-disposition') ?? '', /^attachment;/i);
+  }
+  // Uploading an activity PDF to an already published version must make it
+  // visible through the learner materials list as soon as verification ends.
+  const lateBytes = Buffer.from('%PDF-1.4\n edital publicado depois da atividade');
+  const lateSource = (await request(`${path}/material-sources`, main, 'POST', {
+    versionId, title: 'Edital.pdf', downloadAllowed: true,
+    base64: lateBytes.toString('base64'), requestKey: randomUUID(),
+  })).json;
+  assert.equal((await request(`${path}/my-materials?versionId=${versionId}`, a)).json.items.length, 2);
+  await db.materialSource.update({ where: { id: lateSource.id }, data: { status: 'ready', pageCount: 1 } });
+  await writeFile(materialPath(lateSource.id, 'original.pdf'), lateBytes);
+  for (const cookie of [a, b]) {
+    const publishedItems = (await request(`${path}/my-materials?versionId=${versionId}`, cookie)).json.items;
+    assert.ok(publishedItems.some((item: { id: string; title: string; status: string }) =>
+      item.id === lateSource.id && item.title === 'Edital.pdf' && item.status === 'ready'));
+    const edital = await fetch(`${base}${path}/material-assets/${lateSource.id}/pdf`, { headers: { cookie } });
+    assert.equal(edital.status, 200);
+    assert.deepEqual(Buffer.from(await edital.arrayBuffer()), lateBytes);
   }
   await request(`${path}/my-materials?versionId=${versionId}`, '', 'GET', undefined, 401);
   await request(`${path}/my-materials?versionId=${versionId}`, otherTeacher, 'GET', undefined, 404);
