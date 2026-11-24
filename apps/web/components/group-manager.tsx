@@ -25,7 +25,7 @@ export function GroupManager({ missionId }: { missionId: string }) {
   }, [missionId]);
   const assigned = new Set(groups.flatMap(group => group.studentIds));
   async function create() {
-    if (pending || selected.length < 2 || !name.trim()) return;
+    if (pending || selected.length < 1 || !name.trim()) return;
     setPending(true); setMessage("");
     try {
       const group = await api("createGroup", { params: { id: missionId }, body: { name: name.trim(), leaderId: leaderId || null, studentIds: selected } });
@@ -36,7 +36,7 @@ export function GroupManager({ missionId }: { missionId: string }) {
     finally { setPending(false); }
   }
   async function update(group: Group) {
-    if (pending || selected.length < 2) return;
+    if (pending || selected.length < 1) return;
     setPending(true); setMessage("");
     try {
       const changed = await api("updateGroup", { params: { id: missionId, groupId: group.id }, body: { name: name.trim(), leaderId: leaderId || null, studentIds: selected } });
@@ -93,13 +93,15 @@ export function GroupManager({ missionId }: { missionId: string }) {
         {selected.map(id => <option key={id} value={id}>{students.find(student => student.id === id)?.name ?? id}</option>)}
       </select>
     </label>}
-    {selected.length < 2 && <p className="small" role="status" aria-live="polite">
-      {selected.length === 0
-        ? "Selecione pelo menos 2 estudantes para criar uma equipe."
-        : "Falta selecionar mais 1 estudante. Uma equipe precisa ter pelo menos 2 integrantes."}
+    {(selected.length === 0 || !name.trim()) && <p className="small" role="status" aria-live="polite">
+      {selected.length === 0 && !name.trim()
+        ? "Informe o nome da equipe e selecione pelo menos 1 estudante."
+        : selected.length === 0
+          ? "Selecione pelo menos 1 estudante para criar uma equipe."
+          : "Informe o nome da equipe para habilitar a criação."}
     </p>}
     <div className="button-row">
-      <button type="button" className="button button-outline" disabled={pending || !name.trim() || selected.length < 2} onClick={() => editing ? void update(groups.find(group => group.id === editing)!) : void create()}>{editing ? "Salvar equipe" : "Criar equipe"}</button>
+      <button type="button" className="button button-outline" disabled={pending || !name.trim() || selected.length < 1} onClick={() => editing ? void update(groups.find(group => group.id === editing)!) : void create()}>{editing ? "Salvar equipe" : "Criar equipe"}</button>
       {editing && <button type="button" className="text-button" disabled={pending} onClick={() => { setEditing(null); setSelected([]); setLeaderId(""); }}>Cancelar edição</button>}
     </div>
     <fieldset className="teacher-choice-list"><legend>Exceção individual nesta atividade</legend>
