@@ -8567,533 +8567,6 @@
         }
       }
     },
-    "/v1/classrooms/{id}/teams": {
-      "get": {
-        "operationId": "classroomTeams",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "items": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
-                          },
-                          "classroomId": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
-                          },
-                          "name": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 200
-                          },
-                          "leaderId": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
-                          },
-                          "members": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "string",
-                                  "minLength": 1,
-                                  "maxLength": 100
-                                },
-                                "name": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "id",
-                                "name"
-                              ],
-                              "additionalProperties": false
-                            }
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "classroomId",
-                          "name",
-                          "leaderId",
-                          "members"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "items"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Erro",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "code",
-                    "message",
-                    "requestId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "createClassroomTeam",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$schema": "https://json-schema.org/draft/2020-12/schema",
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 200
-                  },
-                  "leaderId": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
-                  "studentIds": {
-                    "minItems": 2,
-                    "maxItems": 50,
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    }
-                  }
-                },
-                "required": [
-                  "name",
-                  "leaderId",
-                  "studentIds"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    },
-                    "classroomId": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 200
-                    },
-                    "leaderId": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    },
-                    "members": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
-                          },
-                          "name": {
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "name"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "classroomId",
-                    "name",
-                    "leaderId",
-                    "members"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Erro",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "code",
-                    "message",
-                    "requestId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/classrooms/{id}/teams/{teamId}": {
-      "patch": {
-        "operationId": "updateClassroomTeam",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            }
-          },
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$schema": "https://json-schema.org/draft/2020-12/schema",
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 200
-                  },
-                  "leaderId": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 100
-                  },
-                  "studentIds": {
-                    "minItems": 2,
-                    "maxItems": 50,
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    }
-                  }
-                },
-                "required": [
-                  "name",
-                  "leaderId",
-                  "studentIds"
-                ],
-                "additionalProperties": false
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    },
-                    "classroomId": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 200
-                    },
-                    "leaderId": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 100
-                    },
-                    "members": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 100
-                          },
-                          "name": {
-                            "type": "string"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "name"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "classroomId",
-                    "name",
-                    "leaderId",
-                    "members"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Erro",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "code",
-                    "message",
-                    "requestId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deleteClassroomTeam",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            }
-          },
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$schema": "https://json-schema.org/draft/2020-12/schema",
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 100
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "removed": {
-                      "type": "boolean",
-                      "const": true
-                    }
-                  },
-                  "required": [
-                    "removed"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          },
-          "default": {
-            "description": "Erro",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "requestId": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "code",
-                    "message",
-                    "requestId"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/classrooms/{id}/members": {
       "get": {
         "operationId": "members",
@@ -10006,6 +9479,9 @@
                                       "mixed"
                                     ]
                                   },
+                                  "studentsCanFormTeams": {
+                                    "type": "boolean"
+                                  },
                                   "steps": {
                                     "type": "array",
                                     "items": {
@@ -10141,6 +9617,7 @@
                                   "criteria",
                                   "dueAt",
                                   "workMode",
+                                  "studentsCanFormTeams",
                                   "steps",
                                   "materials",
                                   "id",
@@ -10210,6 +9687,9 @@
                                       "mixed"
                                     ]
                                   },
+                                  "studentsCanFormTeams": {
+                                    "type": "boolean"
+                                  },
                                   "steps": {
                                     "type": "array",
                                     "items": {
@@ -10345,6 +9825,7 @@
                                   "criteria",
                                   "dueAt",
                                   "workMode",
+                                  "studentsCanFormTeams",
                                   "steps",
                                   "materials",
                                   "id",
@@ -10493,6 +9974,9 @@
                       "group",
                       "mixed"
                     ]
+                  },
+                  "studentsCanFormTeams": {
+                    "type": "boolean"
                   },
                   "steps": {
                     "minItems": 1,
@@ -10669,6 +10153,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -10804,6 +10291,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -10873,6 +10361,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -11008,6 +10499,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -11169,6 +10661,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -11304,6 +10799,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -11373,6 +10869,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -11508,6 +11007,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -11642,6 +11142,9 @@
                       "group",
                       "mixed"
                     ]
+                  },
+                  "studentsCanFormTeams": {
+                    "type": "boolean"
                   },
                   "steps": {
                     "minItems": 1,
@@ -11840,6 +11343,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -11975,6 +11481,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -12044,6 +11551,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -12179,6 +11689,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -12434,6 +11945,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -12569,6 +12083,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -12638,6 +12153,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -12773,6 +12291,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -12961,6 +12480,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -13096,6 +12618,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -13165,6 +12688,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -13300,6 +12826,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -13474,6 +13001,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -13609,6 +13139,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",
@@ -13678,6 +13209,9 @@
                                 "mixed"
                               ]
                             },
+                            "studentsCanFormTeams": {
+                              "type": "boolean"
+                            },
                             "steps": {
                               "type": "array",
                               "items": {
@@ -13813,6 +13347,7 @@
                             "criteria",
                             "dueAt",
                             "workMode",
+                            "studentsCanFormTeams",
                             "steps",
                             "materials",
                             "id",

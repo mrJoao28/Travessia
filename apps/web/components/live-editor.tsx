@@ -26,6 +26,7 @@ function editable(version: Version): Input {
     criteria: version.criteria,
     dueAt: version.dueAt,
     workMode: version.workMode,
+    studentsCanFormTeams: version.studentsCanFormTeams,
     steps: version.steps.map((step) => ({
       title: step.title,
       instructions: step.instructions,
@@ -51,6 +52,7 @@ const empty: Input = {
   criteria: [""],
   dueAt: null,
   workMode: "individual",
+  studentsCanFormTeams: false,
   steps: [{ title: "", instructions: "", example: "" }],
   materials: [],
 };
@@ -273,12 +275,16 @@ export function LiveEditor({
                 />
               </label>
               <label htmlFor="editor-work-mode">Forma de realização
-                <select id="editor-work-mode" value={input.workMode ?? "individual"} onChange={e => change({ ...input, workMode: e.target.value as "individual" | "group" | "mixed" })}>
+                <select id="editor-work-mode" value={input.workMode ?? "individual"} onChange={e => { const workMode = e.target.value as "individual" | "group" | "mixed"; change({ ...input, workMode, ...(workMode === "individual" ? { studentsCanFormTeams: false } : {}) }); }}>
                   <option value="individual">Individual: cada aluno envia sua atividade</option>
                   <option value="group">Em grupo: uma entrega compartilhada por equipe</option>
                   <option value="mixed">Individual ou grupo: o professor pode abrir exceções</option>
                 </select>
               </label>
+              {input.workMode !== "individual" && <div className="form-stack">
+                <label className="check"><input type="checkbox" checked={input.studentsCanFormTeams ?? false} onChange={e => change({ ...input, studentsCanFormTeams: e.target.checked })} aria-describedby="editor-student-team-help" />Permitir que os alunos criem a própria equipe ao iniciar esta atividade</label>
+                <p className="small" id="editor-student-team-help">Quando desativado, o professor designa as equipes na página da atividade. A permissão vale somente para esta versão publicada.</p>
+              </div>}
               <label htmlFor="editor-objectives">
                 Objetivos de aprendizagem · um por linha
                 <textarea

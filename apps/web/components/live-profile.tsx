@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { api, pages, errorMessage, type ApiBody, type ApiResponse } from "../lib/product-client";
+import { api, errorMessage, type ApiBody, type ApiResponse } from "../lib/product-client";
 import { Workspace } from "./workspace";
 import { OperationStatus } from "./operation-status";
-import { ClassroomTeamManager } from "./classroom-team-manager";
 
 type Profile = ApiResponse<"profile">;
 type Saved = (value: Profile) => void;
@@ -15,12 +14,11 @@ export function LiveProfile({ role }: { role: "aluno" | "professor" }) {
   const [me, setMe] = useState<ApiResponse<"me"> | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
-  const [classrooms, setClassrooms] = useState<ApiResponse<"classrooms">["items"]>([]);
   useEffect(() => {
     const controller = new AbortController();
     setError("");
-    void Promise.all([api("profile", { signal: controller.signal }), api("me", { signal: controller.signal }), pages("classrooms")])
-      .then(([profile, account, rooms]) => { if (!controller.signal.aborted) { setData(profile); setMe(account); setClassrooms(rooms.filter(room => room.role === "student")); } })
+    void Promise.all([api("profile", { signal: controller.signal }), api("me", { signal: controller.signal })])
+      .then(([profile, account]) => { if (!controller.signal.aborted) { setData(profile); setMe(account); } })
       .catch(reason => { if (!controller.signal.aborted) setError(errorMessage(reason)); });
     return () => controller.abort();
   }, [attempt]);
@@ -37,7 +35,6 @@ export function LiveProfile({ role }: { role: "aluno" | "professor" }) {
       <ContactForm initial={data} onSaved={setData} />
       <p>Você pode preencher os dois perfis. Seus dados acadêmicos ficam na sua conta; o acesso a cada turma depende do vínculo com ela.</p>
       <StudentForm initial={data} onSaved={setData} />
-      {role === "aluno" && data.id && classrooms.map(room => <ClassroomTeamManager key={room.id} classroomId={room.id} classroomName={room.name} viewerId={data.id} />)}
       <TeacherForm initial={data} onSaved={setData} />
     </div>}
   </Workspace>;

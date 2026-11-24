@@ -11,7 +11,7 @@ import { SubmissionMedia } from "./submission-media";
 import { LearnerMaterials } from "./learner-materials";
 import { readStudentDraft, storeStudentDraft } from "../lib/student-draft";
 import { MissionSupports } from "./mission-supports";
-import { GroupManager } from "./group-manager";
+import { GroupManager, StudentTeamFormation } from "./group-manager";
 
 export function LiveMission({
   id,
@@ -27,6 +27,7 @@ export function LiveMission({
   const [mission, setMission] = useState<Mission | null>(null);
   const [team, setTeam] = useState<string | null>(null);
   const [teamGroup, setTeamGroup] = useState<ApiResponse<"groups">["items"][number] | null>(null);
+  const [ownTeam, setOwnTeam] = useState<ApiResponse<"groups">["items"][number] | null>(null);
   const [teamMode, setTeamMode] = useState<"group" | "individual" | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [index, setIndex] = useState(0);
@@ -90,6 +91,7 @@ export function LiveMission({
         setDirty(!!recover);
         setMission(value);
         const ownTeam = groups.items.find(group => group.studentIds.includes(viewerId)) ?? null;
+        setOwnTeam(ownTeam);
         setTeamGroup(groups.participationMode === "group" ? ownTeam : null);
         setTeamMode(groups.participationMode);
         setTeam(ownTeam?.name ?? null);
@@ -200,7 +202,7 @@ export function LiveMission({
   if (!classroom || !step)
     return <p className="paper">Este contexto não está disponível.</p>;
   const locked = !!submission && !["draft", "partial"].includes(submission.status) && !submission.revisionRequested;
-  const requiresTeam = version.workMode === "group" || (version.workMode === "mixed" && teamMode === "group");
+  const requiresTeam = (version.workMode === "group" && teamMode !== "individual") || (version.workMode === "mixed" && teamMode === "group");
   const allMembersValidated = Boolean(submission && teamGroup && submission.groupId === teamGroup.id && !dirty && version.steps.every(item => {
     const response = submission.stepResponses?.[item.id] ?? "";
     return response.trim() && teamGroup.studentIds.every(memberId => submission.validations?.some(validation =>
@@ -317,7 +319,9 @@ export function LiveMission({
           <MissionSupports missionId={id} versionId={version.id} steps={version.steps.map(item => ({ id: item.id, title: item.title }))} />
         </details>
         <details className="preview-student-context"><summary>Objetivos e critérios da atividade</summary><h3>Objetivos de aprendizagem</h3><ul>{version.objectives.map((item, i) => <li key={i}>{item}</li>)}</ul><h3>Critérios de avaliação</h3><ul>{version.criteria.map((item, i) => <li key={i}>{item}</li>)}</ul></details>
-        <button type="button" className="button" onClick={() => setStarted(true)}>{dirty || (submission && !locked) ? "Continuar atividade" : submission ? "Consultar atividade" : "Clique aqui para iniciar"}</button>
+        {version.workMode !== "individual" && version.studentsCanFormTeams && teamMode === null && !ownTeam && <StudentTeamFormation missionId={id} classroomId={classroom.id} viewerId={viewerId} currentTeam={ownTeam} required={version.workMode === "group"} onCreated={group => { setOwnTeam(group); setTeamGroup(group); setTeamMode("group"); setTeam(group.name); }} />}
+        {version.workMode === "group" && requiresTeam && !teamGroup && <p className="notice" role="status">O professor ainda precisa designar sua equipe para esta atividade.</p>}
+        <button type="button" className="button" disabled={version.workMode === "group" && requiresTeam && !teamGroup} onClick={() => setStarted(true)}>{dirty || (submission && !locked) ? "Continuar atividade" : submission ? "Consultar atividade" : (!version.workMode || version.workMode === "individual") ? "Clique aqui para iniciar" : version.workMode === "mixed" && teamMode !== "group" ? "Começar atividade individual" : "Começar atividade"}</button>
       </section> : <section className="paper">{role === "professor" && <p className="eyebrow accent">{classroom.name}</p>}<h2>{version.title}</h2><p>{version.description}</p>{role === "professor" && version.workMode !== "individual" && <p>{version.workMode === "mixed" ? "Atividade individual ou em grupo · confira a forma de entrega de cada aluno." : "Atividade em grupo · uma entrega por equipe."}</p>}{role === "professor" && version.dueAt && <p>Entrega prevista: {new Date(version.dueAt).toLocaleDateString("pt-BR")}</p>}</section>}
       {role === "professor" && version.workMode !== "individual" && <GroupManager missionId={id} />}
       {started && <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>

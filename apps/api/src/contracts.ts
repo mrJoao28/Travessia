@@ -14,19 +14,19 @@ export const preferences = z.strictObject({ fontSize: z.enum(['default', 'large'
   spacing: z.enum(['default', 'wide']).optional(), contrast: z.enum(['default', 'high']).optional(), reducedDistractions: z.boolean().optional() });
 export const missionInput = z.strictObject({ title: short, description: text, objectives: z.array(short).min(1).max(10),
   criteria: z.array(short).min(1).max(10), dueAt: date.nullable().optional(), workMode: z.enum(['individual', 'group', 'mixed']).optional(),
+  studentsCanFormTeams: z.boolean().optional(),
   steps: z.array(z.strictObject({ title: short, instructions: text, example: text,
     dueAt: date.nullable().optional(), maxPoints: z.number().int().min(0).max(100).nullable().optional() })).min(1).max(10),
   materials: z.array(z.strictObject({ title: short, text })).max(10) });
 export type MissionInput = z.infer<typeof missionInput>;
 const version = missionInput.extend({ id, missionId: id, source: z.enum(['manual', 'gemini', 'demo_fixture']),
-  createdAt: date, dueAt: date.nullable(), workMode: z.enum(['individual', 'group', 'mixed']),
+  createdAt: date, dueAt: date.nullable(), workMode: z.enum(['individual', 'group', 'mixed']), studentsCanFormTeams: z.boolean(),
   steps: z.array(z.strictObject({ id, position: z.number().int(), title: short, instructions: text, example: text,
     dueAt: date.nullable(), deadlineExtended: z.boolean(), maxPoints: z.number().int().min(0).max(100).nullable() })),
   materials: z.array(z.strictObject({ id, title: short, text, hasFile: z.boolean() })) });
 const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', 'published', 'archived']),
   draftVersion: version.nullable(), publishedVersion: version.nullable() });
 const classroom = z.strictObject({ id, name: short, shift: z.string().nullable().optional(), role: z.enum(['student', 'teacher', 'monitor']), archivedAt: date.nullable().optional(), ownerId: id.optional(), isOwner: z.boolean().optional() });
-const classroomTeam = z.strictObject({ id, classroomId: id, name: short, leaderId: id, members: z.array(z.strictObject({ id, name: z.string() })) });
 const gradePeriod = z.strictObject({ id, classroomId: id, name: short, formula: z.enum(['weighted_average', 'simple_average', 'sum']), startsAt: date.nullable(), endsAt: date.nullable(), assessments: z.array(z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() })) });
 const gradebook = z.strictObject({ period: gradePeriod, students: z.array(z.strictObject({ studentId: id, name: z.string(), assessments: z.array(z.strictObject({ assessmentId: id, missionId: id, title: short, value: z.number().nullable(), weight: z.number().int().positive() })), average: z.number().nullable() })) });
 const stepScore = z.strictObject({ stepId: id, points: z.number().int().min(0).max(100), comment: z.string().trim().max(1000) });
@@ -132,10 +132,6 @@ export const routes = {
   createGradePeriod: { method: 'post', path: '/v1/classrooms/{id}/grade-periods', body: z.strictObject({ name: short, startsAt: date.nullable().optional(), endsAt: date.nullable().optional() }), query: empty, response: gradePeriod },
   addGradeAssessment: { method: 'post', path: '/v1/grade-periods/{id}/assessments', body: z.strictObject({ missionId: id, weight: z.number().int().positive().max(100) }), query: empty, response: z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() }) },
   gradebook: { method: 'get', path: '/v1/grade-periods/{id}/gradebook', body: empty, query: empty, response: gradebook },
-  classroomTeams: { method: 'get', path: '/v1/classrooms/{id}/teams', body: empty, query: empty, response: z.strictObject({ items: z.array(classroomTeam) }) },
-  createClassroomTeam: { method: 'post', path: '/v1/classrooms/{id}/teams', body: z.strictObject({ name: short, leaderId: id, studentIds: unique(id, 50).min(2) }), query: empty, response: classroomTeam },
-  updateClassroomTeam: { method: 'patch', path: '/v1/classrooms/{id}/teams/{teamId}', body: z.strictObject({ name: short, leaderId: id, studentIds: unique(id, 50).min(2) }), query: empty, response: classroomTeam },
-  deleteClassroomTeam: { method: 'delete', path: '/v1/classrooms/{id}/teams/{teamId}', body: empty, query: empty, response: z.strictObject({ removed: z.literal(true) }) },
   members: { method: 'get', path: '/v1/classrooms/{id}/members', body: empty, query: page,
     response: list(z.strictObject({ id, name: z.string(), role: z.enum(['student', 'teacher', 'monitor']), active: z.boolean() })) },
   leaveClassroom: { method: 'post', path: '/v1/classrooms/{id}/leave', body: empty, query: empty, response: z.strictObject({ left: z.literal(true) }) },
