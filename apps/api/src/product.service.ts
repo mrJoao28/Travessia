@@ -18,7 +18,8 @@ import { MATERIAL_DRAFT_RETENTION_MS, publishedMaterialExpiry } from './material
 const versionInclude = { steps: { orderBy: { position: 'asc' as const } }, materials: true };
 const missionInclude = { draftVersion: { include: versionInclude }, publishedVersion: { include: versionInclude } };
 const submissionInclude = { feedback: { orderBy: { createdAt: 'asc' as const } },
-  validations: { orderBy: [{ stepId: 'asc' as const }, { validatedAt: 'asc' as const }] },
+  updatedBy: { select: { name: true } },
+  validations: { orderBy: [{ stepId: 'asc' as const }, { validatedAt: 'asc' as const }], include: { user: { select: { name: true } } } },
   version: { include: { steps: { orderBy: { position: 'asc' as const }, include: { deadlineExtensions: true } } } } };
 type MissionRow = Prisma.MissionGetPayload<{ include: typeof missionInclude }>;
 
@@ -31,14 +32,18 @@ export function missionView(row: MissionRow, teacher: boolean) {
   return { id: row.id, classroomId: row.classroomId, status: row.status,
     draftVersion: teacher ? version(row.draftVersion) : null, publishedVersion: version(row.publishedVersion) };
 }
-export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof submissionInclude }>) {
+export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof submissionInclude }>, teacher = false) {
   const completions = s.stepCompletedAt && typeof s.stepCompletedAt === 'object' && !Array.isArray(s.stepCompletedAt)
     ? s.stepCompletedAt as Record<string, string> : {};
   const stepResponses = (s.stepResponses && typeof s.stepResponses === 'object' && !Array.isArray(s.stepResponses) ? s.stepResponses : {}) as Record<string, string>;
   const stepRevisions = (s.stepRevisions && typeof s.stepRevisions === 'object' && !Array.isArray(s.stepRevisions) ? s.stepRevisions : {}) as Record<string, number>;
-  return { id: s.id, versionId: s.versionId, userId: s.userId, groupId: s.groupId, status: s.status, content: s.content, stepResponses, stepRevisions,
-    validations: s.validations.map(validation => ({ stepId: validation.stepId, userId: validation.userId, validatedAt: validation.validatedAt,
-      current: validation.contentHash === (stepResponses[validation.stepId] ?? (s.currentStepId === validation.stepId ? s.content : '')) })), hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
+  const submittedStepIds = Array.isArray(s.submittedStepIds) ? s.submittedStepIds.filter((stepId): stepId is string => typeof stepId === 'string') : [];
+  const visibleResponses = teacher && s.status === 'partial' ? Object.fromEntries(Object.entries(stepResponses).filter(([stepId]) => submittedStepIds.includes(stepId))) : stepResponses;
+  const partialTeacherView = teacher && s.status === 'partial';
+  return { id: s.id, versionId: s.versionId, userId: s.userId, updatedById: s.updatedById, updatedByName: s.updatedBy?.name ?? null, groupId: s.groupId, status: s.status, content: partialTeacherView ? '' : s.content, stepResponses: visibleResponses, stepRevisions,
+    validations: s.validations.map(validation => ({ stepId: validation.stepId, userId: validation.userId, userName: validation.user.name, validatedAt: validation.validatedAt,
+      current: validation.contentHash === (stepResponses[validation.stepId] ?? (s.currentStepId === validation.stepId ? s.content : '')) })), hasAudio: partialTeacherView ? false : s.hasAudio, hasTextFile: partialTeacherView ? false : s.hasTextFile,
+    submittedStepIds, submittedStepAt: s.submittedStepAt,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
     submittedAt: s.submittedAt, updatedAt: s.updatedAt, attempt: s.attempt, revisionRequested: s.revisionRequested,
     gradingSteps: s.version.steps.map(step => {
@@ -357,42 +362,63 @@ export class ProductService {
         if (op === 'groups') {
           const relevant = member.role === 'student' ? row.publishedVersion : row.draftVersion ?? row.publishedVersion;
           if (relevant?.workMode === 'individual') return { items: [], participationMode: null };
-          const groups = await tx.missionGroup.findMany({ where: { missionId: id, ...(member.role === 'student' ? { members: { some: { userId } } } : {}) }, include: { members: { select: { userId: true } } }, orderBy: { name: 'asc' } });
+          const groups = await tx.missionGroup.findMany({ where: { missionId: id, archivedAt: null, ...(member.role === 'student' ? { members: { some: { userId } } } : {}) }, include: { members: { select: { userId: true } }, _count: { select: { submissions: true } } }, orderBy: { name: 'asc' } });
           const participation = member.role === 'student' ? await tx.missionParticipation.findUnique({ where: { missionId_userId: { missionId: id, userId } }, select: { mode: true } }) : null;
-          return { items: groups.map(g => ({ id: g.id, name: g.name, leaderId: g.leaderId, studentIds: g.members.map(m => m.userId) })),
+          return { items: groups.map(g => ({ id: g.id, name: g.name, leaderId: g.leaderId, studentIds: g.members.map(m => m.userId), ...(isInstructorRole(member.role) ? { hasSubmissions: g._count.submissions > 0 } : {}) })),
             participationMode: participation?.mode === 'individual' ? 'individual' : participation ? 'group' : null };
         }
         if (op === 'createGroup') {
           if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
           if (row.draftVersion?.workMode === 'individual' && row.publishedVersion?.workMode === 'individual') return fail(409, 'INDIVIDUAL_ACTIVITY', 'Esta atividade é individual.');
           const data = body as Body<'createGroup'>;
-          if (await tx.missionGroup.count({ where: { missionId: id, name: data.name } })) return fail(409, 'GROUP_NAME_EXISTS', 'Já existe uma equipe com este nome nesta atividade.');
+          if (await tx.missionGroup.count({ where: { missionId: id, name: data.name, archivedAt: null } })) return fail(409, 'GROUP_NAME_EXISTS', 'Já existe uma equipe com este nome nesta atividade.');
           const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
           if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');
           if (data.leaderId && !data.studentIds.includes(data.leaderId)) return fail(400, 'INVALID_LEADER', 'O líder precisa pertencer à equipe.');
-          const already = await tx.missionGroupMember.count({ where: { userId: { in: data.studentIds }, group: { missionId: id } } });
+          const already = await tx.missionGroupMember.count({ where: { userId: { in: data.studentIds }, group: { missionId: id, archivedAt: null } } });
           if (already) return fail(409, 'GROUP_MEMBERSHIP_EXISTS', 'Um aluno já pertence a outra equipe desta atividade.');
           const group = await tx.missionGroup.create({ data: { missionId: id, name: data.name, leaderId: data.leaderId ?? data.studentIds[0], members: { create: data.studentIds.map(userId => ({ userId })) } } });
-          await tx.missionParticipation.createMany({ data: data.studentIds.map(userId => ({ missionId: id, userId, groupId: group.id, mode: 'group' })), skipDuplicates: true });
+          for (const studentId of data.studentIds) await tx.missionParticipation.upsert({
+            where: { missionId_userId: { missionId: id, userId: studentId } },
+            create: { missionId: id, userId: studentId, groupId: group.id, mode: 'group' },
+            update: { groupId: group.id, mode: 'group', reason: null },
+          });
           await tx.auditEvent.create({ data: { actorId: userId, action: 'group.create', resourceId: group.id } });
-          return { id: group.id, name: group.name, leaderId: group.leaderId, studentIds: data.studentIds };
+          return { id: group.id, name: group.name, leaderId: group.leaderId, studentIds: data.studentIds, hasSubmissions: false };
         }
         if (op === 'updateGroup') {
           if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
           const data = body as Body<'updateGroup'>;
-          const group = await tx.missionGroup.findFirst({ where: { id: p.groupId, missionId: id }, include: { members: true } });
+          const group = await tx.missionGroup.findFirst({ where: { id: p.groupId, missionId: id, archivedAt: null }, include: { members: true } });
           if (!group) return missing();
           if (data.leaderId && !data.studentIds.includes(data.leaderId)) return fail(400, 'INVALID_LEADER', 'O líder precisa pertencer à equipe.');
+          const duplicateName = await tx.missionGroup.findFirst({ where: { missionId: id, name: data.name ?? group.name, id: { not: group.id }, archivedAt: null }, select: { id: true } });
+          if (duplicateName) return fail(409, 'GROUP_NAME_EXISTS', 'Já existe uma equipe com este nome nesta atividade.');
+          const oldStudentIds = group.members.map(item => item.userId).sort();
+          const newStudentIds = [...data.studentIds].sort();
+          const membershipChanged = oldStudentIds.length !== newStudentIds.length || oldStudentIds.some((studentId, index) => studentId !== newStudentIds[index]);
+          const submissionCount = await tx.submission.count({ where: { groupId: group.id } });
+          if (submissionCount && membershipChanged) return fail(409, 'GROUP_HAS_SUBMISSIONS', 'Esta equipe já tem entregas. Para preservar o acesso ao histórico, remova a equipe e crie outra com os novos integrantes.');
           const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
           if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');
-          const occupied = await tx.missionGroupMember.count({ where: { userId: { in: data.studentIds }, group: { missionId: id, id: { not: group.id } } } });
+          const occupied = await tx.missionGroupMember.count({ where: { userId: { in: data.studentIds }, group: { missionId: id, archivedAt: null, id: { not: group.id } } } });
           if (occupied) return fail(409, 'GROUP_MEMBERSHIP_EXISTS', 'Um aluno já pertence a outra equipe desta atividade.');
-          await tx.missionGroupMember.deleteMany({ where: { groupId: group.id } });
-          const changed = await tx.missionGroup.update({ where: { id: group.id }, data: { leaderId: data.leaderId ?? data.studentIds[0], members: { create: data.studentIds.map(userId => ({ userId })) } }, include: { members: true } });
-          await tx.missionParticipation.deleteMany({ where: { missionId: id, groupId: group.id } });
-          await tx.missionParticipation.createMany({ data: data.studentIds.map(userId => ({ missionId: id, userId, groupId: group.id, mode: 'group' })) });
+          if (membershipChanged) {
+            await tx.missionGroupMember.deleteMany({ where: { groupId: group.id } });
+            await tx.missionGroupMember.createMany({ data: data.studentIds.map(userId => ({ groupId: group.id, userId })) });
+            await tx.missionParticipation.updateMany({ where: { missionId: id, groupId: group.id }, data: {
+              groupId: null,
+              mode: (row.draftVersion ?? row.publishedVersion)?.workMode === 'mixed' ? 'individual' : 'group',
+            } });
+            for (const studentId of data.studentIds) await tx.missionParticipation.upsert({
+              where: { missionId_userId: { missionId: id, userId: studentId } },
+              create: { missionId: id, userId: studentId, mode: 'group', groupId: group.id },
+              update: { mode: 'group', groupId: group.id, reason: null },
+            });
+          }
+          const changed = await tx.missionGroup.update({ where: { id: group.id }, data: { name: data.name ?? group.name, leaderId: data.leaderId ?? data.studentIds[0] }, include: { members: true } });
           await tx.auditEvent.create({ data: { actorId: userId, action: 'group.update', resourceId: group.id } });
-          return { id: changed.id, name: changed.name, leaderId: changed.leaderId, studentIds: changed.members.map(m => m.userId) };
+          return { id: changed.id, name: changed.name, leaderId: changed.leaderId, studentIds: changed.members.map(m => m.userId), hasSubmissions: submissionCount > 0 };
         }
         if (op === 'setParticipationMode') {
           if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
@@ -400,7 +426,7 @@ export class ProductService {
           const student = await tx.membership.findFirst({ where: { classroomId: row.classroomId, userId: studentId, role: 'student', active: true } });
           if (!student) return missing();
           const data = body as Body<'setParticipationMode'>;
-          const group = await tx.missionGroup.findFirst({ where: { missionId: id, members: { some: { userId: studentId } } } });
+          const group = await tx.missionGroup.findFirst({ where: { missionId: id, archivedAt: null, members: { some: { userId: studentId } } } });
           if (data.mode === 'group' && !group) return fail(409, 'GROUP_REQUIRED', 'Inclua o aluno em uma equipe antes de selecionar a entrega em grupo.');
           const saved = await tx.missionParticipation.upsert({ where: { missionId_userId: { missionId: id, userId: studentId } }, create: { missionId: id, userId: studentId, mode: data.mode, groupId: data.mode === 'group' ? group?.id : null, reason: data.reason ?? null }, update: { mode: data.mode, groupId: data.mode === 'group' ? group?.id : null, reason: data.reason ?? null } });
           await tx.auditEvent.create({ data: { actorId: userId, action: 'group.participation-mode', resourceId: saved.id } });
@@ -408,10 +434,13 @@ export class ProductService {
         }
         if (op === 'removeGroup') {
           if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
-          const group = await tx.missionGroup.findFirst({ where: { id: p.groupId, missionId: id } });
+          const group = await tx.missionGroup.findFirst({ where: { id: p.groupId, missionId: id, archivedAt: null } });
           if (!group) return missing();
-          if (await tx.submission.count({ where: { groupId: group.id } })) return fail(409, 'GROUP_HAS_SUBMISSIONS', 'Esta equipe já possui uma entrega.');
-          await tx.missionGroup.delete({ where: { id: group.id } });
+          await tx.missionGroup.update({ where: { id: group.id }, data: { archivedAt: new Date() } });
+          await tx.missionParticipation.updateMany({ where: { missionId: id, groupId: group.id }, data: {
+            groupId: null,
+            mode: (row.draftVersion ?? row.publishedVersion)?.workMode === 'mixed' ? 'individual' : 'group',
+          } });
           await tx.auditEvent.create({ data: { actorId: userId, action: 'group.remove', resourceId: group.id } });
           return { removed: true };
         }
@@ -462,7 +491,7 @@ export class ProductService {
           if (!stepIds.has(input.currentStepId) || input.completedStepIds.some(s => !stepIds.has(s)) || new Set(input.completedStepIds).size !== input.completedStepIds.length) return fail(400, 'INVALID_PROGRESS', 'Etapas inválidas.');
           const participation = await tx.missionParticipation.findUnique({ where: { missionId_userId: { missionId: row.id, userId } } });
           const group = version.workMode !== 'individual' && participation?.mode !== 'individual'
-            ? await tx.missionGroup.findFirst({ where: { id: participation?.groupId ?? undefined, missionId: row.id, members: { some: { userId } } } })
+            ? await tx.missionGroup.findFirst({ where: { id: participation?.groupId ?? undefined, missionId: row.id, archivedAt: null, members: { some: { userId } } } })
             : null;
           if ((version.workMode === 'group' || (version.workMode === 'mixed' && participation?.mode !== 'individual')) && !group) return fail(409, 'GROUP_REQUIRED', 'Peça ao professor para incluir você em uma equipe desta atividade.');
           const old = await tx.submission.findFirst({ where: { versionId: version.id, ...(group ? { groupId: group.id } : { userId, groupId: null }) }, orderBy: { attempt: 'desc' } });
@@ -471,6 +500,9 @@ export class ProductService {
           if (input.stepId && !stepIds.has(input.stepId)) return fail(400, 'INVALID_STEP_RESPONSES', 'Resposta vinculada a uma etapa inválida.');
           const stepResponses = input.stepId ? { ...existingResponses, ...(input.stepResponses ?? {}), [input.stepId]: input.content }
             : input.stepResponses ? { ...existingResponses, ...input.stepResponses } : existingResponses;
+          const alreadySubmitted = Array.isArray(old?.submittedStepIds) ? old.submittedStepIds.filter((value): value is string => typeof value === 'string') : [];
+          if (old?.status === 'partial' && alreadySubmitted.some(stepId => existingResponses[stepId] !== stepResponses[stepId]))
+            return fail(409, 'SUBMITTED_STEP_LOCKED', 'Uma atividade já enviada ao professor não pode ser alterada. Continue pelas atividades ainda abertas.');
           const safeStepMerge = Boolean(old && input.stepId && input.status === 'draft' && old.status === 'draft' && input.expectedRevision < old.revision &&
             (existingStepRevisions[input.stepId!] ?? 0) <= input.expectedRevision);
           if ((old?.revision ?? 0) !== input.expectedRevision && !safeStepMerge) {
@@ -478,7 +510,7 @@ export class ProductService {
             return fail(409, 'REVISION_CONFLICT', 'A entrega mudou. Recarregue antes de salvar.');
           }
           const retry = old?.status === 'reviewed' && old.revisionRequested;
-          if (old && old.status !== 'draft' && !retry) return fail(409, 'SUBMISSION_LOCKED', 'Entrega enviada preservada para revisão.');
+          if (old && !['draft', 'partial'].includes(old.status) && !retry) return fail(409, 'SUBMISSION_LOCKED', 'Entrega enviada preservada para revisão.');
           const audio = input.audio === undefined ? (retry ? null : old?.audio) ?? null : input.audio === null ? null : verifySupportAudio(input.audio);
           const textFile = input.textFile === undefined ? (retry ? null : old?.textFile) ?? null : input.textFile?.text ?? null;
           if (textFile !== null && (Buffer.byteLength(textFile, 'utf8') > 32768 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(textFile))) return fail(400, 'INVALID_TEXT_FILE', 'Use arquivo de texto UTF-8, até 32 KiB, sem conteúdo binário.');
@@ -492,37 +524,54 @@ export class ProductService {
             ? { ...(old.stepCompletedAt as Record<string, string>) } : {};
           if (!staleStepWrite) for (const completedId of input.completedStepIds) if (!completedAt[completedId]) completedAt[completedId] = new Date().toISOString();
           for (const [stepId, response] of Object.entries(stepResponses)) if (!stepIds.has(stepId) || typeof response !== 'string' || response.length > 12000) return fail(400, 'INVALID_STEP_RESPONSES', 'Respostas por etapa inválidas.');
-          if (input.status === 'submitted' && group) {
+          const requestedStepIds = input.submitStepIds ?? [];
+          if (requestedStepIds.some(stepId => !stepIds.has(stepId))) return fail(400, 'INVALID_PROGRESS', 'Atividade parcial inválida.');
+          if (requestedStepIds.length && !group) return fail(400, 'PARTIAL_GROUP_ONLY', 'Envio parcial está disponível para atividades em equipe.');
+          let submittedStepIds = Array.isArray(old?.submittedStepIds) ? old.submittedStepIds.filter((stepId): stepId is string => typeof stepId === 'string') : [];
+          const submittedStepAt: Record<string, string> = old?.submittedStepAt && typeof old.submittedStepAt === 'object' && !Array.isArray(old.submittedStepAt) ? { ...(old.submittedStepAt as Record<string, string>) } : {};
+          for (const stepId of new Set([...Object.keys(existingResponses), ...Object.keys(stepResponses)])) if (existingResponses[stepId] !== stepResponses[stepId]) {
+            submittedStepIds = submittedStepIds.filter(value => value !== stepId); delete submittedStepAt[stepId];
+          }
+          if ((input.status === 'submitted' || requestedStepIds.length) && group) {
             if (group.leaderId !== userId) return fail(403, 'GROUP_LEADER_REQUIRED', 'Somente o líder da equipe pode enviar a atividade.');
             const members = await tx.missionGroupMember.findMany({ where: { groupId: group.id }, select: { userId: true } });
             const validations = old ? await tx.submissionStepValidation.findMany({ where: { submissionId: old.id, userId: { in: members.map(item => item.userId) }, stepId: { in: [...stepIds] } } }) : [];
-            const complete = version.steps.every(step => {
+            const candidates = requestedStepIds.length ? requestedStepIds : version.steps.map(step => step.id);
+            const complete = candidates.every(stepId => {
+              const step = version.steps.find(item => item.id === stepId)!;
               const response = stepResponses[step.id] ?? (old?.currentStepId === step.id ? old.content : '');
               if (!response.trim()) return false;
               const hash = digest(response);
               const approved = new Set(validations.filter(item => item.stepId === step.id && item.contentHash === hash).map(item => item.userId));
               return members.length > 0 && members.every(item => approved.has(item.userId));
             });
-            if (!complete) return fail(409, 'GROUP_VALIDATION_REQUIRED', 'Todos os integrantes precisam validar a resposta atual de cada etapa antes do envio.');
+            if (!complete) return fail(409, 'GROUP_VALIDATION_REQUIRED', 'Todos os integrantes precisam validar a resposta atual de cada atividade selecionada antes do envio.');
+            for (const stepId of candidates) { if (!submittedStepIds.includes(stepId)) submittedStepAt[stepId] = new Date().toISOString(); }
+            submittedStepIds = [...new Set([...submittedStepIds, ...candidates])];
           }
+          const allStepsSubmitted = version.steps.every(step => submittedStepIds.includes(step.id));
+          const nextStatus: 'draft' | 'partial' | 'submitted' | 'reviewed' = requestedStepIds.length ? (allStepsSubmitted ? 'submitted' : 'partial') : input.status === 'draft' && old?.status === 'partial' ? 'partial' : input.status;
           const nextRevision = (old?.revision ?? 0) + 1;
           const nextStepRevisions = { ...existingStepRevisions };
           if (input.stepId) nextStepRevisions[input.stepId] = nextRevision;
           else for (const stepId of new Set([...Object.keys(existingResponses), ...Object.keys(stepResponses)]))
             if (existingResponses[stepId] !== stepResponses[stepId]) nextStepRevisions[stepId] = nextRevision;
           const data = { audio, hasAudio: !!audio, textFile, hasTextFile: textFile !== null, content: input.content, stepResponses, stepRevisions: nextStepRevisions,
+            submittedStepIds: submittedStepIds as Prisma.InputJsonValue, submittedStepAt: submittedStepAt as Prisma.InputJsonValue, updatedById: userId,
             currentStepId: staleStepWrite ? old!.currentStepId : input.currentStepId,
             completedStepIds: (staleStepWrite ? existingCompletedStepIds : input.completedStepIds) as Prisma.InputJsonValue,
-            stepCompletedAt: completedAt as Prisma.InputJsonValue, status: input.status,
-            submittedAt: input.status === 'submitted' ? new Date() : null };
+            stepCompletedAt: completedAt as Prisma.InputJsonValue, status: nextStatus,
+            submittedAt: nextStatus === 'submitted' ? new Date() : null };
           const saved = old && !retry ? await tx.submission.update({ where: { id: old.id }, data: { ...data, revision: { increment: 1 } } }) :
-            await tx.submission.create({ data: { ...data, versionId: version.id, userId, groupId: group?.id ?? null, attempt: (old?.attempt ?? 0) + 1, revision: (old?.revision ?? 0) + 1 } });
+            await tx.submission.create({ data: { ...data, versionId: version.id, userId, groupId: group?.id ?? null,
+              attempt: ((await tx.submission.aggregate({ where: { versionId: version.id, userId }, _max: { attempt: true } }))._max.attempt ?? 0) + 1,
+              revision: (old?.revision ?? 0) + 1 } });
           return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: saved.id }, include: submissionInclude }));
         }
         if (op === 'submissions') {
           const rows = await tx.submission.findMany({ ...pageArgs(paging), where: { ...after(paging), version: { missionId: id },
-            ...(member.role === 'student' ? { OR: [{ userId, groupId: null }, { group: { members: { some: { userId } } } }] } : { status: { in: ['submitted', 'reviewed'] } }) }, include: submissionInclude });
-          return pagination(rows.map(submissionView), paging.limit);
+            ...(member.role === 'student' ? { OR: [{ userId, groupId: null }, { group: { members: { some: { userId } } } }] } : { status: { in: ['partial', 'submitted', 'reviewed'] } }) }, include: submissionInclude });
+          return pagination(rows.map(row => submissionView(row, member.role !== 'student')), paging.limit);
         }
       }
       if (['submission', 'feedback', 'submissionAudio', 'submissionTextFile', 'validateSubmissionStep'].includes(op)) {
@@ -532,9 +581,11 @@ export class ProductService {
         const groupMember = member.role === 'student' && row.groupId && await tx.missionGroupMember.findUnique({ where: { groupId_userId: { groupId: row.groupId, userId } } });
         if (row.userId !== userId && !groupMember && (!isInstructorRole(member.role) || row.status === 'draft')) return missing();
         if (op === 'validateSubmissionStep') {
-          if (member.role !== 'student' || row.status !== 'draft' || !row.groupId || !groupMember) return missing();
+          if (member.role !== 'student' || !['draft', 'partial'].includes(row.status) || !row.groupId || !groupMember) return missing();
           const step = row.version.steps.find(item => item.id === p.stepId);
           if (!step) return missing();
+          const submittedStepIds = Array.isArray(row.submittedStepIds) ? row.submittedStepIds : [];
+          if (submittedStepIds.includes(step.id)) return fail(409, 'SUBMITTED_STEP_LOCKED', 'Esta atividade já foi enviada ao professor.');
           const input = body as Body<'validateSubmissionStep'>;
           const responses = row.stepResponses && typeof row.stepResponses === 'object' && !Array.isArray(row.stepResponses) ? row.stepResponses as Record<string, string> : {};
           const response = responses[step.id] ?? (row.currentStepId === step.id ? row.content : '');
@@ -545,10 +596,11 @@ export class ProductService {
             create: { submissionId: row.id, stepId: step.id, userId, contentHash: digest(response) }, update: { contentHash: digest(response), validatedAt: new Date() } });
           return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: row.id }, include: submissionInclude }));
         }
-        if (op === 'submissionAudio') { if (!row.audio) return missing(); return { base64: Buffer.from(row.audio).toString('base64'), mimeType: 'audio/wav' }; }
-        if (op === 'submissionTextFile') { if (row.textFile === null) return missing(); return { name: 'atividade.txt', text: row.textFile }; }
-        if (op === 'submission') return submissionView(row);
+        if (op === 'submissionAudio') { if (!row.audio || isInstructorRole(member.role) && row.status === 'partial') return missing(); return { base64: Buffer.from(row.audio).toString('base64'), mimeType: 'audio/wav' }; }
+        if (op === 'submissionTextFile') { if (row.textFile === null || isInstructorRole(member.role) && row.status === 'partial') return missing(); return { name: 'atividade.txt', text: row.textFile }; }
+        if (op === 'submission') return submissionView(row, isInstructorRole(member.role));
         if (!isInstructorRole(member.role) || row.status === 'draft') return missing();
+        if (row.status === 'partial') return fail(409, 'PARTIAL_NOT_READY', 'A equipe ainda está enviando outras atividades. O feedback e a avaliação ficam disponíveis após a entrega completa.');
         const { content, requestRevision = false, scores } = body as Body<'feedback'>;
         let totalPoints: number | null = null;
         const graded = await tx.step.findMany({ where: { versionId: row.versionId, maxPoints: { not: null } }, select: { id: true, maxPoints: true } });

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { SupportAudio } from "./support-audio";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
 
-export function MissionSupports({ missionId, versionId, stepId }: { missionId: string; versionId: string; stepId: string }) {
+export function MissionSupports({ missionId, versionId, stepId, steps = [] }: { missionId: string; versionId: string; stepId?: string; steps?: { id: string; title: string }[] }) {
   const [items, setItems] = useState<ApiResponse<"missionSupports">["items"]>([]);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(true);
@@ -12,18 +12,18 @@ export function MissionSupports({ missionId, versionId, stepId }: { missionId: s
     const controller = new AbortController();
     setItems([]); setError(""); setPending(true);
     void api("missionSupports", { params: { id: missionId }, query: { versionId }, signal: controller.signal })
-      .then(value => { if (!controller.signal.aborted) setItems(value.items.filter(item => !item.stepId || item.stepId === stepId)); })
+      .then(value => { if (!controller.signal.aborted) setItems(value.items.filter(item => !item.stepId || !stepId || item.stepId === stepId)); })
       .catch(reason => { if (!controller.signal.aborted) setError(errorMessage(reason)); })
       .finally(() => { if (!controller.signal.aborted) setPending(false); });
     return () => controller.abort();
   }, [missionId, versionId, stepId, retry]);
   if (!pending && !error && !items.length) return null;
-  return <section className="mission-supports" aria-label="Apoios desta etapa">
-    <h3>Apoios desta etapa</h3>
+  return <section className="mission-supports" aria-label={stepId ? "Apoios desta atividade" : "Apoios da atividade"}>
+    {stepId && <h3>Apoios desta atividade</h3>}
     {pending ? <p role="status">Consultando os apoios disponíveis…</p> : error ? <>
       <p role="alert">{error}</p><button className="text-button" onClick={() => setRetry(n => n + 1)}>Tentar carregar os apoios novamente</button>
     </> : items.length ? <><p className="small">Abra os apoios que forem úteis para você.</p>
-      {items.map(item => <details className="example" key={item.id}><summary>{item.title}</summary><p className="submission-content">{item.content}</p>{item.hasAudio && <SupportAudio missionId={missionId} itemId={item.id} />}</details>)}
-    </> : <p className="small">Nenhum apoio adicional disponível nesta etapa.</p>}
+      {items.map(item => <details className="example" key={item.id}><summary>{item.title}</summary>{!stepId && item.stepId && <p className="small">Atividade: {steps.find(step => step.id === item.stepId)?.title ?? "Atividade específica"}</p>}<p className="submission-content">{item.content}</p>{item.hasAudio && <SupportAudio missionId={missionId} itemId={item.id} />}</details>)}
+    </> : <p className="small">Nenhum apoio adicional disponível nesta atividade.</p>}
   </section>;
 }

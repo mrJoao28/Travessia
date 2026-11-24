@@ -33,7 +33,7 @@ function AdaptationForm({ entry, version, onDirty }: { entry: MissionEntry; vers
   const [requests, setRequests] = useState<ApiResponse<"sharedLearningNeeds">["items"]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [stepId, setStepId] = useState("");
-  const [audience, setAudience] = useState<"classroom" | "students">("classroom");
+  const [audience, setAudience] = useState<"students">("students");
   const [studentIds, setStudentIds] = useState<string[]>([]);
   const [supports, setSupports] = useState<ApiBody<"createAdaptation">["supportNeeds"]>([]);
   const [formats, setFormats] = useState<ApiBody<"createAdaptation">["allowedFormats"]>(["text"]);
@@ -59,14 +59,14 @@ function AdaptationForm({ entry, version, onDirty }: { entry: MissionEntry; vers
   }, [entry.mission.id, version.id, retry]);
   function change() { setDirty(true); onDirty(true); setReviewed(false); saveKey.current = null; setMessage(""); }
   function changeGeneration() { change(); setApproved(false); setDraft(null); aiKey.current = null; }
-  function reset() { changeGeneration(); setEditing(null); setInstructions(""); setExample(""); setSupports([]); setFormats(["text"]); setStudentIds([]); setAudience("classroom"); setStepId(""); setStage(0); setDirty(false); onDirty(false); }
+  function reset() { changeGeneration(); setEditing(null); setInstructions(""); setExample(""); setSupports([]); setFormats(["text"]); setStudentIds([]); setAudience("students"); setStepId(""); setStage(0); setDirty(false); onDirty(false); }
   const currentStep = version.steps.find(s => s.id === stepId);
   if (!options) return <section className="paper">{error ? <><p role="alert">{error}</p><button className="button" onClick={() => setRetry(n => n + 1)}>Tentar carregar adaptações</button></> : <p role="status">Consultando adaptações e pedidos autorizados…</p>}</section>;
   const readOnly = entry.mission.status === "archived";
   function next() {
     setError("");
     if (stage === 0) {
-      if (audience === "students" && !studentIds.length) { setError("Escolha pelo menos um aluno para continuar."); document.getElementById("adapt-audience")?.focus(); return; }
+      if (audience === "students" && studentIds.length !== 1) { setError("Escolha um único aluno para esta adaptação."); document.getElementById("adapt-audience")?.focus(); return; }
       if (!instructions.trim()) { change(); setInstructions(currentStep?.instructions ?? version.description); setExample(currentStep?.example ?? ""); }
       setStage(1);
     } else if (stage === 1) {
@@ -74,14 +74,14 @@ function AdaptationForm({ entry, version, onDirty }: { entry: MissionEntry; vers
       setReviewed(false); setStage(2);
     }
   }
-  const recipients = audience === "classroom" ? "Turma inteira" : studentIds.map(id => students.find(s => s.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ");
+  const recipients = studentIds.map(id => students.find(s => s.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ");
   return <div className="teacher-guide">
     <TeacherSteps labels={["Para quem", "Ajustar a atividade", "Conferir"]} current={stage} disabled={busy} onBack={value => { setReviewed(false); setStage(value); }} />
     {readOnly && <p className="notice">Esta atividade está arquivada. Os apoios podem ser consultados, mas não alterados.</p>}
     <form noValidate onSubmit={async e => {
-      e.preventDefault(); if (stage !== 2 || !reviewed || busy || readOnly || !instructions.trim() || (audience === "students" && !studentIds.length)) return;
+      e.preventDefault(); if (stage !== 2 || !reviewed || busy || readOnly || !instructions.trim() || studentIds.length !== 1) return;
       setBusy(true); setError("");
-      const input = { versionId: version.id, stepId: stepId || null, audience, studentIds: audience === "students" ? studentIds : [], instructions, example, supportNeeds: supports, allowedFormats: formats, reviewed: true as const };
+      const input = { versionId: version.id, stepId: stepId || null, audience: "students" as const, studentIds, instructions, example, supportNeeds: supports, allowedFormats: formats, reviewed: true as const };
       try { const saved = editing ? await api("updateAdaptation", { params: { ...params, planId: editing.id }, body: { ...input, expectedRevision: editing.revision } }) : await api("createAdaptation", { params, body: { ...input, requestKey: saveKey.current ??= crypto.randomUUID() } }); setPlans(old => [...old.filter(p => p.id !== saved.id), saved]); reset(); setMessage(version.id === entry.mission.publishedVersion?.id ? "Adaptação revisada e disponível aos destinatários." : "Adaptação salva no rascunho; ficará disponível após publicar esta versão."); }
       catch (reason) { setError(errorMessage(reason)); } finally { setBusy(false); }
     }}>
@@ -89,10 +89,9 @@ function AdaptationForm({ entry, version, onDirty }: { entry: MissionEntry; vers
         <div className="teacher-guide-grid">
           <section className="paper form-stack teacher-editor-panel">
             <h2 ref={title} tabIndex={-1}>{["Quem vai receber este apoio?", "O que o aluno deve fazer?", "Está tudo certo para disponibilizar?"][stage]}</h2>
-            <p className="muted">{["Escolha a turma inteira ou os alunos que vão receber esta adaptação.", "Partimos do enunciado original. Ajuste o texto com uma ação por vez.", "Confira as instruções, os destinatários e as formas de entrega antes de confirmar."][stage]}</p>
+            <p className="muted">{["Cada adaptação fica disponível somente para um aluno selecionado.", "Partimos do enunciado original. Ajuste o texto com uma ação por vez.", "Confira as instruções, os destinatários e as formas de entrega antes de confirmar."][stage]}</p>
             <div className="form-stack" hidden={stage !== 0}>
-              <label htmlFor="adapt-audience">Destinatários da adaptação</label><select id="adapt-audience" value={audience} onChange={e => { change(); setAudience(e.target.value as typeof audience); }}><option value="classroom">Turma inteira</option><option value="students">Alunos selecionados</option></select>
-              {audience === "students" && <fieldset className="strategy-fields teacher-choice-list"><legend>Alunos destinatários</legend>{!students.length && <p>Nenhum aluno ativo nesta turma.</p>}{students.map(s => <label className="check" key={s.id}><input type="checkbox" checked={studentIds.includes(s.id)} onChange={e => { change(); setStudentIds(old => e.target.checked ? [...old, s.id] : old.filter(id => id !== s.id)); }} />{s.name}</label>)}</fieldset>}
+              <label htmlFor="adapt-audience">Aluno que receberá esta adaptação</label><select id="adapt-audience" value={studentIds[0] ?? ""} onChange={e => { change(); setAudience("students"); setStudentIds(e.target.value ? [e.target.value] : []); }}><option value="">Selecione um aluno</option>{students.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select>
               <label htmlFor="adapt-step">Onde disponibilizar a adaptação</label><select id="adapt-step" value={stepId} onChange={e => { setStepId(e.target.value); changeGeneration(); }}><option value="">Atividade inteira</option>{version.steps.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</select>
               <details className="teacher-disclosure" open={requests.length > 0}><summary>Pedidos de apoio compartilhados</summary><p>Somente escolhas autorizadas pelos alunos. Uma deficiência não determina a adaptação e não é enviada à IA.</p>
                 {!requests.length && <p>Nenhum aluno autorizou o compartilhamento neste contexto.</p>}
@@ -129,10 +128,10 @@ function AdaptationForm({ entry, version, onDirty }: { entry: MissionEntry; vers
         </div>
       </fieldset>
       {error && <p className="form-error" role="alert">{error}</p>}<p role="status">{message}</p>
-      <footer className="teacher-guide-footer"><div>{stage > 0 && <button type="button" className="text-button" disabled={busy} onClick={() => { setReviewed(false); setStage(stage - 1); }}>← Voltar</button>}<span className="small">Etapa {stage + 1} de 3</span>{editing && <button type="button" className="text-button" disabled={busy} onClick={() => { if (!dirty || window.confirm("Descartar as alterações desta adaptação?")) reset(); }}>Cancelar edição</button>}</div>{stage < 2 ? <button type="button" className="button" disabled={busy || readOnly} onClick={next}>{stage === 0 ? "Continuar para a atividade →" : "Conferir adaptação →"}</button> : <button type="submit" className="button" disabled={busy || readOnly || !reviewed || !instructions.trim() || (audience === "students" && !studentIds.length)}>{busy ? "Salvando…" : "Salvar adaptação revisada"}</button>}</footer>
+      <footer className="teacher-guide-footer"><div>{stage > 0 && <button type="button" className="text-button" disabled={busy} onClick={() => { setReviewed(false); setStage(stage - 1); }}>← Voltar</button>}<span className="small">Etapa {stage + 1} de 3</span>{editing && <button type="button" className="text-button" disabled={busy} onClick={() => { if (!dirty || window.confirm("Descartar as alterações desta adaptação?")) reset(); }}>Cancelar edição</button>}</div>{stage < 2 ? <button type="button" className="button" disabled={busy || readOnly} onClick={next}>{stage === 0 ? "Continuar para a atividade →" : "Conferir adaptação →"}</button> : <button type="submit" className="button" disabled={busy || readOnly || !reviewed || !instructions.trim() || studentIds.length !== 1}>{busy ? "Salvando…" : "Salvar adaptação revisada"}</button>}</footer>
     </form>
-    <section className="paper form-stack" aria-label="Adaptações salvas"><h2>Adaptações nesta versão</h2>{!plans.length && <p>Nenhuma adaptação salva nesta versão.</p>}{plans.map(p => <article className="example" key={p.id}><h3>{p.stepId ? version.steps.find(s => s.id === p.stepId)?.title : "Atividade inteira"}</h3><p>{p.audience === "classroom" ? "Turma inteira" : p.studentIds.map(id => students.find(s => s.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ")}</p><details><summary>Consultar texto e exemplo</summary><p className="submission-content">{p.instructions}</p><p className="submission-content">{p.example}</p></details>
-      <div className="actions"><button type="button" className="text-button" disabled={busy || readOnly} onClick={() => { if (dirty && !window.confirm("Descartar o texto ainda não salvo e abrir esta adaptação?")) return; changeGeneration(); setEditing(p); setStepId(p.stepId ?? ""); setInstructions(p.instructions); setExample(p.example); setSupports(p.supportNeeds); setFormats(p.allowedFormats); setAudience(p.audience); setStudentIds(p.studentIds); setStage(1); }}>Editar adaptação</button><button type="button" className="text-button teacher-danger" disabled={busy || readOnly} onClick={async () => {
+    <section className="paper form-stack" aria-label="Adaptações salvas"><h2>Adaptações nesta versão</h2>{!plans.length && <p>Nenhuma adaptação salva nesta versão.</p>}{plans.map(p => <article className="example" key={p.id}><h3>{p.stepId ? version.steps.find(s => s.id === p.stepId)?.title : "Atividade inteira"}</h3><p>{p.studentIds.map(id => students.find(s => s.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ")}</p><details><summary>Consultar texto e exemplo</summary><p className="submission-content">{p.instructions}</p><p className="submission-content">{p.example}</p></details>
+      <div className="actions"><button type="button" className="text-button" disabled={busy || readOnly || p.studentIds.length !== 1} onClick={() => { if (dirty && !window.confirm("Descartar o texto ainda não salvo e abrir esta adaptação?")) return; changeGeneration(); setEditing(p); setStepId(p.stepId ?? ""); setInstructions(p.instructions); setExample(p.example); setSupports(p.supportNeeds); setFormats(p.allowedFormats); setAudience("students"); setStudentIds(p.studentIds); setStage(1); }}>Editar adaptação</button><button type="button" className="text-button teacher-danger" disabled={busy || readOnly} onClick={async () => {
         if (!window.confirm("Remover esta adaptação e seus formatos adicionais de entrega? Entregas já enviadas serão preservadas.")) return;
         setBusy(true); setError(""); try { await api("removeAdaptation", { params: { ...params, planId: p.id }, body: { expectedRevision: p.revision } }); setPlans(old => old.filter(a => a.id !== p.id)); if (editing?.id === p.id) reset(); } catch (reason) { setError(errorMessage(reason)); } finally { setBusy(false); }
       }}>Remover adaptação</button></div>
