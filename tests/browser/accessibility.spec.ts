@@ -139,7 +139,7 @@ test("relato de barreira é salvo ao sair do formulário", async ({ page }) => {
   await expect(page.getByText(/salvo automaticamente quando você sair deste formulário/)).toBeVisible();
   await page.getByLabel("O que dificultou esta atividade?").fill("Preciso de uma explicação mais clara.");
   await page.getByLabel("Compartilhar com o(a) professor(a) a dificuldade encontrada").check();
-  await page.getByRole("heading", { name: "O que podemos tornar mais claro?" }).click();
+  await page.keyboard.press("Tab");
   await expect(page.getByRole("status")).toContainText("compartilhado com a professora");
 });
 test("editor ordena por teclado e exige revisão antes da publicação local", async ({
