@@ -466,6 +466,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByText('Revisada', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Escreva a sua resposta', { exact: true })).toHaveCount(0);
   await page.reload();
+  await page.getByRole('button', { name: 'Consultar atividade', exact: true }).click();
   await expect(page.getByText(feedback, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();
   await page.setViewportSize({ width: 320, height: 850 });
