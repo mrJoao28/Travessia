@@ -8,9 +8,9 @@ Leia AGENTS.md, apps/api/AGENTS.md, docs/PRODUCT.md, docs/ARCHITECTURE.md, docs/
 
 ## 2. Arquitetura final deste MVP
 
-NestJS/TypeScript, Prisma e PostgreSQL hospedado no Supabase; Supabase Storage privado. Para este MVP adote Better Auth com sessões persistidas no PostgreSQL, cookies seguros e integração documentada com NestJS. Essa decisão substitui a proposta inicial de Supabase Auth; não manter dois sistemas de login. Consulte a documentação oficial da versão instalada. Hash de senha pela biblioteca; não criar criptografia ou autenticação caseira.
+NestJS/TypeScript, Prisma e PostgreSQL em containers Linux no servidor Mais Acesso. Para este MVP adote Better Auth com sessões persistidas no PostgreSQL, cookies seguros e integração documentada com NestJS. Essa decisão substitui a proposta inicial de Supabase Auth; não manter dois sistemas de login. Consulte a documentação oficial da versão instalada. Hash de senha pela biblioteca; não criar criptografia ou autenticação caseira.
 
-Sem entidades Institution/Organization. Papéis teacher/student pertencem a Membership por turma. Uma mesma conta pode ter contextos diferentes; nenhuma escolha do cliente concede privilégio. Credenciais ficam no servidor. Inicialização e health compatíveis com Vercel Functions; respeitar PORT e o entrypoint reconhecido. API modular e monólito para facilitar a entrega.
+Sem entidades Institution/Organization. Papéis teacher/student pertencem a Membership por turma. Uma mesma conta pode ter contextos diferentes; nenhuma escolha do cliente concede privilégio. Credenciais ficam no servidor. Inicialização e health compatíveis com os containers Docker; respeitar PORT e sinais de encerramento gracioso. API modular e monólito para facilitar a entrega.
 
 ## 3. Autenticação e dados
 
@@ -34,15 +34,15 @@ Upsert com IDs estáveis/namespaces de seed, transações e sem duplicações. N
 
 Provedor exclusivo Gemini via @google/genai, chave server-side. Modelo estável configurável por GEMINI_MODEL. MVP: rascunho de atividade/apoios para professor, com objetivos e material didático selecionado; retorno JSON validado, rascunho privado e revisão antes de publicação. Não enviar automaticamente entregas, nomes, emails, preferências, relatos ou diagnósticos. Texto de arquivos é dado não confiável; não permitir que o modelo execute código ou altere banco. Não usar busca web irrestrita como base pedagógica.
 
-Para manter o MVP compatível com Vercel, faça geração aguardada na requisição, limitada e com timeout menor que o orçamento da função. Persistir estado de solicitação, deduplicação e consumo. Sem worker permanente, polling daemon, fila pg-boss ativa ou processamento em background não durável após responder. Se for necessário trabalho longo, documentar serviço durável separado para fase futura, não fingir que ele existe.
+Para manter o custo e o tempo de resposta limitados, faça geração aguardada na requisição, limitada e com timeout explícito. Persistir estado de solicitação, deduplicação e consumo. Sem worker permanente para IA ou fila pg-boss ativa. Se for necessário trabalho longo, documentar serviço durável separado para fase futura, não fingir que ele existe.
 
 Cotas por usuário/contexto, limite de entrada/saída, concorrência e tentativas limitadas. Cancelamento/falha não publica rascunho e não bloqueia atividades existentes. Não retentar cegamente nem prometer chamada externa exatamente uma vez. AI_ENABLED=false precisa produzir estado claro de indisponibilidade; fixtures são dados de demonstração identificados, não falsos resultados ao vivo.
 
 Antes de ativar para público real, confirmar termos de privacidade e elegibilidade etária da oferta Gemini. Em testes, usar conteúdo didático fictício/público. Não tratar modalidade paga como retenção zero ou autorização para enviar dados sensíveis.
 
-## 6. Deploy Vercel
+## 6. Deploy
 
-Projeto separado com raiz apps/api no mesmo monorepo; validar detecção NestJS conforme documentação atual. Conexão Prisma com pool apropriado ao ambiente serverless e migrations executadas uma vez por rotina controlada. Sem disco local persistente, sessão em memória ou processo de worker contínuo. Supabase mantém dados e arquivos.
+Produção roda em Docker Compose no servidor Mais Acesso. A Cloudflare atende o domínio público na borda; GitHub Actions publica o SHA aprovado no servidor de origem após os jobs CI e Docker passarem. Migrations executam como tarefa explícita antes da atualização dos serviços. Não adicionar configuração de hospedagem alternativa sem atualizar `docs/DEPLOY.md`, `docs/DOCKER.md` e o workflow correspondente.
 
 Documentar variáveis por aplicação, sem valores: DATABASE_URL/DIRECT_URL, SUPABASE_URL e credencial server-side de storage quando necessária, BETTER_AUTH_SECRET/BETTER_AUTH_URL/TRUSTED_WEB_ORIGIN, GEMINI_API_KEY/GEMINI_MODEL/AI_ENABLED e DEMO_* descritas. Validar tamanho e origem dos segredos. Coordenar frontend proxy e verificar auth em URL publicada. Não usar CORS permissivo para resolver erro de configuração.
 
@@ -50,4 +50,4 @@ Documentar variáveis por aplicação, sem valores: DATABASE_URL/DIRECT_URL, SUP
 
 Testes HTTP de sessão inválida, isolamento aluno A/B, docente de outra turma, vínculo revogado, papel alterado no payload, convite expirado/reutilizado, relato sem compartilhamento, arquivo privado e cota concorrente. Testar seed duas vezes sem duplicar nem destruir trabalho; login da conta configurada, contextos student/teacher e todos os cenários de demo. Testar Gemini com fake provider apenas em testes e smoke real quando credencial estiver disponível e autorizada.
 
-Entregar API documentada em OpenAPI, migrations, seed, instruções Vercel, exemplos sem dados privados e evidências de checks/build/testes. Reportar honestamente o que funciona e o que depende de configuração. Nenhuma nota final, diagnóstico ou publicação automática por IA. Não declarar deploy ou seed concluído sem verificar.
+Entregar API documentada em OpenAPI, migrations, seed, instruções Docker/produção, exemplos sem dados privados e evidências de checks/build/testes. Reportar honestamente o que funciona e o que depende de configuração. Nenhuma nota final, diagnóstico ou publicação automática por IA. Não declarar deploy ou seed concluído sem verificar.

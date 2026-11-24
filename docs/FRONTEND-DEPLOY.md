@@ -1,52 +1,28 @@
-# Frontend na Vercel
+# Publicação do frontend e Cloudflare
 
-Next.js/TypeScript no workspace `apps/web`. O backend é outro projeto, conforme `DEPLOY.md`. A preparação local não comprova publicação nem validação de sessão na URL final.
+O endereço público do frontend é `https://travessia.maisacessoconecta.com.br`. A Cloudflare recebe as requisições públicas do domínio. O frontend Next.js, porém, roda como container no servidor Mais Acesso, atrás do nginx. O workflow não publica o frontend em Cloudflare Pages ou Workers.
 
-## Configuração do projeto
+## Caminho de publicação
 
-- Repositório `mrJoao28/Travessia`, branch integrada por PR.
-- Framework Next.js, Root Directory `apps/web`, Node.js 24.x.
-- `apps/web/vercel.json` fixa framework, instalação pelo lockfile da raiz e build do workspace; o Root Directory continua sendo uma configuração do projeto Vercel.
-- Habilitar acesso aos arquivos externos ao Root Directory para os workspaces. O tracing aponta para a raiz do monorepo.
-- Install Command: `npm ci --prefix ../..` (usa o lockfile da raiz).
-- Build Command: `npm run build` (no diretório `apps/web`). Output Directory: `.next`, padrão do framework.
-- Nunca usar exportação estática: o proxy precisa de Route Handlers Node.js.
+1. A integração deliberada de `main` em `prod` aciona `.github/workflows/deploy.yml`.
+2. O GitHub Actions executa os jobs de CI e Docker.
+3. Se ambos passarem, o workflow conecta-se via SSH ao servidor e publica o SHA aprovado usando `scripts/deploy-prod.sh`.
+4. O nginx do servidor encaminha o domínio público para a porta local do container frontend (`127.0.0.1:3020`). O frontend acessa a API pela rede privada do Docker (`http://api:3001`).
+5. O workflow valida HTTPS, páginas, assets e acesso anônimo no domínio público que passa pela Cloudflare.
 
-Variáveis privadas do projeto frontend, sem valores versionados:
+Detalhes operacionais, secrets e recuperação estão em [DEPLOY.md](DEPLOY.md). O ambiente Docker e seus serviços estão em [DOCKER.md](DOCKER.md).
 
-| Nome | Conteúdo |
-|---|---|
-| API_INTERNAL_URL | Origem HTTPS do projeto API, sem caminhos, credenciais, query ou fragmento |
-| WEB_PUBLIC_ORIGIN | Origem HTTPS exata do frontend |
+## Cloudflare
 
-No backend, `BETTER_AUTH_URL` e `TRUSTED_WEB_ORIGIN` devem ser essa mesma origem pública. Não apontar a URL de auth para o domínio interno. Cookies host-only, path `/`, HttpOnly, Secure em produção, SameSite conforme backend. Previews exigem origem explicitamente aprovada e banco isolado; não configurar wildcard para cookies.
+DNS, estado de proxy, TLS e regras de cache são administrados na zona da Cloudflare, fora deste repositório. Para preservar autenticação e privacidade:
 
-## Rotas
+- manter HTTPS público e encaminhamento seguro ao nginx de origem;
+- não armazenar em cache páginas autenticadas, respostas da API, sessão, ou outros dados privados;
+- manter cookies de sessão `Secure`, `HttpOnly` e com política `SameSite` definida pelo backend;
+- validar mudanças de proxy/cache no domínio público com `npm run test:production` e com os fluxos autenticados antes de considerá-las concluídas.
 
-- `/login`: formulário sem credenciais embutidas, colagem e gerenciador de senhas permitidos.
-- `/aluno`, `/aluno/turmas`, `/aluno/entregas`, `/aluno/feedback`, `/aluno/barreiras`, `/aluno/atividades/[id]`: dados reais da API, sem fallback fictício.
-- `/professor`, `/professor/atividades`, `/professor/entregas`, `/professor/barreiras`, `/professor/atividades/[id]/editar`: contexto docente autorizado pelo backend. Os caminhos antigos `/aluno/missoes/*` e `/professor/missoes/*` redirecionam para os caminhos equivalentes em `/atividades`.
-- `/previa/aluno` e `/previa/professor`: prévias de interface explícitas, sem autenticação ou persistência; não são o modo final de apresentação. Metadados noindex.
-- `/api/auth/*`: apenas sign-in/email, sign-up/email, get-session e sign-out, encaminhados ao backend.
-- `/api/v1/*`: encaminhados para `/v1/*`, destino fixo server-side. Corpo máximo 64 KiB, JSON, timeout de 30s, orçamento de função de 45s, sem cache. Uploads não são suportados.
+O comando `npm run test:production` realiza somente requisições GET e não cria contas nem altera dados. Ele não substitui testes de sessão, autorização por turma ou testes manuais de navegação.
 
-## Contrato e verificação
+## Configuração legada
 
-Os DTOs vêm dos tipos oficiais `@travessia/contracts/api`, gerados pelo backend. `apps/web/lib/api.generated.ts` contém apenas o adaptador tipado e os caminhos gerados do OpenAPI implementado. O snapshot provisório foi removido após integrar a main `8ae969d`. Gerar novamente quando o contrato mudar:
-
-```
-node apps/web/scripts/generate-api.mjs
-npm ci
-npm run check
-npm run build
-npx playwright test
-node --test apps/web/tests/proxy.test.mjs
-```
-
-A geração não acontece no build nem acessa banco. O adaptador web mantém os caminhos do contrato e importa seus DTOs oficiais; CI verifica drift. Não alterar o OpenAPI para declarar endpoints que não foram implementados.
-
-Na URL publicada, verificar health, login/logout, Set-Cookie e expiração; isolamento de turmas; rascunho persistido após recarregar; entrega e feedback; preferências da conta; barreira privada ausente da visão docente; resposta ao relato compartilhado; edição, revisão e publicação; Gemini desativado e, se autorizado, geração real. Não executar seed/migrations no build. Não registrar senha, email pessoal, tokens ou corpos privados.
-
-Executar roteiro de teclado e leitor de tela, 320px, texto 200%, zoom 400%, espaçamento, contraste e axe. Registrar resultados e limitações em `FRONTEND-VALIDATION.md`; testes automáticos não demonstram conformidade WCAG completa.
-
-Referências consultadas: [monorepos Vercel](https://vercel.com/docs/monorepos), [Next.js na Vercel](https://vercel.com/docs/frameworks/full-stack/nextjs), [Route Handlers Next.js](https://nextjs.org/docs/app/api-reference/file-conventions/route).
+`apps/web/vercel.json` e `apps/api/vercel.json` são arquivos de configuração de uma implantação anterior. Não são consumidos pelo fluxo atual de produção. As variáveis de execução vêm da configuração privada `.env.docker` do servidor, e não de settings de um projeto Vercel.

@@ -2,18 +2,19 @@
 
 ## Decisão
 
-Monorepo npm Workspaces; Node.js 24; frontend Next.js/React/TypeScript; API NestJS/TypeScript. Interface e API são aplicações separadas. API modular. Para o MVP na Vercel, geração limitada na requisição; worker durável é evolução futura. Sem microserviços iniciais.
+Monorepo npm Workspaces; Node.js 24; frontend Next.js/React/TypeScript; API NestJS/TypeScript. Interface e API são aplicações separadas. API modular. Produção usa Docker Compose no servidor Mais Acesso, com Cloudflare na borda pública. A geração Gemini ocorre na requisição; o material-worker é um serviço separado para PDF/OCR/voz, não um worker de geração de IA.
 
 ## Componentes atuais e previstos
 
 | Componente | Estado | Responsabilidade |
 |---|---|---|
-| Next.js | Demonstração executável | Aluno, professor e preferências locais |
+| Next.js | Aplicação web integrada | Aluno, professor, preferências e proxy server-side da API |
 | NestJS | API implementada e testada por HTTP | Regras, autorização por turma e serialização explícita |
-| PostgreSQL/Supabase + Prisma | Schema/migrations implementados; validação local PostgreSQL | Persistência e seed manual; Supabase depende de configuração |
+| PostgreSQL + Prisma | Schema/migrations implementados | Persistência e seed manual; banco isolado no Compose em produção |
 | Better Auth + PostgreSQL | Login/logout/sessões testados | Cookies e credenciais; ver BACKEND-OPERATIONS.md |
-| Supabase Storage privado | Upload desativado; assinatura autorizada preparada | Materiais textuais na demo; pipeline de arquivos pendente |
-| Geração Gemini limitada por requisição | Adaptador implementado; testes com provedor fake | Compatível com Vercel; sem worker permanente |
+| Material worker | Serviço Docker implementado | PDF/OCR/voz no volume privado; ver INDIVIDUAL-MATERIALS.md |
+| Storage externo privado | Opcional; upload novo desativado | Objetos previamente verificados; não é necessário para a implantação base |
+| Geração Gemini limitada por requisição | Adaptador implementado; testes com provedor fake | Somente backend; sem publicação automática; timeout e quotas |
 | Gemini via @google/genai | Desativável; smoke real depende de credencial | Rascunhos revisados por professor |
 
 ## Modelo
@@ -30,12 +31,10 @@ Acesso de negócio ao banco passa pela API. Não presumir que consultas Prisma r
 
 Professor escolhe material permitido → API valida autorização/cota → registro persistido de geração → chamada Gemini aguardada, com timeout e saída limitados → validação de JSON/conteúdo → rascunho privado → revisão/publicação pelo professor. Nenhuma ferramenta de navegação, execução de código ou mutação de banco é entregue ao modelo. Arquivos são dados não confiáveis.
 
-Falhas da IA não bloqueiam atividades existentes. Usar geração limitada por requisição para compatibilidade com Vercel. Não há worker contínuo ou pg-boss ativo neste MVP. Persistir estado, controlar concorrência e evitar publicação duplicada; uma tentativa externa repetida pode gerar cobrança. Processamento durável de longa duração será decisão futura, caso necessário.
+Falhas da IA não bloqueiam atividades existentes. Geração é limitada à requisição, com estado persistido, controle de concorrência e sem publicação automática. Não há fila ou worker contínuo para IA. Uma tentativa externa repetida pode gerar cobrança.
 
 ## Deploy
 
-Web e API são dois projetos na Vercel; banco e objetos persistem no Supabase. Conferir limites/custos do plano selecionado, sem prometer operação gratuita ilimitada. Antes de dados reais: HTTPS, backups testados, política de retenção, controle de acesso, monitoramento sem payloads privados e verificação da oferta Gemini para o público atendido. Integração/SSO com Mais Acesso Conecta é uma etapa posterior, sem compartilhar banco implicitamente.
+O domínio público `travessia.maisacessoconecta.com.br` passa pela Cloudflare até o nginx do servidor Mais Acesso. O GitHub Actions executa CI e verificações Docker e publica o SHA aprovado na branch `prod` via SSH. O servidor executa frontend, API, PostgreSQL e material-worker em Docker Compose; somente o frontend fica acessível pelo proxy. As instruções vigentes, secrets necessários e checagem pós-deploy estão em [DEPLOY.md](DEPLOY.md). A Cloudflare é a camada de borda; este workflow não publica em Pages ou Workers.
 
-## Atualização de escopo — competição e Vercel
-
-As decisões finais de autenticação, conta/turmas demo e geração serverless estão em DEMO.md e DEPLOY.md. Elas substituem os trechos de proposta anterior sobre Supabase Auth, cookies/JWT específicos e worker/pg-boss. Não implementar simultaneamente as alternativas.
+As configurações de Vercel e Supabase em documentos antigos pertencem a propostas anteriores. A implantação, autenticação, demo e dados atuais seguem `DEPLOY.md`, `DOCKER.md`, `DEMO.md` e `SECURITY.md`; não misturar as propostas antigas com a execução atual.

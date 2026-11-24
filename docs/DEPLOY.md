@@ -1,6 +1,6 @@
 # Execução e implantação do Travessia
 
-O destino atual é o servidor Mais Acesso, com frontend, API e PostgreSQL em containers Linux. A configuração executável e os comandos de teste local estão em [DOCKER.md](DOCKER.md). A implantação anterior na Vercel foi descontinuada como direção do projeto.
+O domínio público é atendido pela Cloudflare. O runtime da aplicação continua no servidor Mais Acesso: frontend Next.js, API e PostgreSQL executam em containers Linux, publicados por GitHub Actions via SSH. Portanto, Cloudflare é a camada pública de DNS/proxy/edge; o workflow deste repositório atualiza o servidor de origem, não um projeto Pages/Workers. A configuração executável e os comandos de teste local estão em [DOCKER.md](DOCKER.md).
 
 ## Arquitetura atual
 
@@ -14,7 +14,7 @@ As imagens usam Node 24 / Debian Bookworm. Prisma Client é gerado dentro de Lin
 2. Executar docker:up: build, banco saudável, migration explícita e aplicações.
 3. Para demonstração isolada, executar docker:seed manualmente.
 4. Testar login, vínculos, atividades, feedback, barreiras e persistência. CI Linux também executa teste real dos containers.
-5. No servidor, a branch `prod` dispara `.github/workflows/deploy.yml`. O script `scripts/deploy-prod.sh` publica API e frontend; o banco isolado sobe com `scripts/provision-prod-env.sh`. O workflow repete os testes gerais e Docker e só então publica o SHA aprovado.
+5. No servidor, a branch `prod` dispara `.github/workflows/deploy.yml`. O script `scripts/deploy-prod.sh` publica API, frontend e material-worker; o banco isolado sobe com `scripts/provision-prod-env.sh`. O workflow repete os testes gerais e Docker e só então publica o SHA aprovado. Em seguida verifica o domínio HTTPS através da Cloudflare.
 
 APP_PUBLIC_ORIGIN define a origem pública da autenticação. ALLOW_LOCAL_HTTP vale exclusivamente para localhost/loopback; no servidor, usar HTTPS e desativar essa opção. A exceção HTTP do proxy interno é limitada ao serviço exato http://api:3001 e ativada por configuração de servidor, preservando validação de origem, cookies e autorização.
 
@@ -22,11 +22,13 @@ Migrations e seed não executam em build, healthcheck ou na inicialização da a
 
 Gemini continua limitado por requisição, com revisão humana e quotas persistidas. O worker durável processa PDFs e voz local no volume privado material-data. O banco atende autenticação, atividades e metadados de materiais sem Supabase; Storage permanece opcional para objetos previamente verificados.
 
-Os documentos antigos específicos da Vercel são históricos. Sua configuração não é requisito para os containers.
+Configurações e documentos antigos específicos da Vercel são legados e não participam do deploy atual. O workflow não executa build/deploy para Cloudflare Pages ou Workers: publica os containers no servidor de origem e testa o endereço público roteado pela Cloudflare.
 
 ## Produção no Mais Acesso
 
-O domínio público é `https://travessia.maisacessoconecta.com.br`. O nginx do VPS encaminha esse host para `127.0.0.1:3020`, onde só o frontend escuta. A API não tem vhost: o Next fala com `http://api:3001` na rede Docker. O PostgreSQL do Travessia é um container próprio, sem porta no host, separado do Postgres compartilhado do servidor. A configuração privada fica em `.env.docker` no servidor e não entra no GitHub Actions.
+O domínio público é `https://travessia.maisacessoconecta.com.br`. O DNS/proxy da Cloudflare encaminha o tráfego HTTPS ao nginx do VPS; o nginx encaminha o host para `127.0.0.1:3020`, onde só o frontend escuta. A API não tem vhost: o Next fala com `http://api:3001` na rede Docker. O PostgreSQL do Travessia é um container próprio, sem porta no host, separado do Postgres compartilhado do servidor. A configuração privada fica em `.env.docker` no servidor e não entra no GitHub Actions.
+
+As regras de zona, DNS, proxy, TLS e cache da Cloudflare são geridas fora deste repositório. Não altere cache para rotas autenticadas ou respostas privadas; as rotas dinâmicas da aplicação não devem ser armazenadas como conteúdo público. O teste final em `scripts/check-production.mjs` valida a URL pública pelo HTTPS após publicar.
 
 O workflow só passa a existir quando estes arquivos estão na branch `prod`. Secrets necessários: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`. `DEPLOY_PATH` é opcional e o padrão é `/home/cloud/Travessia`.
 

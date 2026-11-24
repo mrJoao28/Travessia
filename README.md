@@ -7,7 +7,7 @@ Plataforma web de aprendizagem por atividades acessíveis para o ensino superior
 **ODS principal:** 4 — Educação de Qualidade  
 **Contribuição complementar:** 10 — Redução das Desigualdades
 
-[![Abrir aplicação](https://img.shields.io/badge/Aplicação-Travessia-blue)](https://travessia-hazel.vercel.app/)
+[![Abrir aplicação](https://img.shields.io/badge/Aplicação-Travessia-blue)](https://travessia.maisacessoconecta.com.br/)
 
 ---
 
@@ -19,6 +19,7 @@ Plataforma web de aprendizagem por atividades acessíveis para o ensino superior
 - [Estrutura do projeto](#-estrutura-do-projeto)
 - [Rodando com Docker — recomendado](#-rodando-com-docker--recomendado)
 - [Rodando sem Docker](#-rodando-sem-docker)
+- [Produção e deploy](#-produção-e-deploy)
 - [Credenciais de demonstração](#-credenciais-de-demonstração)
 - [Comandos úteis](#-comandos-úteis)
 - [Testes e validação](#-testes-e-validação)
@@ -79,7 +80,7 @@ Atualmente, o projeto possui:
 - contratos OpenAPI e tipos gerados;
 - documentação de arquitetura, acessibilidade, privacidade e operação.
 
-> **Importante:** o projeto ainda possui etapas de integração, configuração e validação antes de ser considerado uma implantação de produção completa.
+O ambiente de produção está publicado em `https://travessia.maisacessoconecta.com.br/`. A Cloudflare atende o domínio público como camada de borda; os serviços da aplicação são atualizados no servidor Mais Acesso pelo workflow da branch `prod`. A disponibilidade de recursos externos opcionais, como Gemini, depende da configuração privada do ambiente.
 
 ---
 
@@ -97,7 +98,9 @@ Atualmente, o projeto possui:
 | Testes da API | Testes HTTP |
 | IA opcional | Google Gemini |
 | Containerização | Docker + Docker Compose |
-| Deploy planejado/atual | Vercel + infraestrutura de backend |
+| Borda pública | Cloudflare |
+| Execução em produção | Docker Compose no servidor Mais Acesso |
+| Deploy | GitHub Actions ao atualizar a branch `prod` |
 
 ---
 
@@ -274,6 +277,23 @@ http://localhost:3001/v1/health
 ```
 
 > Para os fluxos reais da API, é necessário configurar banco de dados e autenticação conforme `docs/BACKEND-OPERATIONS.md`.
+
+---
+
+# ☁️ Produção e deploy
+
+O endereço público é [travessia.maisacessoconecta.com.br](https://travessia.maisacessoconecta.com.br/). A Cloudflare atende as requisições públicas na borda. O workflow de produção atualiza os containers Docker no servidor Mais Acesso por SSH; Cloudflare e o servidor têm papéis diferentes nesse caminho.
+
+O fluxo é `main` → revisão/PR → `prod` → verificações de CI e containers → publicação no servidor → checagem HTTPS. Fazer merge apenas na `main` não publica a alteração. A branch `prod` dispara `.github/workflows/deploy.yml` depois que os jobs de validação passam.
+
+Para publicar uma alteração:
+
+1. Integre a alteração revisada à `main`.
+2. Abra uma PR de `main` para `prod` e aguarde as verificações.
+3. Após o merge, acompanhe **Actions → Deploy production** no GitHub.
+4. Confirme a etapa de deploy e a checagem HTTPS. Localmente, `npm run test:production` faz verificações somente por GET no domínio de produção.
+
+O deploy remoto requer os secrets `DEPLOY_HOST`, `DEPLOY_USER` e `DEPLOY_SSH_KEY`; `DEPLOY_PATH` é opcional. A configuração do servidor, as chaves e regras de DNS/proxy da Cloudflare são privadas e não ficam neste repositório. Consulte [docs/DEPLOY.md](docs/DEPLOY.md) para arquitetura, operação e recuperação.
 
 ---
 
@@ -473,6 +493,7 @@ Antes de alterar o projeto, consulte:
 |---|---|
 | `AGENTS.md` | Regras gerais para desenvolvimento |
 | `docs/DOCKER.md` | Docker e ambiente local |
+| `docs/DEPLOY.md` | Topologia Cloudflare, deploy e verificação de produção |
 | `docs/BACKEND-OPERATIONS.md` | Operação do backend |
 | `docs/BACKEND-INTEGRATION.md` | Integração frontend ↔ backend |
 | `docs/ACCESSIBILITY.md` | Acessibilidade |
@@ -627,19 +648,14 @@ Uploads de arquivos permanecem desativados até existir um pipeline adequado de 
 
 # ⚠️ Limitações e pendências
 
-O projeto ainda possui itens que precisam ser tratados antes de uma implantação de produção completa, incluindo:
+O deploy da aplicação está configurado, mas isso não significa que todos os recursos opcionais estejam ativos ou que todos os cenários tenham validação com usuários. Itens que dependem de configuração ou validação adicional incluem:
 
-- configuração final do Supabase;
-- configuração de contas por variáveis privadas;
-- validação da aplicação na URL publicada;
-- integração completa da interface com a API;
+- provisionamento de contas reais e operação dos dados do ambiente;
 - pipeline de uploads;
 - configuração/validação de Gemini real;
-- testes adicionais em ambiente publicado;
-- validação de cookies, logout e expiração na URL final;
 - validações adicionais de acessibilidade.
 
-Portanto, **não considere o MVP automaticamente pronto para produção apenas porque ele funciona localmente**.
+O checklist de produção e os limites dos testes estão em [docs/DEPLOY.md](docs/DEPLOY.md). Não use dados de demonstração em contas ou bancos com dados reais.
 
 ---
 
@@ -718,11 +734,9 @@ git push
 
 # 🌐 Aplicação
 
-**Versão publicada atualmente registrada no repositório:**
+**Aplicação em produção:**
 
-https://travessia-hazel.vercel.app/
-
-> A documentação do projeto informa que a URL publicada ainda precisa passar por validação completa dos fluxos reais. Portanto, a versão publicada deve ser tratada separadamente do ambiente local validado.
+https://travessia.maisacessoconecta.com.br/
 
 ---
 
