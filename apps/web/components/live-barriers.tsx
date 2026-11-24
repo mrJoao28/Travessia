@@ -24,11 +24,13 @@ export function BarrierComposer({
   const [shared, setShared] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
+  const [saveError, setSaveError] = useState(false);
 
   async function saveReport() {
     if (pending || !description.trim()) return;
     setPending(true);
     setMessage("");
+    setSaveError(false);
     try {
       const saved = await api("createBarrier", {
         params: { id: target.id },
@@ -42,6 +44,7 @@ export function BarrierComposer({
           : "Relato privado salvo. Somente você pode consultá-lo.",
       );
     } catch (reason) {
+      setSaveError(true);
       setMessage(errorMessage(reason));
     } finally {
       setPending(false);
@@ -89,7 +92,12 @@ export function BarrierComposer({
           O relato será salvo automaticamente quando você sair deste formulário.
           Se você marcar o compartilhamento, os docentes da turma poderão consultá-lo.
         </p>
-        <OperationStatus message={message} />
+        <OperationStatus message={message} error={saveError} />
+        {saveError && (
+          <button type="button" className="text-button" disabled={pending} onClick={() => void saveReport()}>
+            Tentar salvar novamente
+          </button>
+        )}
       </div>
     </>
   );
