@@ -361,7 +361,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       const response = await page.request.get(`/api/v1/missions/demo-class-oficina-mission/supports?versionId=${encodeURIComponent(versionId)}`);
       expect(await response.text()).not.toContain('Apoio individual de A');
     }
-    await page.getByRole('button', { name: 'Clique aqui para iniciar', exact: true }).click();
+    await page.getByRole('button', { name: /Clique aqui para iniciar|Continuar atividade|Consultar atividade/ }).click();
     const pagination = page.getByRole('navigation', { name: 'Paginação das atividades' });
     const previous = pagination.getByRole('button', { name: 'Atividade anterior', exact: true });
     await expect(previous).toBeVisible();
@@ -388,7 +388,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByText('Objetivos e critérios da atividade', { exact: true }).click();
     await expect(page.getByText('Justificar uma escolha.', { exact: true })).toBeVisible();
     await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Clique aqui para iniciar', exact: true }).click();
+    await page.getByRole('button', { name: /Clique aqui para iniciar|Continuar atividade|Consultar atividade/ }).click();
     if (suffix === 'A') {
       await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: true })).toBeVisible();
       await page.getByLabel('Áudio da atividade (opcional)', { exact: true }).setInputFiles({ name: 'resposta.wav', mimeType: 'audio/wav', buffer: audio });
