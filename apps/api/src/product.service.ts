@@ -25,6 +25,7 @@ type MissionRow = Prisma.MissionGetPayload<{ include: typeof missionInclude }>;
 
 export function missionView(row: MissionRow, teacher: boolean) {
   const version = (v: MissionRow['draftVersion']) => v && ({ id: v.id, missionId: v.missionId, title: v.title, workMode: v.workMode,
+    studentsCanFormTeams: v.studentsCanFormTeams,
     description: v.description, objectives: v.objectives, criteria: v.criteria, source: v.source, dueAt: v.dueAt,
     createdAt: v.createdAt, steps: v.steps.map(s => ({ id: s.id, position: s.position, title: s.title, instructions: s.instructions, example: s.example,
       dueAt: s.dueAt, deadlineExtended: false, maxPoints: s.maxPoints })),
@@ -80,6 +81,7 @@ export async function scopedMission(tx: Tx, userId: string, id: string, teacher 
 }
 export async function createVersion(tx: Tx, missionId: string, input: MissionInput, source = 'manual') {
   return tx.missionVersion.create({ data: { missionId, title: input.title, description: input.description, workMode: input.workMode ?? 'individual',
+    studentsCanFormTeams: input.workMode !== 'individual' && input.studentsCanFormTeams === true,
     objectives: input.objectives, criteria: input.criteria, dueAt: input.dueAt ? new Date(input.dueAt) : null, source,
     steps: { create: input.steps.map((s, position) => ({ title: s.title, instructions: s.instructions, example: s.example,
       dueAt: s.dueAt ? new Date(s.dueAt) : null, maxPoints: s.maxPoints ?? null, position: position + 1 })) }, materials: { create: input.materials } }, include: versionInclude });
@@ -287,7 +289,7 @@ export class ProductService {
         }
       }
       if (['mission', 'copyMission', 'editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'submissions', 'setStepDeadlineExtension', 'groups', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op)) {
-        const instructorAction = ['copyMission', 'editMission', 'publish', 'archive', 'deleteMission', 'setStepDeadlineExtension', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
+        const instructorAction = ['copyMission', 'editMission', 'publish', 'archive', 'deleteMission', 'setStepDeadlineExtension', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
         const mutation = ['copyMission', 'editMission', 'publish', 'archive', 'deleteMission', 'saveSubmission', 'setStepDeadlineExtension', 'createGroup', 'updateGroup', 'removeGroup', 'setParticipationMode'].includes(op);
         const { row, member } = await scopedMission(tx, userId, id, instructorAction, mutation);
         if (op === 'copyMission') {
@@ -303,7 +305,7 @@ export class ProductService {
           const version = await createVersion(tx, copied.id, {
             title: sourceVersion.title, description: sourceVersion.description,
             objectives: sourceVersion.objectives as string[], criteria: sourceVersion.criteria as string[],
-            workMode: sourceVersion.workMode as MissionInput['workMode'], dueAt: null,
+            workMode: sourceVersion.workMode as MissionInput['workMode'], studentsCanFormTeams: sourceVersion.studentsCanFormTeams, dueAt: null,
             steps: sourceVersion.steps.map(step => ({ title: step.title, instructions: step.instructions, example: step.example, dueAt: null, maxPoints: step.maxPoints })),
             materials: sourceVersion.materials.map(material => ({ title: material.title, text: material.text })),
           }, 'manual');
@@ -368,16 +370,20 @@ export class ProductService {
             participationMode: participation?.mode === 'individual' ? 'individual' : participation ? 'group' : null };
         }
         if (op === 'createGroup') {
-          if (!isInstructorRole(member.role) || row.status === 'archived') return missing();
-          if (row.draftVersion?.workMode === 'individual' && row.publishedVersion?.workMode === 'individual') return fail(409, 'INDIVIDUAL_ACTIVITY', 'Esta atividade é individual.');
+          if (row.status === 'archived') return missing();
+          const studentForming = member.role === 'student';
+          if (studentForming && (!row.publishedVersion?.studentsCanFormTeams || row.publishedVersion.workMode === 'individual')) return missing();
+          if (!studentForming && !isInstructorRole(member.role)) return missing();
+          if (!studentForming && row.draftVersion?.workMode === 'individual' && row.publishedVersion?.workMode === 'individual') return fail(409, 'INDIVIDUAL_ACTIVITY', 'Esta atividade é individual.');
           const data = body as Body<'createGroup'>;
+          if (studentForming && (!data.studentIds.includes(userId) || (data.leaderId && data.leaderId !== userId))) return fail(400, 'GROUP_CREATOR_REQUIRED', 'Inclua você na equipe e escolha a si mesmo como líder.');
           if (await tx.missionGroup.count({ where: { missionId: id, name: data.name, archivedAt: null } })) return fail(409, 'GROUP_NAME_EXISTS', 'Já existe uma equipe com este nome nesta atividade.');
           const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
           if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');
           if (data.leaderId && !data.studentIds.includes(data.leaderId)) return fail(400, 'INVALID_LEADER', 'O líder precisa pertencer à equipe.');
           const already = await tx.missionGroupMember.count({ where: { userId: { in: data.studentIds }, group: { missionId: id, archivedAt: null } } });
           if (already) return fail(409, 'GROUP_MEMBERSHIP_EXISTS', 'Um aluno já pertence a outra equipe desta atividade.');
-          const group = await tx.missionGroup.create({ data: { missionId: id, name: data.name, leaderId: data.leaderId ?? data.studentIds[0], members: { create: data.studentIds.map(userId => ({ userId })) } } });
+          const group = await tx.missionGroup.create({ data: { missionId: id, name: data.name, leaderId: studentForming ? userId : data.leaderId ?? data.studentIds[0], members: { create: data.studentIds.map(userId => ({ userId })) } } });
           for (const studentId of data.studentIds) await tx.missionParticipation.upsert({
             where: { missionId_userId: { missionId: id, userId: studentId } },
             create: { missionId: id, userId: studentId, groupId: group.id, mode: 'group' },
@@ -490,10 +496,11 @@ export class ProductService {
           const stepIds = new Set(version.steps.map(s => s.id));
           if (!stepIds.has(input.currentStepId) || input.completedStepIds.some(s => !stepIds.has(s)) || new Set(input.completedStepIds).size !== input.completedStepIds.length) return fail(400, 'INVALID_PROGRESS', 'Etapas inválidas.');
           const participation = await tx.missionParticipation.findUnique({ where: { missionId_userId: { missionId: row.id, userId } } });
-          const group = version.workMode !== 'individual' && participation?.mode !== 'individual'
+          const requiresGroup = (version.workMode === 'group' && participation?.mode !== 'individual') || (version.workMode === 'mixed' && participation?.mode === 'group');
+          const group = requiresGroup
             ? await tx.missionGroup.findFirst({ where: { id: participation?.groupId ?? undefined, missionId: row.id, archivedAt: null, members: { some: { userId } } } })
             : null;
-          if ((version.workMode === 'group' || (version.workMode === 'mixed' && participation?.mode !== 'individual')) && !group) return fail(409, 'GROUP_REQUIRED', 'Peça ao professor para incluir você em uma equipe desta atividade.');
+          if (requiresGroup && !group) return fail(409, 'GROUP_REQUIRED', 'Peça ao professor para incluir você em uma equipe desta atividade.');
           const old = await tx.submission.findFirst({ where: { versionId: version.id, ...(group ? { groupId: group.id } : { userId, groupId: null }) }, orderBy: { attempt: 'desc' } });
           const existingResponses = old?.stepResponses && typeof old.stepResponses === 'object' && !Array.isArray(old.stepResponses) ? old.stepResponses as Record<string, string> : {};
           const existingStepRevisions = old?.stepRevisions && typeof old.stepRevisions === 'object' && !Array.isArray(old.stepRevisions) ? old.stepRevisions as Record<string, number> : {};

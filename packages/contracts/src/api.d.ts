@@ -580,38 +580,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/classrooms/{id}/teams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["classroomTeams"];
-        put?: never;
-        post: operations["createClassroomTeam"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/classrooms/{id}/teams/{teamId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["deleteClassroomTeam"];
-        options?: never;
-        head?: never;
-        patch: operations["updateClassroomTeam"];
-        trace?: never;
-    };
     "/v1/classrooms/{id}/members": {
         parameters: {
             query?: never;
@@ -3663,196 +3631,6 @@ export interface operations {
             };
         };
     };
-    classroomTeams: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        items: {
-                            id: string;
-                            classroomId: string;
-                            name: string;
-                            leaderId: string;
-                            members: {
-                                id: string;
-                                name: string;
-                            }[];
-                        }[];
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    createClassroomTeam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                    leaderId: string;
-                    studentIds: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        classroomId: string;
-                        name: string;
-                        leaderId: string;
-                        members: {
-                            id: string;
-                            name: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    deleteClassroomTeam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                teamId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @constant */
-                        removed: true;
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
-    updateClassroomTeam: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                teamId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                    leaderId: string;
-                    studentIds: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description Sucesso */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        classroomId: string;
-                        name: string;
-                        leaderId: string;
-                        members: {
-                            id: string;
-                            name: string;
-                        }[];
-                    };
-                };
-            };
-            /** @description Erro */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        code: string;
-                        message: string;
-                        requestId: string;
-                    };
-                };
-            };
-        };
-    };
     members: {
         parameters: {
             query?: {
@@ -4206,6 +3984,7 @@ export interface operations {
                                 dueAt: string | null;
                                 /** @enum {string} */
                                 workMode: "individual" | "group" | "mixed";
+                                studentsCanFormTeams: boolean;
                                 steps: {
                                     id: string;
                                     position: number;
@@ -4237,6 +4016,7 @@ export interface operations {
                                 dueAt: string | null;
                                 /** @enum {string} */
                                 workMode: "individual" | "group" | "mixed";
+                                studentsCanFormTeams: boolean;
                                 steps: {
                                     id: string;
                                     position: number;
@@ -4299,6 +4079,7 @@ export interface operations {
                     dueAt?: string | null;
                     /** @enum {string} */
                     workMode?: "individual" | "group" | "mixed";
+                    studentsCanFormTeams?: boolean;
                     steps: {
                         title: string;
                         instructions: string;
@@ -4333,6 +4114,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4364,6 +4146,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4435,6 +4218,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4466,6 +4250,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4564,6 +4349,7 @@ export interface operations {
                     dueAt?: string | null;
                     /** @enum {string} */
                     workMode?: "individual" | "group" | "mixed";
+                    studentsCanFormTeams?: boolean;
                     steps: {
                         title: string;
                         instructions: string;
@@ -4600,6 +4386,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4631,6 +4418,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4708,6 +4496,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4739,6 +4528,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4818,6 +4608,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4849,6 +4640,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4924,6 +4716,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;
@@ -4955,6 +4748,7 @@ export interface operations {
                             dueAt: string | null;
                             /** @enum {string} */
                             workMode: "individual" | "group" | "mixed";
+                            studentsCanFormTeams: boolean;
                             steps: {
                                 id: string;
                                 position: number;

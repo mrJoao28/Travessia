@@ -10,7 +10,7 @@ Cada atividade tem `/professor/atividades/{id}/apoios`, com caminhos para adapta
 
 ## Criar ou editar atividade
 
-1. Sobre a atividade: título, descrição, objetivos, critérios e data opcional.
+1. Sobre a atividade: título, descrição, objetivos, critérios, data opcional e forma de realização. Nas atividades em grupo ou mistas, o professor pode permitir que os alunos formem sua equipe ao iniciar a atividade.
 2. Etapas e materiais: instruções, exemplos, ordenação por botões e material textual.
 3. Apoios: caminhos opcionais para adaptação e materiais de apoio. A ajuda da IA fica recolhida e exige seleção e autorização dos textos.
 4. Revisão: conteúdo completo, confirmação explícita e publicação.
@@ -33,7 +33,13 @@ Trocar de atividade/versão, seguir links da interface ou recarregar com altera�
 
 Os testes de interface cobrem validação por etapa, teclado/foco, retorno sem perda de texto, conflito de versão, revisão obrigatória, IA controlada e reflow/axe. O cenário integrado percorre o formulário guiado, publicação, apoio individual, entrega por áudio/.txt e feedback com API, PostgreSQL e Better Auth reais. Registrar o resultado da execução no PR.
 
-A verificação automática e a revisão visual não substituem teste com leitores de tela nem observação de professores sem experiência tecnológica. A chamada ao Gemini real depende da chave privada e não é comprovada por testes com provedor controlado. Não há mudança de schema, credenciais ou infraestrutura nesta atualização.
+A verificação automática e a revisão visual não substituem teste com leitores de tela nem observação de professores sem experiência tecnológica. A chamada ao Gemini real depende da chave privada e não é comprovada por testes com provedor controlado.
+
+## Formação de equipes por atividade
+
+As equipes são criadas dentro de uma atividade, não no perfil do aluno. Na configuração de uma atividade em grupo ou mista, o professor decide se os estudantes podem formar suas equipes ao iniciar. Quando essa opção fica desativada, somente o professor ou monitor designa integrantes na página da atividade. A permissão é salva por versão publicada e também é verificada pela API; links ou chamadas diretas não contornam a configuração.
+
+Se a permissão estiver ativa, o estudante pode iniciar uma atividade em grupo formando uma equipe com pelo menos mais uma pessoa ativa da turma; quem cria passa a ser o líder. Em atividades mistas, essa escolha é opcional e a alternativa individual continua disponível. A formação e a designação são específicas à atividade e não ficam no perfil.
 
 ## Correção do fluxo de materiais e adaptações
 

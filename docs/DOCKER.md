@@ -71,7 +71,7 @@ Para trocar a porta local, editar `WEB_PORT` e a porta de `APP_PUBLIC_ORIGIN` ju
 
 ## Servidor Mais Acesso
 
-As mesmas imagens executam em Linux sem depender da Vercel. A publicação da branch `prod` está em [DEPLOY.md](DEPLOY.md): domínio `travessia.maisacessoconecta.com.br`, banco exclusivo do compose e API sem exposição pública.
+As mesmas imagens executam em Linux no servidor de origem. O domínio público `travessia.maisacessoconecta.com.br` passa pela Cloudflare; o deploy da branch `prod` atualiza os containers do servidor conforme [DEPLOY.md](DEPLOY.md). O banco é exclusivo do Compose e a API não tem exposição pública.
 
 - Usar `APP_PUBLIC_ORIGIN=https://dominio-aprovado`, `ALLOW_LOCAL_HTTP=false` e segredo exclusivo do ambiente. Cookies ficam HttpOnly, SameSite=Lax e Secure em HTTPS. O opt-in de localhost não libera HTTP de domínio público.
 - Se o proxy estiver no host, ele pode encaminhar HTTPS para a porta loopback do frontend. Se o proxy estiver em outro container, a equipe deve conectá-lo à rede apropriada e usar `frontend:3000`; não resolver isso expondo PostgreSQL/API publicamente.
