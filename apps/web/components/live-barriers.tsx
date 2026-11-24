@@ -53,7 +53,7 @@ export function BarrierComposer({
 
   return (
     <>
-      <h2>Registre eventuais barreiras para cumprir a atividade</h2>
+      <h2 id="barrier-composer-heading">Registre eventuais barreiras para cumprir a atividade</h2>
       <p>
         Relato sobre a atividade: <strong>{target.title}</strong>.
       </p>
@@ -61,8 +61,10 @@ export function BarrierComposer({
         Descreva o que dificultou a realização da atividade. Não é necessário informar
         diagnóstico ou dados de saúde.
       </p>
-      <div
+      <form
         className="form-stack"
+        aria-labelledby="barrier-composer-heading"
+        onSubmit={(event) => event.preventDefault()}
         onBlur={(event) => {
           const next = event.relatedTarget as Node | null;
           if (!event.currentTarget.contains(next)) void saveReport();
@@ -98,7 +100,7 @@ export function BarrierComposer({
             Tentar salvar novamente
           </button>
         )}
-      </div>
+      </form>
     </>
   );
 }
