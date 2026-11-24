@@ -32,11 +32,11 @@ Alvo WCAG 2.2 AA, com W3C COGA suplementar. Teclado completo, foco visível/não
 
 Apoios opcionais: dividir em passos, ampliar texto, contraste ampliado, espaçamento e reduzir distrações. Sem exigir diagnóstico ou impor “modo TDAH”. Nenhum autoplay, flash, ranking, sequência punitiva ou pressão de tempo. Para ordenar etapas, oferecer botões além de drag-and-drop. Login permite colar senha e usar gerenciador. Mensagens e formulários preservam trabalho em falhas. Apoios podem variar; preservar a competência avaliada. A fonte pedagógica especializada ainda será fornecida: não invente seu conteúdo.
 
-## 6. Integração e Vercel
+## 6. Integração e publicação
 
-Use Next.js/TypeScript e tokens compartilhados. Combine OpenAPI primeiro e gere o cliente a partir do contrato. Defina mocks explícitos apenas para desenvolvimento; o modo de apresentação final usa o seed no banco. Deploy frontend em projeto Vercel com raiz apps/web, respeitando as dependências do workspace.
+Use Next.js/TypeScript e tokens compartilhados. Combine OpenAPI primeiro e gere o cliente a partir do contrato. Defina mocks explícitos apenas para desenvolvimento; o modo de apresentação final usa o seed no banco. O frontend é publicado como container Docker no servidor Mais Acesso; a Cloudflare atende o domínio público na borda. O fluxo atual e seus testes estão em `docs/DEPLOY.md` e `docs/FRONTEND-DEPLOY.md`.
 
-O navegador usa mesma origem: /api/auth/* para autenticação e /api/v1/* para produto. Combine o proxy com o backend para encaminhar cookies/Set-Cookie, método, corpo e headers necessários, sem aceitar destino arbitrário. Não expor credenciais, DATABASE_URL ou chave Gemini. Usar API_INTERNAL_URL server-side; confirmar cookies, origem/CSRF e login na URL publicada. Se o backend ainda não estiver pronto, avance nos componentes e testes sem publicar integração fictícia.
+O navegador usa mesma origem: /api/auth/* para autenticação e /api/v1/* para produto. Combine o proxy com o backend para encaminhar cookies/Set-Cookie, método, corpo e headers necessários, sem aceitar destino arbitrário. Não expor credenciais, DATABASE_URL ou chave Gemini. Usar a origem interna server-side configurada no container; confirmar cookies, origem/CSRF e login na URL publicada. Se o backend ainda não estiver pronto, avance nos componentes e testes sem publicar integração fictícia.
 
 ## 7. Entrega e aceite
 
