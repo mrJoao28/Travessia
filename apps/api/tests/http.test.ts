@@ -110,6 +110,18 @@ test('health público, sessão inválida, CSRF e cadastro na plataforma', async 
   await request('/v1/classrooms', main, 'POST', { name: 'Teste' }, 403, 'https://attacker.invalid');
   await request('/v1/me/preferences', main, 'PATCH', { role: 'teacher' }, 400);
 });
+
+test('cria avaliação AP1 e devolve o período conforme o contrato', async () => {
+  const created = (await request(`/v1/classrooms/${workshop}/grade-periods`, main, 'POST', {
+    name: 'AP1', startsAt: null, endsAt: null,
+  })).json;
+  assert.equal(created.name, 'AP1');
+  assert.equal(created.formula, 'weighted_average');
+  assert.deepEqual(created.assessments, []);
+
+  const listed = (await request(`/v1/classrooms/${workshop}/grade-periods`, main)).json.items;
+  assert.ok(listed.some((period: { name: string; formula: string }) => period.name === 'AP1' && period.formula === 'weighted_average'));
+});
 test('seed real: três contextos aluno, um docente, biblioteca 2/5, feedback e oito alunos', async () => {
   const me = (await request('/v1/me', main)).json;
   assert.equal(me.name, 'Joao Felipe'); assert.equal(me.course, 'Engenharia da Computação');
