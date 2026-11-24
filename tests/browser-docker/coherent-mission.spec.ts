@@ -105,6 +105,8 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   expect(playback.status()).toBe(206);expect(playback.headers()['content-type']).toBe('audio/mpeg');
   expect(playback.headers()['content-range']).toMatch(/^bytes 0-31\//);
   await student.getByRole('button',{name:'Clique aqui para iniciar',exact:true}).click();await expect(student.locator('#etapas h2')).toContainText('Comparar rotas');
+  const learnerAdaptations=await student.request.get('/api/v1/activities/'+missionId+'/my-adaptations?versionId='+versionId).then(response=>response.json());
+  expect(learnerAdaptations.items).toContainEqual(expect.objectContaining({instructions:'Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.'}));
   await expect(student.getByText('Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.',{exact:true})).toBeVisible();
   await other.goto(`/aluno/atividades/${missionId}`);await other.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
   const originalRegion=other.getByRole('region',{name:'PDFs e materiais da atividade',exact:true});
