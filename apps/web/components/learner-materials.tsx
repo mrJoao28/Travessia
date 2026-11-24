@@ -66,7 +66,7 @@ export function LearnerMaterials({ missionId, versionId }: { missionId: string; 
   }, [items]);
 
   return <section className="mission-supports" aria-labelledby="learner-materials-title">
-    <h3 id="learner-materials-title" tabIndex={-1}>PDFs da atividade e apoios para você</h3>
+    <h3 id="learner-materials-title" tabIndex={-1}>PDFs e materiais da atividade</h3>
     {error ? <>
       <p role="alert">Não foi possível consultar os materiais da atividade. {error}</p>
       <button className="text-button" onClick={() => setRetry(n => n + 1)}>Consultar materiais novamente</button>
