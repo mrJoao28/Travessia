@@ -88,8 +88,8 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await post(student,'/api/v1/invitations/accept',{token:secondInvitation.token});
   const materialsRequest=`**/api/v1/activities/${missionId}/my-materials?*`;
   await student.route(materialsRequest,async route=>{await new Promise(resolve=>setTimeout(resolve,750));await route.continue();});
-  await student.goto(`/aluno/atividades/${missionId}`);await expect(student.locator('#etapas h2')).toHaveText('Comparar rotas');
-  const prepared=student.getByRole('region',{name:'PDFs da atividade e apoios para você',exact:true});
+  await student.goto(`/aluno/atividades/${missionId}`);await student.getByRole('button',{name:'Clique aqui para iniciar',exact:true}).click();await expect(student.locator('#etapas h2')).toContainText('Comparar rotas');
+  const prepared=student.getByRole('region',{name:'PDFs e materiais da atividade',exact:true});
   await expect(prepared.getByRole('status')).toHaveText('Consultando materiais da atividade…');
   await expect(prepared.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toHaveCount(2);
   await student.unroute(materialsRequest);
@@ -104,14 +104,14 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   expect(playback.status()).toBe(206);expect(playback.headers()['content-type']).toBe('audio/mpeg');
   expect(playback.headers()['content-range']).toMatch(/^bytes 0-31\//);
   await student.getByText('Consultar enunciado adaptado',{exact:true}).click();await expect(student.getByText('Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.',{exact:true})).toBeVisible();
-  await other.goto(`/aluno/atividades/${missionId}`);await expect(other.locator('#etapas h2')).toHaveText('Comparar rotas');
-  const originalRegion=other.getByRole('region',{name:'PDFs da atividade e apoios para você',exact:true});
+  await other.goto(`/aluno/atividades/${missionId}`);await other.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
+  const originalRegion=other.getByRole('region',{name:'PDFs e materiais da atividade',exact:true});
   await expect(originalRegion.getByRole('heading',{name:'rotas-campus.pdf',exact:true})).toHaveCount(1);
   const originalLink=originalRegion.getByRole('link',{name:'Baixar PDF da atividade',exact:true});await expect(originalLink).toBeVisible();
   const originalResponse=await other.request.get((await originalLink.getAttribute('href'))!);expect(originalResponse.status()).toBe(200);expect(await originalResponse.body()).toEqual(materialPdfFixture());
   const readOnlySource=await post(teacher,`/api/v1/activities/${missionId}/material-sources`,{versionId,title:'Leitura sem download.pdf',downloadAllowed:false,base64:materialPdfFixture().toString('base64'),requestKey:randomUUID()});
   await expect.poll(async()=>{const response=await teacher.request.get(`/api/v1/activities/${missionId}/material-sources?versionId=${versionId}`);return (await response.json()).items.find((item:{id:string})=>item.id===readOnlySource.id)?.status;},{timeout:90000}).toBe('ready');
-  await student.goto(`/aluno/atividades/${missionId}`);
+  await student.goto(`/aluno/atividades/${missionId}`);await student.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
   const readOnlyItem=student.getByRole('article').filter({has:student.getByRole('heading',{name:'Leitura sem download.pdf',exact:true})});
   await expect(readOnlyItem.getByRole('img',{name:'Página 1 do documento Leitura sem download.pdf',exact:true})).toBeVisible();
   await expect(readOnlyItem.getByRole('status').filter({hasText:'As páginas foram carregadas para leitura'})).toBeVisible();
@@ -125,10 +125,10 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   expect((await other.request.get(`/api/v1/activities/${missionId}/material-assets/${privateAdaptation.id}/pdf`)).status()).toBe(404);
   await expect(other.getByLabel('Áudio da atividade (opcional)',{exact:true})).toHaveCount(0);
   const wav=Buffer.alloc(32044);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(16000,24);wav.writeUInt32LE(32000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(32000,40);
-  await student.getByLabel('Planejamento e atividade',{exact:true}).fill('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');
+  await student.getByRole('button',{name:'Clique aqui para iniciar',exact:true}).click();
+  await student.getByLabel('Escreva a sua resposta',{exact:true}).fill('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');
   await student.getByLabel('Áudio da atividade (opcional)',{exact:true}).setInputFiles({name:'resposta-teste.wav',mimeType:'audio/wav',buffer:wav});await expect(student.getByRole('button',{name:'Remover áudio deste apoio',exact:true})).toBeVisible();
   await student.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)',{exact:true}).setInputFiles({name:'resposta.txt',mimeType:'text/plain',buffer:Buffer.from('A rota sem obstáculos permite melhor acesso.')});
-  await student.getByRole('checkbox',{name:'Concluí esta etapa. Salvará com o rascunho ou envio.',exact:true}).check();
   const submissionsRequest=`**/api/v1/activities/${missionId}/submissions`;
   await student.route(submissionsRequest,route=>route.request().method()==='POST'
     ? route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'TEMPORARY',message:'Temporariamente indisponível.'})})
@@ -137,13 +137,13 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await expect(student.getByRole('alert').filter({hasText:'Não foi possível concluir a operação.'})).toBeVisible();
   await expect(student.locator('#submission-content')).toHaveValue('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');
   await student.unroute(submissionsRequest);
-  await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await expect(student.getByRole('status').filter({hasText:'Rascunho e etapa atual salvos no servidor.'})).toBeVisible();
-  await student.getByLabel('O que dificultou esta etapa?',{exact:true}).fill('Preciso de uma descrição mais clara do obstáculo apresentado no exemplo.');
-  await student.getByRole('checkbox',{name:'Compartilhar com os docentes desta turma',exact:true}).check();await student.getByRole('button',{name:'Enviar relato',exact:true}).click();
+  await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await expect(student.getByRole('status').filter({hasText:'Rascunho e atividade atual salvos no servidor.'})).toBeVisible();
+  await student.getByLabel('O que dificultou esta atividade?',{exact:true}).fill('Preciso de uma descrição mais clara do obstáculo apresentado no exemplo.');
+  await student.getByRole('checkbox',{name:'Compartilhar com o(a) professor(a) a dificuldade encontrada',exact:true}).check();await student.getByRole('button',{name:'Enviar relato',exact:true}).click();
   await expect(student.getByText('Relato salvo e compartilhado com os docentes desta turma.',{exact:true})).toBeVisible();
   await teacher.goto(`/professor/barreiras?turma=${classroom.id}`);await teacher.getByLabel('Responder ao estudante',{exact:true}).fill('O obstáculo é a ausência de passagem livre. Compare as alternativas de acesso.');await teacher.getByRole('button',{name:'Enviar resposta',exact:true}).click();await expect(teacher.getByText('Resposta salva e disponível para o autor do relato.',{exact:true})).toBeVisible();
   await student.goto(`/aluno/barreiras?turma=${classroom.id}`);await expect(student.getByText('O obstáculo é a ausência de passagem livre. Compare as alternativas de acesso.',{exact:true})).toBeVisible();
-  await student.goto(`/aluno/atividades/${missionId}`);student.once('dialog', dialog => dialog.accept());
+  await student.goto(`/aluno/atividades/${missionId}`);await student.getByRole('button',{name:'Continuar atividade',exact:true}).click();student.once('dialog', dialog => dialog.accept());
   await student.getByRole('button',{name:'Enviar atividade',exact:true}).click();await expect(student.getByText('Atividade enviada. Aguarde o feedback do professor.',{exact:true})).toBeVisible();
   await teacher.goto('/professor/entregas');const delivery=teacher.locator('li.paper').filter({has:teacher.getByRole('heading',{name:'Rotas acessíveis no campus',exact:true})});
   await delivery.getByText('Consultar entrega e escrever feedback',{exact:true}).click();await delivery.getByLabel('Orientação para o próximo passo',{exact:true}).fill('Sua escolha está justificada. Na próxima etapa, relacione os obstáculos às soluções de acesso.');

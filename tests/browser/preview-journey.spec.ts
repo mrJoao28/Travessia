@@ -47,16 +47,17 @@ test('prévia conecta criação, apoios simulados, PDF, áudio, aluno e feedback
  await page.getByRole('link',{name:'Ver no espaço do aluno'}).click();
  await expect(page.getByRole('heading',{level:1})).toHaveText('Uma rota melhor para nossa biblioteca');
  const url=page.url();
- await page.getByRole('region',{name:'Materiais preparados para você'}).getByText('rotas-do-campus.pdf · Descrição das informações visuais',{exact:true}).click();
+ await page.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
+ await page.getByRole('region',{name:'PDFs e materiais da atividade'}).getByText('rotas-do-campus.pdf · Descrição das informações visuais',{exact:true}).click();
  await expect(page.getByRole('link',{name:'Baixar PDF preparado'})).toHaveAttribute('href','/preview/campus-descricao.pdf');
  await page.getByText('Transcrição do áudio',{exact:true}).click();
  await expect(page.getByRole('link',{name:'Baixar transcrição'})).toHaveAttribute('href','/preview/campus-audiodescricao.txt');
- await page.getByLabel('Planejamento e atividade').fill('Comparei 180 m e dois degraus na rota A com 310 m na rota C. Proponho melhorar as placas e conferir a leitura com usuários.');
- await page.getByLabel('Concluí esta etapa').check();
+ await page.getByRole('button',{name:'Clique aqui para iniciar',exact:true}).click();
+ await page.getByLabel('Escreva a sua resposta').fill('Comparei 180 m e dois degraus na rota A com 310 m na rota C. Proponho melhorar as placas e conferir a leitura com usuários.');
  await page.getByLabel('Anexar resposta fictícia em áudio').check();
  await page.getByLabel('Anexar arquivo de texto fictício (.txt)').check();
  await page.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await page.reload();
- await expect(page.getByLabel('Planejamento e atividade')).toHaveValue(/Comparei 180 m/);
+ await expect(page.getByLabel('Escreva a sua resposta')).toHaveValue(/Comparei 180 m/);
  await expect(page.getByLabel('Anexar resposta fictícia em áudio')).toBeChecked();
  await page.getByRole('button',{name:'Enviar atividade',exact:true}).click();
  await expect(page.getByRole('status')).toContainText('Envio simulado registrado');
@@ -67,7 +68,7 @@ test('prévia conecta criação, apoios simulados, PDF, áudio, aluno e feedback
  await page.goto(url);await expect(page.getByRole('heading',{name:'Feedback da professora'})).toBeVisible();
  await expect(page.getByText('Você comparou os dados. Explique como verificará a legibilidade das placas.',{exact:true})).toBeVisible();
  await page.getByLabel('Aluno fictício').selectOption('preview-student-2');
- await expect(page.getByRole('region',{name:'Materiais preparados para você'})).toHaveCount(0);
+ await expect(page.getByRole('region',{name:'PDFs e materiais da atividade'})).toHaveCount(0);
  expect(apiRequests).toEqual([]);
 });
 
@@ -78,7 +79,8 @@ test('publicação conserva a versão anterior enquanto o professor prepara um r
  await page.getByRole('button',{name:'Salvar e continuar →'}).click();
  await page.goto('/previa/aluno/atividades/campus');
  await expect(page.getByRole('heading',{level:1})).toHaveText('Rotas acessíveis no campus');
- await expect(page.getByRole('region',{name:'Materiais preparados para você'})).toBeVisible();
+ await page.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
+ await expect(page.getByRole('region',{name:'PDFs e materiais da atividade'})).toBeVisible();
  await page.goto('/previa/aluno/atividades/informacao');
  await expect(page.getByRole('heading',{level:1})).toHaveText('Esta atividade ainda não está disponível');
 });
@@ -100,6 +102,7 @@ test('primeiros passos levam a exemplos do professor e do aluno e a revisão pre
  await page.goto('/previa/aluno/primeiros-passos');
  await expect(page.getByRole('heading',{name:'Primeiros passos do aluno'})).toBeVisible();
  await page.getByRole('link',{name:'Abrir atividade',exact:true}).click();
+ await page.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
  await expect(page.getByText('rotas-do-campus.pdf · Texto ampliado e espaçado',{exact:true})).toBeVisible();
 });
 
@@ -122,7 +125,7 @@ test('pedidos são opcionais, perfil não compartilhado não gera recomendaçõe
  await expect(page.getByText('RELATO PRIVADO DE TESTE',{exact:true})).toHaveCount(0);
  await page.goto('/previa/aluno/barreiras');
  await page.getByLabel('O que dificultou esta atividade?').fill('Preciso de um exemplo da segunda etapa.');
- await page.getByLabel('Compartilhar este relato com os docentes desta turma').check();
+ await page.getByLabel('Compartilhar com o(a) professor(a) a dificuldade encontrada').check();
  await page.getByRole('button',{name:'Enviar relato',exact:true}).click();
  await page.goto('/previa/professor/barreiras');
  const report=page.locator('section.paper').filter({has:page.getByText('Preciso de um exemplo da segunda etapa.',{exact:true})});
@@ -180,7 +183,8 @@ test('convites, entrada na turma e estratégias individuais/da turma completam o
  await page.getByLabel('Texto do apoio',{exact:true}).fill('ORIENTAÇÃO EXCLUSIVA DO CENÁRIO DE MARINA');
  await page.getByRole('button',{name:'Salvar orientação de exemplo'}).click();
  await page.goto('/previa/aluno/atividades/campus');
- await page.getByText('Exemplo e orientações da etapa',{exact:true}).click();
+ await page.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
+ await page.getByRole('region',{name:'Apoios da atividade'}).getByText('Roteiro de planejamento',{exact:true}).click();
  await expect(page.getByRole('heading',{name:'Roteiro de planejamento',exact:true})).toBeVisible();
  await expect(page.getByText('ORIENTAÇÃO EXCLUSIVA DO CENÁRIO DE MARINA',{exact:true})).toBeVisible();
  await page.getByLabel('Aluno fictício').selectOption('preview-student-2');
@@ -197,21 +201,22 @@ test('prévia do aluno oferece um acesso por atividade e prioriza a etapa atual'
  expect((await illustration.boundingBox())!.width).toBeLessThanOrEqual(320);
  await expect(page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('link', { name: 'Feedback', exact: true })).toHaveCount(0);
  await main.locator('a[href="/previa/aluno/atividades/campus"]').click();
- await expect(main.locator('.preview-student-mission > :first-child')).toHaveAttribute('aria-labelledby', 'preview-stage-heading');
+ await expect(main.locator('.preview-student-mission > :first-child')).toHaveAttribute('aria-label', 'Apresentação da atividade');
  await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeHidden();
  await main.getByText('Objetivos e critérios da atividade', { exact: true }).click();
  await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeVisible();
+ await main.getByRole('button', { name: 'Clique aqui para iniciar', exact: true }).click();
  const stage = main.locator('.preview-student-stage');
- const guidance = stage.getByText('Exemplo e orientações da etapa', { exact: true });
+ const guidance = stage.getByText('Ver um exemplo', { exact: true });
  await guidance.click();
  await expect(stage.locator('details')).toHaveAttribute('open', '');
- const next = main.getByRole('button', { name: 'Próxima etapa' });
+ const next = main.getByRole('button', { name: 'Próxima atividade' });
  await next.scrollIntoViewIfNeeded();
  const scrollBefore = await page.evaluate(() => window.scrollY);
  await next.click();
  await expect(main.locator('#preview-stage-heading')).toBeFocused();
  await expect(stage.locator('details[open]')).toHaveCount(0);
- await expect(stage.getByRole('navigation', { name: 'Paginação das etapas' })).toContainText('Etapa 3 de 4');
+ await expect(stage.getByRole('navigation', { name: 'Paginação das atividades' })).toContainText('Atividade 3 de 4');
  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
  await page.setViewportSize({ width: 320, height: 800 });
  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });

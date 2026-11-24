@@ -29,7 +29,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     page.getByRole("link", { name: "Continuar atividade" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Etapa 2 de 5 · Planejar a solução", { exact: true }),
+    page.getByText("Atividade 2 de 5 · Planejar a solução", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText("Ambiente de demonstração · dados fictícios", {
@@ -75,8 +75,10 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByRole("main").locator(`a[href="${missionHref}"]`)).toHaveCount(1);
   await expect(page.locator(".preview-student-continue .path-art img")).toBeVisible();
   await resume.click();
+  await expect(page.getByRole("button", { name: "Continuar atividade", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Continuar atividade", exact: true }).click();
   await expect(page.locator(".student-live-mission .form-stack > :first-child").first()).toHaveAttribute("id", "etapas");
-  await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
+  await expect(page.getByLabel("Escreva a sua resposta")).toBeVisible();
   await page.getByText("Aa · Ajustar leitura", { exact: true }).click();
   await page.getByLabel("Tamanho do texto").selectOption("1.125");
   await page.locator("#temas > summary").click();
@@ -91,7 +93,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await page
-    .getByLabel("Planejamento e atividade")
+    .getByLabel("Escreva a sua resposta")
     .fill(
       "Planejamento fictício verificado no navegador: cadastrar, consultar e registrar empréstimos.",
     );
@@ -99,12 +101,13 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     .getByRole("button", { name: "Salvar rascunho", exact: true })
     .click();
   await expect(
-    page.getByText("Rascunho e etapa atual salvos no servidor.", {
+    page.getByText("Rascunho e atividade atual salvos no servidor.", {
       exact: true,
     }),
   ).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Planejamento e atividade")).toHaveValue(
+  await page.getByRole("button", { name: "Continuar atividade", exact: true }).click();
+  await expect(page.getByLabel("Escreva a sua resposta")).toHaveValue(
     "Planejamento fictício verificado no navegador: cadastrar, consultar e registrar empréstimos.",
   );
   await expect(page.locator("html")).toHaveAttribute(
@@ -121,7 +124,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
   await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
-  await page.getByLabel('O que dificultou esta etapa?').fill('Exemplo de relato privado criado no teste integrado.');
+  await page.getByLabel('O que dificultou esta atividade?').fill('Exemplo de relato privado criado no teste integrado.');
   await page.getByRole('button', { name: 'Enviar relato', exact: true }).click();
   await expect(page.getByText('Relato privado salvo. Somente você pode consultá-lo.', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Consultar meus relatos e respostas' }).click();
@@ -348,32 +351,31 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await expect(page).toHaveURL(/\/aluno\/?(?:\?|$)/);
     await page.goto('/aluno/atividades/demo-class-oficina-mission');
-    const pagination = page.getByRole('navigation', { name: 'Paginação das etapas' });
-    const previous = pagination.getByRole('button', { name: 'Etapa anterior', exact: true });
-    await expect(previous).toBeVisible();
-    const stage = page.locator('#etapas h2');
-    for (let remaining = 9; remaining > 0 && (await stage.textContent())?.trim() !== 'Conhecer o desafio'; remaining--) {
-      await previous.click();
-    }
-    await expect(stage).toHaveText('Conhecer o desafio');
-    const supports = page.getByRole('region', { name: 'Apoios desta etapa', exact: true });
+    await page.getByText('Abrir materiais, PDFs e apoios', { exact: true }).click();
+    const supports = page.getByRole('region', { name: 'Apoios da atividade', exact: true });
     await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toBeVisible();
     if (suffix === 'A') {
       await supports.getByText('Exemplo comentado', { exact: true }).click();
       await expect(supports.getByText('Apoio individual de A: compare duas propostas e justifique sua escolha.', { exact: true })).toBeVisible();
       await supports.getByRole('button', { name: 'Carregar áudio do apoio', exact: true }).click();
       await expect(supports.locator('audio')).toHaveAttribute('src', /^blob:/);
-
     } else {
       await expect(supports.getByText('Exemplo comentado', { exact: true })).toHaveCount(0);
       const versionId = await page.evaluate(async () => (await (await fetch('/api/v1/missions/demo-class-oficina-mission')).json()).publishedVersion.id as string);
       const response = await page.request.get(`/api/v1/missions/demo-class-oficina-mission/supports?versionId=${encodeURIComponent(versionId)}`);
       expect(await response.text()).not.toContain('Apoio individual de A');
     }
-    await page.getByRole('button', { name: 'Próxima etapa', exact: true }).click();
+    await page.getByRole('button', { name: 'Clique aqui para iniciar', exact: true }).click();
+    const pagination = page.getByRole('navigation', { name: 'Paginação das atividades' });
+    const previous = pagination.getByRole('button', { name: 'Atividade anterior', exact: true });
+    await expect(previous).toBeVisible();
+    const stage = page.locator('#etapas h2');
+    for (let remaining = 9; remaining > 0 && (await stage.textContent())?.trim() !== 'Conhecer o desafio'; remaining--) {
+      await previous.click();
+    }
+    await expect(stage).toHaveText('Conhecer o desafio');
+    await page.getByRole('button', { name: 'Próxima atividade', exact: true }).click();
     await expect(page.locator('#etapas h2')).toBeFocused();
-    await expect(supports.getByRole('status')).toHaveCount(0);
-    await expect(supports.getByText('Checklist do próximo passo', { exact: true })).toHaveCount(0);
     if (suffix === 'A') {
       await page.goto('/aluno/apoios');
       await page.getByRole('checkbox', { name: 'Tarefa dividida em passos curtos', exact: true }).check();
@@ -398,7 +400,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
       await page.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)', { exact: true }).setInputFiles({ name: 'resposta.txt', mimeType: 'text/plain', buffer: Buffer.from('Arquivo privado do aluno A: comparo duas propostas.') });
       await expect(page.getByText('Arquivo de texto preparado para salvar.', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
-      await expect(page.getByText('Rascunho e etapa atual salvos no servidor.', { exact: true })).toBeVisible();
+      await expect(page.getByText('Rascunho e atividade atual salvos no servidor.', { exact: true })).toBeVisible();
       await page.reload();
       await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();
       page.once('dialog', dialog => dialog.accept());
@@ -467,7 +469,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.goto(`/aluno/atividades/${inclusiveMission.id}`);
   await expect(page.getByText(feedback, { exact: true })).toBeVisible();
   await expect(page.getByText('Revisada', { exact: true })).toBeVisible();
-  await expect(page.getByLabel('Planejamento e atividade', { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('Escreva a sua resposta', { exact: true })).toHaveCount(0);
   await page.reload();
   await expect(page.getByText(feedback, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Carregar áudio da atividade', exact: true })).toBeVisible();

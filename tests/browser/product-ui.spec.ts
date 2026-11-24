@@ -288,7 +288,8 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
     },
   );
   await page.goto("/aluno/atividades/test-mission");
-  await expect(page.getByLabel("Planejamento e atividade")).toBeVisible();
+  await page.getByRole("button", { name: "Continuar atividade", exact: true }).click();
+  await expect(page.getByLabel("Escreva a sua resposta")).toBeVisible();
   await expect(page.getByRole("link", { name: "← Voltar às entregas da turma", exact: true })).toHaveAttribute("href", "/aluno/entregas?turma=test-classroom");
   expect(
     (
@@ -298,23 +299,23 @@ test("rascunho aguarda confirmação, bloqueia edição concorrente e preserva t
     ).violations,
   ).toEqual([]);
   await page
-    .getByLabel("Planejamento e atividade")
+    .getByLabel("Escreva a sua resposta")
     .fill("Meu planejamento preservado.");
   await page
     .getByRole("button", { name: "Salvar rascunho", exact: true })
     .click();
-  await expect(page.getByLabel("Planejamento e atividade")).toBeDisabled();
+  await expect(page.getByLabel("Escreva a sua resposta")).toBeDisabled();
   await expect(
-    page.getByText("Rascunho e etapa atual salvos no servidor.", {
+    page.getByText("Rascunho e atividade atual salvos no servidor.", {
       exact: true,
     }),
   ).toHaveCount(0);
   release();
   await expect(page.getByText(/O conteúdo mudou no servidor/)).toBeVisible();
-  await expect(page.getByLabel("Planejamento e atividade")).toHaveValue(
+  await expect(page.getByLabel("Escreva a sua resposta")).toHaveValue(
     "Meu planejamento preservado.",
   );
-  await expect(page.getByLabel("Planejamento e atividade")).toBeEnabled();
+  await expect(page.getByLabel("Escreva a sua resposta")).toBeEnabled();
 });
 test("editor salva versão, exige revisão e publica somente a versão confirmada — transporte controlado", async ({
   page,

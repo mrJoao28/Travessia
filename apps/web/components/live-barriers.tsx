@@ -28,10 +28,10 @@ export function BarrierComposer({
     <>
       <h2>Registre eventuais barreiras para cumprir a atividade</h2>
       <p>
-        Relato sobre a etapa: <strong>{target.title}</strong>.
+        Relato sobre a atividade: <strong>{target.title}</strong>.
       </p>
       <p>
-        Descreva o que dificultou esta etapa. Não é necessário informar
+        Descreva o que dificultou a realização da atividade. Não é necessário informar
         diagnóstico ou dados de saúde.
       </p>
       <form
@@ -60,7 +60,7 @@ export function BarrierComposer({
         }}
       >
         <label htmlFor="barrier-text">
-          O que dificultou esta etapa?
+          O que dificultou esta atividade?
           <textarea
             disabled={pending}
             id="barrier-text"
