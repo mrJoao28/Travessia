@@ -24,6 +24,30 @@ export function BarrierComposer({
   const [shared, setShared] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
+
+  async function saveReport() {
+    if (pending || !description.trim()) return;
+    setPending(true);
+    setMessage("");
+    try {
+      const saved = await api("createBarrier", {
+        params: { id: target.id },
+        body: { description: description.trim(), sharedWithTeacher: shared },
+      });
+      setDescription("");
+      setShared(false);
+      setMessage(
+        saved.sharedWithTeacher
+          ? "Relato salvo e compartilhado com os docentes desta turma."
+          : "Relato privado salvo. Somente você pode consultá-lo.",
+      );
+    } catch (reason) {
+      setMessage(errorMessage(reason));
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <>
       <h2>Registre eventuais barreiras para cumprir a atividade</h2>
@@ -34,29 +58,11 @@ export function BarrierComposer({
         Descreva o que dificultou a realização da atividade. Não é necessário informar
         diagnóstico ou dados de saúde.
       </p>
-      <form
+      <div
         className="form-stack"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          if (pending) return;
-          setPending(true);
-          setMessage("");
-          try {
-            const saved = await api("createBarrier", {
-              params: { id: target.id },
-              body: { description, sharedWithTeacher: shared },
-            });
-            setDescription("");
-            setMessage(
-              saved.sharedWithTeacher
-                ? "Relato salvo e compartilhado com os docentes desta turma."
-                : "Relato privado salvo. Somente você pode consultá-lo.",
-            );
-          } catch (reason) {
-            setMessage(errorMessage(reason));
-          } finally {
-            setPending(false);
-          }
+        onBlur={(event) => {
+          const next = event.relatedTarget as Node | null;
+          if (!event.currentTarget.contains(next)) void saveReport();
         }}
       >
         <label htmlFor="barrier-text">
@@ -79,19 +85,15 @@ export function BarrierComposer({
           />
           Compartilhar com o(a) professor(a) a dificuldade encontrada
         </label>
-        <p className="small">O compartilhamento só será realizado após clicar no botão Enviar relato.</p>
-        <button
-          className="button button-outline"
-          disabled={pending}
-        >
-          {pending ? "Enviando…" : "Enviar relato"}
-        </button>
+        <p className="small">
+          O relato será salvo automaticamente quando você sair deste formulário.
+          Se você marcar o compartilhamento, os docentes da turma poderão consultá-lo.
+        </p>
         <OperationStatus message={message} />
-      </form>
+      </div>
     </>
   );
 }
-
 export function LiveBarriers({ classroom }: { classroom: Classroom }) {
   const [items, setItems] = useState<ApiResponse<"barriers">["items"]>([]);
   const [error, setError] = useState("");
