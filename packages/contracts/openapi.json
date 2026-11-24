@@ -13584,7 +13584,7 @@
                     ]
                   },
                   "studentIds": {
-                    "minItems": 2,
+                    "minItems": 1,
                     "maxItems": 50,
                     "type": "array",
                     "items": {
@@ -13746,7 +13746,7 @@
                     ]
                   },
                   "studentIds": {
-                    "minItems": 2,
+                    "minItems": 1,
                     "maxItems": 50,
                     "type": "array",
                     "items": {

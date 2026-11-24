@@ -377,6 +377,7 @@ export class ProductService {
           if (!studentForming && row.draftVersion?.workMode === 'individual' && row.publishedVersion?.workMode === 'individual') return fail(409, 'INDIVIDUAL_ACTIVITY', 'Esta atividade é individual.');
           const data = body as Body<'createGroup'>;
           if (studentForming && (!data.studentIds.includes(userId) || (data.leaderId && data.leaderId !== userId))) return fail(400, 'GROUP_CREATOR_REQUIRED', 'Inclua você na equipe e escolha a si mesmo como líder.');
+          if (studentForming && data.studentIds.length < 2) return fail(400, 'GROUP_SIZE_TOO_SMALL', 'Selecione pelo menos outra pessoa para formar uma equipe.');
           if (await tx.missionGroup.count({ where: { missionId: id, name: data.name, archivedAt: null } })) return fail(409, 'GROUP_NAME_EXISTS', 'Já existe uma equipe com este nome nesta atividade.');
           const students = await tx.membership.count({ where: { classroomId: row.classroomId, role: 'student', active: true, userId: { in: data.studentIds } } });
           if (students !== data.studentIds.length) return fail(400, 'INVALID_RECIPIENTS', 'Escolha alunos ativos desta turma.');
