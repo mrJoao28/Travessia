@@ -636,9 +636,11 @@ function SubmissionList({
               <p className="badge">
                 {submission.status === "draft"
                   ? "Rascunho"
-                  : submission.status === "submitted"
-                    ? "Aguardando feedback"
-                    : "Revisada"}
+                  : submission.status === "partial"
+                    ? "Envio parcial · equipe continua trabalhando"
+                    : submission.status === "submitted"
+                      ? "Aguardando feedback"
+                      : "Revisada"}
               </p>
               {role === "aluno" && <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />}
               {submission.feedback.map((feedback) => (
@@ -701,6 +703,22 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
           ? "Feedback publicado pelo servidor."
           : "Esta entrega já foi revisada."}
       </p></div>
+    );
+  if (submission.status === "partial")
+    return (
+      <details>
+        <summary>Consultar atividades enviadas pela equipe</summary>
+        <section aria-label="Atividades já enviadas ao professor">
+          <ul>{steps.filter(step => submission.submittedStepIds?.includes(step.id)).map(step => (
+            <li key={step.id}>
+              <strong>{step.title}</strong>
+              {submission.submittedStepAt?.[step.id] && <> · enviada em {formatTeacherDeadline(submission.submittedStepAt[step.id], timeZone)}</>}
+              {submission.stepResponses?.[step.id] && <p className="submission-content">{submission.stepResponses[step.id]}</p>}
+            </li>
+          ))}</ul>
+        </section>
+        <p className="small">A equipe ainda está trabalhando nas atividades restantes. O feedback e a avaliação serão liberados quando a entrega estiver completa.</p>
+      </details>
     );
   return (
     <details>

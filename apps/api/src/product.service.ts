@@ -39,9 +39,10 @@ export function submissionView(s: Prisma.SubmissionGetPayload<{ include: typeof 
   const stepRevisions = (s.stepRevisions && typeof s.stepRevisions === 'object' && !Array.isArray(s.stepRevisions) ? s.stepRevisions : {}) as Record<string, number>;
   const submittedStepIds = Array.isArray(s.submittedStepIds) ? s.submittedStepIds.filter((stepId): stepId is string => typeof stepId === 'string') : [];
   const visibleResponses = teacher && s.status === 'partial' ? Object.fromEntries(Object.entries(stepResponses).filter(([stepId]) => submittedStepIds.includes(stepId))) : stepResponses;
-  return { id: s.id, versionId: s.versionId, userId: s.userId, updatedById: s.updatedById, updatedByName: s.updatedBy?.name ?? null, groupId: s.groupId, status: s.status, content: teacher && s.status === 'partial' ? '' : s.content, stepResponses: visibleResponses, stepRevisions,
+  const partialTeacherView = teacher && s.status === 'partial';
+  return { id: s.id, versionId: s.versionId, userId: s.userId, updatedById: s.updatedById, updatedByName: s.updatedBy?.name ?? null, groupId: s.groupId, status: s.status, content: partialTeacherView ? '' : s.content, stepResponses: visibleResponses, stepRevisions,
     validations: s.validations.map(validation => ({ stepId: validation.stepId, userId: validation.userId, userName: validation.user.name, validatedAt: validation.validatedAt,
-      current: validation.contentHash === (stepResponses[validation.stepId] ?? (s.currentStepId === validation.stepId ? s.content : '')) })), hasAudio: s.hasAudio, hasTextFile: s.hasTextFile,
+      current: validation.contentHash === (stepResponses[validation.stepId] ?? (s.currentStepId === validation.stepId ? s.content : '')) })), hasAudio: partialTeacherView ? false : s.hasAudio, hasTextFile: partialTeacherView ? false : s.hasTextFile,
     submittedStepIds, submittedStepAt: s.submittedStepAt,
     completedStepIds: s.completedStepIds, currentStepId: s.currentStepId, revision: s.revision,
     submittedAt: s.submittedAt, updatedAt: s.updatedAt, attempt: s.attempt, revisionRequested: s.revisionRequested,
@@ -595,10 +596,11 @@ export class ProductService {
             create: { submissionId: row.id, stepId: step.id, userId, contentHash: digest(response) }, update: { contentHash: digest(response), validatedAt: new Date() } });
           return submissionView(await tx.submission.findUniqueOrThrow({ where: { id: row.id }, include: submissionInclude }));
         }
-        if (op === 'submissionAudio') { if (!row.audio) return missing(); return { base64: Buffer.from(row.audio).toString('base64'), mimeType: 'audio/wav' }; }
-        if (op === 'submissionTextFile') { if (row.textFile === null) return missing(); return { name: 'atividade.txt', text: row.textFile }; }
+        if (op === 'submissionAudio') { if (!row.audio || isInstructorRole(member.role) && row.status === 'partial') return missing(); return { base64: Buffer.from(row.audio).toString('base64'), mimeType: 'audio/wav' }; }
+        if (op === 'submissionTextFile') { if (row.textFile === null || isInstructorRole(member.role) && row.status === 'partial') return missing(); return { name: 'atividade.txt', text: row.textFile }; }
         if (op === 'submission') return submissionView(row, isInstructorRole(member.role));
         if (!isInstructorRole(member.role) || row.status === 'draft') return missing();
+        if (row.status === 'partial') return fail(409, 'PARTIAL_NOT_READY', 'A equipe ainda está enviando outras atividades. O feedback e a avaliação ficam disponíveis após a entrega completa.');
         const { content, requestRevision = false, scores } = body as Body<'feedback'>;
         let totalPoints: number | null = null;
         const graded = await tx.step.findMany({ where: { versionId: row.versionId, maxPoints: { not: null } }, select: { id: true, maxPoints: true } });

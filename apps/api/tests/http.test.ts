@@ -293,6 +293,7 @@ test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega ún
   assert.deepEqual(Object.keys(teacherPartial.stepResponses), [stepOne.id]);
   assert.equal(teacherPartial.stepResponses[stepTwo.id], undefined);
   assert.equal((await request(`/v1/submissions/${first.id}`, main)).json.stepResponses[stepTwo.id], undefined);
+  await request(`/v1/submissions/${first.id}/feedback`, main, 'POST', { content: 'Feedback antes da entrega completa.' }, 409);
   for (const cookie of [a, b]) await request(`/v1/submissions/${first.id}/steps/${stepTwo.id}/validate`, cookie, 'POST', { expectedStepRevision: partial.stepRevisions[stepTwo.id] });
   const current = (await request(`/v1/submissions/${first.id}`, a)).json;
   const submitted = (await request(`${path}/submissions`, a, 'POST', { ...input, content: 'Texto coletivo', status: 'submitted', expectedRevision: current.revision })).json;
