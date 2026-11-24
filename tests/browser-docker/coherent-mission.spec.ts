@@ -60,6 +60,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await teacher.getByLabel('Texto da página 1',{exact:true}).fill('Compare duas rotas de 10 metros. Identifique os obstáculos e justifique uma escolha acessível.');
   await teacher.getByLabel('Descrição das informações visuais da página 1',{exact:true}).fill('Um retângulo representa a área usada na comparação das rotas.');
   await teacher.getByRole('button',{name:'Atividade e entrega',exact:true}).click();
+  await teacher.getByLabel('Onde usar estas instruções',{exact:true}).selectOption('');
   await teacher.getByLabel('Instruções preparadas para Marina do fluxo',{exact:true}).fill('Primeiro identifique os obstáculos. Depois compare as rotas de 10 metros e justifique sua escolha.');
   await teacher.getByRole('checkbox',{name:'Áudio de até 30 segundos',exact:true}).check();await teacher.getByRole('checkbox',{name:'Arquivo de texto (.txt)',exact:true}).check();
   await expect(teacher.getByRole('button',{name:'Salvar e revisar',exact:true})).toBeDisabled();
