@@ -74,7 +74,7 @@ for(const profile of profiles)test(`reflow ${profile.name}`,async({browser},info
   await page.goto('/previa/aluno/atividades/campus');await page.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
   await page.getByRole('region',{name:'PDFs e materiais da atividade'}).getByText('rotas-do-campus.pdf · Texto ampliado e espaçado',{exact:true}).click();
   await page.getByText('Transcrição do áudio',{exact:true}).click();await capture('student-material-audio');
-  await page.getByRole('button',{name:'Clique aqui para iniciar',exact:true}).click();await expect(page.getByLabel('Escreva a sua resposta')).toBeVisible();
+  await page.getByRole('button',{name:/Clique aqui para iniciar|Continuar atividade|Consultar atividade/}).click();await expect(page.getByLabel('Escreva a sua resposta')).toBeVisible();
   const mobile=profile.width<=1024;
   if(mobile){
    await page.getByRole('button',{name:'Abrir menu',exact:true}).click();

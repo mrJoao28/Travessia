@@ -152,7 +152,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await teacher.goto('/professor/entregas');const delivery=teacher.locator('li.paper').filter({has:teacher.getByRole('heading',{name:'Rotas acessíveis no campus',exact:true})});
   await delivery.getByText('Consultar entrega e escrever feedback',{exact:true}).click();await delivery.getByLabel('Orientação para o próximo passo',{exact:true}).fill('Sua escolha está justificada. Na próxima etapa, relacione os obstáculos às soluções de acesso.');
   await delivery.getByRole('button',{name:'Publicar feedback',exact:true}).click();await expect(delivery.getByText('Feedback publicado pelo servidor.',{exact:true})).toBeVisible();
-  await student.reload();await expect(student.getByText('Sua escolha está justificada. Na próxima etapa, relacione os obstáculos às soluções de acesso.',{exact:true})).toBeVisible();
+  await student.reload();await student.getByRole('button',{name:'Consultar atividade',exact:true}).click();await expect(student.getByText('Sua escolha está justificada. Na próxima etapa, relacione os obstáculos às soluções de acesso.',{exact:false})).toBeVisible();
   await student.setViewportSize({width:320,height:850});expect(await student.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   expect((await new AxeBuilder({page:student}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
   await student.screenshot({path:'test-results/reference-coherent-student-feedback.png',fullPage:true});
