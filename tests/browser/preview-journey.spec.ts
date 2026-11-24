@@ -121,7 +121,8 @@ test('pedidos são opcionais, perfil não compartilhado não gera recomendaçõe
  await expect(page.getByRole('radio',{name:/Explicação direta, em passos/})).toBeChecked();
  await page.goto('/previa/aluno/barreiras');
  await page.getByLabel('O que dificultou esta atividade?').fill('RELATO PRIVADO DE TESTE');
- await page.getByRole('heading',{name:'O que podemos tornar mais claro?'}).click();
+ await page.getByLabel('O que dificultou esta atividade?').press('Tab');
+ await page.keyboard.press('Tab');
  await expect(page.getByRole('status')).toContainText('Relato privado simulado salvo');
  await page.goto('/previa/professor/barreiras');
  await expect(page.getByText('RELATO PRIVADO DE TESTE',{exact:true})).toHaveCount(0);
