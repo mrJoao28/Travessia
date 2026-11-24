@@ -142,13 +142,17 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await expect(student.locator('#submission-content')).toHaveValue('Escolho a rota com menos obstáculos e justifico com os dados do PDF.');
   await student.unroute(submissionsRequest);
   await student.getByRole('button',{name:'Salvar rascunho',exact:true}).click();await expect(student.getByRole('status').filter({hasText:'Rascunho e atividade atual salvos no servidor.'})).toBeVisible();
+  await student.getByText('Encontrou uma dificuldade?',{exact:true}).click();
   await student.getByLabel('O que dificultou esta atividade?',{exact:true}).fill('Preciso de uma descrição mais clara do obstáculo apresentado no exemplo.');
   await student.getByRole('checkbox',{name:'Compartilhar com o(a) professor(a) a dificuldade encontrada',exact:true}).check();await student.keyboard.press('Tab');
   await expect(student.getByText('Relato salvo e compartilhado com os docentes desta turma.',{exact:true})).toBeVisible();
   await teacher.goto(`/professor/barreiras?turma=${classroom.id}`);await teacher.getByLabel('Responder ao estudante',{exact:true}).fill('O obstáculo é a ausência de passagem livre. Compare as alternativas de acesso.');await teacher.getByRole('button',{name:'Enviar resposta',exact:true}).click();await expect(teacher.getByText('Resposta salva e disponível para o autor do relato.',{exact:true})).toBeVisible();
   await student.goto(`/aluno/barreiras?turma=${classroom.id}`);await expect(student.getByText('O obstáculo é a ausência de passagem livre. Compare as alternativas de acesso.',{exact:true})).toBeVisible();
-  await student.goto(`/aluno/atividades/${missionId}`);await student.getByRole('button',{name:'Continuar atividade',exact:true}).click();student.once('dialog', dialog => dialog.accept());
-  await student.getByRole('button',{name:'Enviar atividade',exact:true}).click();await expect(student.getByText('Atividade enviada. Aguarde o feedback do professor.',{exact:true})).toBeVisible();
+  await student.goto(`/aluno/atividades/${missionId}`);await student.getByRole('button',{name:'Continuar atividade',exact:true}).click();
+  const progress=student.getByRole('progressbar');const totalSteps=Number(await progress.getAttribute('aria-valuemax'));let currentStep=Number(await progress.getAttribute('aria-valuenow'));
+  while(currentStep<totalSteps){if(currentStep>1)await student.getByLabel('Escreva a sua resposta',{exact:true}).fill(`Resposta da etapa ${currentStep}.`);await student.getByRole('button',{name:`Salvar e avançar para a etapa ${currentStep+1}`,exact:true}).click();currentStep++;await expect(progress).toHaveAttribute('aria-valuenow',String(currentStep));}
+  await student.getByLabel('Escreva a sua resposta',{exact:true}).fill('Resposta final com síntese e justificativa.');
+  await student.getByRole('button',{name:'Finalizar e enviar atividade',exact:true}).click();await student.getByRole('button',{name:'Confirmar envio',exact:true}).click();await expect(student.getByText('Atividade enviada. Aguarde o feedback do professor.',{exact:true})).toBeVisible();
   await teacher.goto('/professor/entregas');const delivery=teacher.locator('li.paper').filter({has:teacher.getByRole('heading',{name:'Rotas acessíveis no campus',exact:true})});
   await delivery.getByText('Consultar entrega e escrever feedback',{exact:true}).click();await delivery.getByLabel('Orientação para o próximo passo',{exact:true}).fill('Sua escolha está justificada. Na próxima etapa, relacione os obstáculos às soluções de acesso.');
   await delivery.getByRole('button',{name:'Publicar feedback',exact:true}).click();await expect(delivery.getByText('Feedback publicado pelo servidor.',{exact:true})).toBeVisible();
