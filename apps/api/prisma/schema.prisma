@@ -253,6 +253,7 @@ model MissionVersion {
   source String @default("manual")
   dueAt DateTime?
   workMode String @default("individual")
+  studentsCanFormTeams Boolean @default(false)
   createdAt DateTime @default(now())
   mission Mission @relation("versions", fields: [missionId], references: [id], onDelete: Cascade)
   draftOf Mission? @relation("draft")

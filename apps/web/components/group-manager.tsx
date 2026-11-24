@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { api, pages, errorMessage, type ApiResponse } from "../lib/product-client";
 
 type Student = ApiResponse<"strategyRecipients">["items"][number];
@@ -110,6 +110,84 @@ export function GroupManager({ missionId }: { missionId: string }) {
       </label>
       <button type="button" className="button button-outline" disabled={pending || !exceptionStudent} onClick={() => void setIndividual()}>Salvar exceção individual</button>
     </fieldset>
+    {message && <p role="status">{message}</p>}
+  </section>;
+}
+
+export function StudentTeamFormation({ missionId, classroomId, viewerId, currentTeam, required, onCreated }: {
+  missionId: string;
+  classroomId: string;
+  viewerId: string;
+  currentTeam: Group | null;
+  required: boolean;
+  onCreated: (group: Group) => void;
+}) {
+  const [students, setStudents] = useState<ApiResponse<"members">["items"]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [loadError, setLoadError] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError("");
+    void pages("members", classroomId)
+      .then(items => { if (active) setStudents(items.filter(item => item.active && item.role === "student")); })
+      .catch(reason => { if (active) setLoadError(errorMessage(reason)); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [classroomId, attempt]);
+
+  async function create(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending || !name.trim() || selected.length === 0 || currentTeam) return;
+    setPending(true);
+    setError("");
+    setMessage("");
+    try {
+      const group = await api("createGroup", { params: { id: missionId }, body: {
+        name: name.trim(), leaderId: viewerId, studentIds: [viewerId, ...selected],
+      } });
+      onCreated(group);
+      setMessage(`Equipe ${group.name} criada para esta atividade.`);
+    } catch (reason) { setError(errorMessage(reason)); }
+    finally { setPending(false); }
+  }
+
+  if (currentTeam) return <section className="notice form-stack" aria-label="Equipe desta atividade">
+    <h3>Equipe definida</h3>
+    <p>Você participa da equipe <strong>{currentTeam.name}</strong>. O professor pode ajustar os integrantes na página da atividade.</p>
+    {message && <p role="status">{message}</p>}
+  </section>;
+
+  return <section className="notice form-stack" aria-labelledby={`student-team-title-${missionId}`} aria-busy={pending}>
+    <h3 id={`student-team-title-${missionId}`}>{required ? "Monte sua equipe para começar" : "Quer fazer esta atividade em grupo?"}</h3>
+    <p>Escolha pelo menos uma pessoa da turma. Você será o líder e poderá organizar as respostas da equipe.</p>
+    {loading ? <p role="status">Carregando estudantes da turma…</p> : loadError ? <div>
+      <p role="alert">{loadError}</p>
+      <button type="button" className="text-button" disabled={pending} onClick={() => setAttempt(value => value + 1)}>Tentar carregar novamente</button>
+    </div> : students.filter(student => student.id !== viewerId).length === 0 ? <p>Não há outros estudantes ativos nesta turma para formar uma equipe.</p> : <form className="form-stack" noValidate onSubmit={event => void create(event)}>
+      <label htmlFor={`student-team-name-${missionId}`}>Nome da equipe
+        <input id={`student-team-name-${missionId}`} value={name} maxLength={150} required disabled={pending} onChange={event => setName(event.target.value)} placeholder="Ex.: Equipe 1" />
+      </label>
+      <fieldset className="teacher-choice-list" disabled={pending}>
+        <legend>Quem vai participar?</legend>
+        <p className="small">Você será incluído automaticamente como líder. A equipe pode ter até 50 pessoas.</p>
+        {students.filter(student => student.id !== viewerId).map(student => <label className="check" key={student.id}>
+          <input type="checkbox" checked={selected.includes(student.id)} disabled={!selected.includes(student.id) && selected.length >= 49} onChange={event => setSelected(current => event.target.checked ? [...current, student.id] : current.filter(id => id !== student.id))} />
+          {student.name}
+        </label>)}
+      </fieldset>
+      <button type="submit" className="button" disabled={pending || loading || !name.trim() || selected.length === 0}>
+        {pending ? "Criando equipe…" : "Criar equipe"}
+      </button>
+    </form>}
+    {error && <p role="alert">{error}</p>}
     {message && <p role="status">{message}</p>}
   </section>;
 }
