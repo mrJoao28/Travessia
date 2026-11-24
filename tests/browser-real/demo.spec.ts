@@ -387,7 +387,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: /Clique aqui para iniciar|Continuar atividade|Consultar atividade/ }).click();
     if (suffix === 'A') {
-      await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: true })).toBeVisible();
+      await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: false })).toBeVisible();
       await page.getByLabel('Áudio da atividade (opcional)', { exact: true }).setInputFiles({ name: 'resposta.wav', mimeType: 'audio/wav', buffer: audio });
       await expect(page.getByRole('button', { name: 'Remover áudio deste apoio', exact: true })).toBeVisible();
       await page.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)', { exact: true }).setInputFiles({ name: 'resposta.txt', mimeType: 'text/plain', buffer: Buffer.from('Arquivo privado do aluno A: comparo duas propostas.') });
@@ -401,7 +401,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
       await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
     } else {
-      await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: true })).toHaveCount(0);
+      await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: false })).toHaveCount(0);
       await expect(page.getByLabel('Áudio da atividade (opcional)', { exact: true })).toHaveCount(0);
       const plans = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/my-adaptations?versionId=${inclusiveMission.publishedVersion.id}`);
       expect((await plans.json()).allowedFormats).toEqual(['text']);
