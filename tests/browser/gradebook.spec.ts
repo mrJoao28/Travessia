@@ -23,6 +23,7 @@ test.describe("Área de Avaliações e Notas do Professor", () => {
     await expect(disclosure).toBeVisible();
     const summary = disclosure.locator("summary");
     await expect(summary).toHaveAccessibleName("Avaliações e notas");
+    await expect(summary.locator(".disclosure-action-hint")).toHaveCSS("position", "absolute");
     await expect(page.locator(`#${await summary.getAttribute("aria-describedby")}`)).toHaveText("Organize períodos e consulte resultados");
 
     // Abrir via teclado
