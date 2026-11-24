@@ -43,8 +43,8 @@ export function AccountMenu({
           <>
             <strong>Prévia interativa</strong>
             <p className="small">Dados fictícios, sem sessão.</p>
-            <Link href={`/previa/${student ? "aluno" : "professor"}/perfil`}>Perfil fictício</Link>
-            <Link href={`/previa/${student ? "professor" : "aluno"}`}>
+            <Link className="account-action" href={`/previa/${student ? "aluno" : "professor"}/perfil`}>Perfil fictício</Link>
+            <Link className="account-action" href={`/previa/${student ? "professor" : "aluno"}`}>
               Ver prévia {student ? "do professor" : "do aluno"}
             </Link>
           </>
@@ -52,14 +52,14 @@ export function AccountMenu({
           <>
             <strong>{account.name}</strong>
             <p className="small">{account.course}</p>
-            <Link className="text-link" href={`/perfil?espaco=${student ? "aluno" : "professor"}`}>Meu perfil</Link>
+            <Link className="account-action" href={`/perfil?espaco=${student ? "aluno" : "professor"}`}>Meu perfil</Link>
             {account.switchHref && (
-              <Link className="text-link" href={account.switchHref}>
+              <Link className="account-action" href={account.switchHref}>
                 {account.switchLabel}
               </Link>
             )}
             <button
-              className="text-button"
+              className="account-action account-signout-action"
               disabled={pending}
               onClick={async () => {
                 setPending(true);
@@ -80,7 +80,7 @@ export function AccountMenu({
             <p role="status">{message}</p>
           </>
         ) : (
-          <Link href="/login">Entrar na sua conta</Link>
+          <Link className="account-action" href="/login">Entrar na sua conta</Link>
         )}
       </div>
     </details>

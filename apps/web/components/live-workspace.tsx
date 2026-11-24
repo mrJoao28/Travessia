@@ -218,8 +218,8 @@ function WorkspaceView({
           {!permitted.length ? (
             <section className="paper">
               {role === "professor" && section === "turmas" && <>
-                <label htmlFor="classroom-view">Exibir turmas
-                  <select id="classroom-view" value={classroomView} onChange={event => {
+                <label htmlFor="classroom-view" className="classroom-view-control"><span>Exibir turmas</span>
+                  <select id="classroom-view" className="classroom-view-select" value={classroomView} onChange={event => {
                     setClassroomView(event.target.value as "active" | "archived");
                     setSelected("");
                     setActionMessage("");
@@ -282,8 +282,8 @@ function WorkspaceView({
                 <LiveBarriers classroom={chosen} />
               ) : section === "turmas" ? (
                 <>
-                <label htmlFor="classroom-view">Exibir turmas
-                  <select id="classroom-view" value={classroomView} onChange={event => {
+                <label htmlFor="classroom-view" className="classroom-view-control"><span>Exibir turmas</span>
+                  <select id="classroom-view" className="classroom-view-select" value={classroomView} onChange={event => {
                     setClassroomView(event.target.value as "active" | "archived");
                     setSelected("");
                     setActionMessage("");
@@ -441,8 +441,8 @@ function StudentDashboard({ entries,classrooms }: { entries: MissionEntry[];clas
         </div>
         <PathIllustration sizes="(max-width: 600px) 208px, 320px" />
       </section>
-      {firstMission && <details className="paper student-first-mission-help">
-        <summary>Primeiros passos</summary>
+      {firstMission && <details className="paper action-disclosure student-first-mission-help">
+        <summary><span>Primeiros passos</span><span className="disclosure-action-hint"><span className="disclosure-closed-hint">Ver guia</span><span className="disclosure-open-hint">Ocultar guia</span></span></summary>
         <StudentFirstSteps />
       </details>}
     </>
@@ -531,8 +531,8 @@ function TeacherDashboard({
       {!hasPublished && (classroom.role === 'teacher' || classroom.role === 'monitor') && <TeacherFirstSteps classroomId={classroom.id} draftId={draft?.mission.id}/>}
       {classroom.role === 'monitor' && <p className="notice">Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.</p>}
       {(classroom.role === 'teacher' || classroom.role === 'monitor') && <div className="teacher-dashboard-tools">
-        <details className="paper teacher-disclosure">
-          <summary aria-label="Alunos da turma e convites" aria-describedby={participantsHintId}><span className="teacher-disclosure-title">Alunos da turma e convites</span><span id={participantsHintId} className="teacher-disclosure-hint">Gerencie participantes e links de convite</span></summary>
+        <details className="paper action-disclosure teacher-disclosure">
+          <summary aria-label="Alunos da turma e convites" aria-describedby={participantsHintId}><span className="teacher-disclosure-title">Alunos da turma e convites</span><span id={participantsHintId} className="teacher-disclosure-hint">Gerencie participantes e links de convite</span><span className="disclosure-action-hint" aria-hidden="true"><span className="disclosure-closed-hint">Abrir</span><span className="disclosure-open-hint">Recolher</span></span></summary>
           <ClassroomMembers classroom={classroom} />
         </details>
         <GradebookManager classroomId={classroom.id} entries={entries} />
@@ -702,8 +702,8 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
       </p></div>
     );
   return (
-    <details>
-      <summary>Consultar entrega e escrever feedback</summary>
+    <details className="action-disclosure submission-feedback-disclosure">
+      <summary><span>Consultar entrega e escrever feedback</span><span className="disclosure-action-hint"><span className="disclosure-closed-hint">Abrir avaliação</span><span className="disclosure-open-hint">Recolher avaliação</span></span></summary>
       {Object.keys(submission.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa"><h3>Respostas por etapa</h3>{steps.map(step => submission.stepResponses?.[step.id] ? <article key={step.id}><h4>{step.title}</h4><p className="submission-content">{submission.stepResponses[step.id]}</p></article> : null)}</section> : <p className="submission-content">{submission.content}</p>}
       <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
       {steps.some(step => step.completedAt) && <section aria-label="Registro de prazo das etapas">
