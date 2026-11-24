@@ -93,6 +93,11 @@ export function GroupManager({ missionId }: { missionId: string }) {
         {selected.map(id => <option key={id} value={id}>{students.find(student => student.id === id)?.name ?? id}</option>)}
       </select>
     </label>}
+    {selected.length < 2 && <p className="small" role="status" aria-live="polite">
+      {selected.length === 0
+        ? "Selecione pelo menos 2 estudantes para criar uma equipe."
+        : "Falta selecionar mais 1 estudante. Uma equipe precisa ter pelo menos 2 integrantes."}
+    </p>}
     <div className="button-row">
       <button type="button" className="button button-outline" disabled={pending || !name.trim() || selected.length < 2} onClick={() => editing ? void update(groups.find(group => group.id === editing)!) : void create()}>{editing ? "Salvar equipe" : "Criar equipe"}</button>
       {editing && <button type="button" className="text-button" disabled={pending} onClick={() => { setEditing(null); setSelected([]); setLeaderId(""); }}>Cancelar edição</button>}
