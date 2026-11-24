@@ -390,7 +390,6 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     await expect(page.getByText('Explicar o raciocínio.', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Clique aqui para iniciar', exact: true }).click();
     if (suffix === 'A') {
-      await page.getByText('Consultar enunciado adaptado', { exact: true }).click();
       await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: true })).toBeVisible();
       await page.getByLabel('Áudio da atividade (opcional)', { exact: true }).setInputFiles({ name: 'resposta.wav', mimeType: 'audio/wav', buffer: audio });
       await expect(page.getByRole('button', { name: 'Remover áudio deste apoio', exact: true })).toBeVisible();
@@ -405,7 +404,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByRole('button', { name: 'Enviar atividade', exact: true }).click();
       await expect(page.getByText('Atividade enviada. Aguarde o feedback do professor.', { exact: true })).toBeVisible();
     } else {
-      await expect(page.getByText('Consultar enunciado adaptado', { exact: true })).toHaveCount(0);
+      await expect(page.getByText('Adaptação real: compare primeiro o custo e depois a clareza. Justifique sua escolha.', { exact: true })).toHaveCount(0);
       await expect(page.getByLabel('Áudio da atividade (opcional)', { exact: true })).toHaveCount(0);
       const plans = await page.request.get(`/api/v1/missions/${inclusiveMission.id}/my-adaptations?versionId=${inclusiveMission.publishedVersion.id}`);
       expect((await plans.json()).allowedFormats).toEqual(['text']);

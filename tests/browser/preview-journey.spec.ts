@@ -52,7 +52,7 @@ test('prévia conecta criação, apoios simulados, PDF, áudio, aluno e feedback
  await expect(page.getByRole('link',{name:'Baixar PDF preparado'})).toHaveAttribute('href','/preview/campus-descricao.pdf');
  await page.getByText('Transcrição do áudio',{exact:true}).click();
  await expect(page.getByRole('link',{name:'Baixar transcrição'})).toHaveAttribute('href','/preview/campus-audiodescricao.txt');
- await page.getByRole('button',{name:'Clique aqui para iniciar',exact:true}).click();
+ await page.getByRole('button',{name:/Clique aqui para iniciar|Continuar atividade/}).click();
  await page.getByLabel('Escreva a sua resposta').fill('Comparei 180 m e dois degraus na rota A com 310 m na rota C. Proponho melhorar as placas e conferir a leitura com usuários.');
  await page.getByLabel('Anexar resposta fictícia em áudio').check();
  await page.getByLabel('Anexar arquivo de texto fictício (.txt)').check();
@@ -185,7 +185,7 @@ test('convites, entrada na turma e estratégias individuais/da turma completam o
  await page.getByRole('button',{name:'Salvar orientação de exemplo'}).click();
  await page.goto('/previa/aluno/atividades/campus');
  await page.getByText('Abrir materiais, PDFs e apoios',{exact:true}).click();
- await page.getByRole('region',{name:'Apoios da atividade'}).getByText('Roteiro de planejamento',{exact:true}).click();
+ await expect(page.getByRole('region',{name:'Apoios da atividade'}).getByText('Roteiro de planejamento',{exact:true})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Roteiro de planejamento',exact:true})).toBeVisible();
  await expect(page.getByText('ORIENTAÇÃO EXCLUSIVA DO CENÁRIO DE MARINA',{exact:true})).toBeVisible();
  await page.getByLabel('Aluno fictício').selectOption('preview-student-2');
@@ -206,7 +206,7 @@ test('prévia do aluno oferece um acesso por atividade e prioriza a etapa atual'
  await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeHidden();
  await main.getByText('Objetivos e critérios da atividade', { exact: true }).click();
  await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeVisible();
- await main.getByRole('button', { name: 'Clique aqui para iniciar', exact: true }).click();
+ await main.getByRole('button', { name: /Clique aqui para iniciar|Continuar atividade/ }).click();
  const stage = main.locator('.preview-student-stage');
  const guidance = stage.getByText('Ver um exemplo', { exact: true });
  await guidance.click();
