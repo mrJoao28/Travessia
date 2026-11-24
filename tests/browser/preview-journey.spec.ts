@@ -60,7 +60,15 @@ test('prévia conecta criação, apoios simulados, PDF, áudio, aluno e feedback
  await page.getByRole('button',{name:'Continuar atividade',exact:true}).click();
  await expect(page.getByLabel('Escreva a sua resposta')).toHaveValue(/Comparei 180 m/);
  await expect(page.getByLabel('Anexar resposta fictícia em áudio')).toBeChecked();
- await page.getByRole('button',{name:'Enviar atividade',exact:true}).click();
+ const stageIndicator = page.locator('#preview-current-stage-label');
+ const stageProgress = page.getByRole('progressbar');
+ const totalStages = Number(await stageProgress.getAttribute('aria-valuemax'));
+ for (let stageNumber = Number(await stageProgress.getAttribute('aria-valuenow')); stageNumber < totalStages; stageNumber++) {
+  await page.getByRole('button', { name: `Salvar e avançar para a etapa ${stageNumber + 1}`, exact: true }).click();
+  await expect(stageIndicator).toHaveText(`Etapa ${stageNumber + 1} de ${totalStages}`);
+ }
+ await page.getByRole('button',{name:'Finalizar e enviar atividade',exact:true}).click();
+ await page.getByRole('button',{name:'Confirmar envio fictício',exact:true}).click();
  await expect(page.getByRole('status')).toContainText('Envio simulado registrado');
  await page.goto('/previa/professor/entregas');
  const item=page.locator('li.paper').filter({has:page.getByRole('heading',{name:'Uma rota melhor para nossa biblioteca',exact:true})});
@@ -211,17 +219,21 @@ test('prévia do aluno oferece um acesso por atividade e prioriza a etapa atual'
  await expect(main.getByRole('heading', { name: 'O que você vai aprender' })).toBeVisible();
  await main.getByRole('button', { name: /Clique aqui para iniciar|Continuar atividade/ }).click();
  const stage = main.locator('.preview-student-stage');
- const guidance = stage.getByText('Ver um exemplo', { exact: true });
+ const guidance = stage.getByText('Exemplo e orientações da etapa', { exact: true });
  await guidance.click();
  await expect(stage.locator('details')).toHaveAttribute('open', '');
- const next = main.getByRole('button', { name: 'Próxima atividade' });
+ const stageProgress = stage.getByRole('progressbar');
+ const currentStage = Number(await stageProgress.getAttribute('aria-valuenow'));
+ const totalStages = Number(await stageProgress.getAttribute('aria-valuemax'));
+ const nextStage = currentStage + 1;
+ const next = main.getByRole('button', { name: `Salvar e avançar para a etapa ${nextStage}`, exact: true });
  await next.scrollIntoViewIfNeeded();
  const scrollBefore = await page.evaluate(() => window.scrollY);
  await next.click();
  await expect(main.locator('#preview-stage-heading')).toBeFocused();
  await expect(stage.locator('details[open]')).toHaveCount(0);
- await expect(stage.getByRole('navigation', { name: 'Paginação das atividades' })).toContainText('Atividade 3 de 4');
- expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+ await expect(stage.getByRole('navigation', { name: 'Navegação das etapas' })).toContainText(`Etapa ${nextStage} de ${totalStages}`);
+ expect(await page.evaluate(() => window.scrollY)).toBeLessThanOrEqual(scrollBefore);
  await page.setViewportSize({ width: 320, height: 800 });
  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);

@@ -475,13 +475,16 @@ nav a:hover,
   text-decoration: none;
 }
 .button:hover:not(:disabled) {
-  text-decoration: underline;
+  text-decoration: none;
+  filter: brightness(0.94);
 }
+.button:active:not(:disabled) { transform: translateY(1px); }
 .button-outline {
   background: var(--surface);
   color: var(--text);
   border-color: var(--muted);
 }
+.button-outline:hover:not(:disabled) { background: var(--sage); border-color: var(--primary); }
 .text-link {
   display: inline-block;
   padding: 0.65rem 0.2rem;
@@ -2440,7 +2443,19 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .preview-student-continue > .path-art { flex: 0 1 20rem; max-width: 100%; align-self: center; }
 .preview-student-other { margin-top: 1.25rem; }
 .preview-student-other .card-list { margin: .6rem 0 0; gap: .5rem; }
-.preview-student-other .card-list > li { padding: .75rem 1rem; flex-wrap: wrap; }
+.preview-student-other .card-list > li { padding: .75rem 1rem; flex-wrap: wrap; align-items: center; }
+.preview-activity-open-button,
+.student-open-activity-button {
+  min-height: 2.9rem;
+  min-width: 10.5rem;
+  gap: .55rem;
+  font-weight: 700;
+}
+.preview-activity-open-button { justify-content: space-between; }
+.preview-activity-open-button > span { font-size: 1.15em; line-height: 1; }
+.preview-activity-open-button:hover:not(:disabled),
+.student-open-activity-button:hover:not(:disabled) { box-shadow: 0 0 0 3px var(--sage); }
+.student-open-activity-button { margin-top: .65rem; }
 .preview-student-mission.form-stack { gap: .75rem; }
 .preview-student-mission > .paper { padding: clamp(.85rem, 2cqi, 1.4rem); }
 .preview-student-stage h2, .preview-student-stage p { margin: 0; }
@@ -2468,12 +2483,199 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: .35rem .6rem;
   padding-bottom: .5rem;
   border-bottom: 1px solid var(--border);
 }
 .student-step-pagination .button { padding: .35rem .65rem; min-height: 44px; }
-.student-step-pagination .eyebrow { color: var(--muted); }
+.student-stage-indicator {
+  display: grid;
+  gap: .4rem;
+  width: min(100%, 13rem);
+  margin-inline-start: auto;
+  padding: .55rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: .8rem;
+  background: var(--sage);
+  color: var(--primary);
+  font-size: .82rem;
+  font-weight: 750;
+  letter-spacing: .035em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.student-stage-progress-track {
+  height: .42rem;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--surface);
+}
+.student-stage-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+@media (max-width: 40rem) {
+  .student-step-pagination { align-items: stretch; }
+  .student-stage-indicator { width: min(100%, 11rem); }
+  .preview-activity-open-button,
+  .student-open-activity-button { min-width: 0; }
+  .preview-student-other .preview-activity-open-button { width: 100%; }
+}
+
+/* Use one recognizable disclosure-button pattern for optional actions. */
+.action-disclosure > summary {
+  min-height: 3rem;
+  padding: .7rem .9rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 650;
+  line-height: 1.4;
+  list-style-position: inside;
+  overflow-wrap: anywhere;
+}
+.action-disclosure > summary::marker { color: var(--primary); }
+.action-disclosure > summary:hover { border-color: var(--primary); background: var(--sage); }
+.action-disclosure[open] > summary { margin-bottom: .9rem; border-color: var(--primary); background: var(--sage); }
+.disclosure-action-hint {
+  float: right;
+  margin-inline-start: .75rem;
+  color: var(--primary);
+  font-size: .88rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
+.disclosure-open-hint { display: none; }
+.action-disclosure[open] .disclosure-closed-hint { display: none; }
+.action-disclosure[open] .disclosure-open-hint { display: inline; }
+.student-first-mission-help > summary {
+  min-height: 3.25rem;
+  padding: .8rem 1rem;
+  border-color: var(--primary);
+  background: var(--sage);
+}
+.student-first-mission-help[open] > summary { margin-bottom: 0; }
+.teacher-dashboard-tools > .teacher-disclosure.action-disclosure > summary {
+  display: list-item;
+  min-height: 4.25rem;
+  padding: .8rem 1rem;
+  background: var(--sage);
+}
+.teacher-disclosure-title { font-weight: 750; }
+.teacher-dashboard-tools .teacher-disclosure-hint {
+  display: block;
+  margin: .15rem 0 0 1.25rem;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 400;
+}
+.teacher-dashboard-tools .teacher-disclosure[open] > summary { margin-bottom: 1rem; }
+.submission-feedback-disclosure { margin-top: .5rem; }
+.submission-feedback-disclosure > summary {
+  display: list-item;
+  border-color: var(--primary);
+  background: var(--sage);
+}
+.submission-feedback-disclosure[open] > summary { margin-bottom: 1rem; }
+.barrier-disclosure {
+  padding: .8rem 1rem;
+  background: var(--background);
+}
+.barrier-disclosure > summary {
+  display: list-item;
+  border-style: dashed;
+  background: var(--background);
+  color: var(--muted);
+  font-weight: 600;
+}
+.barrier-disclosure > summary .disclosure-action-hint { color: var(--muted); }
+.barrier-disclosure[open] > summary { margin-bottom: .75rem; background: var(--surface); color: var(--text); }
+.draft-reuse-confirmation { margin-top: 1rem; }
+.draft-reuse-confirmation .actions { margin-top: .75rem; }
+.submission-stage-guidance {
+  margin: .25rem 0 0;
+  color: var(--muted);
+  font-size: .95rem;
+}
+.submission-actions { align-items: stretch; }
+.submission-actions .button { min-height: 3.5rem; }
+.submission-actions .submission-advance-button,
+.submission-actions .submission-finalize-button { min-width: min(100%, 18rem); padding-inline: 1.4rem; font-weight: 750; }
+.submission-confirmation { border-color: var(--primary); background: var(--sage); }
+.submission-confirmation:focus { outline: 3px solid var(--focus); outline-offset: 3px; }
+.submission-confirmation .actions { margin-top: .75rem; }
+
+.classroom-view-control {
+  display: grid;
+  grid-template-columns: auto minmax(9rem, 13rem);
+  align-items: center;
+  gap: .5rem .85rem;
+  width: fit-content;
+  margin-block: .5rem 1rem;
+  font-weight: 650;
+}
+.classroom-view-select {
+  width: 100%;
+  min-height: 3rem;
+  padding: .55rem .8rem;
+  border: 1px solid var(--muted);
+  border-radius: .65rem;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 650;
+}
+.classroom-view-select:hover { border-color: var(--primary); }
+
+.account > summary {
+  min-height: 44px;
+  justify-content: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.account > summary:hover { filter: brightness(.94); }
+.account-panel {
+  display: grid;
+  gap: .65rem;
+  border-color: var(--border);
+  box-shadow: 0 .6rem 1.5rem rgb(23 54 81 / 14%);
+}
+.account-panel > strong { overflow-wrap: anywhere; }
+.account-panel .small { color: var(--muted); }
+.account-panel > .account-action {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: .65rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: .65rem;
+  background: var(--background);
+  color: var(--text);
+  font-weight: 650;
+  line-height: 1.35;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.account-panel > .account-action:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--sage);
+  text-decoration: underline;
+  text-underline-offset: .18em;
+}
+.account-panel > .account-signout-action { cursor: pointer; text-align: left; }
+.account-panel [role="status"]:empty { display: none; }
+
+@media (max-width: 40rem) {
+  .classroom-view-control { grid-template-columns: minmax(0, 1fr); width: 100%; }
+  .classroom-view-select { max-width: 100%; }
+  .disclosure-action-hint { float: none; display: block; margin: .2rem 0 0 1.25rem; }
+  .submission-actions { flex-direction: column; align-items: stretch; }
+  .submission-actions > .button { width: 100%; }
+}
 
 /* Gradebook Manager & Assessment area */
 .gradebook-disclosure {

@@ -13,3 +13,10 @@ Usar azul, branco, amarelo pontual, ilustração editorial adulta e colaboraçã
 - Prefira rótulos curtos e claros, sem depender de ícone, hover ou cor para explicar a ação. Preserve foco visível, texto que pode quebrar e contraste dos estados.
 - Use `<details>` e `<summary>` nativos para conteúdo opcional. O resumo deve identificar a área e pode trazer uma dica curta; mantenha os alvos de teclado, o marcador nativo e o conteúdo legível quando aberto.
 - Organize áreas irmãs em uma grade responsiva quando isso reduzir rolagem; ao abrir conteúdo amplo, permita que ele ocupe a largura disponível. Reavalie com zoom, texto ampliado e viewport de 320 CSS px.
+
+## Ações claras no percurso de atividades
+
+- A conta, os filtros e as áreas recolhíveis devem parecer controles acionáveis: alvos amplos, foco visível e rótulos que expliquem o resultado.
+- Em uma atividade do aluno, a ação principal de cada etapa intermediária salva o rascunho e avança para a próxima. A ação de envio aparece somente na última etapa; antes do envio, a pessoa revisa e confirma.
+- Relatos de barreira ficam disponíveis em uma área recolhida e de menor ênfase, com um acionador direto que explique como abri-la.
+- Em áreas docentes, convites, participantes, avaliações e feedback usam resumos recolhíveis com apresentação consistente de botão e estado expandido.

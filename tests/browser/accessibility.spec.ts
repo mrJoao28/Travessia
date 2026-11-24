@@ -130,7 +130,8 @@ test("prévia preserva atividade e não fabrica salvamento", async ({ page }) =>
   await expect(page.getByLabel("Escreva a sua resposta")).toHaveValue(
     "Planejamento fictício de teste.",
   );
-  await page.getByRole("button", { name: "Próxima atividade" }).click();
+  await page.getByRole("button", { name: "Salvar e avançar para a etapa 2", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("Etapa 2 de 5");
   await expect(page.getByRole("heading", { name: "Título da atividade: Planejar a solução", exact: true })).toBeFocused();
 });
 test("relato de barreira é salvo ao sair do formulário", async ({ page }) => {

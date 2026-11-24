@@ -41,6 +41,8 @@ export function LiveMission({
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
+  const [draftToReuse, setDraftToReuse] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
   const recoveryKey = `travessia:student-draft:${viewerId}:${id}`;
@@ -52,6 +54,8 @@ export function LiveMission({
   const [recovered, setRecovered] = useState(false);
   const [timeZone, setTimeZone] = useState("UTC");
   const title = useRef<HTMLHeadingElement>(null);
+  const submitConfirmation = useRef<HTMLDivElement>(null);
+  const finalizeButton = useRef<HTMLButtonElement>(null);
   useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
   useEffect(() => { if (started && role === "aluno") title.current?.focus({ preventScroll: true }); }, [started, role]);
   const stepNavigation = useRef(false);
@@ -60,6 +64,9 @@ export function LiveMission({
     stepNavigation.current = false;
     title.current?.focus({ preventScroll: true });
   }, [index]);
+  useEffect(() => {
+    if (confirmSubmit) submitConfirmation.current?.focus();
+  }, [confirmSubmit]);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -201,8 +208,9 @@ export function LiveMission({
   }));
   const canSubmit = !requiresTeam || Boolean(teamGroup && teamGroup.leaderId === viewerId && allMembersValidated);
   const currentValidatedCount = new Set((submission?.validations ?? []).filter(validation => validation.stepId === step.id && validation.current && teamGroup?.studentIds.includes(validation.userId)).map(validation => validation.userId)).size;
+  const isFinalStep = index === version.steps.length - 1;
   async function save(status: "draft" | "submitted", automatic = false, submitStepIds: string[] = []) {
-    if (pending || mediaBusy || !mission?.publishedVersion || !step) return;
+    if (pending || mediaBusy || !mission?.publishedVersion || !step) return false;
     setPending(true);
     if (!automatic) setMessage("");
     try {
@@ -230,14 +238,17 @@ export function LiveMission({
       setSaveError(false);
       setRecovered(false);
       if (readStudentDraft(recoveryKey)?.versionId === mission.publishedVersion.id) storeStudentDraft(recoveryKey, null);
+      if (status === "submitted") setConfirmSubmit(false);
       if (!automatic) setMessage(
         saved.status === "draft"
           ? "Rascunho e atividade atual salvos no servidor."
           : "Atividade enviada. Aguarde o feedback do professor.",
       );
+      return true;
     } catch (reason) {
       setSaveError(true);
       setMessage(errorMessage(reason));
+      return false;
     } finally {
       setPending(false);
     }
@@ -258,11 +269,30 @@ export function LiveMission({
     finally { setPending(false); }
   }
   function reuseDraft(text: string) {
-    if (pending || locked || (content && !window.confirm("Substituir o texto da atividade atual pelo rascunho escolhido?"))) return;
+    if (pending || locked) return;
+    if (content.trim()) {
+      setDraftToReuse(text);
+      return;
+    }
+    applyDraft(text);
+  }
+  function applyDraft(text: string) {
     setContent(text);
     setDirty(true);
     setSaveError(false);
     setMessage("Texto copiado. Confira as instruções antes de salvar ou enviar sua resposta.");
+  }
+  async function saveAndAdvance() {
+    if (isFinalStep || pending || mediaBusy) return;
+    const saved = await save("draft");
+    if (!saved) return;
+    const next = index + 1;
+    navigate(next);
+    setMessage(`Etapa ${next + 1} de ${version?.steps.length ?? 0}.`);
+  }
+  function dismissSubmitConfirmation() {
+    setConfirmSubmit(false);
+    requestAnimationFrame(() => finalizeButton.current?.focus());
   }
   function navigate(next: number) {
     if (next === index) return;
@@ -293,24 +323,23 @@ export function LiveMission({
       {started && <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
         <div className="form-stack">
           <section className="paper preview-student-stage form-stack" id="etapas">
-            <nav className="student-step-pagination" aria-label={role === "aluno" ? "Paginação das atividades" : "Paginação das etapas"}>
+            <nav className="student-step-pagination" aria-label="Navegação das etapas">
               <button
                 className="button button-outline"
                 disabled={pending || index === 0}
-                aria-label={role === "aluno" ? "Atividade anterior" : "Etapa anterior"}
+                aria-label="Etapa anterior"
                 onClick={() => navigate(index - 1)}
               >
                 Anterior
               </button>
-              <span className="eyebrow">{role === "aluno" ? "Atividade" : "Etapa"} {index + 1} de {version.steps.length}</span>
-              <button
-                className="button button-outline"
-                disabled={pending || index === version.steps.length - 1}
-                aria-label={role === "aluno" ? "Próxima atividade" : "Próxima etapa"}
-                onClick={() => navigate(index + 1)}
-              >
-                Próxima
-              </button>
+              {role === "aluno" ? (
+                <div className="student-stage-indicator">
+                  <span id="student-current-stage-label">Etapa {index + 1} de {version.steps.length}</span>
+                  <div className="student-stage-progress-track" role="progressbar" aria-labelledby="student-current-stage-label" aria-valuemin={1} aria-valuemax={version.steps.length} aria-valuenow={index + 1} aria-valuetext={`Etapa ${index + 1} de ${version.steps.length}`}>
+                    <span style={{ width: `${((index + 1) / version.steps.length) * 100}%` }} />
+                  </div>
+                </div>
+              ) : <span className="eyebrow">Etapa {index + 1} de {version.steps.length}</span>}
             </nav>
             {role === "aluno" ? <h2 ref={title} tabIndex={-1}><strong>Título da atividade:</strong> {step.title}</h2> : <h2 ref={title} tabIndex={-1}>{step.title}</h2>}
             {(step.dueAt || version.dueAt) && <p className="small"><strong>Prazo desta atividade:</strong> {step.deadlineExtended ? "Prazo individual prorrogado até " : ""}{formatDeadline(step.dueAt ?? version.dueAt!, timeZone)}</p>}
@@ -395,6 +424,14 @@ export function LiveMission({
                   <SubmissionMedia id={draft.id} hasAudio={draft.hasAudio} hasTextFile={draft.hasTextFile} />
                   {!locked && <button type="button" className="button button-outline" disabled={pending} onClick={() => reuseDraft(draft.content)}>Reaproveitar texto nesta versão</button>}
                 </details>)}
+                {draftToReuse !== null && <div className="notice draft-reuse-confirmation" role="group" aria-labelledby="draft-reuse-title">
+                  <h4 id="draft-reuse-title">Substituir o texto desta etapa?</h4>
+                  <p>O texto atual será trocado pelo rascunho escolhido. Seus outros rascunhos continuam preservados.</p>
+                  <div className="actions">
+                    <button type="button" className="button button-outline" disabled={pending} onClick={() => setDraftToReuse(null)}>Manter texto atual</button>
+                    <button type="button" className="button" disabled={pending} onClick={() => { applyDraft(draftToReuse); setDraftToReuse(null); }}>Substituir texto</button>
+                  </div>
+                </div>}
               </section>}
               {locked ? (
                 <>
@@ -421,14 +458,17 @@ export function LiveMission({
                   aria-busy={pending}
                   onSubmit={(e) => {
                     e.preventDefault();
+                    if (!isFinalStep) {
+                      void saveAndAdvance();
+                      return;
+                    }
                     if (!canSubmit) {
                       setMessage(teamGroup?.leaderId !== viewerId
                         ? "Somente o líder da equipe pode enviar a atividade."
                         : "A equipe precisa validar todas as etapas antes do envio.");
                       return;
                     }
-                    if (window.confirm("Enviar esta tentativa para revisão? Confira o texto e os anexos selecionados antes de confirmar."))
-                      void save("submitted");
+                    setConfirmSubmit(true);
                   }}
                 >
                   {recovered && <p role="status">Texto e progresso recuperados deste navegador.</p>}
@@ -462,10 +502,7 @@ export function LiveMission({
                       <button type="button" className="button button-outline" disabled={pending || dirty || !content.trim() || submission?.groupId !== teamGroup.id || submission?.submittedStepIds?.includes(step.id) || currentValidatedCount === teamGroup.studentIds.length} onClick={() => void validateCurrentStep()}>
                         {submission?.validations?.some(validation => validation.stepId === step.id && validation.userId === viewerId && validation.current) ? "Atividade validada por você" : "Validar conteúdo desta atividade"}
                       </button>
-                      {teamGroup.leaderId === viewerId && <button type="button" className="button button-outline" disabled={pending || dirty || currentValidatedCount !== teamGroup.studentIds.length || !content.trim() || submission?.groupId !== teamGroup.id || submission?.submittedStepIds?.includes(step.id)} onClick={() => void save("draft", false, [step.id])}>Enviar esta atividade validada ao professor</button>}
-                      {submission?.submittedStepIds?.includes(step.id) && <p role="status">Esta atividade já foi enviada ao professor em {formatDeadline(submission.submittedStepAt?.[step.id] ?? submission.updatedAt, timeZone)}.</p>}
-                      {teamGroup.leaderId !== viewerId && <p className="small">Somente o líder da equipe pode enviar a atividade depois que todos validarem todas as etapas.</p>}
-                  {teamGroup.leaderId === viewerId && !allMembersValidated && <p className="small">Cada atividade pode ser enviada ao professor depois que todos validarem a resposta atual. A entrega final será concluída quando todas forem enviadas.</p>}
+                      <p className="small">As respostas ficam em rascunho durante as etapas. O líder envia a atividade completa ao professor somente na última etapa, depois que todos validarem cada resposta.</p>
                     </> : <p>Esta atividade exige uma equipe. Peça ao professor para confirmar seu vínculo antes de enviar.</p>}
                   </section>}
                   {formats === null && <p role="status">Os formatos adicionais aparecem quando a consulta de adaptações da atividade for concluída.</p>}
@@ -478,7 +515,12 @@ export function LiveMission({
                     try { if (!/\.txt$/i.test(file.name) || file.size > 32768) throw new Error("Selecione um arquivo .txt de até 32 KiB."); const text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer()); if (text.length > 20000 || /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/u.test(text)) throw new Error("O arquivo precisa conter somente texto UTF-8, até 20 mil caracteres."); setTextFile({ text }); setDirty(true); } catch (reason) { setMessage(errorMessage(reason)); } finally { setMediaBusy(false); }
                   }} />{textFile && <><p>Arquivo de texto preparado para salvar.</p><details><summary>Conferir texto do arquivo</summary><p className="submission-content">{textFile.text}</p></details><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo selecionado</button></>}</div>}
                   {submission?.hasTextFile && !submission.revisionRequested && textFile === undefined && <><SubmissionMedia id={submission.id} hasTextFile /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setTextFile(null); setDirty(true); }}>Remover arquivo salvo da atividade</button></>}
-                  <div className="actions">
+                  <p className="submission-stage-guidance">
+                    {isFinalStep
+                      ? "Você chegou à última etapa. Revise suas respostas antes de enviar a atividade para o professor."
+                      : "Ao avançar, esta etapa será salva como rascunho. Você só enviará a atividade quando chegar à última etapa."}
+                  </p>
+                  <div className="actions submission-actions">
                     <button
                       className="button button-outline"
                       type="button"
@@ -487,10 +529,28 @@ export function LiveMission({
                     >
                       {pending ? "Aguarde…" : "Salvar rascunho"}
                     </button>
-                    <button className="button" disabled={pending || mediaBusy || !canSubmit}>
-                      {pending ? "Aguarde…" : "Enviar atividade"}
-                    </button>
+                    {isFinalStep ? (
+                      <button ref={finalizeButton} className="button submission-finalize-button" type="submit" disabled={pending || mediaBusy || !canSubmit}>
+                        {pending ? "Enviando…" : "Finalizar e enviar atividade"}
+                      </button>
+                    ) : (
+                      <button className="button submission-advance-button" type="button" disabled={pending || mediaBusy} onClick={() => void saveAndAdvance()}>
+                        {pending ? "Salvando…" : `Salvar e avançar para a etapa ${index + 2}`}
+                      </button>
+                    )}
                   </div>
+                  {confirmSubmit && <div className="notice submission-confirmation" role="group" aria-labelledby="submission-confirmation-title" tabIndex={-1} ref={submitConfirmation} onKeyDown={event => {
+                    if (event.key === "Escape") dismissSubmitConfirmation();
+                  }}>
+                    <h3 id="submission-confirmation-title">Enviar atividade para revisão?</h3>
+                    <p>Suas respostas e anexos ficarão disponíveis aos docentes de {classroom.name}. Confira tudo antes de confirmar.</p>
+                    <div className="actions">
+                      <button type="button" className="button button-outline" disabled={pending} onClick={dismissSubmitConfirmation}>Continuar revisando</button>
+                      <button type="button" className="button" disabled={pending || mediaBusy || !canSubmit} onClick={() => void save("submitted")}>
+                        {pending ? "Enviando…" : "Confirmar envio"}
+                      </button>
+                    </div>
+                  </div>}
                   <p className="small">
                     {dirty
                       ? pending ? "Salvando…" : localSaved
@@ -506,11 +566,8 @@ export function LiveMission({
               {saveError && version.workMode === "group" && <button type="button" className="text-button" onClick={() => window.location.reload()}>Recarregar a entrega da equipe</button>}
             </section>
           )}
-          <section
-            id="barreira"
-            className="paper"
-
-          >
+          <details id="barreira" className="paper action-disclosure barrier-disclosure">
+            <summary><span>Encontrou uma dificuldade?</span><span className="disclosure-action-hint"><span className="disclosure-closed-hint">Registrar uma barreira</span><span className="disclosure-open-hint">Recolher</span></span></summary>
             <BarrierComposer
               stepId={step.id}
               stepTitle={step.title}
@@ -523,7 +580,7 @@ export function LiveMission({
                 Consultar meus relatos e respostas
               </Link>
             )}
-          </section>
+          </details>
         </div>
         {role === "professor" && <aside className="paper">
           <h2>Todas as etapas</h2>
