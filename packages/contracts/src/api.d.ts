@@ -2475,8 +2475,8 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     stepId: string | null;
-                    /** @enum {string} */
-                    audience: "classroom" | "students";
+                    /** @constant */
+                    audience: "students";
                     studentIds: string[];
                     instructions: string;
                     example: string;
@@ -2541,8 +2541,8 @@ export interface operations {
                 "application/json": {
                     versionId: string;
                     stepId: string | null;
-                    /** @enum {string} */
-                    audience: "classroom" | "students";
+                    /** @constant */
+                    audience: "students";
                     studentIds: string[];
                     instructions: string;
                     example: string;
@@ -5019,6 +5019,7 @@ export interface operations {
                             name: string;
                             leaderId: string | null;
                             studentIds: string[];
+                            hasSubmissions?: boolean;
                         }[];
                         participationMode: ("group" | "individual") | null;
                     };
@@ -5069,6 +5070,7 @@ export interface operations {
                         name: string;
                         leaderId: string | null;
                         studentIds: string[];
+                        hasSubmissions?: boolean;
                     };
                 };
             };
@@ -5139,6 +5141,7 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
+                    name?: string;
                     leaderId?: string | null;
                     studentIds: string[];
                 };
@@ -5156,6 +5159,7 @@ export interface operations {
                         name: string;
                         leaderId: string | null;
                         studentIds: string[];
+                        hasSubmissions?: boolean;
                     };
                 };
             };
@@ -5249,11 +5253,13 @@ export interface operations {
                             id: string;
                             versionId: string;
                             userId: string;
+                            updatedById?: string | null;
+                            updatedByName?: string | null;
                             groupId: string | null;
                             attempt?: number;
                             revisionRequested?: boolean;
                             /** @enum {string} */
-                            status: "draft" | "submitted" | "reviewed";
+                            status: "draft" | "partial" | "submitted" | "reviewed";
                             content: string;
                             stepResponses?: {
                                 [key: string]: string;
@@ -5264,10 +5270,15 @@ export interface operations {
                             validations?: {
                                 stepId: string;
                                 userId: string;
+                                userName?: string;
                                 /** Format: date-time */
                                 validatedAt: string;
                                 current: boolean;
                             }[];
+                            submittedStepIds?: string[];
+                            submittedStepAt?: {
+                                [key: string]: string;
+                            };
                             hasAudio?: boolean;
                             hasTextFile?: boolean;
                             completedStepIds: string[];
@@ -5344,6 +5355,7 @@ export interface operations {
                     currentStepId: string;
                     /** @enum {string} */
                     status: "draft" | "submitted";
+                    submitStepIds?: string[];
                     expectedRevision: number;
                 };
             };
@@ -5359,11 +5371,13 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        updatedById?: string | null;
+                        updatedByName?: string | null;
                         groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
-                        status: "draft" | "submitted" | "reviewed";
+                        status: "draft" | "partial" | "submitted" | "reviewed";
                         content: string;
                         stepResponses?: {
                             [key: string]: string;
@@ -5374,10 +5388,15 @@ export interface operations {
                         validations?: {
                             stepId: string;
                             userId: string;
+                            userName?: string;
                             /** Format: date-time */
                             validatedAt: string;
                             current: boolean;
                         }[];
+                        submittedStepIds?: string[];
+                        submittedStepAt?: {
+                            [key: string]: string;
+                        };
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];
@@ -5454,11 +5473,13 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        updatedById?: string | null;
+                        updatedByName?: string | null;
                         groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
-                        status: "draft" | "submitted" | "reviewed";
+                        status: "draft" | "partial" | "submitted" | "reviewed";
                         content: string;
                         stepResponses?: {
                             [key: string]: string;
@@ -5469,10 +5490,15 @@ export interface operations {
                         validations?: {
                             stepId: string;
                             userId: string;
+                            userName?: string;
                             /** Format: date-time */
                             validatedAt: string;
                             current: boolean;
                         }[];
+                        submittedStepIds?: string[];
+                        submittedStepAt?: {
+                            [key: string]: string;
+                        };
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];
@@ -5542,11 +5568,13 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        updatedById?: string | null;
+                        updatedByName?: string | null;
                         groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
-                        status: "draft" | "submitted" | "reviewed";
+                        status: "draft" | "partial" | "submitted" | "reviewed";
                         content: string;
                         stepResponses?: {
                             [key: string]: string;
@@ -5557,10 +5585,15 @@ export interface operations {
                         validations?: {
                             stepId: string;
                             userId: string;
+                            userName?: string;
                             /** Format: date-time */
                             validatedAt: string;
                             current: boolean;
                         }[];
+                        submittedStepIds?: string[];
+                        submittedStepAt?: {
+                            [key: string]: string;
+                        };
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];
@@ -5642,11 +5675,13 @@ export interface operations {
                         id: string;
                         versionId: string;
                         userId: string;
+                        updatedById?: string | null;
+                        updatedByName?: string | null;
                         groupId: string | null;
                         attempt?: number;
                         revisionRequested?: boolean;
                         /** @enum {string} */
-                        status: "draft" | "submitted" | "reviewed";
+                        status: "draft" | "partial" | "submitted" | "reviewed";
                         content: string;
                         stepResponses?: {
                             [key: string]: string;
@@ -5657,10 +5692,15 @@ export interface operations {
                         validations?: {
                             stepId: string;
                             userId: string;
+                            userName?: string;
                             /** Format: date-time */
                             validatedAt: string;
                             current: boolean;
                         }[];
+                        submittedStepIds?: string[];
+                        submittedStepAt?: {
+                            [key: string]: string;
+                        };
                         hasAudio?: boolean;
                         hasTextFile?: boolean;
                         completedStepIds: string[];

@@ -30,6 +30,7 @@ export function LiveMission({
   const [teamMode, setTeamMode] = useState<"group" | "individual" | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [index, setIndex] = useState(0);
+  const [started, setStarted] = useState(role === "professor");
   const [formats, setFormats] = useState<("text" | "audio" | "text_file")[] | null>(null);
   const [audio, setAudio] = useState<string | null | undefined>();
   const [textFile, setTextFile] = useState<{ text: string } | null | undefined>();
@@ -56,6 +57,7 @@ export function LiveMission({
   const submitConfirmation = useRef<HTMLDivElement>(null);
   const finalizeButton = useRef<HTMLButtonElement>(null);
   useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
+  useEffect(() => { if (started && role === "aluno") title.current?.focus({ preventScroll: true }); }, [started, role]);
   const stepNavigation = useRef(false);
   useLayoutEffect(() => {
     if (!stepNavigation.current) return;
@@ -197,7 +199,7 @@ export function LiveMission({
   const step = version.steps[index];
   if (!classroom || !step)
     return <p className="paper">Este contexto não está disponível.</p>;
-  const locked = !!submission && submission.status !== "draft" && !submission.revisionRequested;
+  const locked = !!submission && !["draft", "partial"].includes(submission.status) && !submission.revisionRequested;
   const requiresTeam = version.workMode === "group" || (version.workMode === "mixed" && teamMode === "group");
   const allMembersValidated = Boolean(submission && teamGroup && submission.groupId === teamGroup.id && !dirty && version.steps.every(item => {
     const response = submission.stepResponses?.[item.id] ?? "";
@@ -207,7 +209,7 @@ export function LiveMission({
   const canSubmit = !requiresTeam || Boolean(teamGroup && teamGroup.leaderId === viewerId && allMembersValidated);
   const currentValidatedCount = new Set((submission?.validations ?? []).filter(validation => validation.stepId === step.id && validation.current && teamGroup?.studentIds.includes(validation.userId)).map(validation => validation.userId)).size;
   const isFinalStep = index === version.steps.length - 1;
-  async function save(status: "draft" | "submitted", automatic = false) {
+  async function save(status: "draft" | "submitted", automatic = false, submitStepIds: string[] = []) {
     if (pending || mediaBusy || !mission?.publishedVersion || !step) return false;
     setPending(true);
     if (!automatic) setMessage("");
@@ -223,6 +225,7 @@ export function LiveMission({
           completedStepIds: completed,
           currentStepId: step.id,
           status,
+          ...(submitStepIds.length ? { submitStepIds } : {}),
           expectedRevision: submission?.revision ?? 0,
         },
       });
@@ -238,7 +241,7 @@ export function LiveMission({
       if (status === "submitted") setConfirmSubmit(false);
       if (!automatic) setMessage(
         saved.status === "draft"
-          ? "Rascunho e etapa atual salvos no servidor."
+          ? "Rascunho e atividade atual salvos no servidor."
           : "Atividade enviada. Aguarde o feedback do professor.",
       );
       return true;
@@ -252,7 +255,7 @@ export function LiveMission({
   }
   async function validateCurrentStep() {
     if (!submission || !teamGroup || dirty || pending || !content.trim()) {
-      setMessage("Salve a resposta desta etapa antes de validá-la.");
+      setMessage("Salve a resposta desta atividade antes de validá-la.");
       return;
     }
     setPending(true); setMessage("");
@@ -261,7 +264,7 @@ export function LiveMission({
         body: { expectedStepRevision: submission.stepRevisions?.[step.id] ?? 0 } });
       setSubmission(validated);
       setStepResponses(validated.stepResponses ?? {});
-      setMessage("Você validou a resposta atual desta etapa.");
+      setMessage("Você validou a resposta atual desta atividade.");
     } catch (reason) { setMessage(errorMessage(reason)); }
     finally { setPending(false); }
   }
@@ -277,7 +280,7 @@ export function LiveMission({
     setContent(text);
     setDirty(true);
     setSaveError(false);
-    setMessage("Texto copiado. Confira as instruções e marque as etapas que concluiu nesta versão.");
+    setMessage("Texto copiado. Confira as instruções antes de salvar ou enviar sua resposta.");
   }
   async function saveAndAdvance() {
     if (isFinalStep || pending || mediaBusy) return;
@@ -305,71 +308,45 @@ export function LiveMission({
   return (
     <>
       {role === "aluno" && <p className="teacher-mission-context"><Link className="text-link" href={`/aluno/entregas?turma=${encodeURIComponent(classroom.id)}`}>← Voltar às entregas da turma</Link></p>}
-      <section className="paper">
-        <p className="eyebrow accent">{classroom.name}</p>
+      {role === "aluno" && !started ? <section className="paper form-stack" aria-label="Apresentação da atividade">
         <h2>{version.title}</h2>
         <p>{version.description}</p>
-        {version.workMode !== "individual" && <p>{role === "aluno" ? team ? `Atividade em grupo · ${team}. Sua equipe compartilha esta entrega.` : version.workMode === "mixed" ? "Atividade individual ou em grupo · o professor definiu sua forma de entrega." : "Atividade em grupo · você ainda não foi incluído em uma equipe. Solicite ao professor." : version.workMode === "mixed" ? "Atividade individual ou em grupo · confira a forma de entrega de cada aluno." : "Atividade em grupo · uma entrega por equipe."}</p>}
-        {version.dueAt && (
-          <p>
-            Entrega prevista:{" "}
-            {new Date(version.dueAt).toLocaleDateString("pt-BR")}
-          </p>
-        )}
-      </section>
+        <details className="preview-student-context"><summary>Abrir materiais, PDFs e apoios</summary>
+          {version.materials.length > 0 && <section aria-label="Materiais textuais da atividade"><h3>Materiais da atividade</h3>{version.materials.map(material => <article className="material-library-item" key={material.id}><h4>{material.title}</h4><p className="submission-content">{material.text}</p>{material.hasFile && <button className="text-button" onClick={async () => { try { const download = await api("download", { params: { id: material.id } }); const url = new URL(download.url); if (url.protocol !== "https:") throw new Error("O arquivo não está disponível por uma conexão segura."); window.open(url.href, "_blank", "noopener,noreferrer"); } catch (reason) { setMessage(errorMessage(reason)); } }}>Abrir arquivo autorizado</button>}</article>)}</section>}
+          <LearnerMaterials missionId={id} versionId={version.id} />
+          <MissionSupports missionId={id} versionId={version.id} steps={version.steps.map(item => ({ id: item.id, title: item.title }))} />
+        </details>
+        <details className="preview-student-context"><summary>Objetivos e critérios da atividade</summary><h3>Objetivos de aprendizagem</h3><ul>{version.objectives.map((item, i) => <li key={i}>{item}</li>)}</ul><h3>Critérios de avaliação</h3><ul>{version.criteria.map((item, i) => <li key={i}>{item}</li>)}</ul></details>
+        <button type="button" className="button" onClick={() => setStarted(true)}>{dirty || (submission && !locked) ? "Continuar atividade" : submission ? "Consultar atividade" : "Clique aqui para iniciar"}</button>
+      </section> : <section className="paper">{role === "professor" && <p className="eyebrow accent">{classroom.name}</p>}<h2>{version.title}</h2><p>{version.description}</p>{role === "professor" && version.workMode !== "individual" && <p>{version.workMode === "mixed" ? "Atividade individual ou em grupo · confira a forma de entrega de cada aluno." : "Atividade em grupo · uma entrega por equipe."}</p>}{role === "professor" && version.dueAt && <p>Entrega prevista: {new Date(version.dueAt).toLocaleDateString("pt-BR")}</p>}</section>}
       {role === "professor" && version.workMode !== "individual" && <GroupManager missionId={id} />}
-      <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
+      {started && <div className={role === "aluno" ? "student-live-mission" : "two-column student-live-mission"}>
         <div className="form-stack">
           <section className="paper preview-student-stage form-stack" id="etapas">
-          <div className="student-step-pagination">
+            <nav className="student-step-pagination" aria-label={role === "aluno" ? "Paginação das atividades" : "Paginação das etapas"}>
               <button
                 className="button button-outline"
                 disabled={pending || index === 0}
-                aria-label="Etapa anterior"
+                aria-label={role === "aluno" ? "Atividade anterior" : "Etapa anterior"}
                 onClick={() => navigate(index - 1)}
               >
                 Anterior
               </button>
-              <span className="eyebrow">Etapa {index + 1} de {version.steps.length}</span>
-          </div>
-            <h2 ref={title} tabIndex={-1}>
-              {step.title}
-            </h2>
-            {step.dueAt && <p className="small">{step.deadlineExtended ? "Prazo individual prorrogado até" : "Prazo desta etapa"}: {formatDeadline(step.dueAt, timeZone)}</p>}
+              <span className="eyebrow">{role === "aluno" ? "Atividade" : "Etapa"} {index + 1} de {version.steps.length}</span>
+            </nav>
+            {role === "aluno" ? <h2 ref={title} tabIndex={-1}><strong>Título da atividade:</strong> {step.title}</h2> : <h2 ref={title} tabIndex={-1}>{step.title}</h2>}
+            {(step.dueAt || version.dueAt) && <p className="small"><strong>Prazo desta atividade:</strong> {step.deadlineExtended ? "Prazo individual prorrogado até " : ""}{formatDeadline(step.dueAt ?? version.dueAt!, timeZone)}</p>}
             {submission?.gradingSteps.find(item => item.id === step.id)?.completedAt && <p className="small" role="status">
-              Etapa registrada {submission.gradingSteps.find(item => item.id === step.id)?.late ? "com atraso" : "no prazo"} em {formatDeadline(submission.gradingSteps.find(item => item.id === step.id)!.completedAt!, timeZone)}.
+              {role === "aluno" ? "Atividade" : "Etapa"} registrada {submission.gradingSteps.find(item => item.id === step.id)?.late ? "com atraso" : "no prazo"} em {formatDeadline(submission.gradingSteps.find(item => item.id === step.id)!.completedAt!, timeZone)}.
             </p>}
             {step.maxPoints !== null && <p className="small">Pontuação máxima: {step.maxPoints}</p>}
-            <p className="submission-content">{step.instructions}</p>
+            {role === "aluno" ? <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} originalInstructions={step.instructions} onFormats={setFormats} /> : <p className="submission-content">{step.instructions}</p>}
             {step.example && <details className="example" key={step.id}>
               <summary>Ver um exemplo</summary>
               <p className="submission-content">{step.example}</p>
             </details>}
-            {role === "aluno" && <a className="text-link" href="#learner-materials-title"
-              onClick={() => document.getElementById("learner-materials-title")?.focus({ preventScroll: true })}>Abrir materiais da atividade</a>}
-            {role === "aluno" && <LearnerAdaptations key={version.id} missionId={id} versionId={version.id} stepId={step.id} onFormats={setFormats} />}
-            {role === "aluno" && <MissionSupports key={`${version.id}:${step.id}`} missionId={id} versionId={version.id} stepId={step.id} />}
-            {role === "aluno" && !locked && (
-              <label className="check">
-                <input
-                  type="checkbox"
-                  disabled={pending || mediaBusy}
-                  checked={completed.includes(step.id)}
-                  onChange={(e) => {
-                    setCompleted((all) =>
-                      e.target.checked
-                        ? [...all, step.id]
-                        : all.filter((value) => value !== step.id),
-                    );
-                    setDirty(true);
-                    setMessage("");
-                  }}
-                />
-                Concluí esta etapa. Salvará com o rascunho ou envio.
-              </label>
-            )}
           </section>
-          <details className="paper preview-student-context">
+          {role === "professor" && <details className="paper preview-student-context">
             <summary>Objetivos e critérios da atividade</summary>
             <h3>Objetivos de aprendizagem</h3>
             <ul>
@@ -383,12 +360,10 @@ export function LiveMission({
                 <li key={i}>{criterion}</li>
               ))}
             </ul>
-          </details>
-          <section className="paper" aria-label="Materiais da atividade">
+          </details>}
+          {role === "professor" && <section className="paper" aria-label="Materiais da atividade">
             <h3>Materiais da atividade</h3>
-            {role === "professor" && !version.materials.length && <p className="small">Nenhum material na atividade.</p>}
-            {role === "aluno" && !version.materials.length && <p className="small">Não há materiais textuais anexados à atividade. O PDF da turma e os apoios preparados pelo professor aparecem nesta área.</p>}
-            {role === "aluno" && <LearnerMaterials missionId={id} versionId={version.id} />}
+            {!version.materials.length && <p className="small">Nenhum material na atividade.</p>}
             {version.materials.map((material) => (
               <article className="material-library-item" key={material.id}>
                 <h4>{material.title}</h4>
@@ -417,7 +392,7 @@ export function LiveMission({
                 )}
               </article>
             ))}
-          </section>
+          </section>}
           {role === "aluno" && (
             <section className="paper">
               <h2>Sua atividade</h2>
@@ -491,7 +466,7 @@ export function LiveMission({
                 >
                   {recovered && <p role="status">Texto e progresso recuperados deste navegador.</p>}
                   <label htmlFor="submission-content">
-                    Planejamento e atividade
+                    Escreva a sua resposta
                     <textarea
                       disabled={pending || mediaBusy}
                       id="submission-content"
@@ -514,17 +489,18 @@ export function LiveMission({
                   {requiresTeam && <section className="notice form-stack" aria-label="Validação da equipe">
                     {teamGroup ? <>
                       <p>Rascunho compartilhado com {teamGroup.studentIds.length} integrantes. Todos podem editar; a atualização aparece para a equipe em poucos segundos.</p>
-                      <p>Etapa {index + 1}: {currentValidatedCount} de {teamGroup.studentIds.length} integrantes validaram a resposta atual.</p>
-                      <button type="button" className="button button-outline" disabled={pending || dirty || !content.trim() || submission?.groupId !== teamGroup.id || currentValidatedCount === teamGroup.studentIds.length} onClick={() => void validateCurrentStep()}>
-                        {submission?.validations?.some(validation => validation.stepId === step.id && validation.userId === viewerId && validation.current) ? "Etapa validada por você" : "Validar conteúdo desta etapa"}
+                      {submission?.updatedAt && <p className="small">Último rascunho salvo por {submission.updatedByName ?? "integrante da equipe"} em {formatDeadline(submission.updatedAt, timeZone)}.</p>}
+                      <p>Atividade {index + 1}: {currentValidatedCount} de {teamGroup.studentIds.length} integrantes validaram a resposta atual.</p>
+                      {submission?.validations?.filter(validation => validation.stepId === step.id && validation.current && teamGroup.studentIds.includes(validation.userId)).map(validation => <p className="small" key={validation.userId}>Validada por {validation.userName ?? "integrante da equipe"} em {formatDeadline(validation.validatedAt, timeZone)}.</p>)}
+                      <button type="button" className="button button-outline" disabled={pending || dirty || !content.trim() || submission?.groupId !== teamGroup.id || submission?.submittedStepIds?.includes(step.id) || currentValidatedCount === teamGroup.studentIds.length} onClick={() => void validateCurrentStep()}>
+                        {submission?.validations?.some(validation => validation.stepId === step.id && validation.userId === viewerId && validation.current) ? "Atividade validada por você" : "Validar conteúdo desta atividade"}
                       </button>
-                      {teamGroup.leaderId !== viewerId && <p className="small">Somente o líder da equipe pode enviar a atividade depois que todos validarem todas as etapas.</p>}
-                      {teamGroup.leaderId === viewerId && !allMembersValidated && <p className="small">O envio será liberado quando cada integrante validar a resposta atual de todas as etapas.</p>}
+                      <p className="small">As respostas ficam em rascunho durante as etapas. O líder envia a atividade completa ao professor somente na última etapa, depois que todos validarem cada resposta.</p>
                     </> : <p>Esta atividade exige uma equipe. Peça ao professor para confirmar seu vínculo antes de enviar.</p>}
                   </section>}
                   {formats === null && <p role="status">Os formatos adicionais aparecem quando a consulta de adaptações da atividade for concluída.</p>}
                   {formats?.length === 1 && <p className="small">Formato disponível nesta atividade: texto no editor.</p>}
-                  <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo. A resposta não será enviada ao Gemini.</p>
+                  <p className="small">Você pode combinar os formatos liberados pelo professor. Para enviar, inclua texto, áudio ou um arquivo de texto com conteúdo.</p>
                   {formats?.includes("audio") && <AudioAttachment label="Áudio da atividade (opcional)" disabled={pending || mediaBusy} id="submission" missionId={id} help="Resposta em áudio de até 30 segundos; arquivo de até 10 MB na seleção. O navegador converte localmente para WAV. Um resumo no editor é opcional." value={audio ? { base64: audio } : null} onBusy={setMediaBusy} onChange={value => { setAudio(value && "base64" in value ? value.base64 : null); setDirty(true); }} />}
                   {submission?.hasAudio && !submission.revisionRequested && audio === undefined && <><SubmissionMedia id={submission.id} hasAudio /><button type="button" className="text-button" disabled={pending || mediaBusy} onClick={() => { setAudio(null); setDirty(true); }}>Remover áudio salvo da atividade</button></>}
                   {formats?.includes("text_file") && <div className="form-stack"><label htmlFor="submission-file">Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)</label><input id="submission-file" type="file" accept=".txt,text/plain" disabled={pending || mediaBusy} onChange={async e => {
@@ -588,7 +564,6 @@ export function LiveMission({
             <BarrierComposer
               stepId={step.id}
               stepTitle={step.title}
-              classroomName={classroom.name}
             />
             {role === "aluno" && (
               <Link
@@ -624,7 +599,7 @@ export function LiveMission({
             alterar os objetivos avaliados.
           </p>
         </aside>}
-      </div>
+      </div>}
     </>
   );
 }

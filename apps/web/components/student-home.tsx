@@ -25,11 +25,11 @@ export function StudentHomePreview() {
             Crie um sistema de empréstimo de livros.
           </p>
           <p className="progress-description">
-            Etapa 2 de 5 · Planejar a solução
+            Atividade 2 de 5 · Planejar a solução
           </p>
           <ol
             className="stepper"
-            aria-label="Etapas da atividade — exemplo fictício"
+            aria-label="Progresso da atividade — exemplo fictício"
           >
             {librarySteps.map((step, index) => (
               <li

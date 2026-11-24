@@ -39,7 +39,7 @@ export function GroupManager({ missionId }: { missionId: string }) {
     if (pending || selected.length < 2) return;
     setPending(true); setMessage("");
     try {
-      const changed = await api("updateGroup", { params: { id: missionId, groupId: group.id }, body: { leaderId: leaderId || null, studentIds: selected } });
+      const changed = await api("updateGroup", { params: { id: missionId, groupId: group.id }, body: { name: name.trim(), leaderId: leaderId || null, studentIds: selected } });
       setGroups(all => all.map(item => item.id === changed.id ? changed : item));
       setEditing(null); setSelected([]); setLeaderId("");
       setMessage(`Equipe ${changed.name} atualizada.`);
@@ -58,27 +58,30 @@ export function GroupManager({ missionId }: { missionId: string }) {
   }
   async function remove(groupId: string) {
     if (pending) return;
+    if (!window.confirm("Remover esta equipe das equipes ativas? Entregas anteriores serão preservadas com os integrantes originais. Os alunos precisarão ser designados novamente para continuar uma atividade em grupo.")) return;
     setPending(true); setMessage("");
     try {
       await api("removeGroup", { params: { id: missionId, groupId } });
       setGroups(all => all.filter(group => group.id !== groupId));
-      setMessage("Equipe removida.");
+      if (editing === groupId) { setEditing(null); setName(""); setSelected([]); setLeaderId(""); }
+      setMessage("Equipe removida das equipes ativas. As entregas anteriores foram preservadas.");
     } catch (reason) { setMessage(errorMessage(reason)); }
     finally { setPending(false); }
   }
   return <section className="paper form-stack" aria-label="Equipes da atividade">
     <h3>Equipes da atividade</h3>
-    <p>Organize os alunos da turma em equipes de pelo menos duas pessoas. Todos os membros podem editar a mesma entrega. O líder é apenas uma referência de organização e não concentra permissões.</p>
+    <p>Organize os alunos da turma em equipes de pelo menos duas pessoas. Todos os integrantes podem editar e validar cada atividade; o líder envia a resposta validada ao professor.</p>
     {groups.map(group => <div key={group.id} className="example">
-      <strong>{group.name}</strong> · Líder: {students.find(student => student.id === group.leaderId)?.name ?? "não definido"}<br />
+      <h4>{group.name}</h4><p>Líder: {students.find(student => student.id === group.leaderId)?.name ?? "não definido"}</p>
       <span>{group.studentIds.map(id => students.find(student => student.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ")}</span>
-      <button type="button" className="text-button" disabled={pending} onClick={() => { setEditing(group.id); setName(group.name); setSelected(group.studentIds); setLeaderId(group.leaderId ?? ""); }}>Editar membros</button>{" "}
+      {group.hasSubmissions && <p className="small">Esta equipe já tem entregas. Você pode corrigir o nome e o líder. Para trocar integrantes, remova a equipe e crie outra; o histórico continuará vinculado aos integrantes originais.</p>}
+      <button type="button" className="text-button" disabled={pending} onClick={() => { setEditing(group.id); setName(group.name); setSelected(group.studentIds); setLeaderId(group.leaderId ?? ""); }}>Editar equipe</button>{" "}
       <button type="button" className="text-button" disabled={pending} onClick={() => void remove(group.id)}>Remover equipe</button>
     </div>)}
     <label htmlFor="group-name">{editing ? "Editando equipe" : "Nome da equipe"}
       <input id="group-name" maxLength={150} value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: Equipe 1" />
     </label>
-    <fieldset className="teacher-choice-list"><legend>Integrantes disponíveis</legend>
+    <fieldset className="teacher-choice-list" disabled={pending || !!groups.find(group => group.id === editing)?.hasSubmissions}><legend>Integrantes disponíveis</legend>
       {students.filter(student => editing || !assigned.has(student.id)).map(student => <label key={student.id} className="check">
         <input type="checkbox" checked={selected.includes(student.id)} disabled={pending} onChange={event => setSelected(all => event.target.checked ? [...all, student.id] : all.filter(id => id !== student.id))} />{student.name}
       </label>)}

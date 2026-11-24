@@ -4859,13 +4859,11 @@
                   },
                   "audience": {
                     "type": "string",
-                    "enum": [
-                      "classroom",
-                      "students"
-                    ]
+                    "const": "students"
                   },
                   "studentIds": {
-                    "maxItems": 50,
+                    "minItems": 1,
+                    "maxItems": 1,
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -5130,13 +5128,11 @@
                   },
                   "audience": {
                     "type": "string",
-                    "enum": [
-                      "classroom",
-                      "students"
-                    ]
+                    "const": "students"
                   },
                   "studentIds": {
-                    "maxItems": 50,
+                    "minItems": 1,
+                    "maxItems": 1,
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -13939,6 +13935,9 @@
                               "minLength": 1,
                               "maxLength": 100
                             }
+                          },
+                          "hasSubmissions": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -14107,6 +14106,9 @@
                         "minLength": 1,
                         "maxLength": 100
                       }
+                    },
+                    "hasSubmissions": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -14191,6 +14193,11 @@
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 "type": "object",
                 "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150
+                  },
                   "leaderId": {
                     "anyOf": [
                       {
@@ -14260,6 +14267,9 @@
                         "minLength": 1,
                         "maxLength": 100
                       }
+                    },
+                    "hasSubmissions": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -14644,6 +14654,15 @@
                       "submitted"
                     ]
                   },
+                  "submitStepIds": {
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    }
+                  },
                   "expectedRevision": {
                     "type": "integer",
                     "minimum": 0,
@@ -14687,6 +14706,24 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "updatedById": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "updatedByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "groupId": {
                       "anyOf": [
                         {
@@ -14711,6 +14748,7 @@
                       "type": "string",
                       "enum": [
                         "draft",
+                        "partial",
                         "submitted",
                         "reviewed"
                       ]
@@ -14757,6 +14795,9 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "userName": {
+                            "type": "string"
+                          },
                           "validatedAt": {
                             "type": "string",
                             "format": "date-time",
@@ -14773,6 +14814,27 @@
                           "current"
                         ],
                         "additionalProperties": false
+                      }
+                    },
+                    "submittedStepIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "submittedStepAt": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                       }
                     },
                     "hasAudio": {
@@ -15098,6 +15160,24 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "updatedById": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 100
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "updatedByName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "groupId": {
                             "anyOf": [
                               {
@@ -15122,6 +15202,7 @@
                             "type": "string",
                             "enum": [
                               "draft",
+                              "partial",
                               "submitted",
                               "reviewed"
                             ]
@@ -15168,6 +15249,9 @@
                                   "minLength": 1,
                                   "maxLength": 100
                                 },
+                                "userName": {
+                                  "type": "string"
+                                },
                                 "validatedAt": {
                                   "type": "string",
                                   "format": "date-time",
@@ -15184,6 +15268,27 @@
                                 "current"
                               ],
                               "additionalProperties": false
+                            }
+                          },
+                          "submittedStepIds": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            }
+                          },
+                          "submittedStepAt": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100
+                            },
+                            "additionalProperties": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                             }
                           },
                           "hasAudio": {
@@ -15532,6 +15637,24 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "updatedById": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "updatedByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "groupId": {
                       "anyOf": [
                         {
@@ -15556,6 +15679,7 @@
                       "type": "string",
                       "enum": [
                         "draft",
+                        "partial",
                         "submitted",
                         "reviewed"
                       ]
@@ -15602,6 +15726,9 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "userName": {
+                            "type": "string"
+                          },
                           "validatedAt": {
                             "type": "string",
                             "format": "date-time",
@@ -15618,6 +15745,27 @@
                           "current"
                         ],
                         "additionalProperties": false
+                      }
+                    },
+                    "submittedStepIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "submittedStepAt": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                       }
                     },
                     "hasAudio": {
@@ -15919,6 +16067,24 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "updatedById": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "updatedByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "groupId": {
                       "anyOf": [
                         {
@@ -15943,6 +16109,7 @@
                       "type": "string",
                       "enum": [
                         "draft",
+                        "partial",
                         "submitted",
                         "reviewed"
                       ]
@@ -15989,6 +16156,9 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "userName": {
+                            "type": "string"
+                          },
                           "validatedAt": {
                             "type": "string",
                             "format": "date-time",
@@ -16005,6 +16175,27 @@
                           "current"
                         ],
                         "additionalProperties": false
+                      }
+                    },
+                    "submittedStepIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "submittedStepAt": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                       }
                     },
                     "hasAudio": {
@@ -16360,6 +16551,24 @@
                       "minLength": 1,
                       "maxLength": 100
                     },
+                    "updatedById": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "updatedByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "groupId": {
                       "anyOf": [
                         {
@@ -16384,6 +16593,7 @@
                       "type": "string",
                       "enum": [
                         "draft",
+                        "partial",
                         "submitted",
                         "reviewed"
                       ]
@@ -16430,6 +16640,9 @@
                             "minLength": 1,
                             "maxLength": 100
                           },
+                          "userName": {
+                            "type": "string"
+                          },
                           "validatedAt": {
                             "type": "string",
                             "format": "date-time",
@@ -16446,6 +16659,27 @@
                           "current"
                         ],
                         "additionalProperties": false
+                      }
+                    },
+                    "submittedStepIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    },
+                    "submittedStepAt": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "additionalProperties": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                       }
                     },
                     "hasAudio": {
