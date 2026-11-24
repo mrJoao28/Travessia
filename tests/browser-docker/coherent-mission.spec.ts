@@ -151,6 +151,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await student.goto(`/aluno/atividades/${missionId}`);await student.getByRole('button',{name:'Continuar atividade',exact:true}).click();
   const progress=student.getByRole('progressbar');const totalSteps=Number(await progress.getAttribute('aria-valuemax'));let currentStep=Number(await progress.getAttribute('aria-valuenow'));
   while(currentStep<totalSteps){if(currentStep>1)await student.getByLabel('Escreva a sua resposta',{exact:true}).fill(`Resposta da etapa ${currentStep}.`);await student.getByRole('button',{name:`Salvar e avançar para a etapa ${currentStep+1}`,exact:true}).click();currentStep++;await expect(progress).toHaveAttribute('aria-valuenow',String(currentStep));}
+  await student.screenshot({path:'test-results/reference-coherent-final-step.png',fullPage:true});
   await student.getByLabel('Escreva a sua resposta',{exact:true}).fill('Resposta final com síntese e justificativa.');
   await student.getByRole('button',{name:'Finalizar e enviar atividade',exact:true}).click();await student.getByRole('button',{name:'Confirmar envio',exact:true}).click();await expect(student.getByText('Atividade enviada. Aguarde o feedback do professor.',{exact:true})).toBeVisible();
   await teacher.goto('/professor/entregas');const delivery=teacher.locator('li.paper').filter({has:teacher.getByRole('heading',{name:'Rotas acessíveis no campus',exact:true})});
