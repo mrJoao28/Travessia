@@ -7,8 +7,9 @@ test("espaçamento de texto, cores do sistema e movimento reduzido mantêm o con
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/previa/aluno/atividades/biblioteca");
-  await expect(page.getByRole("heading", { name: "Compreender o problema", exact: true })).toBeVisible();
-  await expect(page.getByLabel("Planejamento da solução")).toBeVisible();
+  await page.getByRole("button", { name: "Clique aqui para iniciar", exact: true }).click();
+  await expect(page.locator("#preview-stage-heading")).toHaveText(/Título da atividade: Compreender o problema/);
+  await expect(page.getByLabel("Escreva a sua resposta")).toBeVisible();
   await page.addStyleTag({
     content:
       "* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; } p { margin-bottom: 2em !important; }",
@@ -19,7 +20,7 @@ test("espaçamento de texto, cores do sistema e movimento reduzido mantêm o con
     ),
   ).toBe(true);
   await page
-    .getByLabel("Planejamento da solução")
+    .getByLabel("Escreva a sua resposta")
     .fill("Texto fictício com espaçamento ajustado.");
   await page
     .getByRole("button", { name: "Salvar rascunho", exact: true })
@@ -116,8 +117,9 @@ for (const route of routes)
   });
 test("prévia preserva atividade e não fabrica salvamento", async ({ page }) => {
   await page.goto("/previa/aluno/atividades/biblioteca");
+  await page.getByRole("button", { name: "Clique aqui para iniciar", exact: true }).click();
   await page
-    .getByLabel("Planejamento da solução")
+    .getByLabel("Escreva a sua resposta")
     .fill("Planejamento fictício de teste.");
   await page
     .getByRole("button", { name: "Salvar rascunho", exact: true })
@@ -125,23 +127,17 @@ test("prévia preserva atividade e não fabrica salvamento", async ({ page }) =>
   await expect(page.getByRole("status")).toContainText(
     "Esta prévia não envia dados",
   );
-  await expect(page.getByLabel("Planejamento da solução")).toHaveValue(
+  await expect(page.getByLabel("Escreva a sua resposta")).toHaveValue(
     "Planejamento fictício de teste.",
   );
-  await page.getByRole("button", { name: "Próxima etapa" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Planejar a solução", exact: true }),
-  ).toBeFocused();
+  await page.getByRole("button", { name: "Próxima atividade" }).click();
+  await expect(page.getByRole("heading", { name: "Título da atividade: Planejar a solução", exact: true })).toBeFocused();
 });
 test("barreira informa destinatário antes do envio", async ({ page }) => {
   await page.goto("/previa/aluno/barreiras");
-  await expect(page.locator("#recipients")).toContainText("somente você");
-  await page
-    .getByLabel("Compartilhar este relato com os docentes desta turma")
-    .check();
-  await expect(page.locator("#recipients")).toContainText(
-    "docentes com vínculo ativo em Oficina de Projetos Inclusivos",
-  );
+  await expect(page.locator("#recipients")).toHaveCount(0);
+  await expect(page.getByText("O compartilhamento só será realizado após clicar no botão Enviar relato.", { exact: true })).toBeVisible();
+  await page.getByLabel("Compartilhar com o(a) professor(a) a dificuldade encontrada").check();
 });
 test("editor ordena por teclado e exige revisão antes da publicação local", async ({
   page,
@@ -208,7 +204,7 @@ test("área real sem API não usa dados de demonstração como fallback", async 
   await expect(
     page.getByRole("heading", { name: "Não foi possível abrir seu percurso" }),
   ).toBeVisible();
-  await expect(page.getByText("Etapa 2 de 5 · Planejar a solução")).toHaveCount(
+  await expect(page.getByText("Atividade 2 de 5 · Planejar a solução")).toHaveCount(
     0,
   );
 });

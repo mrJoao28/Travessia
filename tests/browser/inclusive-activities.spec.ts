@@ -64,8 +64,6 @@ test('aluno escolhe apoios sem diagnóstico obrigatório e compartilha deficiên
 });
 test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro preserva adaptação', async ({ page }) => {
   const captured = await fixture(page, 'teacher'); await page.goto('/professor/adaptacoes');
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
-  await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
   await page.getByRole('button', { name: 'Preparar adaptação com os apoios de Aluno A', exact: true }).click();
   await page.getByText('Pedir uma sugestão à IA (opcional)', { exact: true }).click();
   const generate = page.getByRole('button', { name: 'Sugerir um texto com IA', exact: true });
@@ -89,6 +87,7 @@ test('professor usa pedidos autorizados e Gemini gera somente rascunho; erro pre
 });
 test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e preserva arquivo em erro', async ({ page }) => {
   const captured = await fixture(page, 'student'); await page.goto('/aluno/atividades/m-inclusive');
+  await page.getByRole('button', { name: 'Clique aqui para iniciar', exact: true }).click();
   await page.getByLabel('Arquivo de texto da atividade (.txt, UTF-8, até 32 KiB)', { exact: true }).setInputFiles({ name: 'resposta.txt', mimeType: 'text/plain', buffer: Buffer.from('Minha resposta em arquivo.') });
   await expect(page.getByText('Arquivo de texto preparado para salvar.', { exact: true })).toBeVisible();
   page.once('dialog', dialog => dialog.accept());
@@ -100,15 +99,11 @@ test('aluno envia arquivo de texto sem obrigar texto duplicado no editor e prese
 
 test('apoios partem da atividade e exigem destinatários e nova revisão após voltar para editar', async ({ page }) => {
   await fixture(page, 'teacher');
-  await page.goto('/professor/atividades/m-inclusive/apoios');
-  await expect(page.getByRole('heading',{name:'Apoios para toda a turma',exact:true})).toBeVisible();
-  if(!await page.locator('.material-extra-tools').evaluate(el=>(el as HTMLDetailsElement).open))await page.getByText('Outros apoios da atividade',{exact:true}).click();
-  await page.getByText('Ajustar instruções ou entregas para a turma inteira',{exact:true}).click();
-  await expect(page.getByLabel('Atividade para adaptar', { exact: true })).toHaveCount(0);
-  await page.getByLabel('Destinatários da adaptação', { exact: true }).selectOption('students');
+  await page.goto('/professor/atividades/m-inclusive/adaptacoes');
+  await expect(page.getByRole('heading',{name:'Quem vai receber este apoio?',exact:true})).toBeVisible();
   await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
-  await expect(page.getByRole('main').getByRole('alert')).toContainText('Escolha pelo menos um aluno');
-  await page.getByRole('checkbox', { name: 'Aluno A', exact: true }).check();
+  await expect(page.getByRole('main').getByRole('alert')).toContainText('Escolha um único aluno');
+  await page.getByLabel('Aluno que receberá esta adaptação', { exact: true }).selectOption('student-a');
   await page.getByRole('button', { name: 'Continuar para a atividade →', exact: true }).click();
   await page.getByLabel('Enunciado adaptado', { exact: true }).fill('Compare um custo por vez.');
   await page.getByRole('button', { name: 'Conferir adaptação →', exact: true }).click();

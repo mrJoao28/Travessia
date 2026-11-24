@@ -111,6 +111,8 @@ try {
   const supportMarker = 'Apoio pedagógico preservado no volume PostgreSQL.';
   const adaptationPath = `/api/v1/missions/${teacherMission.id}/adaptations`;
   const adaptationMarker = 'Atividade adaptada preservada no volume PostgreSQL.';
+  const adaptationRecipients = (await request(`/api/v1/missions/${teacherMission.id}/strategy-recipients`)).json.items;
+  check(adaptationRecipients.length > 0, 'Destinatário da adaptação indisponível.');
   if (verifyPersistence) {
     const needs = (await request('/api/v1/me/learning-needs')).json;
     check(needs.supports.includes('short-steps'), 'Escolhas privadas não persistiram no volume.');
@@ -119,7 +121,7 @@ try {
   } else {
     const needs = (await request('/api/v1/me/learning-needs')).json;
     await request('/api/v1/me/learning-needs', { method: 'PATCH', body: { disabilities: [], supports: ['short-steps'], preferredFormats: ['text'], expectedRevision: needs.revision } });
-    await request(adaptationPath, { method: 'POST', body: { versionId: teacherVersion.id, stepId: null, audience: 'classroom', studentIds: [],
+    await request(adaptationPath, { method: 'POST', body: { versionId: teacherVersion.id, stepId: null, audience: 'students', studentIds: [adaptationRecipients[0].id],
       instructions: adaptationMarker, example: '', supportNeeds: ['short-steps'], allowedFormats: ['text', 'audio'], reviewed: true, requestKey: crypto.randomUUID() } });
   }
   const audio = Buffer.alloc(32044); audio.write('RIFF'); audio.writeUInt32LE(audio.length - 8, 4); audio.write('WAVEfmt ', 8);
