@@ -366,10 +366,13 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     const previous = pagination.getByRole('button', { name: 'Atividade anterior', exact: true });
     await expect(previous).toBeVisible();
     const stage = page.locator('#etapas h2');
-    for (let remaining = 9; remaining > 0 && (await stage.textContent())?.trim() !== 'Conhecer o desafio'; remaining--) {
+    const demoMission = await page.request.get('/api/v1/missions/demo-class-oficina-mission').then(response => response.json());
+    const firstActivityTitle = demoMission.publishedVersion.steps[0].title as string;
+    for (let remaining = 9; remaining > 0 && (await stage.textContent())?.includes(firstActivityTitle) !== true; remaining--) {
+      if (await previous.isDisabled()) break;
       await previous.click();
     }
-    await expect(stage).toHaveText('Conhecer o desafio');
+    await expect(stage).toContainText(firstActivityTitle);
     await page.getByRole('button', { name: 'Próxima atividade', exact: true }).click();
     await expect(page.locator('#etapas h2')).toBeFocused();
     if (suffix === 'A') {
