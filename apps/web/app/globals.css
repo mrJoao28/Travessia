@@ -2561,10 +2561,30 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 }
 .student-first-mission-help[open] > summary { margin-bottom: 0; }
 .teacher-dashboard-tools > .teacher-disclosure.action-disclosure > summary {
+  position: relative;
   display: list-item;
   min-height: 4.25rem;
-  padding: .8rem 1rem;
+  padding: .8rem 5.5rem .8rem 1rem;
   background: var(--sage);
+}
+.teacher-dashboard-tools .teacher-disclosure .disclosure-action-hint {
+  position: absolute;
+  inset-inline-end: 1rem;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  margin: 0;
+  padding: .25rem .7rem;
+  transform: translateY(-50%);
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary);
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
 }
 .teacher-disclosure-title { font-weight: 750; }
 .teacher-dashboard-tools .teacher-disclosure-hint {
