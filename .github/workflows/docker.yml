@@ -9,7 +9,7 @@ permissions:
   contents: read
 concurrency:
   group: docker-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   compose:
     runs-on: ubuntu-latest
