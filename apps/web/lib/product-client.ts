@@ -92,6 +92,10 @@ export async function api<K extends keyof ApiOperations>(
     const operationErrors: Record<string, string> = {
       MISSION_DELETE_BLOCKED:
         "Esta atividade possui entregas, relatos ou arquivos. Use Arquivar atividade para preservar o histórico.",
+      GROUP_LEADER_ADD_ONLY:
+        "Como líder, você pode adicionar pessoas à equipe. Para remover alguém ou mudar o nome e a liderança, peça autorização ao professor.",
+      GROUP_HAS_SUBMISSIONS:
+        "Esta equipe já tem entregas. Peça autorização ao professor para alterar os integrantes.",
     };
     const message = Object.hasOwn(geminiErrors, code) ? geminiErrors[code] :
       Object.hasOwn(operationErrors, code) ? operationErrors[code] :

@@ -20,7 +20,7 @@ A fonte executável é `packages/contracts/openapi.json`, gerada das rotas Zod i
 | POST /v1/invitations/accept | Sessão válida; token opaco, válido e não revogado; consumo transacional |
 | POST /v1/classrooms/{id}/activities | Docente da turma; cria rascunho |
 | POST /v1/activities/{id}/groups | Docente/monitor designa equipes; estudante só pode criar a própria equipe se a versão publicada permitir formação pelos alunos |
-| PATCH /v1/activities/{id}/groups/{groupId} | Docente/monitor; altera integrantes, com histórico de entregas preservado |
+| PATCH /v1/activities/{id}/groups/{groupId} | Docente/monitor gerencia integrantes; líder estudante pode apenas acrescentar colegas se a versão publicada permitir e ainda não houver entrega. Remoções e mudanças de liderança/nome ficam com docente/monitor; entregas bloqueiam mudanças de integrantes para preservar o histórico |
 | DELETE /v1/activities/{id}/groups/{groupId} | Docente/monitor; arquiva equipe ativa e preserva o histórico |
 | GET /v1/activities/{id} | Docente da turma ou aluno com vínculo e atividade publicada |
 | POST /v1/activities/{id}/publish | Docente; critérios, etapas e materiais validados |

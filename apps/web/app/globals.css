@@ -2444,6 +2444,12 @@ input[type="file"]::file-selector-button { max-width: 100%; white-space: normal;
 .preview-student-other { margin-top: 1.25rem; }
 .preview-student-other .card-list { margin: .6rem 0 0; gap: .5rem; }
 .preview-student-other .card-list > li { padding: .75rem 1rem; flex-wrap: wrap; align-items: center; }
+.preview-team-example { margin: 1rem 0; }
+.preview-team-example h2, .preview-team-example h3, .student-team-card h3, .student-team-card h4 { margin: 0; }
+.preview-team-example ul, .student-team-card ul { margin: 0; padding-left: 1.25rem; }
+.button-row { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; }
+.button-row select { flex: 1 1 14rem; }
+.student-team-card { border-left: 4px solid var(--primary); }
 .preview-activity-open-button,
 .student-open-activity-button {
   min-height: 2.9rem;

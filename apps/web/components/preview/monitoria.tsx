@@ -5,6 +5,7 @@ import { Icon } from "../icons";
 import { PreviewHeading } from "./chrome";
 import { usePreview } from "./provider";
 import styles from "./monitoria.module.css";
+import { sortStudentsByName } from "../../lib/student-sorting";
 
 const permissions = {
   partial: { title: "Moderação parcial", detail: "O professor revisa cada proposta antes de aplicá-la." },
@@ -20,7 +21,7 @@ export function PreviewMonitoria() {
   const [missionId, setMissionId] = useState(state.missions[0]?.id ?? "");
   const mission = state.missions.find(item => item.id === missionId);
   const classroom = state.classrooms.find(item => item.id === mission?.classroomId);
-  const students = state.students.filter(item => classroom?.students.includes(item.id));
+  const students = sortStudentsByName(state.students.filter(item => classroom?.students.includes(item.id)));
   const [studentId, setStudentId] = useState(students[0]?.id ?? "");
   const student = students.find(item => item.id === studentId);
   const [mode, setMode] = useState<Mode>("partial");
