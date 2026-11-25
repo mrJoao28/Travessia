@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { errorMessage, pages, type ApiResponse } from "../lib/product-client";
+import { sortStudentsByName } from "../lib/student-sorting";
 
 type SharedNeed = ApiResponse<"sharedLearningNeeds">["items"][number];
 
@@ -17,7 +18,7 @@ export function TeacherNeedsNotice({ classroomId, activityId }: { classroomId: s
     setLoading(true);
     setError("");
     void pages("sharedLearningNeeds", classroomId)
-      .then((rows) => { if (active) setItems(rows); })
+      .then((rows) => { if (active) setItems(sortStudentsByName(rows.map(item => ({ ...item, id: item.userId })))); })
       .catch((reason) => { if (active) setError(errorMessage(reason)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };

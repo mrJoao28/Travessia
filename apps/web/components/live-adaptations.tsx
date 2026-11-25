@@ -3,6 +3,7 @@ import Link from "next/link";
 import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { useEffect, useRef, useState } from "react";
 import { api, pages, errorMessage, type ApiResponse, type ApiBody } from "../lib/product-client";
+import { sortStudentsByName } from "../lib/student-sorting";
 import type { MissionEntry } from "./live-workspace";
 
 type Plan = ApiResponse<"createAdaptation">;
@@ -54,7 +55,7 @@ function AdaptationForm({ entry, version, onDirty }: { entry: MissionEntry; vers
   useEffect(() => {
     let active = true; setRequests([]);
     void Promise.all([api("learningOptions"), pages("strategyRecipients", entry.mission.id), pages("sharedLearningNeeds", entry.classroom.id), api("adaptationPlans", { params, query: { versionId: version.id } })])
-      .then(([o, s, r, p]) => { if (active) { setOptions(o); setStudents(s); setRequests(r); setPlans(p.items); setError(""); } }).catch(e => { if (active) setError(errorMessage(e)); });
+      .then(([o, s, r, p]) => { if (active) { setOptions(o); setStudents(sortStudentsByName(s)); setRequests(r); setPlans(p.items); setError(""); } }).catch(e => { if (active) setError(errorMessage(e)); });
     return () => { active = false; };
   }, [entry.mission.id, version.id, retry]);
   function change() { setDirty(true); onDirty(true); setReviewed(false); saveKey.current = null; setMessage(""); }
@@ -74,7 +75,7 @@ function AdaptationForm({ entry, version, onDirty }: { entry: MissionEntry; vers
       setReviewed(false); setStage(2);
     }
   }
-  const recipients = studentIds.map(id => students.find(s => s.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ");
+  const recipients = sortStudentsByName(studentIds.map(id => students.find(s => s.id === id)).filter((s): s is ApiResponse<"strategyRecipients">["items"][number] => !!s)).map(s => s.name).join(", ");
   return <div className="teacher-guide">
     <TeacherSteps labels={["Para quem", "Ajustar a atividade", "Conferir"]} current={stage} disabled={busy} onBack={value => { setReviewed(false); setStage(value); }} />
     {readOnly && <p className="notice">Esta atividade está arquivada. Os apoios podem ser consultados, mas não alterados.</p>}
@@ -130,7 +131,7 @@ function AdaptationForm({ entry, version, onDirty }: { entry: MissionEntry; vers
       {error && <p className="form-error" role="alert">{error}</p>}<p role="status">{message}</p>
       <footer className="teacher-guide-footer"><div>{stage > 0 && <button type="button" className="text-button" disabled={busy} onClick={() => { setReviewed(false); setStage(stage - 1); }}>← Voltar</button>}<span className="small">Etapa {stage + 1} de 3</span>{editing && <button type="button" className="text-button" disabled={busy} onClick={() => { if (!dirty || window.confirm("Descartar as alterações desta adaptação?")) reset(); }}>Cancelar edição</button>}</div>{stage < 2 ? <button type="button" className="button" disabled={busy || readOnly} onClick={next}>{stage === 0 ? "Continuar para a atividade →" : "Conferir adaptação →"}</button> : <button type="submit" className="button" disabled={busy || readOnly || !reviewed || !instructions.trim() || studentIds.length !== 1}>{busy ? "Salvando…" : "Salvar adaptação revisada"}</button>}</footer>
     </form>
-    <section className="paper form-stack" aria-label="Adaptações salvas"><h2>Adaptações nesta versão</h2>{!plans.length && <p>Nenhuma adaptação salva nesta versão.</p>}{plans.map(p => <article className="example" key={p.id}><h3>{p.stepId ? version.steps.find(s => s.id === p.stepId)?.title : "Atividade inteira"}</h3><p>{p.studentIds.map(id => students.find(s => s.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ")}</p><details><summary>Consultar texto e exemplo</summary><p className="submission-content">{p.instructions}</p><p className="submission-content">{p.example}</p></details>
+    <section className="paper form-stack" aria-label="Adaptações salvas"><h2>Adaptações nesta versão</h2>{!plans.length && <p>Nenhuma adaptação salva nesta versão.</p>}{plans.map(p => <article className="example" key={p.id}><h3>{p.stepId ? version.steps.find(s => s.id === p.stepId)?.title : "Atividade inteira"}</h3><p>{sortStudentsByName(p.studentIds.map(id => students.find(s => s.id === id)).filter((s): s is ApiResponse<"strategyRecipients">["items"][number] => !!s)).map(s => s.name).join(", ")}</p><details><summary>Consultar texto e exemplo</summary><p className="submission-content">{p.instructions}</p><p className="submission-content">{p.example}</p></details>
       <div className="actions"><button type="button" className="text-button" disabled={busy || readOnly || p.studentIds.length !== 1} onClick={() => { if (dirty && !window.confirm("Descartar o texto ainda não salvo e abrir esta adaptação?")) return; changeGeneration(); setEditing(p); setStepId(p.stepId ?? ""); setInstructions(p.instructions); setExample(p.example); setSupports(p.supportNeeds); setFormats(p.allowedFormats); setAudience("students"); setStudentIds(p.studentIds); setStage(1); }}>Editar adaptação</button><button type="button" className="text-button teacher-danger" disabled={busy || readOnly} onClick={async () => {
         if (!window.confirm("Remover esta adaptação e seus formatos adicionais de entrega? Entregas já enviadas serão preservadas.")) return;
         setBusy(true); setError(""); try { await api("removeAdaptation", { params: { ...params, planId: p.id }, body: { expectedRevision: p.revision } }); setPlans(old => old.filter(a => a.id !== p.id)); if (editing?.id === p.id) reset(); } catch (reason) { setError(errorMessage(reason)); } finally { setBusy(false); }

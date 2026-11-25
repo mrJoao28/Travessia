@@ -10,6 +10,7 @@ import { MaterialComparison } from '../material-comparison';
 import { PreparationProgress } from '../preparation-progress';
 import { PreviewHeading } from './chrome';
 import { usePreview } from './provider';
+import { sortStudentsByName } from '../../lib/student-sorting';
 
 const presetDetails: Record<Preset, string> = {
  original: 'Disponibiliza o arquivo de referência.',
@@ -108,7 +109,7 @@ export function PreviewMaterials({missionId='campus',embedded=false}:{missionId?
     <div className="simple-student-context">
      <label htmlFor="preview-material-student">Aluno da turma</label>
      <select id="preview-material-student" value={studentId} onChange={e=>{setStudentId(e.target.value);resetSelection();}}>
-      <option value="">Escolha um aluno</option>{state.students.filter(s=>members.includes(s.id)).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
+      <option value="">Escolha um aluno</option>{sortStudentsByName(state.students.filter(s=>members.includes(s.id))).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}
      </select>
      <p className="small">{shared.length?'O aluno compartilhou pedidos de apoio neste cenário.':'Nenhum pedido compartilhado neste cenário. Você ainda pode selecionar um apoio.'}</p>
     </div>
