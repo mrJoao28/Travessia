@@ -13473,13 +13473,17 @@
                           },
                           "hasSubmissions": {
                             "type": "boolean"
+                          },
+                          "canAddMembers": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
                           "id",
                           "name",
                           "leaderId",
-                          "studentIds"
+                          "studentIds",
+                          "canAddMembers"
                         ],
                         "additionalProperties": false
                       }
@@ -13644,13 +13648,17 @@
                     },
                     "hasSubmissions": {
                       "type": "boolean"
+                    },
+                    "canAddMembers": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "id",
                     "name",
                     "leaderId",
-                    "studentIds"
+                    "studentIds",
+                    "canAddMembers"
                   ],
                   "additionalProperties": false
                 }
@@ -13805,13 +13813,17 @@
                     },
                     "hasSubmissions": {
                       "type": "boolean"
+                    },
+                    "canAddMembers": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "id",
                     "name",
                     "leaderId",
-                    "studentIds"
+                    "studentIds",
+                    "canAddMembers"
                   ],
                   "additionalProperties": false
                 }

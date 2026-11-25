@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
+import { sortStudentsByName } from "../lib/student-sorting";
 
 type Period = ApiResponse<"gradePeriods">["items"][number];
 type Entry = { mission: ApiResponse<"mission"> };
@@ -457,7 +458,7 @@ export function GradebookManager({
                       </td>
                     </tr>
                   ) : (
-                    active.students.map((student) => (
+                    sortStudentsByName(active.students.map(student => ({ ...student, id: student.studentId }))).map((student) => (
                       <tr key={student.studentId}>
                         <th scope="row">{student.name}</th>
                         {student.assessments.map((item) => (
