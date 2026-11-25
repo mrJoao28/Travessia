@@ -4814,6 +4814,7 @@ export interface operations {
                             leaderId: string | null;
                             studentIds: string[];
                             hasSubmissions?: boolean;
+                            canAddMembers: boolean;
                         }[];
                         participationMode: ("group" | "individual") | null;
                     };
@@ -4865,6 +4866,7 @@ export interface operations {
                         leaderId: string | null;
                         studentIds: string[];
                         hasSubmissions?: boolean;
+                        canAddMembers: boolean;
                     };
                 };
             };
@@ -4954,6 +4956,7 @@ export interface operations {
                         leaderId: string | null;
                         studentIds: string[];
                         hasSubmissions?: boolean;
+                        canAddMembers: boolean;
                     };
                 };
             };

@@ -2,6 +2,7 @@
 import { PDF_MAX_BYTES, PDF_MAX_MB, PDF_MAX_PAGES } from "../lib/material-limits";
 import { useEffect, useRef, useState } from "react";
 import { api, pages, errorMessage, type ApiResponse, type ApiBody } from "../lib/product-client";
+import { sortStudentsByName } from "../lib/student-sorting";
 import { materialProfiles, type MaterialSupport } from "../lib/material-profiles";
 import { materialSuggestions } from "../lib/material-suggestions";
 import { useTeacherDraftGuard } from "./teacher-steps";
@@ -52,7 +53,7 @@ export function IndividualMaterials({ missionId, versionId, classroomId, archive
     let active=true;
     setLoading(true); setError("");
     void Promise.all([pages("strategyRecipients",missionId), pages("sharedLearningNeeds",classroomId), api("materialSources",{params:{id:missionId},query:{versionId}}),api("materialAdaptations",{params:{id:missionId},query:{versionId}})])
-      .then(([s,n,f,a])=>{ if(active){setStudents(s);setShared(n);setSources(f.items);setAdaptations(a.items);} })
+      .then(([s,n,f,a])=>{ if(active){setStudents(sortStudentsByName(s));setShared(n);setSources(f.items);setAdaptations(a.items);} })
       .catch(reason=>{if(active)setError(errorMessage(reason));}).finally(()=>{if(active)setLoading(false);});
     return ()=>{active=false;};
   },[missionId,versionId,classroomId,retry]);

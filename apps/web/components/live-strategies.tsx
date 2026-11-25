@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api, pages, errorMessage, type ApiResponse } from "../lib/product-client";
+import { sortStudentsByName } from "../lib/student-sorting";
 import type { MissionEntry } from "./live-workspace";
 import { AudioAttachment, SupportAudio, type AudioValue } from "./support-audio";
 import { SupportGenerator } from "./support-generator";
@@ -91,7 +92,7 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
   useEffect(() => {
     let active = true; setLoading(true); setLoadError("");
     void Promise.all([api("strategyCatalog"), pages("strategyRecipients", entry.mission.id), api("strategyPlans", { params: { id: entry.mission.id }, query: { versionId: version.id } })])
-      .then(([strategies, recipients, applications]) => { if (active) { setCatalog(strategies.items); setStudents(recipients); setPlans(applications.items); } })
+      .then(([strategies, recipients, applications]) => { if (active) { setCatalog(strategies.items); setStudents(sortStudentsByName(recipients)); setPlans(applications.items); } })
       .catch(reason => { if (active) setLoadError(errorMessage(reason)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -190,7 +191,7 @@ function StrategyForm({ entry, version }: { entry: MissionEntry; version: NonNul
     <OperationStatus message={message} error={failed} />
     {preview && <section className="paper strategy-preview" aria-label="Prévia do aluno"><h2 ref={previewTitle} tabIndex={-1}>Prévia dos apoios para o aluno</h2><p>{stepId ? version.steps.find(s => s.id === stepId)?.title : "Apoios disponíveis em todas as etapas desta atividade"}</p>{chosen.map(s => <details className="example" key={s.id}><summary>{s.title}</summary><p className="submission-content">{contents[s.id]}</p>{audios[s.id] && <SupportAudio missionId={entry.mission.id} {...audios[s.id]!} />}</details>)}<p className="small">Esta prévia não salva nem publica os apoios.</p></section>}
     <section className="strategy-saved" aria-label="Aplicações salvas"><h2>Aplicações nesta versão</h2>{!plans.length && <p>Nenhuma aplicação salva nesta versão.</p>}
-      {plans.map(plan => <article className="paper" key={plan.id}><h3>{plan.stepId ? `Etapa · ${version.steps.find(s => s.id === plan.stepId)?.title}` : "Atividade inteira"}</h3><p>{plan.audience === "classroom" ? "Turma inteira" : `Alunos selecionados: ${plan.recipients.map(s => s.name).join(", ")}`}</p>
+      {plans.map(plan => <article className="paper" key={plan.id}><h3>{plan.stepId ? `Etapa · ${version.steps.find(s => s.id === plan.stepId)?.title}` : "Atividade inteira"}</h3><p>{plan.audience === "classroom" ? "Turma inteira" : `Alunos selecionados: ${sortStudentsByName(plan.recipients).map(s => s.name).join(", ")}`}</p>
         {plan.items.map(item => <details key={item.id}><summary>{item.title}</summary><p className="submission-content">{item.content}</p>{item.hasAudio && <SupportAudio missionId={entry.mission.id} itemId={item.id} />}</details>)}
         <div className="actions"><button className="button button-outline" disabled={pending || mediaBusy || aiBusy || archived} onClick={() => {
           setEditing(plan); setSelected(plan.items.map(i => i.strategyId)); setContents(Object.fromEntries(plan.items.map(i => [i.strategyId, i.content])));

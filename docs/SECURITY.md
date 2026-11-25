@@ -10,7 +10,7 @@ O backend implementa Better Auth persistido, autorização por turma, validaçã
 |---|---|
 | Aluno altera ID e lê trabalho alheio | Sessão verificada, autorização por recurso/turma e teste HTTP negativo |
 | Professor lê outra turma | Vínculo resolvido no servidor e queries com escopo |
-| Aluno organiza uma equipe sem autorização ou inclui pessoa fora da turma | Permissão salva na versão publicada, sessão ativa da turma, lista de integrantes validados no servidor, autor como líder e uma equipe ativa por atividade |
+| Aluno organiza uma equipe sem autorização ou inclui pessoa fora da turma | Permissão salva na versão publicada, sessão ativa da turma, lista de integrantes validados no servidor, autor como líder e uma equipe ativa por atividade; líder só acrescenta integrantes antes da primeira entrega. Remoção e mudança de liderança/nome exigem ação docente |
 | Cliente promove o próprio papel | Campos permitidos e criação/convite transacional, sem perfil global editável |
 | Convite vaza | Token opaco com hash, validade, revogação e limite de tentativas; preferir não expor em logs/referrers |
 | Arquivo malicioso ou de outra turma | Bucket privado, limites, validação, quarentena/verificação e download autorizado |

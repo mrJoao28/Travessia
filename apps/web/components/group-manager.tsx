@@ -1,6 +1,7 @@
 "use client";
 import { type FormEvent, useEffect, useState } from "react";
 import { api, pages, errorMessage, type ApiResponse } from "../lib/product-client";
+import { sortStudentsByName } from "../lib/student-sorting";
 
 type Student = ApiResponse<"strategyRecipients">["items"][number];
 type Group = ApiResponse<"groups">["items"][number];
@@ -19,7 +20,7 @@ export function GroupManager({ missionId }: { missionId: string }) {
   useEffect(() => {
     let active = true;
     Promise.all([pages("strategyRecipients", missionId), api("groups", { params: { id: missionId } })])
-      .then(([recipients, result]) => { if (active) { setStudents(recipients); setGroups(result.items); } })
+      .then(([recipients, result]) => { if (active) { setStudents(sortStudentsByName(recipients)); setGroups(result.items); } })
       .catch(reason => { if (active) setMessage(errorMessage(reason)); });
     return () => { active = false; };
   }, [missionId]);
@@ -73,7 +74,7 @@ export function GroupManager({ missionId }: { missionId: string }) {
     <p>Organize os alunos da turma em equipes de pelo menos duas pessoas. Todos os integrantes podem editar e validar cada atividade; o líder envia a resposta validada ao professor.</p>
     {groups.map(group => <div key={group.id} className="example">
       <h4>{group.name}</h4><p>Líder: {students.find(student => student.id === group.leaderId)?.name ?? "não definido"}</p>
-      <span>{group.studentIds.map(id => students.find(student => student.id === id)?.name ?? "Aluno sem vínculo ativo").join(", ")}</span>
+      <span>{sortStudentsByName(group.studentIds.map(id => students.find(student => student.id === id)).filter((student): student is Student => !!student)).map(student => student.name).join(", ")}{group.studentIds.some(id => !students.some(student => student.id === id)) ? ", Aluno sem vínculo ativo" : ""}</span>
       {group.hasSubmissions && <p className="small">Esta equipe já tem entregas. Você pode corrigir o nome e o líder. Para trocar integrantes, remova a equipe e crie outra; o histórico continuará vinculado aos integrantes originais.</p>}
       <button type="button" className="text-button" disabled={pending} onClick={() => { setEditing(group.id); setName(group.name); setSelected(group.studentIds); setLeaderId(group.leaderId ?? ""); }}>Editar equipe</button>{" "}
       <button type="button" className="text-button" disabled={pending} onClick={() => void remove(group.id)}>Remover equipe</button>
@@ -138,13 +139,15 @@ export function StudentTeamFormation({ missionId, classroomId, viewerId, current
   const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [memberMessage, setMemberMessage] = useState("");
+  const [memberError, setMemberError] = useState("");
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setLoadError("");
     void pages("members", classroomId)
-      .then(items => { if (active) setStudents(items.filter(item => item.active && item.role === "student")); })
+      .then(items => { if (active) setStudents(sortStudentsByName(items.filter(item => item.active && item.role === "student"))); })
       .catch(reason => { if (active) setLoadError(errorMessage(reason)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -166,11 +169,41 @@ export function StudentTeamFormation({ missionId, classroomId, viewerId, current
     finally { setPending(false); }
   }
 
-  if (currentTeam) return <section className="notice form-stack" aria-label="Equipe desta atividade">
-    <h3>Equipe definida</h3>
-    <p>Você participa da equipe <strong>{currentTeam.name}</strong>. O professor pode ajustar os integrantes na página da atividade.</p>
-    {message && <p role="status">{message}</p>}
-  </section>;
+  async function addMembers(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending || !currentTeam?.canAddMembers || selected.length === 0) return;
+    setPending(true); setMemberError(""); setMemberMessage("");
+    try {
+      const updated = await api("updateGroup", { params: { id: missionId, groupId: currentTeam.id }, body: {
+        name: currentTeam.name, leaderId: currentTeam.leaderId, studentIds: [...currentTeam.studentIds, ...selected],
+      } });
+      onCreated(updated);
+      setSelected([]);
+      setMemberMessage("Novas pessoas adicionadas à equipe.");
+    } catch (reason) { setMemberError(errorMessage(reason)); }
+    finally { setPending(false); }
+  }
+
+  if (currentTeam) {
+    const teamStudents = sortStudentsByName(currentTeam.studentIds.map(id => students.find(student => student.id === id)).filter((student): student is NonNullable<typeof student> => !!student));
+    const availableStudents = students.filter(student => !currentTeam.studentIds.includes(student.id));
+    return <section className="notice form-stack student-team-card" aria-label="Equipe desta atividade" aria-busy={pending}>
+      <h3>Sua equipe: {currentTeam.name}</h3>
+      <p>Líder: <strong>{students.find(student => student.id === currentTeam.leaderId)?.name ?? "não definido"}</strong></p>
+      <h4>Integrantes</h4>
+      <ul>{teamStudents.map(student => <li key={student.id}>{student.name}{student.id === currentTeam.leaderId ? " · líder" : ""}</li>)}</ul>
+      {currentTeam.canAddMembers ? <form className="form-stack" onSubmit={event => void addMembers(event)}>
+        <fieldset className="teacher-choice-list" disabled={pending || loading || availableStudents.length === 0}>
+          <legend>Adicionar pessoas à equipe</legend>
+          {loading ? <p role="status">Carregando estudantes da turma…</p> : availableStudents.length === 0 ? <p>Todas as pessoas ativas da turma já estão nesta equipe.</p> : availableStudents.map(student => <label className="check" key={student.id}>
+            <input type="checkbox" checked={selected.includes(student.id)} disabled={!selected.includes(student.id) && currentTeam.studentIds.length + selected.length >= 50} onChange={event => setSelected(items => event.target.checked ? [...items, student.id] : items.filter(id => id !== student.id))} />{student.name}
+          </label>)}
+        </fieldset>
+        <button type="submit" className="button" disabled={pending || selected.length === 0}>{pending ? "Adicionando…" : "Adicionar à equipe"}</button>
+      </form> : !loading && <p className="small">Para adicionar pessoas, fale com o professor. Se alguém precisar sair da equipe, também será necessário pedir autorização ao professor.</p>}
+      {memberError && <p role="alert">{memberError}</p>}{memberMessage && <p role="status">{memberMessage}</p>}{message && <p role="status">{message}</p>}
+    </section>;
+  }
 
   return <section className="notice form-stack" aria-labelledby={`student-team-title-${missionId}`} aria-busy={pending}>
     <h3 id={`student-team-title-${missionId}`}>{required ? "Monte sua equipe para começar" : "Quer fazer esta atividade em grupo?"}</h3>

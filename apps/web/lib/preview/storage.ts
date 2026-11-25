@@ -18,8 +18,9 @@ export function parsePreview(raw:string|null):PreviewState{
   if(!rows(s.reports,60,r=>['id','missionId','studentId'].every(k=>str(r[k],100))&&str(r.content,3000)&&typeof r.shared==='boolean'&&str(r.reply,3000)))return initialPreview();
   if(!rows(s.strategies,60,r=>str(r.id,100)&&str(r.missionId,100)&&integer(r.revision)&&(r.studentId===null||str(r.studentId,100))&&(r.step===null||integer(r.step))&&str(r.title,200)&&str(r.content,6000)))return initialPreview();
   if(s.activitySupports!==undefined&&!rows(s.activitySupports,60,r=>['missionId','studentId'].every(k=>str(r[k],100))&&integer(r.revision)&&str(r.instructions,6000)&&strings(r.formats,3)&&(r.formats as string[]).every(f=>['text','audio','text_file'].includes(f))))return initialPreview();
+  if(s.teams!==undefined&&!rows(s.teams,10,r=>['id','classroomId','missionId','name','leaderId'].every(k=>str(r[k],150))&&strings(r.memberIds,50)))return initialPreview();
   const value=s as unknown as PreviewState;
   if(!value.students.some(x=>x.id===value.studentId)||!value.students.length||!value.classrooms.length||!value.missions.length)return initialPreview();
-  return value;
+  return {...value,teams:value.teams??initialPreview().teams};
  }catch{return initialPreview();}
 }
