@@ -20,7 +20,7 @@ export function LoginForm() {
   return (
     <section className="login-form" id="conteudo" tabIndex={-1}>
       <p className="eyebrow">BEM-VINDO AO TRAVESSIA</p>
-      <h2>Seu próximo passo começa aqui.</h2>
+      <h2>Entrar na sua conta</h2>
       <p>{invitation?"Entre ou crie sua conta para aceitar o convite da turma.":"Entre com o e-mail e a senha da sua conta."}</p>
       <noscript><p>Ative o JavaScript para entrar com segurança.</p></noscript>
       <form

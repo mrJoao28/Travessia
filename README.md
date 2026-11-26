@@ -1,8 +1,10 @@
 # Travessia
 
-> **Diferentes caminhos para aprender e avançar.**
+> **Uma experiência fluida e acessível para aprender e avançar.**
 
-Plataforma web de aprendizagem por atividades acessíveis para o ensino superior. O Travessia permite que professores organizem objetivos, etapas, materiais e critérios, enquanto estudantes acompanham atividades, escolhem apoios, entregam trabalhos e comunicam barreiras.
+O Travessia é uma plataforma web de aprendizagem por atividades para o ensino superior. Nossa principal proposta é oferecer uma experiência **fluida e acessível**: estudantes entendem o que fazer, avançam por etapas, escolhem apoios sem precisar apresentar diagnóstico e acompanham o retorno do professor. Professores organizam objetivos, materiais, critérios e entregas em um percurso integrado.
+
+Acessibilidade é parte do fluxo principal, não um modo separado. A plataforma apoia o trabalho pedagógico, mas não diagnostica estudantes nem atribui notas finais automaticamente. A proposta, os públicos, os princípios, os fluxos, o escopo e os pontos a validar estão em [`docs/PRODUCT.md`](docs/PRODUCT.md).
 
 **ODS principal:** 4 — Educação de Qualidade  
 **Contribuição complementar:** 10 — Redução das Desigualdades
@@ -35,7 +37,7 @@ Plataforma web de aprendizagem por atividades acessíveis para o ensino superior
 
 ## 🎯 Visão geral
 
-O Travessia é um **MVP de uma plataforma educacional acessível**, com espaços para:
+O Travessia é um **MVP de uma plataforma educacional**, com espaços para:
 
 - 👨‍🎓 **Aluno**
   - visualizar turmas e atividades;
@@ -54,7 +56,9 @@ O Travessia é um **MVP de uma plataforma educacional acessível**, com espaços
   - fornecer feedback;
   - trabalhar com diferentes formas de apoio.
 
-A aplicação também possui recursos de acessibilidade como **ajuste de tamanho do texto, contraste, espaçamento e redução de decoração**.
+O produto integra organização em etapas, retomada do trabalho, apoios opcionais, entregas e feedback. A aplicação oferece recursos de acessibilidade como **ajuste de tamanho do texto, contraste, espaçamento e redução de decoração**. Esses recursos ajudam a experiência, mas não significam certificação nem validação com todas as pessoas.
+
+Consulte [`docs/PRODUCT.md`](docs/PRODUCT.md) para a proposta completa e a diferença entre recursos implementados, demonstrações e itens ainda sujeitos a validação.
 
 ---
 
@@ -492,6 +496,7 @@ Antes de alterar o projeto, consulte:
 | Documento | Para que serve |
 |---|---|
 | `AGENTS.md` | Regras gerais para desenvolvimento |
+| `docs/PRODUCT.md` | Proposta, públicos, princípios, fluxos, escopo e estado conhecido do produto |
 | `docs/DOCKER.md` | Docker e ambiente local |
 | `docs/DEPLOY.md` | Topologia Cloudflare, deploy e verificação de produção |
 | `docs/BACKEND-OPERATIONS.md` | Operação do backend |
@@ -501,8 +506,8 @@ Antes de alterar o projeto, consulte:
 | `docs/ARCHITECTURE.md` | Arquitetura |
 | `docs/DESIGN.md` | Identidade visual |
 | `docs/ARTWORK.md` | Artes e referências |
-| `docs/FRONTEND.md` | Orientações do frontend |
-| `docs/BACKEND.md` | Orientações do backend |
+| `apps/web/AGENTS.md` e `docs/agents/FRONTEND.md` | Orientações do frontend |
+| `apps/api/AGENTS.md` e `docs/agents/BACKEND.md` | Orientações do backend |
 | `docs/agents/AI-WORKFLOW.md` | Divisão de tarefas entre Codex, Antigravity e protótipos no Google AI Studio |
 
 > Alguns nomes/arquivos podem ser atualizados conforme a evolução do projeto. Consulte a pasta `docs/` para a documentação disponível na versão atual.
