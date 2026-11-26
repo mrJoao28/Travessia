@@ -44,7 +44,7 @@ export const missionInput = z.strictObject({ title: short, description: text, ob
   criteria: z.array(short).min(1).max(10), dueAt: date.nullable().optional(), workMode: z.enum(['individual', 'group', 'mixed']).optional(),
   studentsCanFormTeams: z.boolean().optional(),
   steps: z.array(z.strictObject({ title: short, instructions: text, example: text, interaction: activityInteraction.optional(),
-    dueAt: date.nullable().optional(), maxPoints: z.number().int().min(0).max(100).nullable().optional() })).min(1).max(10),
+    dueAt: date.nullable().optional(), maxPoints: z.number().int().min(1).max(100) })).min(1).max(10),
   materials: z.array(z.strictObject({ title: short, text })).max(10) });
 export type MissionInput = z.infer<typeof missionInput>;
 const version = missionInput.extend({ id, missionId: id, source: z.enum(['manual', 'gemini', 'demo_fixture']),
@@ -57,7 +57,7 @@ const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', '
 const classroom = z.strictObject({ id, name: short, shift: z.string().nullable().optional(), role: z.enum(['student', 'teacher', 'monitor']), archivedAt: date.nullable().optional(), ownerId: id.optional(), isOwner: z.boolean().optional() });
 const gradePeriod = z.strictObject({ id, classroomId: id, name: short, formula: z.enum(['weighted_average', 'simple_average', 'sum']), startsAt: date.nullable(), endsAt: date.nullable(), assessments: z.array(z.strictObject({ id, missionId: id, title: short, weight: z.number().int().positive() })) });
 const gradebook = z.strictObject({ period: gradePeriod, students: z.array(z.strictObject({ studentId: id, name: z.string(), assessments: z.array(z.strictObject({ assessmentId: id, missionId: id, title: short, value: z.number().nullable(), weight: z.number().int().positive() })), average: z.number().nullable() })) });
-const stepScore = z.strictObject({ stepId: id, points: z.number().int().min(0).max(100), comment: z.string().trim().max(1000) });
+const stepScore = z.strictObject({ stepId: id, points: z.number().int().min(1).max(100), comment: z.string().trim().max(1000) });
 const feedbackDraft = z.strictObject({ content: z.string().trim().min(1).max(6000), scores: z.array(stepScore).max(10) });
 const feedback = z.strictObject({ id, content: text, createdAt: date,
   scores: z.array(stepScore).nullable(), totalPoints: z.number().int().min(0).nullable() });
