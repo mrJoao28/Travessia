@@ -4106,7 +4106,7 @@ export interface operations {
                             answerKey?: string[];
                         };
                         dueAt?: string | null;
-                        maxPoints?: number | null;
+                        maxPoints: number;
                     }[];
                     materials: {
                         title: string;
@@ -4411,7 +4411,7 @@ export interface operations {
                             answerKey?: string[];
                         };
                         dueAt?: string | null;
-                        maxPoints?: number | null;
+                        maxPoints: number;
                     }[];
                     materials: {
                         title: string;
