@@ -78,9 +78,11 @@ test("preferências por teclado, Escape, persistência local e skip link", async
     await contrast.check();
     await page.keyboard.press("Escape");
     await expect(page.locator("#preferencias")).not.toHaveAttribute("open", "");
-    const themeToggle = page.getByRole("button", { name: "Ativar modo escuro" });
+    const themeToggle = page.locator(".theme-toggle");
+    await expect(themeToggle).toHaveAccessibleName("Ativar modo escuro");
     await themeToggle.click();
     await expect(themeToggle).toHaveAttribute("aria-pressed", "true");
+    await expect(themeToggle).toHaveAccessibleName("Ativar modo claro");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   });
   await test.step("ajustar tamanho e fechar o painel de leitura com Escape", async () => {
