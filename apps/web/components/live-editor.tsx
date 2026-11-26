@@ -440,8 +440,8 @@ export function LiveEditor({
                         onChange={(e) => change({ ...input, steps: input.steps.map((s, i) => i === index ? { ...s, dueAt: e.target.value ? new Date(e.target.value).toISOString() : null } : s) })} />
                     </label>
                     <label htmlFor={`live-step-points-${stepKeys[index]}`}>
-                      Pontuação máxima da etapa (opcional)
-                      <input id={`live-step-points-${stepKeys[index]}`} type="number" min="0" max="100" step="1"
+                      Pontuação máxima da etapa (obrigatória · de 1 a 100)
+                      <input id={`live-step-points-${stepKeys[index]}`} type="number" min="1" max="100" step="1" required
                         value={step.maxPoints ?? ""}
                         onChange={(e) => change({ ...input, steps: input.steps.map((s, i) => i === index ? { ...s, maxPoints: e.target.value === "" ? null : Number(e.target.value) } : s) })} />
                     </label>
