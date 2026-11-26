@@ -42,6 +42,7 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await teacher.getByRole('button',{name:'Continuar para as etapas →',exact:true}).click();
   await teacher.getByLabel('Título da etapa',{exact:true}).fill('Comparar rotas');await teacher.getByLabel('Instrução',{exact:true}).fill('Compare duas rotas de 10 metros e justifique sua escolha.');
   await teacher.getByLabel('Exemplo de apoio',{exact:true}).fill('Observe distância, obstáculos e acesso.');
+  await teacher.getByLabel('Pontuação máxima da etapa (obrigatória · de 1 a 100)',{exact:true}).fill('10');
   await expect(teacher.getByText(/Uploads permanecem desativados/)).toHaveCount(0);
   await teacher.getByRole('checkbox',{name:'Ao adicionar este PDF, disponibilizar também o botão de download',exact:true}).check();
   await teacher.getByLabel('Adicionar PDF à atividade',{exact:true}).setInputFiles({name:'rotas-campus.pdf',mimeType:'application/pdf',buffer:materialPdfFixture()});
