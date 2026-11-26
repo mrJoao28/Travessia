@@ -100,6 +100,7 @@ Esta seção diferencia a proposta do estado do código e das demonstrações. �
 |---|---|---|
 | Identidade e turmas | Login, perfis e vínculo por turma | Better Auth, sessões persistidas e autorização por turma documentados; revisar operação real e recuperação de conta antes de piloto amplo |
 | Atividades | Criar, editar, versionar, revisar e publicar | Fluxo de criação guiada e publicação implementados; consultar `docs/TEACHER-INTERFACE.md` |
+| Formatos de resposta | Configurar respostas por etapa, como texto, escolha, lacunas e autoavaliação de confiança | Formatos configuráveis no editor; gabaritos são privados e servem como referência do professor, sem correção ou nota automática. Ideias futuras: `docs/ACTIVITY-INTERACTIONS.md` |
 | Etapas do aluno | Ler instruções, salvar progresso, retomar e entregar | Fluxos de atividade/entrega implementados; validação de uso com estudantes ainda é necessária |
 | Entregas e feedback | Enviar trabalho e receber retorno docente | Capacidades integradas com API; validar política operacional de retenção e fluxos de suporte |
 | Barreiras e apoios | Relatar dificuldades e preparar apoios | Compartilhamento explícito e materiais individuais documentados; confirmar destinatários e privacidade em testes de cada fluxo |

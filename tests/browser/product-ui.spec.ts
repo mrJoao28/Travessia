@@ -239,6 +239,7 @@ test("docente exclui atividade sem histórico e mantém acesso às entregas", as
   await page.goto("/professor?turma=test-classroom");
   const deliveries = page.getByRole("link", { name: "Ver entregas da atividade", exact: true });
   await expect(deliveries).toHaveAttribute("href", "/professor/entregas?atividade=test-mission&turma=test-classroom");
+  await page.locator(".mission-more-actions > summary").click();
   await expect(page.getByRole("button", { name: "Excluir atividade", exact: true })).toBeVisible();
   page.once("dialog", dialog => dialog.accept());
   const request = page.waitForRequest(candidate => candidate.url().endsWith("/api/v1/activities/test-mission") && candidate.method() === "DELETE");
@@ -257,6 +258,7 @@ test("docente recebe o motivo correto quando a exclusão da atividade é bloquea
     await route.fallback();
   });
   await page.goto("/professor?turma=test-classroom");
+  await page.locator(".mission-more-actions > summary").click();
   page.once("dialog", dialog => dialog.accept());
   await page.getByRole("button", { name: "Excluir atividade", exact: true }).click();
   const deleteError = page.locator(".mission-delete-action-item [role=alert]");

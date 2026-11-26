@@ -274,6 +274,7 @@ model Step {
   title String
   instructions String
   example String
+  interaction Json?
   dueAt DateTime?
   maxPoints Int?
   version MissionVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)

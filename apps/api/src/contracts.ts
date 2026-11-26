@@ -6,6 +6,34 @@ export const id = z.string().min(1).max(100);
 const text = z.string().trim().min(1).max(6000);
 const short = z.string().trim().min(1).max(200);
 const date = z.iso.datetime();
+const activityInteraction = z.strictObject({
+  type: z.enum(['written', 'short_text', 'single_choice', 'multiple_choice', 'true_false', 'fill_blank', 'confidence']),
+  question: z.string().trim().max(1000).optional(),
+  options: z.array(z.string().trim().min(1).max(200)).max(8).optional(),
+  answerKey: z.array(z.string().trim().min(1).max(200)).max(8).optional(),
+}).superRefine((value, ctx) => {
+  if (value.type !== 'written' && !value.question?.trim())
+    ctx.addIssue({ code: 'custom', path: ['question'], message: 'Escreva a pergunta ou orientação.' });
+  if (['single_choice', 'multiple_choice'].includes(value.type)) {
+    if (!value.options || value.options.length < 2)
+      ctx.addIssue({ code: 'custom', path: ['options'], message: 'Inclua pelo menos duas opções.' });
+    if (value.options && new Set(value.options.map(item => item.toLocaleLowerCase('pt-BR'))).size !== value.options.length)
+      ctx.addIssue({ code: 'custom', path: ['options'], message: 'Remova opções repetidas.' });
+    if (value.answerKey?.some(answer => !value.options?.includes(answer)))
+      ctx.addIssue({ code: 'custom', path: ['answerKey'], message: 'A resposta esperada precisa corresponder a uma opção.' });
+  }
+  if (value.type === 'true_false' && value.answerKey?.some(answer => !['true', 'false'].includes(answer)))
+    ctx.addIssue({ code: 'custom', path: ['answerKey'], message: 'Escolha verdadeiro ou falso como resposta esperada.' });
+  if (value.type === 'fill_blank') {
+    const blanks = [...(value.question ?? '').matchAll(/\[\[(\d+)\]\]/g)].map(match => Number(match[1]));
+    if (!blanks.length || blanks.length > 5 || blanks.some((number, index) => number !== index + 1))
+      ctx.addIssue({ code: 'custom', path: ['question'], message: 'Use os espaços [[1]], [[2]]… em sequência (até cinco).' });
+    if ((value.answerKey?.length ?? 0) !== blanks.length)
+      ctx.addIssue({ code: 'custom', path: ['answerKey'], message: 'Informe uma resposta esperada para cada espaço, na mesma ordem.' });
+  }
+  if (value.type === 'single_choice' && (value.answerKey?.length ?? 0) > 1)
+    ctx.addIssue({ code: 'custom', path: ['answerKey'], message: 'Marque no máximo uma resposta esperada.' });
+});
 const list = <T extends z.ZodType>(item: T) => z.strictObject({ items: z.array(item), nextCursor: z.string().nullable() });
 export const page = z.strictObject({ limit: z.coerce.number().int().min(1).max(50).default(20), cursor: id.optional() });
 const empty = z.strictObject({});
@@ -15,13 +43,13 @@ export const preferences = z.strictObject({ fontSize: z.enum(['default', 'large'
 export const missionInput = z.strictObject({ title: short, description: text, objectives: z.array(short).min(1).max(10),
   criteria: z.array(short).min(1).max(10), dueAt: date.nullable().optional(), workMode: z.enum(['individual', 'group', 'mixed']).optional(),
   studentsCanFormTeams: z.boolean().optional(),
-  steps: z.array(z.strictObject({ title: short, instructions: text, example: text,
+  steps: z.array(z.strictObject({ title: short, instructions: text, example: text, interaction: activityInteraction.optional(),
     dueAt: date.nullable().optional(), maxPoints: z.number().int().min(0).max(100).nullable().optional() })).min(1).max(10),
   materials: z.array(z.strictObject({ title: short, text })).max(10) });
 export type MissionInput = z.infer<typeof missionInput>;
 const version = missionInput.extend({ id, missionId: id, source: z.enum(['manual', 'gemini', 'demo_fixture']),
   createdAt: date, dueAt: date.nullable(), workMode: z.enum(['individual', 'group', 'mixed']), studentsCanFormTeams: z.boolean(),
-  steps: z.array(z.strictObject({ id, position: z.number().int(), title: short, instructions: text, example: text,
+  steps: z.array(z.strictObject({ id, position: z.number().int(), title: short, instructions: text, example: text, interaction: activityInteraction.optional(),
     dueAt: date.nullable(), deadlineExtended: z.boolean(), maxPoints: z.number().int().min(0).max(100).nullable() })),
   materials: z.array(z.strictObject({ id, title: short, text, hasFile: z.boolean() })) });
 const mission = z.strictObject({ id, classroomId: id, status: z.enum(['draft', 'published', 'archived']),

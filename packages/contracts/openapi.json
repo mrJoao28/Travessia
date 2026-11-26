@@ -9512,6 +9512,49 @@
                                           "minLength": 1,
                                           "maxLength": 6000
                                         },
+                                        "interaction": {
+                                          "type": "object",
+                                          "properties": {
+                                            "type": {
+                                              "type": "string",
+                                              "enum": [
+                                                "written",
+                                                "short_text",
+                                                "single_choice",
+                                                "multiple_choice",
+                                                "true_false",
+                                                "fill_blank",
+                                                "confidence"
+                                              ]
+                                            },
+                                            "question": {
+                                              "type": "string",
+                                              "maxLength": 1000
+                                            },
+                                            "options": {
+                                              "maxItems": 8,
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200
+                                              }
+                                            },
+                                            "answerKey": {
+                                              "maxItems": 8,
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200
+                                              }
+                                            }
+                                          },
+                                          "required": [
+                                            "type"
+                                          ],
+                                          "additionalProperties": false
+                                        },
                                         "dueAt": {
                                           "anyOf": [
                                             {
@@ -9719,6 +9762,49 @@
                                           "type": "string",
                                           "minLength": 1,
                                           "maxLength": 6000
+                                        },
+                                        "interaction": {
+                                          "type": "object",
+                                          "properties": {
+                                            "type": {
+                                              "type": "string",
+                                              "enum": [
+                                                "written",
+                                                "short_text",
+                                                "single_choice",
+                                                "multiple_choice",
+                                                "true_false",
+                                                "fill_blank",
+                                                "confidence"
+                                              ]
+                                            },
+                                            "question": {
+                                              "type": "string",
+                                              "maxLength": 1000
+                                            },
+                                            "options": {
+                                              "maxItems": 8,
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200
+                                              }
+                                            },
+                                            "answerKey": {
+                                              "maxItems": 8,
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 200
+                                              }
+                                            }
+                                          },
+                                          "required": [
+                                            "type"
+                                          ],
+                                          "additionalProperties": false
                                         },
                                         "dueAt": {
                                           "anyOf": [
@@ -10000,6 +10086,49 @@
                           "minLength": 1,
                           "maxLength": 6000
                         },
+                        "interaction": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "written",
+                                "short_text",
+                                "single_choice",
+                                "multiple_choice",
+                                "true_false",
+                                "fill_blank",
+                                "confidence"
+                              ]
+                            },
+                            "question": {
+                              "type": "string",
+                              "maxLength": 1000
+                            },
+                            "options": {
+                              "maxItems": 8,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              }
+                            },
+                            "answerKey": {
+                              "maxItems": 8,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              }
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ],
+                          "additionalProperties": false
+                        },
                         "dueAt": {
                           "anyOf": [
                             {
@@ -10185,6 +10314,49 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   "dueAt": {
                                     "anyOf": [
@@ -10393,6 +10565,49 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   "dueAt": {
                                     "anyOf": [
@@ -10694,6 +10909,49 @@
                                     "minLength": 1,
                                     "maxLength": 6000
                                   },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   "dueAt": {
                                     "anyOf": [
                                       {
@@ -10901,6 +11159,49 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   "dueAt": {
                                     "anyOf": [
@@ -11168,6 +11469,49 @@
                           "minLength": 1,
                           "maxLength": 6000
                         },
+                        "interaction": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "written",
+                                "short_text",
+                                "single_choice",
+                                "multiple_choice",
+                                "true_false",
+                                "fill_blank",
+                                "confidence"
+                              ]
+                            },
+                            "question": {
+                              "type": "string",
+                              "maxLength": 1000
+                            },
+                            "options": {
+                              "maxItems": 8,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              }
+                            },
+                            "answerKey": {
+                              "maxItems": 8,
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              }
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ],
+                          "additionalProperties": false
+                        },
                         "dueAt": {
                           "anyOf": [
                             {
@@ -11376,6 +11720,49 @@
                                     "minLength": 1,
                                     "maxLength": 6000
                                   },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   "dueAt": {
                                     "anyOf": [
                                       {
@@ -11583,6 +11970,49 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   "dueAt": {
                                     "anyOf": [
@@ -11978,6 +12408,49 @@
                                     "minLength": 1,
                                     "maxLength": 6000
                                   },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   "dueAt": {
                                     "anyOf": [
                                       {
@@ -12185,6 +12658,49 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   "dueAt": {
                                     "anyOf": [
@@ -12513,6 +13029,49 @@
                                     "minLength": 1,
                                     "maxLength": 6000
                                   },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   "dueAt": {
                                     "anyOf": [
                                       {
@@ -12720,6 +13279,49 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   "dueAt": {
                                     "anyOf": [
@@ -13034,6 +13636,49 @@
                                     "minLength": 1,
                                     "maxLength": 6000
                                   },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
+                                  },
                                   "dueAt": {
                                     "anyOf": [
                                       {
@@ -13241,6 +13886,49 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 6000
+                                  },
+                                  "interaction": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "enum": [
+                                          "written",
+                                          "short_text",
+                                          "single_choice",
+                                          "multiple_choice",
+                                          "true_false",
+                                          "fill_blank",
+                                          "confidence"
+                                        ]
+                                      },
+                                      "question": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                      },
+                                      "options": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      },
+                                      "answerKey": {
+                                        "maxItems": 8,
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 200
+                                        }
+                                      }
+                                    },
+                                    "required": [
+                                      "type"
+                                    ],
+                                    "additionalProperties": false
                                   },
                                   "dueAt": {
                                     "anyOf": [

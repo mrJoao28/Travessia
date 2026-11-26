@@ -22,7 +22,9 @@ A fonte compartilhada continua em packages/design-tokens. Cores de texto e botõ
 
 ## Modo escuro
 
-O tema escuro é opcional e fica no painel “Tema e contraste”, separado dos ajustes de texto e espaçamento. É independente da preferência “Mais contraste”. A escolha é persistida localmente no navegador; o tema não faz parte do contrato atual de preferências da conta. Os tokens são aplicados globalmente e também ajustam os controles nativos com `color-scheme: dark`. O alto contraste permanece disponível sobre os temas claro e escuro.
+O tema escuro é opcional e alternado por um botão no cabeçalho (sol no modo claro, lua no escuro). A preferência “Mais contraste” fica no painel “Aa · Ajustar leitura”, junto aos ajustes de texto e espaçamento, e funciona nos dois temas. A escolha é persistida localmente no navegador; o tema não faz parte do contrato atual de preferências da conta. Os tokens são aplicados globalmente e também ajustam os controles nativos com `color-scheme: dark`.
+
+A troca usa uma transição curta entre as duas paletas e anima o ícone do botão; navegadores sem suporte à transição de tela aplicam o tema imediatamente. A transição não roda quando o sistema solicita movimento reduzido.
 
 | Token | Escuro | Alto contraste escuro |
 |---|---|---|
@@ -47,7 +49,11 @@ No celular e tablet, um cabeçalho compacto reúne marca, botão Menu e conta. O
 
 ## Escopo
 
-Login, aluno, professor, leitor, editor, entregas e barreiras compartilham os mesmos tokens. Sem mudança de schema, autenticação, contratos ou infraestrutura nesta etapa. Não adicionar logos de clientes/parceiros do ZIP, pois não representam vínculos específicos do Travessia. Detalhes das artes e prompts em design/ARTWORK.md. A referência marfim/verde anterior fica apenas como histórico.
+Login, aluno, professor, leitor, editor, entregas e barreiras compartilham os mesmos tokens. Alterações de interface devem manter contratos e persistência em sincronia quando novos campos fizerem parte do fluxo. Não adicionar logos de clientes/parceiros do ZIP, pois não representam vínculos específicos do Travessia. Detalhes das artes e prompts em design/ARTWORK.md. A referência marfim/verde anterior fica apenas como histórico.
+
+## Formatos de resposta por etapa
+
+O editor docente permite configurar formatos de resposta por etapa. Controles de seleção usam superfícies opacas para manter legibilidade; ações da atividade têm hierarquia principal/secundária e opções destrutivas recolhidas. A tela de resposta mantém rótulos associados e grupos semânticos. Gabaritos são privados para quem revisa; não há correção automática. Ver formatos, princípios e ideias futuras em [ACTIVITY-INTERACTIONS.md](ACTIVITY-INTERACTIONS.md).
 
 ## Preparação guiada docente
 

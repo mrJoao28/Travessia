@@ -3991,6 +3991,13 @@ export interface operations {
                                     title: string;
                                     instructions: string;
                                     example: string;
+                                    interaction?: {
+                                        /** @enum {string} */
+                                        type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                        question?: string;
+                                        options?: string[];
+                                        answerKey?: string[];
+                                    };
                                     dueAt: string | null;
                                     deadlineExtended: boolean;
                                     maxPoints: number | null;
@@ -4023,6 +4030,13 @@ export interface operations {
                                     title: string;
                                     instructions: string;
                                     example: string;
+                                    interaction?: {
+                                        /** @enum {string} */
+                                        type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                        question?: string;
+                                        options?: string[];
+                                        answerKey?: string[];
+                                    };
                                     dueAt: string | null;
                                     deadlineExtended: boolean;
                                     maxPoints: number | null;
@@ -4084,6 +4098,13 @@ export interface operations {
                         title: string;
                         instructions: string;
                         example: string;
+                        interaction?: {
+                            /** @enum {string} */
+                            type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                            question?: string;
+                            options?: string[];
+                            answerKey?: string[];
+                        };
                         dueAt?: string | null;
                         maxPoints?: number | null;
                     }[];
@@ -4121,6 +4142,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4153,6 +4181,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4225,6 +4260,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4257,6 +4299,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4354,6 +4403,13 @@ export interface operations {
                         title: string;
                         instructions: string;
                         example: string;
+                        interaction?: {
+                            /** @enum {string} */
+                            type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                            question?: string;
+                            options?: string[];
+                            answerKey?: string[];
+                        };
                         dueAt?: string | null;
                         maxPoints?: number | null;
                     }[];
@@ -4393,6 +4449,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4425,6 +4488,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4503,6 +4573,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4535,6 +4612,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4615,6 +4699,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4647,6 +4738,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4723,6 +4821,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
@@ -4755,6 +4860,13 @@ export interface operations {
                                 title: string;
                                 instructions: string;
                                 example: string;
+                                interaction?: {
+                                    /** @enum {string} */
+                                    type: "written" | "short_text" | "single_choice" | "multiple_choice" | "true_false" | "fill_blank" | "confidence";
+                                    question?: string;
+                                    options?: string[];
+                                    answerKey?: string[];
+                                };
                                 dueAt: string | null;
                                 deadlineExtended: boolean;
                                 maxPoints: number | null;
