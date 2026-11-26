@@ -27,7 +27,6 @@ export function Workspace({
   teachingLabel?: "professor" | "monitor";
 }) {
   const [collapsed,setCollapsed]=useState(false),[ready,setReady]=useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const sidebarId=useId(),pathname=usePathname();
   const [mobile,setMobile]=useState(false),[mobileOpen,setMobileOpen]=useState(false);
   const menuTrigger=useRef<HTMLButtonElement>(null);
@@ -50,14 +49,6 @@ export function Workspace({
   },[mobile]);
   useEffect(()=>{try{setCollapsed(localStorage.getItem('travessia:sidebar:v1')==='collapsed');}catch{}setReady(true);},[]);
   useEffect(()=>{if(ready)try{localStorage.setItem('travessia:sidebar:v1',collapsed?'collapsed':'expanded');}catch{}},[collapsed,ready]);
-  useEffect(() => {
-    const root = document.documentElement;
-    const syncTheme = () => setTheme(root.dataset.theme === "dark" ? "dark" : "light");
-    const observer = new MutationObserver(syncTheme);
-    syncTheme();
-    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => observer.disconnect();
-  }, []);
   const toggleLabel=mobile?'Abrir menu':collapsed?'Abrir menu':'Recolher menu';
   const base = preview ? "/previa" : "";
   const student = role === "aluno";
@@ -99,12 +90,9 @@ export function Workspace({
             </ul>
           </nav>
           <div className="sidebar-tools">
-            {!student && <><NavigationHint label="Preferências de leitura" enabled={collapsed&&!mobile}><a href="#preferencias" aria-label="Preferências de leitura">
+            {!student && <NavigationHint label="Ajustar leitura" enabled={collapsed&&!mobile}><a href="#preferencias" aria-label="Ajustar leitura">
               <Icon name="settings" /><span className="sidebar-label">Preferências de leitura</span>
-            </a></NavigationHint>
-            <NavigationHint label="Tema e contraste" enabled={collapsed}><a href="#temas" aria-label="Tema e contraste">
-              <Icon name={theme === "dark" ? "moon" : "sun"} /><span className="sidebar-label">Tema e contraste</span>
-            </a></NavigationHint></>}
+            </a></NavigationHint>}
             <NavigationHint label="Ajuda" enabled={collapsed}><Link href={`${base}/${role}/ajuda`} aria-label="Ajuda">
               <Icon name="help" /><span className="sidebar-label">Ajuda</span>
             </Link></NavigationHint>

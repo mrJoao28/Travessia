@@ -29,6 +29,7 @@ import { ArchiveClassroomAction } from "./archive-classroom-action";
 import { ArchiveMissionAction } from "./archive-mission-action";
 import { DeleteMissionAction } from "./delete-mission-action";
 import { CopyMissionAction } from "./copy-mission-action";
+import { displayInteractionAnswer, interactionLabels } from "../lib/activity-interactions";
 
 export type Classroom = ApiResponse<"classrooms">["items"][number];
 export type Mission = ApiResponse<"mission">;
@@ -506,7 +507,7 @@ function TeacherDashboard({
             </div>
             <div className="classroom-choice-actions" role="group" aria-label={`Ações para a turma ${room.name}`}>
               <Link
-                className="button button-outline"
+                className="button"
                 href={`/professor?turma=${encodeURIComponent(room.id)}`}
                 aria-label={`Abrir turma ${room.name}`}
               >
@@ -584,36 +585,33 @@ function TeacherDashboard({
               )}
             </div>
             <div className="mission-card-actions" role="group" aria-label={`Ações para ${(mission.draftVersion ?? mission.publishedVersion)?.title ?? "atividade"} na turma ${room.name}`}>
-              {mission.status !== "archived" && (
-                <Link
-                  className="button"
-                  href={`/professor/atividades/${mission.id}/editar`}
-                >
-                  Editar e revisar
-                </Link>
-              )}
-              {(room.role === 'teacher' || room.role === 'monitor') && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Configurar materiais e apoios</Link>}
-              {room.role === 'teacher' && (mission.draftVersion ?? mission.publishedVersion)?.workMode !== 'individual' && <Link className="text-link" href={`/professor/atividades/${mission.id}`}>Designar equipes e integrantes</Link>}
-              {(room.role === 'teacher' || room.role === 'monitor') && <Link
-                className="button button-outline"
-                href={`/professor/entregas?atividade=${encodeURIComponent(mission.id)}&turma=${encodeURIComponent(room.id)}`}
-              >
-                Ver entregas da atividade
-              </Link>}
-              {(room.role === 'teacher' || room.role === 'monitor') && <CopyMissionAction
-                missionId={mission.id}
-                classrooms={classrooms.filter(target => target.id !== room.id && (target.role === 'teacher' || target.role === 'monitor'))}
-                onCopied={(copied, target) => onMissionCopied(copied, classrooms.find(room => room.id === target.id)!)} />}
-              {(room.role === 'teacher' || room.role === 'monitor') && mission.status !== "archived" && <ArchiveMissionAction
-                missionId={mission.id}
-                missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
-                classroomName={room.name}
-                onArchived={onMissionArchived} />}
-              {room.role === 'teacher' && <DeleteMissionAction
-                missionId={mission.id}
-                missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
-                classroomName={room.name}
-                onDeleted={() => onMissionDeleted(mission.id)} />}
+              <div className="mission-main-actions">
+                {mission.status !== "archived" && <Link className="button" href={`/professor/atividades/${mission.id}/editar`}>Editar e revisar</Link>}
+                {(room.role === 'teacher' || room.role === 'monitor') && <Link className="button button-outline" href={`/professor/entregas?atividade=${encodeURIComponent(mission.id)}&turma=${encodeURIComponent(room.id)}`}>Ver entregas da atividade</Link>}
+              </div>
+              <div className="mission-config-actions" aria-label="Configurações da atividade">
+                {(room.role === 'teacher' || room.role === 'monitor') && <Link className="text-link" href={`/professor/atividades/${mission.id}/apoios`}>Materiais e apoios</Link>}
+                {room.role === 'teacher' && (mission.draftVersion ?? mission.publishedVersion)?.workMode !== 'individual' && <Link className="text-link" href={`/professor/atividades/${mission.id}`}>Equipes e integrantes</Link>}
+              </div>
+              <details className="mission-more-actions">
+                <summary>Mais opções</summary>
+                <div className="mission-more-actions-panel">
+                  {(room.role === 'teacher' || room.role === 'monitor') && <CopyMissionAction
+                    missionId={mission.id}
+                    classrooms={classrooms.filter(target => target.id !== room.id && (target.role === 'teacher' || target.role === 'monitor'))}
+                    onCopied={(copied, target) => onMissionCopied(copied, classrooms.find(room => room.id === target.id)!)} />}
+                  {(room.role === 'teacher' || room.role === 'monitor') && mission.status !== "archived" && <ArchiveMissionAction
+                    missionId={mission.id}
+                    missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
+                    classroomName={room.name}
+                    onArchived={onMissionArchived} />}
+                  {room.role === 'teacher' && <DeleteMissionAction
+                    missionId={mission.id}
+                    missionTitle={(mission.draftVersion ?? mission.publishedVersion)?.title ?? "Atividade"}
+                    classroomName={room.name}
+                    onDeleted={() => onMissionDeleted(mission.id)} />}
+                </div>
+              </details>
             </div>
           </li>
         ))}
@@ -689,7 +687,12 @@ function SubmissionList({
                 {role === "aluno" ? "Abrir atividade" : "Consultar atividade"}
               </Link>
               {role === "professor" && (
-                <TeacherFeedback missionId={entry.mission.id} submission={submission} steps={submission.gradingSteps} />
+                <TeacherFeedback
+                  missionId={entry.mission.id}
+                  submission={submission}
+                  steps={submission.gradingSteps}
+                  interactionSteps={(entry.mission.publishedVersion ?? entry.mission.draftVersion)?.steps ?? []}
+                />
               )}
             </div>
           </li>
@@ -700,7 +703,8 @@ function SubmissionList({
 }
 
 type ScoredStep = Submission["gradingSteps"][number];
-function TeacherFeedback({ missionId, submission, steps }: { missionId: string; submission: Submission; steps: ScoredStep[] }) {
+type ActivityStep = NonNullable<Mission["publishedVersion"]>["steps"][number];
+function TeacherFeedback({ missionId, submission, steps, interactionSteps }: { missionId: string; submission: Submission; steps: ScoredStep[]; interactionSteps: ActivityStep[] }) {
   const [content, setContent] = useState("");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
@@ -736,7 +740,7 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
             <li key={step.id}>
               <strong>{step.title}</strong>
               {submission.submittedStepAt?.[step.id] && <> · enviada em {formatTeacherDeadline(submission.submittedStepAt[step.id], timeZone)}</>}
-              {submission.stepResponses?.[step.id] && <p className="submission-content">{submission.stepResponses[step.id]}</p>}
+              {submission.stepResponses?.[step.id] && <p className="submission-content">{displayInteractionAnswer(submission.stepResponses[step.id])}</p>}
             </li>
           ))}</ul>
         </section>
@@ -746,7 +750,11 @@ function TeacherFeedback({ missionId, submission, steps }: { missionId: string; 
   return (
     <details className="action-disclosure submission-feedback-disclosure">
       <summary><span>Consultar entrega e escrever feedback</span><span className="disclosure-action-hint"><span className="disclosure-closed-hint">Abrir avaliação</span><span className="disclosure-open-hint">Recolher avaliação</span></span></summary>
-      {Object.keys(submission.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa"><h3>Respostas por etapa</h3>{steps.map(step => submission.stepResponses?.[step.id] ? <article key={step.id}><h4>{step.title}</h4><p className="submission-content">{submission.stepResponses[step.id]}</p></article> : null)}</section> : <p className="submission-content">{submission.content}</p>}
+      {Object.keys(submission.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa"><h3>Respostas por etapa</h3>{steps.map(step => {
+        const response = submission.stepResponses?.[step.id];
+        const interaction = interactionSteps.find(item => item.id === step.id)?.interaction;
+        return response ? <article key={step.id}><h4>{step.title}</h4><p className="small">{interactionLabels[interaction?.type ?? "written"]}{interaction?.question ? ` · ${interaction.question}` : ""}</p><p className="submission-content">{displayInteractionAnswer(response)}</p>{interaction?.answerKey?.length ? <p className="small"><strong>Referência privada de resposta:</strong> {interaction.answerKey.join(" · ")}</p> : null}</article> : null;
+      })}</section> : <p className="submission-content">{submission.content}</p>}
       <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
       {steps.some(step => step.completedAt) && <section aria-label="Registro de prazo das etapas">
         <h3>Entrega por etapa</h3>

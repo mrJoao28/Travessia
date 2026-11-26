@@ -28,6 +28,7 @@ export function missionView(row: MissionRow, teacher: boolean) {
     studentsCanFormTeams: v.studentsCanFormTeams,
     description: v.description, objectives: v.objectives, criteria: v.criteria, source: v.source, dueAt: v.dueAt,
     createdAt: v.createdAt, steps: v.steps.map(s => ({ id: s.id, position: s.position, title: s.title, instructions: s.instructions, example: s.example,
+      ...(s.interaction && typeof s.interaction === 'object' && !Array.isArray(s.interaction) ? { interaction: teacher ? s.interaction : Object.fromEntries(Object.entries(s.interaction).filter(([key]) => key !== 'answerKey')) } : {}),
       dueAt: s.dueAt, deadlineExtended: false, maxPoints: s.maxPoints })),
     materials: v.materials.map(m => ({ id: m.id, title: m.title, text: m.text, hasFile: Boolean(m.storagePath) })) });
   return { id: row.id, classroomId: row.classroomId, status: row.status,
@@ -83,7 +84,7 @@ export async function createVersion(tx: Tx, missionId: string, input: MissionInp
   return tx.missionVersion.create({ data: { missionId, title: input.title, description: input.description, workMode: input.workMode ?? 'individual',
     studentsCanFormTeams: input.workMode !== 'individual' && input.studentsCanFormTeams === true,
     objectives: input.objectives, criteria: input.criteria, dueAt: input.dueAt ? new Date(input.dueAt) : null, source,
-    steps: { create: input.steps.map((s, position) => ({ title: s.title, instructions: s.instructions, example: s.example,
+    steps: { create: input.steps.map((s, position) => ({ title: s.title, instructions: s.instructions, example: s.example, interaction: s.interaction ?? Prisma.JsonNull,
       dueAt: s.dueAt ? new Date(s.dueAt) : null, maxPoints: s.maxPoints ?? null, position: position + 1 })) }, materials: { create: input.materials } }, include: versionInclude });
 }
 function pagination<T extends {id: string}>(rows: T[], limit: number) {
@@ -306,7 +307,7 @@ export class ProductService {
             title: sourceVersion.title, description: sourceVersion.description,
             objectives: sourceVersion.objectives as string[], criteria: sourceVersion.criteria as string[],
             workMode: sourceVersion.workMode as MissionInput['workMode'], studentsCanFormTeams: sourceVersion.studentsCanFormTeams, dueAt: null,
-            steps: sourceVersion.steps.map(step => ({ title: step.title, instructions: step.instructions, example: step.example, dueAt: null, maxPoints: step.maxPoints })),
+            steps: sourceVersion.steps.map(step => ({ title: step.title, instructions: step.instructions, example: step.example, interaction: step.interaction as MissionInput['steps'][number]['interaction'], dueAt: null, maxPoints: step.maxPoints })),
             materials: sourceVersion.materials.map(material => ({ title: material.title, text: material.text })),
           }, 'manual');
           const files = await tx.materialSource.findMany({ where: { versionId: sourceVersion.id, status: 'ready', expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 });
@@ -484,7 +485,7 @@ export class ProductService {
           const v = row.draftVersion;
           missionInput.parse({ title: v.title, description: v.description, objectives: v.objectives, criteria: v.criteria,
             dueAt: v.dueAt?.toISOString() ?? null, workMode: v.workMode,
-            steps: v.steps.map(s => ({ title: s.title, instructions: s.instructions, example: s.example,
+            steps: v.steps.map(s => ({ title: s.title, instructions: s.instructions, example: s.example, interaction: s.interaction as MissionInput['steps'][number]['interaction'],
               dueAt: s.dueAt?.toISOString() ?? null, maxPoints: s.maxPoints })),
             materials: v.materials.map(m => ({ title: m.title, text: m.text })) });
           const changed = await tx.mission.update({ where: { id }, data: { status: 'published', publishedVersionId: input.versionId, draftVersionId: null }, include: missionInclude });

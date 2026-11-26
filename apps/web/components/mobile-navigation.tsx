@@ -18,7 +18,7 @@ export function MobileNavigation({open,onClose,role,links,helpHref,preferences}:
   if(open&&!node.open){
    node.showModal();
    const hash=window.location.hash;
-   const target=hash==="#preferencias"||hash==="#temas"?node.querySelector<HTMLElement>(hash+" > summary"):null;
+   const target=hash==="#preferencias"||hash==="#temas"?node.querySelector<HTMLElement>("#preferencias > summary"):null;
    (target??closeButton.current)?.focus();
   }else if(!open&&node.open)node.close();
  },[open]);

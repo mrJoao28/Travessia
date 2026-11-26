@@ -6,6 +6,8 @@ import { TeacherSteps, useTeacherDraftGuard } from "./teacher-steps";
 import { MissionSupportsEditor } from "./live-strategies";
 import { SupportGenerator } from "./support-generator";
 import { GroupManager } from "./group-manager";
+import { ActivityInteractionEditor } from "./activity-interaction-editor";
+import { defaultInteraction, interactionLabels, type ActivityInteraction } from "../lib/activity-interactions";
 import { TeacherNeedsNotice } from "./teacher-needs-notice";
 import { OperationStatus } from "./operation-status";
 import {
@@ -31,6 +33,7 @@ function editable(version: Version): Input {
       title: step.title,
       instructions: step.instructions,
       example: step.example,
+      ...(step.interaction ? { interaction: step.interaction } : {}),
       dueAt: step.dueAt,
       maxPoints: step.maxPoints,
     })),
@@ -76,7 +79,7 @@ export function LiveEditor({
   }, [stage, pendingPdf]);
   const [published, setPublished] = useState(false);
   const stageTitle = useRef<HTMLHeadingElement>(null);
-  const invalidField = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const invalidField = useRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>(null);
   useEffect(() => {
     if (invalidField.current) { invalidField.current.focus(); invalidField.current.reportValidity(); invalidField.current = null; }
     else stageTitle.current?.focus();
@@ -155,8 +158,26 @@ export function LiveEditor({
       const field = document.getElementById(fieldId) as HTMLTextAreaElement | null;
       field?.setCustomValidity(lines.length > 10 || lines.some(line => !line.trim() || line.trim().length > 200) ? "Use de 1 a 10 linhas preenchidas, com até 200 caracteres em cada linha." : "");
     }
-    const selector = onlyStage === undefined ? 'input, textarea' : `[data-editor-stage="${onlyStage}"] input, [data-editor-stage="${onlyStage}"] textarea`;
-    const fields = Array.from(form.current?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(selector) ?? []);
+    for (const [index, step] of input.steps.entries()) {
+      const interaction = step.interaction;
+      if (!interaction || interaction.type === "written") continue;
+      const questionField = document.getElementById(`live-interaction-question-${stepKeys[index]}`) as HTMLInputElement | HTMLTextAreaElement | null;
+      questionField?.setCustomValidity(interaction.question?.trim() ? "" : "Escreva a pergunta desta etapa.");
+      if (interaction.type === "single_choice" || interaction.type === "multiple_choice") {
+        const optionsField = document.getElementById(`live-interaction-options-${stepKeys[index]}`) as HTMLTextAreaElement | null;
+        const options = (interaction.options ?? []).map(option => option.trim()).filter(Boolean);
+        const repeated = new Set(options.map(option => option.toLocaleLowerCase("pt-BR"))).size !== options.length;
+        optionsField?.setCustomValidity(options.length < 2 || repeated ? "Inclua pelo menos duas opções diferentes, uma por linha." : "");
+      }
+      if (interaction.type === "fill_blank") {
+        const blankCount = [...(interaction.question ?? "").matchAll(/\[\[(\d+)\]\]/g)].length;
+        const answerField = document.getElementById(`live-interaction-answer-key-${stepKeys[index]}`) as HTMLTextAreaElement | null;
+        answerField?.setCustomValidity(blankCount < 1 || blankCount > 5 || (interaction.answerKey?.length ?? 0) !== blankCount
+          ? "Use espaços numerados em sequência (até cinco) e informe uma resposta para cada um." : "");
+      }
+    }
+    const selector = onlyStage === undefined ? 'input, textarea, select' : `[data-editor-stage="${onlyStage}"] input, [data-editor-stage="${onlyStage}"] textarea, [data-editor-stage="${onlyStage}"] select`;
+    const fields = Array.from(form.current?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(selector) ?? []);
     const invalid = fields.find(field => !field.checkValidity());
     if (!invalid) return true;
     const targetStage = Number(invalid.closest<HTMLElement>('[data-editor-stage]')?.dataset.editorStage ?? 0);
@@ -177,18 +198,30 @@ export function LiveEditor({
     setPending(true);
     setMessage("");
     try {
+      const normalizedInput: Input = {
+        ...input,
+        steps: input.steps.map(step => ({
+          ...step,
+          ...(step.interaction?.options ? {
+            interaction: {
+              ...step.interaction,
+              options: step.interaction.options.map(option => option.trim()).filter(Boolean),
+            },
+          } : {}),
+        })),
+      };
       const value = mission
         ? await api("editMission", {
             params: { id: mission.id },
             body: {
-              ...input,
+              ...normalizedInput,
               expectedDraftVersionId: mission.draftVersion?.id ?? null,
               carryForwardMaterialIds,
             },
           })
         : await api("createMission", {
             params: { id: classroomId ?? "" },
-            body: input,
+            body: normalizedInput,
           });
       setCarryForwardMaterialIds([]);
       adopt(value);
@@ -240,7 +273,7 @@ export function LiveEditor({
             const target = event.target;
             if (
               target instanceof HTMLInputElement ||
-              target instanceof HTMLTextAreaElement
+              target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement
             )
               target.setCustomValidity("");
           }}
@@ -392,6 +425,14 @@ export function LiveEditor({
                         }
                       />
                     </label>
+                    <ActivityInteractionEditor
+                      id={`live-interaction-${stepKeys[index]}`}
+                      value={step.interaction ?? defaultInteraction}
+                      onChange={(interaction: ActivityInteraction) => change({
+                        ...input,
+                        steps: input.steps.map((item, position) => position === index ? { ...item, interaction } : item),
+                      })}
+                    />
                     <label htmlFor={`live-step-due-${stepKeys[index]}`}>
                       Data de entrega da etapa (opcional)
                       <input id={`live-step-due-${stepKeys[index]}`} type="datetime-local"
@@ -478,7 +519,7 @@ export function LiveEditor({
                     ...input,
                     steps: [
                       ...input.steps,
-                      { title: "", instructions: "", example: "" },
+                      { title: "", instructions: "", example: "", interaction: { type: "written" } },
                     ],
                   });
                   requestAnimationFrame(() =>
@@ -617,6 +658,9 @@ export function LiveEditor({
                   <strong>{step.title}</strong>
                   <p>{step.instructions}</p>
                   <p>Exemplo: {step.example}</p>
+                  <p><strong>Resposta do aluno:</strong> {interactionLabels[step.interaction?.type ?? "written"]}</p>
+                  {step.interaction?.question && <p><strong>Pergunta:</strong> {step.interaction.question}</p>}
+                  {!!step.interaction?.answerKey?.length && <p><strong>Resposta de referência (visível só ao professor):</strong> {step.interaction.answerKey.join(" · ")}</p>}
                   {step.dueAt && <p>Entrega da etapa: {new Date(step.dueAt).toLocaleString("pt-BR")}</p>}
                   {step.maxPoints !== null && step.maxPoints !== undefined && <p>Pontuação máxima: {step.maxPoints}</p>}
                 </li>
