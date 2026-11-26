@@ -307,6 +307,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await page.getByLabel('Título da etapa', { exact: true }).fill('Comparar propostas');
   await page.getByLabel('Instrução', { exact: true }).fill('Compare as propostas.');
   await page.getByLabel('Exemplo de apoio', { exact: true }).fill('Compare dois custos.');
+  await page.getByLabel('Pontuação máxima da etapa (obrigatória · de 1 a 100)', { exact: true }).fill('10');
   await page.getByRole('button', { name: 'Adicionar material textual', exact: true }).click();
   await page.getByLabel('Título do material', { exact: true }).fill('Texto didático público fictício');
   await page.getByRole('textbox', { name: 'Texto do material', exact: true }).fill('Compare custo e clareza.');
