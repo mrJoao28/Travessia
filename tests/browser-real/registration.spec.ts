@@ -79,6 +79,6 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     await teacher.locator('summary[aria-label="Menu da conta"]').click();
     await teacher.getByRole('link', { name: 'Ir para o espaço do aluno', exact: true }).click();
     await expect(teacher).toHaveURL(/\/aluno$/);
-    await expect(teacher.getByRole('heading', { name: 'Um passo de cada vez.', exact: true })).toBeVisible();
+    await expect(teacher.getByRole('heading', { name: 'Seu percurso de aprendizagem', exact: true })).toBeVisible();
   } finally { await teacherContext.close(); await studentContext.close(); }
 });

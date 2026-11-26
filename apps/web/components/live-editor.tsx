@@ -215,7 +215,7 @@ export function LiveEditor({
   const storedVersion = mission?.draftVersion ?? mission?.publishedVersion;
   return (
     <div className="teacher-guide">
-      <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar atividade"}</p><Link className="text-link" href="/professor/atividades">← Minhas atividades</Link><h1>Vamos preparar sua atividade</h1><p>Um passo de cada vez. Você revisa antes de publicar.</p></header>
+      <header className="teacher-guide-heading"><p className="eyebrow">{classroomNames?.[mission?.classroomId ?? classroomId ?? ""] ?? "Preparar atividade"}</p><Link className="text-link" href="/professor/atividades">← Minhas atividades</Link><h1>{mission ? "Editar atividade" : "Criar atividade"}</h1><p>Organize o objetivo, as etapas e os materiais. Você confere tudo antes de publicar.</p></header>
       <TeacherSteps labels={["Sobre a atividade", "Etapas e materiais", "Apoios", "Revisão"]} current={stage} disabled={pending||supportsDirty} onBack={value => { setConfirmed(false); setReview(null); setStage(value); }} />
       <div className={`teacher-guide-grid${stage===2?" teacher-support-stage":""}`}><section className="paper teacher-editor-panel">
         <h2 ref={stageTitle} tabIndex={-1} id="editor-stage-title">{["O que a turma vai aprender?", "Como o aluno vai realizar a atividade?", "Quer oferecer alguma ajuda?", "Confira antes de publicar"][stage]}</h2>

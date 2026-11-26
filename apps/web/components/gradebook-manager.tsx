@@ -143,7 +143,7 @@ export function GradebookManager({
 
   return (
     <details className="paper action-disclosure teacher-disclosure gradebook-disclosure">
-      <summary aria-label="Avaliações e notas" aria-describedby={disclosureHintId}><span className="teacher-disclosure-title">Avaliações e notas</span><span id={disclosureHintId} className="teacher-disclosure-hint">Organize períodos e consulte resultados</span><span className="disclosure-action-hint" aria-hidden="true"><span className="disclosure-closed-hint">Abrir</span><span className="disclosure-open-hint">Recolher</span></span></summary>
+      <summary aria-label="Avaliações e notas" aria-describedby={disclosureHintId}><span className="teacher-disclosure-copy"><span className="teacher-disclosure-title">Avaliações e notas</span><span id={disclosureHintId} className="teacher-disclosure-hint">Organize períodos e consulte resultados</span></span><span className="disclosure-action-hint" aria-hidden="true"><span className="disclosure-closed-hint">Configurar avaliações</span><span className="disclosure-open-hint">Fechar</span></span></summary>
       <div className="form-stack gradebook-content">
         <div className="gradebook-intro">
           <p>

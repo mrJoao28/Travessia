@@ -4,8 +4,8 @@ import { Brand } from "./icons";
 export function AuthIntro({ teacher = false }: { teacher?: boolean }) {
   return <aside className="login-intro registration-intro" aria-label="Travessia">
     <Brand />
-    <p className="auth-intro-title">Um passo de cada vez.</p>
-    <p>Diferentes caminhos para aprender.</p>
+    <p className="auth-intro-title">{teacher ? "Planeje com clareza." : "Aprenda no seu ritmo."}</p>
+    <p>{teacher ? "Organize etapas, materiais e acompanhe a aprendizagem da turma." : "Encontre suas atividades, escolha apoios e acompanhe o feedback."}</p>
     <Image className="login-art decorative" src={teacher ? "/brand/teaching-pathways.webp" : "/brand/learning-together.webp"}
       width={768} height={768} sizes="(max-width: 800px) 1px, 42vw" alt="" />
     <div className="login-network">
