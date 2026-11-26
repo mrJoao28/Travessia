@@ -167,7 +167,7 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     );
   for (const score of await page.getByLabel("Nota da etapa", { exact: true }).all())
     if (await score.isVisible()) await score.fill("1");
-  await page.getByLabel("Conferi as notas e confirmo a avaliação final.", { exact: true }).check();
+  await page.getByLabel("Conferi as notas e confirmo a avaliação final.", { exact: true }).first().check();
   await page
     .getByRole("button", { name: "Publicar feedback", exact: true })
     .first()
