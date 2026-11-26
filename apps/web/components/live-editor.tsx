@@ -17,7 +17,8 @@ import {
   type ApiResponse,
 } from "../lib/product-client";
 
-type Input = ApiBody<"createMission">;
+type PersistedInput = ApiBody<"createMission">;
+type Input = Omit<PersistedInput, "steps"> & { steps: Array<Omit<PersistedInput["steps"][number], "maxPoints"> & { maxPoints: number | null }> };
 type Version = NonNullable<ApiResponse<"mission">["draftVersion"]>;
 type CarriedSource = ApiResponse<"materialSources">["items"][number];
 function editable(version: Version): Input {
@@ -56,7 +57,7 @@ const empty: Input = {
   dueAt: null,
   workMode: "individual",
   studentsCanFormTeams: false,
-  steps: [{ title: "", instructions: "", example: "" }],
+  steps: [{ title: "", instructions: "", example: "", maxPoints: null }],
   materials: [],
 };
 
@@ -198,10 +199,11 @@ export function LiveEditor({
     setPending(true);
     setMessage("");
     try {
-      const normalizedInput: Input = {
+      const normalizedInput: PersistedInput = {
         ...input,
         steps: input.steps.map(step => ({
           ...step,
+          maxPoints: step.maxPoints!,
           ...(step.interaction?.options ? {
             interaction: {
               ...step.interaction,
@@ -519,7 +521,7 @@ export function LiveEditor({
                     ...input,
                     steps: [
                       ...input.steps,
-                      { title: "", instructions: "", example: "", interaction: { type: "written" } },
+                      { title: "", instructions: "", example: "", maxPoints: null, interaction: { type: "written" } },
                     ],
                   });
                   requestAnimationFrame(() =>
