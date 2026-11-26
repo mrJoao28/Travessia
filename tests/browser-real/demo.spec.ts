@@ -165,6 +165,9 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
     .fill(
       "A proposta está clara. Acrescente um exemplo de como verificar a alternativa textual.",
     );
+  for (const score of await page.getByLabel("Nota da etapa", { exact: true }).all())
+    if (await score.isVisible()) await score.fill("1");
+  await page.getByLabel("Conferi as notas e confirmo a avaliação final.", { exact: true }).check();
   await page
     .getByRole("button", { name: "Publicar feedback", exact: true })
     .first()
@@ -472,6 +475,8 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   expect((await fileDownload).suggestedFilename()).toBe('atividade.txt');
   const feedback = 'Sua comparação está clara. No próximo passo, justifique como o custo e a clareza orientaram a escolha.';
   await delivery.getByLabel('Orientação para o próximo passo', { exact: true }).fill(feedback);
+  for (const score of await delivery.getByLabel('Nota da etapa', { exact: true }).all()) if (await score.isVisible()) await score.fill('1');
+  await delivery.getByLabel('Conferi as notas e confirmo a avaliação final.', { exact: true }).check();
   await delivery.getByRole('button', { name: 'Publicar feedback', exact: true }).click();
   await expect(delivery.getByText('Feedback publicado pelo servidor.', { exact: true })).toBeVisible();
   await logout();
