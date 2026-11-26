@@ -621,14 +621,17 @@ export class ProductService {
         if (row.status === 'partial') return fail(409, 'PARTIAL_NOT_READY', 'A equipe ainda está enviando outras atividades. O feedback e a avaliação ficam disponíveis após a entrega completa.');
         const { content, requestRevision = false, scores } = body as Body<'feedback'>;
         let totalPoints: number | null = null;
-        const graded = await tx.step.findMany({ where: { versionId: row.versionId, maxPoints: { not: null } }, select: { id: true, maxPoints: true } });
+        const graded = await tx.step.findMany({ where: { versionId: row.versionId }, select: { id: true, maxPoints: true } });
+        if (!requestRevision && graded.some(step => step.maxPoints === null || step.maxPoints < 1))
+          return fail(409, 'SCORING_NOT_CONFIGURED', 'Esta atividade tem etapas sem pontuação máxima válida. Configure de 1 a 100 pontos em cada etapa antes de avaliar.');
         if (!requestRevision && graded.length && scores === undefined)
-          return fail(400, 'MISSING_SCORES', 'Informe a nota de cada etapa antes de concluir a avaliação.');
+          return fail(400, 'MISSING_SCORES', 'Informe uma nota de 1 ponto ou mais para cada etapa antes de concluir a avaliação.')
         if (scores !== undefined) {
           if (requestRevision) return fail(400, 'INVALID_SCORES', 'Avalie após a revisão solicitada.');
-          if (graded.length !== scores.length || new Set(scores.map(score => score.stepId)).size !== scores.length ||
+          if (graded.some(step => step.maxPoints === null || step.maxPoints < 1) || graded.length !== scores.length ||
+            new Set(scores.map(score => score.stepId)).size !== scores.length ||
             scores.some(score => !graded.some(step => step.id === score.stepId && score.points <= step.maxPoints!)))
-            return fail(400, 'INVALID_SCORES', 'Informe uma nota válida para cada etapa com pontuação.');
+            return fail(400, 'INVALID_SCORES', 'Informe uma nota maior que zero e dentro do limite para cada etapa.')
           totalPoints = scores.reduce((sum, score) => sum + score.points, 0);
         }
         if (row.status === 'reviewed') {
