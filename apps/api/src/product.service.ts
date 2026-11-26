@@ -625,13 +625,13 @@ export class ProductService {
         if (!requestRevision && graded.some(step => step.maxPoints === null || step.maxPoints < 1))
           return fail(409, 'SCORING_NOT_CONFIGURED', 'Esta atividade tem etapas sem pontuação máxima válida. Configure de 1 a 100 pontos em cada etapa antes de avaliar.');
         if (!requestRevision && graded.length && scores === undefined)
-          return fail(400, 'MISSING_SCORES', 'Informe uma nota de 1 ponto ou mais para cada etapa antes de concluir a avaliação.';
+          return fail(400, 'MISSING_SCORES', 'Informe uma nota de 1 ponto ou mais para cada etapa antes de concluir a avaliação.');
         if (scores !== undefined) {
           if (requestRevision) return fail(400, 'INVALID_SCORES', 'Avalie após a revisão solicitada.');
           if (graded.some(step => step.maxPoints === null || step.maxPoints < 1) || graded.length !== scores.length ||
             new Set(scores.map(score => score.stepId)).size !== scores.length ||
             scores.some(score => !graded.some(step => step.id === score.stepId && score.points <= step.maxPoints!)))
-            return fail(400, 'INVALID_SCORES', 'Informe uma nota maior que zero e dentro do limite para cada etapa.';
+            return fail(400, 'INVALID_SCORES', 'Informe uma nota maior que zero e dentro do limite para cada etapa.');
           totalPoints = scores.reduce((sum, score) => sum + score.points, 0);
         }
         if (row.status === 'reviewed') {
