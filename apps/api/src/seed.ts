@@ -78,7 +78,7 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
           criteria: ['Apresentar uma solução coerente com o objetivo.', 'Explicar o raciocínio e revisar com feedback.'], dueAt,
           steps: ['Conhecer o desafio', 'Planejar a solução', 'Construir uma proposta', 'Verificar os resultados', 'Compartilhar e revisar'].map((title, i) => ({
             title, instructions: `Etapa ${i + 1} de 5. Registre suas ideias e explique sua escolha. Você pode salvar e retomar.`,
-            example: index === 0 ? 'Exemplo: represente um livro por título e autor; descreva como localizar um exemplar.' : 'Exemplo didático: compare duas alternativas e registre uma justificativa.' })),
+            example: index === 0 ? 'Exemplo: represente um livro por título e autor; descreva como localizar um exemplar.' : 'Exemplo didático: compare duas alternativas e registre uma justificativa.' , maxPoints: 10 })),
           materials: [{ title: 'Material didático fictício', text: 'Exemplo próprio de planejamento: defina o problema, compare alternativas, implemente uma proposta e confira os critérios.' }],
         }, 'demo_fixture');
         mission = await tx.mission.update({ where: { id: missionId }, data: { status: 'published', publishedVersionId: version.id } });
@@ -105,7 +105,7 @@ export async function seedDemo(db: PrismaClient, config: Config, options: { rota
           await tx.mission.create({ data: { id: draftId, classroomId: c.id } });
           const draft = await createVersion(tx, draftId, { title: 'Rascunho de demonstração — revisar antes de publicar',
             description: 'Exemplo preparado previamente, sem chamada ao Gemini.', objectives: ['Planejar uma solução inclusiva.'], criteria: ['Justificar as escolhas.'], dueAt,
-            steps: [{ title: 'Planejar', instructions: 'Descreva uma proposta e revise os critérios.', example: 'Compare duas alternativas de acesso ao material.' }],
+            steps: [{ title: 'Planejar', instructions: 'Descreva uma proposta e revise os critérios.', example: 'Compare duas alternativas de acesso ao material.' , maxPoints: 10 }],
             materials: [{ title: 'Texto fictício para geração', text: 'Planejamento de projeto: objetivo, alternativas, implementação e revisão de resultados.' }] }, 'demo_fixture');
           await tx.mission.update({ where: { id: draftId }, data: { draftVersionId: draft.id } });
         }
