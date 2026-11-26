@@ -303,13 +303,15 @@ export class ProductService {
           if (!target) return missing();
           const sourceVersion = row.draftVersion ?? row.publishedVersion;
           if (!sourceVersion) return fail(409, 'MISSION_HAS_NO_VERSION', 'A atividade não tem conteúdo para copiar.');
+          if (sourceVersion.steps.some(step => step.maxPoints === null || step.maxPoints < 1))
+            return fail(409, 'SCORING_NOT_CONFIGURED', 'Configure de 1 a 100 pontos em cada etapa antes de copiar esta atividade.');
           const copied = await tx.mission.create({ data: { classroomId: target.id } });
           const version = await createVersion(tx, copied.id, {
             title: sourceVersion.title, description: sourceVersion.description,
             objectives: sourceVersion.objectives as string[], criteria: sourceVersion.criteria as string[],
             workMode: sourceVersion.workMode as MissionInput['workMode'], studentsCanFormTeams: sourceVersion.studentsCanFormTeams, dueAt: null,
             steps: sourceVersion.steps.map(step => ({ title: step.title, instructions: step.instructions, example: step.example,
-              ...(step.interaction ? { interaction: step.interaction as MissionInput['steps'][number]['interaction'] } : {}), dueAt: null, maxPoints: step.maxPoints })),
+              ...(step.interaction ? { interaction: step.interaction as MissionInput['steps'][number]['interaction'] } : {}), dueAt: null, maxPoints: step.maxPoints! })),
             materials: sourceVersion.materials.map(material => ({ title: material.title, text: material.text })),
           }, 'manual');
           const files = await tx.materialSource.findMany({ where: { versionId: sourceVersion.id, status: 'ready', expiresAt: { gt: new Date() } }, orderBy: { createdAt: 'asc' }, take: 30 });
