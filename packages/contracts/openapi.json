@@ -10142,22 +10142,16 @@
                           ]
                         },
                         "maxPoints": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": 0,
-                              "maximum": 100
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
                         }
                       },
                       "required": [
                         "title",
                         "instructions",
-                        "example"
+                        "example",
+                        "maxPoints"
                       ],
                       "additionalProperties": false
                     }
@@ -11525,22 +11519,16 @@
                           ]
                         },
                         "maxPoints": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": 0,
-                              "maximum": 100
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100
                         }
                       },
                       "required": [
                         "title",
                         "instructions",
-                        "example"
+                        "example",
+                        "maxPoints"
                       ],
                       "additionalProperties": false
                     }
@@ -16737,7 +16725,7 @@
                         },
                         "points": {
                           "type": "integer",
-                          "minimum": 0,
+                          "minimum": 1,
                           "maximum": 100
                         },
                         "comment": {
@@ -17264,7 +17252,7 @@
                                   },
                                   "points": {
                                     "type": "integer",
-                                    "minimum": 0,
+                                    "minimum": 1,
                                     "maximum": 100
                                   },
                                   "comment": {
