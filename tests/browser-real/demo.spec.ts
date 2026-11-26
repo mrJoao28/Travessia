@@ -81,7 +81,9 @@ test("demonstração com API, PostgreSQL e Better Auth reais, sem respostas simu
   await expect(page.getByLabel("Escreva a sua resposta")).toBeVisible();
   await page.getByText("Aa · Ajustar leitura", { exact: true }).click();
   await page.getByLabel("Tamanho do texto").selectOption("1.125");
-  await page.locator("#temas > summary").click();
+  const themeToggle = page.locator(".theme-toggle");
+  await themeToggle.click();
+  await expect(themeToggle).toHaveAccessibleName("Ativar modo claro");
   await page
     .getByRole("button", { name: "Salvar preferências compatíveis na conta" })
     .click();
