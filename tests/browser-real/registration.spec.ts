@@ -57,7 +57,7 @@ test('cadastro real: professor cria turma, aluno aceita convite e permissões co
     await expect(student).toHaveURL(/\/aluno\?turma=/);
     expect((await student.request.get('/api/v1/classrooms').then(r => r.json())).items[0].role).toBe('student');
     await expect(student.getByRole('heading',{name:'Você entrou na turma Turma de cadastro inclusivo.',exact:true})).toBeVisible();
-    const input={title:'Primeira atividade do laboratório',description:'Compare duas soluções para organizar o laboratório.',objectives:['Comparar duas alternativas.'],criteria:['Justificar uma escolha com dois dados.'],steps:[{title:'Conhecer o desafio',instructions:'Leia os dados e compare as alternativas.',example:'Compare custo e clareza.'}],materials:[]};
+    const input={title:'Primeira atividade do laboratório',description:'Compare duas soluções para organizar o laboratório.',objectives:['Comparar duas alternativas.'],criteria:['Justificar uma escolha com dois dados.'],steps:[{title:'Conhecer o desafio',instructions:'Leia os dados e compare as alternativas.',example:'Compare custo e clareza.',maxPoints:10}],materials:[]};
     const createdResponse=await teacher.request.post(`/api/v1/classrooms/${classroomId}/activities`,{headers:{Origin:baseURL!},data:input});expect(createdResponse.status()).toBe(200);const created=await createdResponse.json();
     expect((await teacher.request.post(`/api/v1/activities/${created.id}/publish`,{headers:{Origin:baseURL!},data:{versionId:created.draftVersion.id,reviewed:true}})).status()).toBe(200);
     await student.reload();await expect(student.getByRole('link',{name:'Começar minha primeira atividade',exact:true})).toBeVisible();
