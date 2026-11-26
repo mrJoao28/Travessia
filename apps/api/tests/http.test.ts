@@ -259,13 +259,13 @@ test('entregas: autoria, isolamento A/B, draft privado e controle de concorrênc
   const sent = (await request(`/v1/missions/${fresh.id}/submissions`, a, 'POST', { ...savedInput, content: latest.content, status: 'submitted', expectedRevision: latest.revision })).json;
   assert.equal(sent.status, 'submitted');
   await request(`/v1/submissions/${sent.id}/feedback`, b, 'POST', { content: 'Não autorizado' }, 404);
-  const reviewed = (await request(`/v1/submissions/${sent.id}/feedback`, main, 'POST', { content: 'Compare também uma segunda alternativa.' })).json;
+  const reviewed = (await request(`/v1/submissions/${sent.id}/feedback`, main, 'POST', { content: 'Compare também uma segunda alternativa.', scores: [{ stepId: fresh.draftVersion.steps[0].id, points: 1, comment: '' }] })).json;
   assert.equal(reviewed.status, 'reviewed'); assert.equal(reviewed.feedback.length, 1);
 });
 test('atividade em grupo: equipe exclusiva, rascunho compartilhado e entrega única', async () => {
   const c = (await provision('demo-student-3')).cookie;
   const created = (await request(`/v1/classrooms/${workshop}/missions`, main, 'POST', { ...fixture, workMode: 'group', steps: [
-    fixture.steps[0], { title: 'Planejar', instructions: 'Descreva o plano.', example: 'Uma lista de ações.' },
+    fixture.steps[0], { title: 'Planejar', instructions: 'Descreva o plano.', example: 'Uma lista de ações.', maxPoints: 10 }, 
   ] })).json;
   const path = `/v1/missions/${created.id}`;
   assert.equal(created.draftVersion.workMode, 'group');
@@ -799,7 +799,7 @@ test('adaptações e respostas multimodais: autorização por aluno, bytes priva
   await request(`/v1/submissions/${saved.id}/audio`, otherTeacher, 'GET', undefined, 404);
   await request(`/v1/submissions/${saved.id}/audio`, b, 'GET', undefined, 404);
   await request(`/v1/submissions/${saved.id}/audio`, '', 'GET', undefined, 401);
-  await request(`/v1/submissions/${saved.id}/feedback`, main, 'POST', { content: 'Feedback após escutar e ler a atividade.' });
+  await request(`/v1/submissions/${saved.id}/feedback`, main, 'POST', { content: 'Feedback após escutar e ler a atividade.', scores: [{ stepId: version.steps[0].id, points: 1, comment: '' }] });
   assert.equal((await request(`/v1/submissions/${saved.id}/text-file`, main)).json.name, 'atividade.txt');
   await request(`${path}/adaptations/${plan.id}/remove`, main, 'POST', { expectedRevision: 2 }, 409);
   await request(`${path}/adaptations/${plan.id}/remove`, main, 'POST', { expectedRevision: 1 });
