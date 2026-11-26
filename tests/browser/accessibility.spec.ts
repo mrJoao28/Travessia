@@ -70,17 +70,19 @@ test("preferências por teclado, Escape, persistência local e skip link", async
   await expect(page.locator("main")).toBeFocused();
   await page.getByText("Aa · Ajustar leitura", { exact: true }).focus();
   await page.keyboard.press("Enter");
-  const themeSummary = page.locator("#temas > summary");
-  await test.step("alternar contraste pelo painel Tema e contraste", async () => {
-    await themeSummary.click();
-    await expect(page.locator("#temas")).toHaveAttribute("open", "");
+  const readingSummary = page.locator("#preferencias > summary");
+  await test.step("ajustar contraste e alternar tema pelo botão", async () => {
+    await expect(page.locator("#preferencias")).toHaveAttribute("open", "");
     const contrast = page.getByLabel("Mais contraste", { exact: true });
     await expect(contrast).toBeVisible();
     await contrast.check();
     await page.keyboard.press("Escape");
-    await expect(page.locator("#temas")).not.toHaveAttribute("open", "");
+    await expect(page.locator("#preferencias")).not.toHaveAttribute("open", "");
+    const themeToggle = page.getByRole("button", { name: "Ativar modo escuro" });
+    await themeToggle.click();
+    await expect(themeToggle).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   });
-  const readingSummary = page.locator("#preferencias > summary");
   await test.step("ajustar tamanho e fechar o painel de leitura com Escape", async () => {
     await readingSummary.click();
     await expect(page.locator("#preferencias")).toHaveAttribute("open", "");
@@ -92,6 +94,7 @@ test("preferências por teclado, Escape, persistência local e skip link", async
   ).toBeFocused();
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-contrast", "true");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(page.locator("html")).toHaveAttribute(
     "style",
     /font-size: 125%/,

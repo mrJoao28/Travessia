@@ -14,11 +14,11 @@ test.describe("Área de Avaliações e Notas do Professor", () => {
     const tools = page.locator(".teacher-dashboard-tools");
     const collapsedLayout = await tools.evaluate(grid => Array.from(grid.children).map(card => {
       const rect = card.getBoundingClientRect();
-      return { left: rect.left, right: rect.right, top: rect.top };
+      return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
     }));
     expect(collapsedLayout).toHaveLength(2);
-    expect(Math.abs(collapsedLayout[0].top - collapsedLayout[1].top)).toBeLessThan(2);
-    expect(collapsedLayout[1].left).toBeGreaterThan(collapsedLayout[0].right);
+    expect(Math.abs(collapsedLayout[0].left - collapsedLayout[1].left)).toBeLessThan(2);
+    expect(collapsedLayout[1].top).toBeGreaterThanOrEqual(collapsedLayout[0].bottom);
     const disclosure = page.locator("details.gradebook-disclosure");
     await expect(disclosure).toBeVisible();
     const summary = disclosure.locator("summary");
