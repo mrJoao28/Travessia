@@ -721,7 +721,8 @@ function TeacherFeedback({ missionId, submission, steps, interactionSteps }: { m
   const aiRequest = useRef<{ revision: number; key: string } | null>(null);
   const [deadlineValues, setDeadlineValues] = useState<Record<string, string>>(() => Object.fromEntries(steps.map(step => [step.id, toLocalDateTime(step.dueAt)])));
   useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"), []);
-  const gradedSteps = steps.filter(step => step.maxPoints !== null);
+  const scoringReady = steps.length > 0 && steps.every(step => step.maxPoints !== null && step.maxPoints >= 1);
+  const gradedSteps = scoringReady ? steps : [];
   const totalPoints = gradedSteps.reduce((sum, step) => sum + Number(scores[step.id]?.points || 0), 0);
   if (submission.status === "reviewed" || done)
     return (
@@ -779,11 +780,13 @@ function TeacherFeedback({ missionId, submission, steps, interactionSteps }: { m
         </fieldset>)}
         <OperationStatus message={deadlineMessage} />
       </details>}
+      {!scoringReady && <p role="alert">Esta versão ainda não tem pontuação máxima válida em todas as etapas. A avaliação só poderá ser publicada depois que cada etapa tiver de 1 a 100 pontos.</p>}
       <form
         className="form-stack"
         onSubmit={async (e) => {
           e.preventDefault();
           if (pending) return;
+          if (!requestRevision && !scoringReady) { setMessage("Esta versão tem etapas sem pontuação máxima válida. Configure de 1 a 100 pontos em cada etapa antes de avaliar."); return; }
           if (gradedSteps.length && !requestRevision && !confirmedScores) { setMessage("Confirme a pontuação antes de publicar."); return; }
           setPending(true);
           setMessage("");
@@ -825,7 +828,7 @@ function TeacherFeedback({ missionId, submission, steps, interactionSteps }: { m
         {!requestRevision && gradedSteps.map(step => <fieldset className="editor-step" key={step.id}>
           <legend>{step.title} · até {step.maxPoints} pontos</legend>
           <label>Nota da etapa
-            <input type="number" min="0" max={step.maxPoints ?? 0} step="1" required disabled={pending}
+            <input type="number" min="1" max={step.maxPoints ?? 0} step="1" required disabled={pending}
               value={scores[step.id]?.points ?? ""}
               onChange={e => { setConfirmedScores(false); setScores(all => ({ ...all, [step.id]: { points: e.target.value, comment: all[step.id]?.comment ?? "" } })); }} />
           </label>
@@ -843,7 +846,7 @@ function TeacherFeedback({ missionId, submission, steps, interactionSteps }: { m
           Destinatário: {submission.groupId ? "integrantes da equipe" : "estudante autor da entrega"}. O feedback e a avaliação ficam pendentes de validação docente; nada é publicado automaticamente pela IA.
         </p>
         <label className="check"><input type="checkbox" checked={requestRevision} disabled={pending} onChange={e => setRequestRevision(e.target.checked)} /> Solicitar ajustes e permitir nova tentativa</label>
-        <button className="button" disabled={pending}>
+        <button className="button" disabled={pending || (!requestRevision && !scoringReady)}>
           {pending ? "Publicando…" : "Publicar feedback"}
         </button>
         <OperationStatus message={message} />
