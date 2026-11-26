@@ -28,6 +28,7 @@ export const version: NonNullable<ApiResponse<"mission">["publishedVersion"]> = 
       title: "Compreender o problema",
       instructions: "Identifique as informações necessárias.",
       example: "Livro disponível e leitor.",
+      maxPoints: 10,
     },
     {
       id: "step-two",
