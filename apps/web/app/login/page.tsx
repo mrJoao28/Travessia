@@ -11,10 +11,10 @@ export default function LoginPage() {
       <main className="login-shell">
         <div className="login-intro">
           <Brand />
-          <h1>Um passo de cada vez.</h1>
+          <h1>Atividades com caminhos claros.</h1>
           <p>
-            Aprendizagem com caminhos claros e espaço para o seu jeito de
-            aprender.
+            Professores planejam etapas e estudantes encontram apoios para
+            avançar e acompanhar o feedback.
           </p>
           <ThemeImage
             className="login-art decorative"

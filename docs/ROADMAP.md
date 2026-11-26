@@ -1,34 +1,73 @@
-# Sequência de implementação
+# Roteiro de evolução do Travessia
 
-## 0. Fundação — esta entrega
+Este roteiro transforma a proposta em etapas de produto. A ordem prioriza uma experiência fluida e acessível e não representa compromisso de prazo. Consulte [`PRODUCT.md`](PRODUCT.md) para a proposta, limites e estado conhecido; detalhes operacionais ficam nos documentos de cada área.
 
-Monorepo, duas áreas demonstrativas, preferências de leitura, health API, identidade visual, contrato inicial, política de referência e documentação. Sem dados reais e sem chamada ao Gemini.
+## Base disponível
 
-## 1. Identidade e turmas
+O repositório já inclui aplicações web e API, sessão autenticada, autorização por turma, atividades com versões, fluxos de entrega e feedback, materiais, preferências de leitura e uma prévia interativa fictícia. A implantação atual usa containers no servidor Mais Acesso com Cloudflare na borda.
 
-Backend: Better Auth, sessão persistida e autorização; migrations User/Classroom/Membership/Invitation; convites student; isolamento de recursos e testes HTTP negativos.
-Frontend: login/recuperação acessíveis, lista/criação de turmas e fluxo de convite; lidar com expiração sem perder contexto. Integrar contrato antes de remover os avisos de demonstração.
+Essa base técnica não equivale a um piloto validado. Recursos de demonstração, testes automatizados e integrações opcionais devem continuar identificados como tais.
 
-Aceite: professor cria turma, aluno entra por convite, não há acesso de terceiros nem autopromoção de papel.
+## Prioridade 1 — Preparar um piloto responsável
 
-## 2. Atividades manuais
+**Objetivo:** garantir que o fluxo completo seja previsível, acessível e operável com um grupo pequeno.
 
-Backend: rascunho/publicação/versionamento, etapas e critérios. Frontend: editor acessível e leitor com navegação livre/apoios. Materiais textuais inicialmente; não habilitar upload real antes dos controles de segurança.
+- Confirmar política de retenção, suporte, recuperação de conta e resposta a incidentes.
+- Revisar login, convites, permissões de turma, arquivos e ações de exclusão com cenários de acesso autorizado e não autorizado.
+- Validar teclado, leitor de tela, ampliação, reflow, contraste e conteúdo real das atividades.
+- Testar com professores e estudantes, incluindo pessoas com diferentes necessidades de acesso, sem exigir diagnóstico.
+- Resolver elegibilidade e condições do provedor antes de usar IA com dados ou público reais; manter o fluxo principal funcional sem IA.
 
-Aceite: professor publica atividade revisada e aluno vinculado acessa somente a versão permitida.
+**Saída esperada:** piloto delimitado, responsáveis e suporte definidos, barreiras prioritárias registradas, dados de demonstração separados de dados reais e limitações comunicadas.
 
-## 3. Entregas, feedback e barreiras
+## Prioridade 2 — Validar o percurso de aprendizagem
 
-Uploads privados após verificações; autoria e visibilidade; formulário de barreira com destinatário claro; fluxo de resposta. Preferências próprias e retenção definida.
+**Objetivo:** entender se as pessoas conseguem percorrer o ciclo da atividade sem perder contexto.
 
-Aceite: aluno envia trabalho, docente da turma responde, outro aluno não acessa; relato privado não é exposto a quem não foi autorizado.
+1. Professor cria turma e convida estudantes.
+2. Professor publica atividade com objetivos, etapas, materiais e critérios.
+3. Estudante encontra a atividade, compreende o próximo passo, salva e retoma o trabalho.
+4. Estudante envia a entrega e recebe confirmação.
+5. Professor consulta a entrega e fornece feedback.
+6. Estudante encontra e compreende o feedback.
 
-## 4. Gemini no planejamento
+Observar compreensão, pontos de bloqueio, perda de conteúdo, clareza de estados e tempo de suporte necessário. Tempo não deve ser usado como medida de capacidade ou aprendizagem.
 
-Adaptador @google/genai, geração limitada por requisição Vercel, cotas e minimização; JSON validado, rascunho revisável. Resolver adequação etária/contratual e política de dados antes do piloto. Testes com provedor simulado sem saída falsa em produção; ao obter chave, smoke test autorizado com material fictício.
+## Prioridade 3 — Refinar acessibilidade e clareza de ponta a ponta
 
-Aceite: professor gera, revisa e publica; falha/cota esgotada é tratada e conteúdo existente continua acessível.
+**Objetivo:** reduzir esforço desnecessário em toda a navegação e nos formulários.
 
-## 5. Piloto e validação
+- Padronizar rótulos, hierarquia de botões, confirmações e estados de salvamento/erro.
+- Preservar conteúdo quando a rede falhar, a sessão expirar ou uma validação impedir o avanço.
+- Melhorar navegação por teclado e leitor de tela em listas, diálogos, seletores e fluxos longos.
+- Validar alternativas de leitura, áudio e documento gerado com as tecnologias disponíveis.
+- Transformar barreiras observadas em critérios de aceite e regressão.
 
-Uma turma e três atividades. Revisão da fonte pedagógica quando recebida; testes de teclado, leitor de tela, zoom/contraste e pessoas com diferentes necessidades. Registrar resultado e limitações; revisar retenção, recuperação e custo. Só depois ampliar tutor, integrações e monetização automática.
+## Prioridade 4 — Consolidar planejamento e acompanhamento docente
+
+**Objetivo:** apoiar o trabalho do professor sem multiplicar telas e operações repetidas.
+
+- Revisar criação, edição, versão, revisão e publicação de atividades.
+- Confirmar escopo de cada recurso de professor/monitor e garantir sua autorização no servidor.
+- Tornar entregas, critérios, feedback e pedidos compartilhados fáceis de localizar.
+- Verificar que personalizações e equipes são específicas da atividade e respeitam as permissões da turma.
+
+## Prioridade 5 — Medir utilidade e decidir próximos investimentos
+
+**Objetivo:** aprender com o piloto antes de ampliar público ou complexidade.
+
+Acompanhar indicadores de processo com finalidade explícita: conclusão de etapas, clareza do feedback percebida, barreiras comunicadas/resolvidas e esforço para preparar/acompanhar atividades. Usar amostras pequenas como evidência exploratória. Não criar ranking, perfil de capacidade, vigilância individual ou conclusões de eficácia sem desenho e validação apropriados.
+
+Com estudantes e docentes, revisar os achados, as barreiras persistentes e as prioridades. Atualizar este roteiro com decisões e evidências, sem assumir que mais funcionalidades significam melhor experiência.
+
+## Depois do MVP — sujeito a decisão
+
+- Integrações institucionais e relatórios agregados com finalidade e privacidade definidas.
+- Expansão de formatos e fluxos de material após validar acessibilidade e segurança.
+- Recursos de monitoria autenticados, caso haja necessidade confirmada e regras de autorização claras.
+- Integração Gemini em produção somente após resolver público elegível, condições de uso, minimização e revisão humana.
+- Modelos operacionais e comerciais após evidência do piloto.
+
+## Fora do roteiro atual
+
+Diagnóstico, perfil clínico, detecção de deficiência, decisão automatizada de nota, ranking, tutor irrestrito, LMS completo e vigilância de comportamento seguem fora do escopo, conforme [`PRODUCT.md`](PRODUCT.md).

@@ -160,7 +160,25 @@ function WorkspaceView({
   const chosen = permitted.find((room) => room.id === selected) ?? permitted[0];
   const singleContext = ["barreiras", "nova", "editor"].includes(section);
   const monitorHome = role === "professor" && !section && chosen?.role === "monitor" && (selected === chosen.id || permitted.length === 1);
-  const title = role === "aluno" ? (section === "apoios" ? "Meus apoios de aprendizagem" : "Um passo de cada vez.") : monitorHome ? "Painel de monitoria" : ({ adaptacoes: "Adaptar material para um aluno", estrategias: "Estratégias de apoio", apoios: "Materiais e apoios da atividade", atividades: "Suas atividades", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
+  const studentTitles: Record<string, string> = {
+    "": entries.some(entry => entry.mission.publishedVersion) ? "Continue sua atividade" : "Seu percurso de aprendizagem",
+    turmas: "Minhas turmas",
+    entregas: "Minhas entregas",
+    apoios: "Meus apoios de aprendizagem",
+    barreiras: "Meus relatos e respostas",
+    ajuda: "Ajuda com suas atividades",
+  };
+  const studentDescriptions: Record<string, string> = {
+    "": entries.some(entry => entry.mission.publishedVersion)
+      ? "Retome de onde parou ou escolha uma atividade publicada pela sua turma."
+      : "As atividades publicadas pelos seus professores aparecem aqui.",
+    turmas: "Consulte suas turmas e abra as atividades de cada uma.",
+    entregas: "Acompanhe o que você enviou e consulte o feedback dos professores.",
+    apoios: "Consulte os materiais e apoios preparados para suas atividades.",
+    barreiras: "Acompanhe seus relatos compartilhados e as respostas recebidas.",
+    ajuda: "Encontre orientações para usar o Travessia e realizar suas atividades.",
+  };
+  const title = role === "aluno" ? (studentTitles[section] ?? "Seu percurso de aprendizagem") : monitorHome ? "Painel de monitoria" : ({ "": "Acompanhe suas turmas", adaptacoes: "Adaptar material para um aluno", estrategias: "Estratégias de apoio", apoios: "Materiais e apoios da atividade", atividades: "Suas atividades", entregas: "Acompanhe as entregas", turmas: "Organize suas turmas", barreiras: "Pedidos e barreiras de aprendizagem", ajuda: "Como podemos ajudar?" }[section] ?? "O que vamos preparar hoje?");
   const materialWorkspace=role==="professor"&&["adaptacoes","estrategias","apoios"].includes(section);
   const guidedEditor = role === "professor" && ["editor", "nova"].includes(section);
   const showClassroomCreation = role === "professor" && ["", "atividades", "turmas"].includes(section) && chosen?.role !== "monitor";
@@ -185,7 +203,7 @@ function WorkspaceView({
           <h1>{title}</h1>
           <p>
             {materialWorkspace ? "Prepare, compare e confira antes de disponibilizar ao aluno." : role === "aluno"
-              ? (entries.some(entry=>entry.mission.publishedVersion)?"Retome sua atividade de onde parou.":"Suas atividades serão mostradas aqui.")
+              ? (studentDescriptions[section] ?? "Consulte suas atividades e os próximos passos.")
               : "Organize objetivos, etapas e devolutivas para sua turma."}
           </p>
         </div>
@@ -536,7 +554,7 @@ function TeacherDashboard({
       {classroom.role === 'monitor' && <p className="notice">Você tem as mesmas ferramentas de gestão e acompanhamento do professor nesta turma.</p>}
       {(classroom.role === 'teacher' || classroom.role === 'monitor') && <div className="teacher-dashboard-tools">
         <details className="paper action-disclosure teacher-disclosure">
-          <summary aria-label="Alunos da turma e convites" aria-describedby={participantsHintId}><span className="teacher-disclosure-title">Alunos da turma e convites</span><span id={participantsHintId} className="teacher-disclosure-hint">Gerencie participantes e links de convite</span><span className="disclosure-action-hint" aria-hidden="true"><span className="disclosure-closed-hint">Abrir</span><span className="disclosure-open-hint">Recolher</span></span></summary>
+          <summary aria-label="Alunos da turma e convites" aria-describedby={participantsHintId}><span className="teacher-disclosure-copy"><span className="teacher-disclosure-title">Alunos da turma e convites</span><span id={participantsHintId} className="teacher-disclosure-hint">Gerencie participantes e links de convite</span></span><span className="disclosure-action-hint" aria-hidden="true"><span className="disclosure-closed-hint">Gerenciar turma</span><span className="disclosure-open-hint">Fechar</span></span></summary>
           <ClassroomMembers classroom={classroom} />
         </details>
         <GradebookManager classroomId={classroom.id} entries={entries} />
