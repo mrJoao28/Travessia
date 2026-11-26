@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { api, errorMessage, type ApiResponse } from "../lib/product-client";
 import { Icon } from "./icons";
 
@@ -26,11 +27,11 @@ export function ReadingPreferences({
   accountPreferences?: ApiResponse<"preferences">;
 }) {
   const details = useRef<HTMLDetailsElement>(null);
-  const themeDetails = useRef<HTMLDetailsElement>(null);
   const [preferences, setPreferences] = useState(defaults);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [themeMotionKey, setThemeMotionKey] = useState(0);
   useEffect(() => {
     if (accountPreferences)
       setPreferences((current) => ({
@@ -58,10 +59,8 @@ export function ReadingPreferences({
       }
     };
     const openFromHash = () => {
-      if (window.location.hash === "#preferencias")
-        open(details.current, themeDetails.current);
-      if (window.location.hash === "#temas")
-        open(themeDetails.current, details.current);
+      if (["#preferencias", "#temas"].includes(window.location.hash))
+        open(details.current, null);
     };
     const openFromLink = (event: MouseEvent) => {
       if (
@@ -80,10 +79,8 @@ export function ReadingPreferences({
           'a[href="#preferencias"], a[href="#temas"]',
         );
         if (!(link instanceof HTMLAnchorElement)) return;
-        if (link?.hash === "#preferencias")
-          open(details.current, themeDetails.current);
-        if (link?.hash === "#temas")
-          open(themeDetails.current, details.current);
+        if (link?.hash === "#preferencias" || link?.hash === "#temas")
+          open(details.current, null);
       }
     };
     window.addEventListener("hashchange", openFromHash);
@@ -127,16 +124,31 @@ export function ReadingPreferences({
       /* Persistência opcional. */
     }
   }, [preferences, ready]);
+  const toggleTheme = () => {
+    const nextTheme = preferences.theme === "dark" ? "light" : "dark";
+    const applyTheme = () => {
+      document.documentElement.dataset.theme = nextTheme;
+      flushSync(() => {
+        setPreferences((current) => ({ ...current, theme: nextTheme }));
+        setThemeMotionKey((current) => current + 1);
+      });
+    };
+    const transitionDocument = document as Document & {
+      startViewTransition?: (update: () => void) => unknown;
+    };
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduceMotion && transitionDocument.startViewTransition) {
+      transitionDocument.startViewTransition(applyTheme);
+    } else {
+      applyTheme();
+    }
+  };
   return (
-    <>
+    <div className="reading-controls">
       <details
         className="preferences"
         id="preferencias"
         ref={details}
-        onToggle={(event) => {
-          if (event.currentTarget.open && themeDetails.current?.open)
-            themeDetails.current.open = false;
-        }}
         onKeyDown={(event) => {
           if (event.key === "Escape" && details.current?.open) {
             details.current.open = false;
@@ -179,52 +191,6 @@ export function ReadingPreferences({
             />
             Mais espaço entre linhas
           </label>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => setPreferences(defaults)}
-          >
-            Restaurar todas as preferências
-          </button>
-          <p className="small">
-            Tamanho, espaçamento e elementos decorativos ficam salvos neste navegador. Você também pode usar o zoom do navegador.
-          </p>
-        </div>
-      </details>
-      <details
-        className="preferences"
-        id="temas"
-        ref={themeDetails}
-        onToggle={(event) => {
-          if (event.currentTarget.open && details.current?.open)
-            details.current.open = false;
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape" && themeDetails.current?.open) {
-            themeDetails.current.open = false;
-            themeDetails.current.querySelector("summary")?.focus();
-          }
-        }}
-      >
-        <summary>
-          <Icon name={preferences.theme === "dark" ? "moon" : "sun"} />
-          Tema e contraste
-        </summary>
-        <div className="preferences-panel">
-          <h2>Aparência do site</h2>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={preferences.theme === "dark"}
-              onChange={(event) =>
-                setPreferences((p) => ({
-                  ...p,
-                  theme: event.target.checked ? "dark" : "light",
-                }))
-              }
-            />
-            Modo escuro
-          </label>
           <label className="check">
             <input
               type="checkbox"
@@ -235,6 +201,16 @@ export function ReadingPreferences({
             />
             Mais contraste
           </label>
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => setPreferences(defaults)}
+          >
+            Restaurar todas as preferências
+          </button>
+          <p className="small">
+            Tamanho, espaçamento e elementos decorativos ficam salvos neste navegador. Você também pode usar o zoom do navegador.
+          </p>
           {accountPreferences && (
             <button
               type="button"
@@ -246,20 +222,13 @@ export function ReadingPreferences({
                 try {
                   await api("preferences", {
                     body: {
-                      fontSize:
-                        preferences.scale === "1.25"
-                          ? "larger"
-                          : preferences.scale === "1.125"
-                            ? "large"
-                            : "default",
+                      fontSize: preferences.scale === "1.25" ? "larger" : preferences.scale === "1.125" ? "large" : "default",
                       contrast: preferences.contrast ? "high" : "default",
                       spacing: preferences.spacing ? "wide" : "default",
                       reducedDistractions: preferences.focus,
                     },
                   });
-                  setMessage(
-                    "Preferências de acessibilidade salvas na conta. O tema fica salvo neste navegador.",
-                  );
+                  setMessage("Preferências de acessibilidade salvas na conta. O tema fica salvo neste navegador.");
                 } catch (reason) {
                   setMessage(errorMessage(reason));
                 } finally {
@@ -270,15 +239,19 @@ export function ReadingPreferences({
               {saving ? "Salvando…" : "Salvar preferências compatíveis na conta"}
             </button>
           )}
-          <p className="small">
-            Tema salvo neste navegador. O alto contraste é independente do tema.
-            {accountPreferences
-              ? " Use o botão para salvar as preferências de acessibilidade na conta."
-              : " As preferências não são sincronizadas com uma conta nesta tela."}
-          </p>
           <p role="status">{message}</p>
         </div>
       </details>
-    </>
+      <button
+        type="button"
+        className="theme-toggle"
+        aria-label={preferences.theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+        aria-pressed={preferences.theme === "dark"}
+        title={preferences.theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
+        onClick={toggleTheme}
+      >
+        <Icon key={themeMotionKey} name={preferences.theme === "dark" ? "moon" : "sun"} />
+      </button>
+    </div>
   );
 }

@@ -12,6 +12,8 @@ import { LearnerMaterials } from "./learner-materials";
 import { readStudentDraft, storeStudentDraft } from "../lib/student-draft";
 import { MissionSupports } from "./mission-supports";
 import { GroupManager, StudentTeamFormation } from "./group-manager";
+import { ActivityInteractionResponse } from "./activity-interaction-response";
+import { displayInteractionAnswer } from "../lib/activity-interactions";
 
 export function LiveMission({
   id,
@@ -211,6 +213,22 @@ export function LiveMission({
   const canSubmit = !requiresTeam || Boolean(teamGroup && teamGroup.leaderId === viewerId && allMembersValidated);
   const currentValidatedCount = new Set((submission?.validations ?? []).filter(validation => validation.stepId === step.id && validation.current && teamGroup?.studentIds.includes(validation.userId)).map(validation => validation.userId)).size;
   const isFinalStep = index === version.steps.length - 1;
+  function responseIsReady() {
+    const interaction = step.interaction;
+    if (!interaction || interaction.type === "written") return true;
+    if (interaction.type === "multiple_choice") {
+      try { return Array.isArray(JSON.parse(content)) && (JSON.parse(content) as unknown[]).length > 0; }
+      catch { return false; }
+    }
+    if (interaction.type === "fill_blank") {
+      try {
+        const values: unknown = JSON.parse(content);
+        const blanks = [...(interaction.question ?? "").matchAll(/\[\[(\d+)\]\]/g)].length;
+        return Array.isArray(values) && values.length === blanks && values.every(value => typeof value === "string" && value.trim());
+      } catch { return false; }
+    }
+    return Boolean(content.trim());
+  }
   async function save(status: "draft" | "submitted", automatic = false, submitStepIds: string[] = []) {
     if (pending || mediaBusy || !mission?.publishedVersion || !step) return false;
     setPending(true);
@@ -286,6 +304,10 @@ export function LiveMission({
   }
   async function saveAndAdvance() {
     if (isFinalStep || pending || mediaBusy) return;
+    if (!responseIsReady()) {
+      setMessage("Responda à pergunta desta etapa antes de continuar.");
+      return;
+    }
     const saved = await save("draft");
     if (!saved) return;
     const next = index + 1;
@@ -410,7 +432,7 @@ export function LiveMission({
               {submission?.revisionRequested && <p role="status">O professor solicitou ajustes. Leia o feedback e prepare uma nova tentativa.</p>}
               {[...(submission?.revisionRequested ? [submission] : []), ...attemptHistory].map(attempt => <details key={attempt.id}>
                 <summary>Tentativa {attempt.attempt ?? 1} · entrega e feedback</summary>
-                {Object.keys(attempt.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa">{attempt.gradingSteps.map(item => attempt.stepResponses?.[item.id] ? <article key={item.id}><h3>{item.title}</h3><p className="submission-content">{attempt.stepResponses[item.id]}</p></article> : null)}</section> : <p className="submission-content">{attempt.content}</p>}
+                  {Object.keys(attempt.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa">{attempt.gradingSteps.map(item => attempt.stepResponses?.[item.id] ? <article key={item.id}><h3>{item.title}</h3><p className="submission-content">{displayInteractionAnswer(attempt.stepResponses[item.id])}</p></article> : null)}</section> : <p className="submission-content">{attempt.content}</p>}
                 <SubmissionMedia id={attempt.id} hasAudio={attempt.hasAudio} hasTextFile={attempt.hasTextFile} />
                 {attempt.feedback.map(feedback => <blockquote key={feedback.id}><p>{feedback.content}</p></blockquote>)}
               </details>)}
@@ -444,7 +466,7 @@ export function LiveMission({
                       ? "Revisada"
                       : "Aguardando feedback"}
                   </p>
-                  {Object.keys(submission.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa">{submission.gradingSteps.map(item => submission.stepResponses?.[item.id] ? <article key={item.id}><h3>{item.title}</h3><p className="submission-content">{submission.stepResponses[item.id]}</p></article> : null)}</section> : <p className="submission-content">{submission.content}</p>}
+                  {Object.keys(submission.stepResponses ?? {}).length ? <section aria-label="Respostas por etapa">{submission.gradingSteps.map(item => submission.stepResponses?.[item.id] ? <article key={item.id}><h3>{item.title}</h3><p className="submission-content">{displayInteractionAnswer(submission.stepResponses[item.id])}</p></article> : null)}</section> : <p className="submission-content">{submission.content}</p>}
                   <SubmissionMedia id={submission.id} hasAudio={submission.hasAudio} hasTextFile={submission.hasTextFile} />
                   {submission.feedback.map((feedback) => (
                     <blockquote key={feedback.id}>
@@ -462,6 +484,10 @@ export function LiveMission({
                   aria-busy={pending}
                   onSubmit={(e) => {
                     e.preventDefault();
+                    if (!responseIsReady()) {
+                      setMessage("Responda à pergunta desta etapa antes de continuar.");
+                      return;
+                    }
                     if (!isFinalStep) {
                       void saveAndAdvance();
                       return;
@@ -476,22 +502,18 @@ export function LiveMission({
                   }}
                 >
                   {recovered && <p role="status">Texto e progresso recuperados deste navegador.</p>}
-                  <label htmlFor="submission-content">
-                    Escreva a sua resposta
-                    <textarea
-                      disabled={pending || mediaBusy}
-                      id="submission-content"
-                      maxLength={12000}
-                      value={content}
-                      onChange={(e) => {
-                        setContent(e.target.value);
-                        setStepResponses(responses => ({ ...responses, [step.id]: e.target.value }));
-                        setDirty(true);
-                        setMessage("");
-                      }}
-                      aria-describedby="submission-help"
-                    />
-                  </label>
+                  <ActivityInteractionResponse
+                    id="submission-content"
+                    interaction={step.interaction}
+                    value={content}
+                    disabled={pending || mediaBusy}
+                    onChange={answer => {
+                      setContent(answer);
+                      setStepResponses(responses => ({ ...responses, [step.id]: answer }));
+                      setDirty(true);
+                      setMessage("");
+                    }}
+                  />
                   <p id="submission-help" className="small">
                     O envio torna esta entrega disponível aos docentes de{" "}
                     {classroom.name}. O texto e o progresso são salvos automaticamente. O rascunho
