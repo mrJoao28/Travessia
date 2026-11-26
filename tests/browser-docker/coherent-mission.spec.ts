@@ -158,6 +158,8 @@ test('fluxo completo real: cadastro, turma, atividade, PDF/voz, adaptação indi
   await student.getByRole('button',{name:'Finalizar e enviar atividade',exact:true}).click();await student.getByRole('button',{name:'Confirmar envio',exact:true}).click();await expect(student.getByText('Atividade enviada. Aguarde o feedback do professor.',{exact:true})).toBeVisible();
   await teacher.goto('/professor/entregas');const delivery=teacher.locator('li.paper').filter({has:teacher.getByRole('heading',{name:'Rotas acessíveis no campus',exact:true})});
   await delivery.getByText('Consultar entrega e escrever feedback',{exact:true}).click();await delivery.getByLabel('Orientação para o próximo passo',{exact:true}).fill('Sua escolha está justificada. Na próxima etapa, relacione os obstáculos às soluções de acesso.');
+  for(const score of await delivery.getByLabel('Nota da etapa',{exact:true}).all())if(await score.isVisible())await score.fill('1');
+  await delivery.getByLabel('Conferi as notas e confirmo a avaliação final.',{exact:true}).check();
   await delivery.getByRole('button',{name:'Publicar feedback',exact:true}).click();await expect(delivery.getByText('Feedback publicado pelo servidor.',{exact:true})).toBeVisible();
   await student.reload();await student.getByRole('button',{name:'Consultar atividade',exact:true}).click();await expect(student.getByText('Sua escolha está justificada. Na próxima etapa, relacione os obstáculos às soluções de acesso.',{exact:false})).toBeVisible();
   await student.setViewportSize({width:320,height:850});expect(await student.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
