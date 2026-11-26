@@ -36,6 +36,7 @@ export const version: NonNullable<ApiResponse<"mission">["publishedVersion"]> = 
       title: "Planejar a solução",
       instructions: "Organize as funcionalidades.",
       example: "Comece por um empréstimo.",
+      maxPoints: 10,
     },
   ],
   materials: [
