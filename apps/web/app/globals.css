@@ -1722,9 +1722,8 @@ body {
 .teacher-ai { background: var(--background); }
 .teacher-ai > summary, .teacher-disclosure > summary { font-weight: 650; overflow-wrap: anywhere; }
 .teacher-ai[open] > summary, .teacher-disclosure[open] > summary { margin-bottom: 1rem; }
-.teacher-dashboard-tools { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 1rem; margin-block: 1.25rem; }
+.teacher-dashboard-tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 31rem), 1fr)); align-items: start; gap: 1rem; margin-block: 1.25rem; }
 .teacher-dashboard-tools > .teacher-disclosure { min-width: 0; margin: 0; }
-.teacher-dashboard-tools > .teacher-disclosure[open] { grid-column: 1; }
 .teacher-dashboard-tools > .teacher-disclosure > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .75rem; min-height: 2.75rem; cursor: pointer; }
 .teacher-disclosure-title { font-weight: 700; }
 .teacher-disclosure-hint { color: var(--muted); font-size: .9rem; font-weight: 400; }
