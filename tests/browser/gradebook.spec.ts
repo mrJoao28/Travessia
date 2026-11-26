@@ -23,7 +23,17 @@ test.describe("Área de Avaliações e Notas do Professor", () => {
     await expect(disclosure).toBeVisible();
     const summary = disclosure.locator("summary");
     await expect(summary).toHaveAccessibleName("Avaliações e notas");
-    await expect(summary.locator(".disclosure-action-hint")).toHaveCSS("position", "absolute");
+    const actionHint = summary.locator(".disclosure-action-hint");
+    await expect(summary).toHaveCSS("display", "grid");
+    await expect(actionHint).toHaveCSS("position", "static");
+    const desktopSummaryLayout = await summary.evaluate(node => {
+      const copy = node.querySelector(".teacher-disclosure-copy")!.getBoundingClientRect();
+      const action = node.querySelector(".disclosure-action-hint")!.getBoundingClientRect();
+      const bounds = node.getBoundingClientRect();
+      return { copyRight: copy.right, actionLeft: action.left, actionRight: action.right, summaryRight: bounds.right };
+    });
+    expect(desktopSummaryLayout.actionLeft).toBeGreaterThanOrEqual(desktopSummaryLayout.copyRight);
+    expect(desktopSummaryLayout.actionRight).toBeLessThanOrEqual(desktopSummaryLayout.summaryRight);
     await expect(page.locator(`#${await summary.getAttribute("aria-describedby")}`)).toHaveText("Organize períodos e consulte resultados");
 
     // Abrir via teclado
@@ -117,6 +127,14 @@ test.describe("Área de Avaliações e Notas do Professor", () => {
 
     // 8. Reflow em viewport estreito de 320px
     await page.setViewportSize({ width: 320, height: 800 });
+    const mobileSummaryLayout = await summary.evaluate(node => {
+      const copy = node.querySelector(".teacher-disclosure-copy")!.getBoundingClientRect();
+      const action = node.querySelector(".disclosure-action-hint")!.getBoundingClientRect();
+      const bounds = node.getBoundingClientRect();
+      return { copyBottom: copy.bottom, actionTop: action.top, actionRight: action.right, summaryRight: bounds.right };
+    });
+    expect(mobileSummaryLayout.actionTop).toBeGreaterThanOrEqual(mobileSummaryLayout.copyBottom);
+    expect(mobileSummaryLayout.actionRight).toBeLessThanOrEqual(mobileSummaryLayout.summaryRight);
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1
     );
