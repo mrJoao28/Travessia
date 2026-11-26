@@ -16,7 +16,7 @@ import type { MissionInput } from '../src/contracts.js';
 const db = new PrismaClient({ log: [] });
 const config = readConfig();
 const fixture: MissionInput = { title: 'Missão de teste', description: 'Conteúdo didático fictício.', objectives: ['Comparar soluções.'],
-  criteria: ['Justificar a escolha.'], steps: [{ title: 'Comparar', instructions: 'Compare duas soluções.', example: 'Uma tabela de alternativas.' }],
+  criteria: ['Justificar a escolha.'], steps: [{ title: 'Comparar', instructions: 'Compare duas soluções.', example: 'Uma tabela de alternativas.', maxPoints: 10 }],
   materials: [{ title: 'Material público fictício', text: 'Compare custo e clareza de duas soluções.' }] };
 let base: string;
 let runtime: Awaited<ReturnType<typeof createApplication>>;
